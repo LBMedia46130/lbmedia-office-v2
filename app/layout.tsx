@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LBMedia Office",
+  title: "LBMedia Office V2",
   description:
     "Pilotage éditorial et publications LBMedia",
 };
@@ -44,7 +44,7 @@ export default function RootLayout({
 
               <div>
                 <p className="text-sm font-bold tracking-tight text-slate-950">
-                  LBMedia Office
+                  LBMedia Office V2
                 </p>
 
                 <p className="text-xs text-slate-500">
