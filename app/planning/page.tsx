@@ -378,22 +378,6 @@ export default async function PlanningPage() {
           description="Visualise immédiatement ce qui doit être publié aujourd’hui, cette semaine et plus tard."
         />
 
-        <div className="mt-6 flex flex-wrap justify-end gap-3">
-          <Link
-            href="/publications/new"
-            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
-          >
-            + Nouveau post
-          </Link>
-
-          <Link
-            href="/news/new"
-            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            + Nouvelle actualité
-          </Link>
-        </div>
-
         <section className="mt-8 grid gap-4 sm:grid-cols-3">
           <Counter
             label="Prêtes à planifier"
