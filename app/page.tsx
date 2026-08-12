@@ -71,15 +71,12 @@ function getPublicationHref(
 
 function getParisDateKey(value: Date) {
   const parts =
-    new Intl.DateTimeFormat(
-      "en-CA",
-      {
-        timeZone: "Europe/Paris",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }
-    ).formatToParts(value);
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Paris",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(value);
 
   const year =
     parts.find(
@@ -121,18 +118,6 @@ function formatTime(value: string | null) {
       timeZone: "Europe/Paris",
       hour: "2-digit",
       minute: "2-digit",
-    }
-  ).format(new Date(value));
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(
-    "fr-FR",
-    {
-      timeZone: "Europe/Paris",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
     }
   ).format(new Date(value));
 }
@@ -255,22 +240,12 @@ export default async function HomePage() {
         "failed"
     );
 
-  const scheduledCount =
-    publications.filter(
-      (publication) =>
-        publication.status ===
-        "scheduled"
-    ).length;
-
   const publishedCount =
     publications.filter(
       (publication) =>
         publication.status ===
         "published"
     ).length;
-
-  const recentNews =
-    news.slice(0, 4);
 
   const attentionCount =
     toPrepare.length +
@@ -310,9 +285,7 @@ export default async function HomePage() {
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           <DashboardCard
             label="À traiter"
-            value={
-              attentionCount
-            }
+            value={attentionCount}
             description="Éléments qui demandent ton attention."
           />
 
@@ -324,9 +297,7 @@ export default async function HomePage() {
 
           <DashboardCard
             label="Publiées"
-            value={
-              publishedCount
-            }
+            value={publishedCount}
             description="Publications déjà diffusées."
           />
         </section>
@@ -349,8 +320,7 @@ export default async function HomePage() {
                   {failed.length > 1
                     ? "s ont"
                     : " a"}{" "}
-                  rencontré un
-                  problème.
+                  rencontré un problème.
                 </p>
               </div>
             </div>
@@ -359,9 +329,7 @@ export default async function HomePage() {
               {failed.map(
                 (publication) => (
                   <PublicationAction
-                    key={
-                      publication.id
-                    }
+                    key={publication.id}
                     publication={
                       publication
                     }
@@ -378,17 +346,16 @@ export default async function HomePage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                  Module éditorial
+                  Pénélope
                 </p>
 
                 <h2 className="mt-2 text-2xl font-bold text-slate-950">
-                  Pilotage éditorial
+                  Préparer la semaine
                 </h2>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                  Préparation,
-                  planification et
-                  suivi des contenus
+                  Préparer les prochains
+                  sujets éditoriaux
                   LBMedia.
                 </p>
               </div>
@@ -399,36 +366,6 @@ export default async function HomePage() {
               >
                 Voir les actualités →
               </Link>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Counter
-                label="À préparer"
-                value={
-                  toPrepare.length
-                }
-              />
-
-              <Counter
-                label="Prêtes"
-                value={
-                  readyToSchedule.length
-                }
-              />
-
-              <Counter
-                label="Planifiées"
-                value={
-                  scheduledCount
-                }
-              />
-
-              <Counter
-                label="Publiées"
-                value={
-                  publishedCount
-                }
-              />
             </div>
 
             <div className="mt-6">
@@ -515,9 +452,7 @@ export default async function HomePage() {
               {today.map(
                 (publication) => (
                   <PublicationAction
-                    key={
-                      publication.id
-                    }
+                    key={publication.id}
                     publication={
                       publication
                     }
@@ -529,200 +464,7 @@ export default async function HomePage() {
           )}
         </section>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                  À faire
-                </p>
-
-                <h2 className="mt-2 text-xl font-bold text-slate-950">
-                  Prêtes à planifier
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Contenus validés qui
-                  attendent une date.
-                </p>
-              </div>
-
-              <Link
-                href="/planning"
-                className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
-              >
-                Planning →
-              </Link>
-            </div>
-
-            {readyToSchedule.length ===
-            0 ? (
-              <EmptyState
-                title="Rien en attente"
-                description="Aucun contenu validé n’attend de planification."
-              />
-            ) : (
-              <div className="mt-5 grid gap-3">
-                {readyToSchedule
-                  .slice(0, 4)
-                  .map(
-                    (
-                      publication
-                    ) => (
-                      <PublicationAction
-                        key={
-                          publication.id
-                        }
-                        publication={
-                          publication
-                        }
-                      />
-                    )
-                  )}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                  À faire
-                </p>
-
-                <h2 className="mt-2 text-xl font-bold text-slate-950">
-                  Actualités à préparer
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Actualités encore
-                  vides ou à rédiger.
-                </p>
-              </div>
-
-              <Link
-                href="/news/new"
-                className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
-              >
-                Nouvelle →
-              </Link>
-            </div>
-
-            {toPrepare.length ===
-            0 ? (
-              <EmptyState
-                title="Rien à préparer"
-                description="Toutes les actualités disposent déjà d’un contenu."
-              />
-            ) : (
-              <div className="mt-5 grid gap-3">
-                {toPrepare
-                  .slice(0, 4)
-                  .map((item) => (
-                    <Link
-                      key={item.id}
-                      href={`/news/${item.id}`}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-200 hover:bg-blue-50/40"
-                    >
-                      <h3 className="font-semibold text-slate-950">
-                        {
-                          item.title
-                        }
-                      </h3>
-
-                      <p className="mt-2 text-xs font-medium text-blue-700">
-                        Ouvrir
-                        l’actualité →
-                      </p>
-                    </Link>
-                  ))}
-              </div>
-            )}
-          </section>
-        </div>
-
-        <section className="mt-8 pb-10">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                Dernière activité
-              </p>
-
-              <h2 className="mt-2 text-xl font-bold text-slate-950">
-                Actualités récentes
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Les derniers contenus
-                travaillés dans
-                LBMedia Office.
-              </p>
-            </div>
-
-            <Link
-              href="/news"
-              className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
-            >
-              Voir toutes les actualités →
-            </Link>
-          </div>
-
-          {recentNews.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-              <p className="font-semibold text-slate-950">
-                Aucune actualité
-              </p>
-
-              <Link
-                href="/news/new"
-                className="mt-4 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-              >
-                Créer la première
-                actualité
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {recentNews.map(
-                (item) => (
-                  <Link
-                    key={item.id}
-                    href={`/news/${item.id}`}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-slate-950">
-                          {
-                            item.title
-                          }
-                        </h3>
-
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
-                          {item.content ||
-                            "Aucun contenu rédigé pour le moment."}
-                        </p>
-                      </div>
-
-                      <NewsStatusBadge
-                        status={
-                          item.status
-                        }
-                      />
-                    </div>
-
-                    <p className="mt-4 text-xs text-slate-400">
-                      Mis à jour le{" "}
-                      {formatDate(
-                        item.updated_at
-                      )}
-                    </p>
-                  </Link>
-                )
-              )}
-            </div>
-          )}
-        </section>
+        <div className="pb-10" />
       </div>
     </main>
   );
@@ -754,26 +496,6 @@ function DashboardCard({
   );
 }
 
-function Counter({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-medium text-slate-500">
-        {label}
-      </p>
-
-      <p className="mt-2 text-2xl font-bold text-slate-950">
-        {value}
-      </p>
-    </div>
-  );
-}
-
 function ModuleItem({
   label,
   status,
@@ -790,26 +512,6 @@ function ModuleItem({
       <span className="rounded-full bg-blue-900/60 px-2.5 py-1 text-xs font-semibold text-blue-200">
         {status}
       </span>
-    </div>
-  );
-}
-
-function EmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-      <p className="font-semibold text-slate-900">
-        {title}
-      </p>
-
-      <p className="mt-2 text-sm text-slate-500">
-        {description}
-      </p>
     </div>
   );
 }
@@ -896,47 +598,5 @@ function PublicationAction({
         </div>
       </div>
     </Link>
-  );
-}
-
-function NewsStatusBadge({
-  status,
-}: {
-  status: string;
-}) {
-  const labels: Record<
-    string,
-    string
-  > = {
-    draft: "Brouillon",
-    ready: "Prête",
-    scheduled: "Planifiée",
-    published: "Publiée",
-  };
-
-  const classes: Record<
-    string,
-    string
-  > = {
-    draft:
-      "bg-slate-100 text-slate-600",
-    ready:
-      "bg-emerald-50 text-emerald-700",
-    scheduled:
-      "bg-blue-50 text-blue-700",
-    published:
-      "bg-violet-50 text-violet-700",
-  };
-
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-        classes[status] ??
-        "bg-slate-100 text-slate-600"
-      }`}
-    >
-      {labels[status] ??
-        status}
-    </span>
   );
 }
