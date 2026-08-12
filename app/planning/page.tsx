@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import PageBanner from "@/components/dashboard/PageBanner";
+
 import type {
   PublicationChannel,
   PublicationStatus,
@@ -370,39 +372,26 @@ export default async function PlanningPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              LBMedia Office
-            </p>
+        <PageBanner
+          eyebrow="Organisation"
+          title="Planning éditorial"
+          description="Visualise immédiatement ce qui doit être publié aujourd’hui, cette semaine et plus tard."
+        />
 
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-              Planning éditorial
-            </h1>
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Link
+            href="/publications/new"
+            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
+          >
+            + Nouveau post
+          </Link>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Visualise immédiatement
-              ce qui doit être publié
-              aujourd’hui, cette
-              semaine et plus tard.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/publications/new"
-              className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
-            >
-              + Nouveau post
-            </Link>
-
-            <Link
-              href="/news/new"
-              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              + Nouvelle actualité
-            </Link>
-          </div>
+          <Link
+            href="/news/new"
+            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            + Nouvelle actualité
+          </Link>
         </div>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-3">

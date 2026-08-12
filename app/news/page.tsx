@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import PageBanner from "@/components/dashboard/PageBanner";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -24,37 +25,26 @@ export default async function NewsPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              LBMedia Office
-            </p>
+        <PageBanner
+          eyebrow="Module éditorial"
+          title="Actualités"
+          description="Crée, rédige et prépare les actualités LBMedia avant leur diffusion sur les différents supports."
+        />
 
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-              Actualités
-            </h1>
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Link
+            href="/news/new"
+            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            + Nouvelle actualité
+          </Link>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Crée, rédige et prépare les actualités LBMedia avant leur diffusion
-              sur les différents supports.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/news/new"
-              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              + Nouvelle actualité
-            </Link>
-
-            <Link
-              href="/publications/new"
-              className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
-            >
-              + Nouveau post
-            </Link>
-          </div>
+          <Link
+            href="/publications/new"
+            className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
+          >
+            + Nouveau post
+          </Link>
         </div>
 
         {news.length === 0 ? (
