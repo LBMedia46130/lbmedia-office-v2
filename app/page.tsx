@@ -132,6 +132,33 @@ function formatDate(value: string) {
   ).format(new Date(value));
 }
 
+function formatTodayDate() {
+  return new Intl.DateTimeFormat(
+    "fr-FR",
+    {
+      timeZone: "Europe/Paris",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  ).format(new Date());
+}
+
+function formatCurrentTime() {
+  return new Intl.DateTimeFormat(
+    "fr-FR",
+    {
+      timeZone: "Europe/Paris",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }
+  )
+    .format(new Date())
+    .replace(":", "h");
+}
+
 export default async function HomePage() {
   const [
     newsResult,
@@ -243,48 +270,68 @@ export default async function HomePage() {
     readyToSchedule.length +
     failed.length;
 
+  const todayDate = formatTodayDate();
+  const currentTime = formatCurrentTime();
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              LBMedia Office V2
-            </p>
+        <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-sky-500 px-6 py-5 text-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100">
+                Aujourd’hui
+              </p>
 
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-              Tableau de bord
-            </h1>
+              <p className="mt-1 text-lg font-semibold">
+                Nous sommes le {todayDate}
+              </p>
+            </div>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Vue d’ensemble de l’activité
-              LBMedia et accès rapide aux
-              actions importantes.
-            </p>
+            <div className="flex items-center gap-3 rounded-xl bg-white/10 px-5 py-3 backdrop-blur-sm">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                className="h-6 w-6 text-blue-100"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                />
+                <path d="M12 7v5l3 2" />
+              </svg>
+
+              <div>
+                <p className="text-xs font-medium text-blue-100">
+                  Il est
+                </p>
+
+                <p className="text-xl font-bold tracking-tight">
+                  {currentTime}
+                </p>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/planning"
-              className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
-            >
-              Ouvrir le planning
-            </Link>
+        <div className="mt-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            LBMedia Office V2
+          </p>
 
-            <Link
-              href="/publications/new"
-              className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
-            >
-              + Nouveau post
-            </Link>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+            Tableau de bord
+          </h1>
 
-            <Link
-              href="/news/new"
-              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              + Nouvelle actualité
-            </Link>
-          </div>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            Vue d’ensemble de l’activité
+            LBMedia et accès rapide aux
+            actions importantes.
+          </p>
         </div>
 
         <section className="mt-8 grid gap-4 md:grid-cols-3">
@@ -365,7 +412,7 @@ export default async function HomePage() {
 
               <Link
                 href="/news"
-                className="text-sm font-semibold text-slate-600 transition hover:text-slate-950"
+                className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
               >
                 Voir les actualités →
               </Link>
@@ -398,8 +445,8 @@ export default async function HomePage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <section className="rounded-2xl border border-blue-900 bg-gradient-to-b from-blue-950 to-slate-950 p-6 text-white shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">
               Écosystème LBMedia
             </p>
 
@@ -485,7 +532,7 @@ export default async function HomePage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
                   À faire
                 </p>
 
@@ -500,7 +547,7 @@ export default async function HomePage() {
 
               <Link
                 href="/planning"
-                className="text-sm font-semibold text-slate-600 transition hover:text-slate-950"
+                className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
               >
                 Planning →
               </Link>
@@ -537,7 +584,7 @@ export default async function HomePage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
                   À faire
                 </p>
 
@@ -552,7 +599,7 @@ export default async function HomePage() {
 
               <Link
                 href="/news/new"
-                className="text-sm font-semibold text-slate-600 transition hover:text-slate-950"
+                className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
               >
                 Nouvelle →
               </Link>
@@ -572,13 +619,13 @@ export default async function HomePage() {
                     <Link
                       key={item.id}
                       href={`/news/${item.id}`}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-200 hover:bg-blue-50/40"
                     >
                       <h3 className="font-semibold text-slate-950">
                         {item.title}
                       </h3>
 
-                      <p className="mt-2 text-xs font-medium text-slate-400">
+                      <p className="mt-2 text-xs font-medium text-blue-700">
                         Ouvrir l’actualité →
                       </p>
                     </Link>
@@ -591,7 +638,7 @@ export default async function HomePage() {
         <section className="mt-8 pb-10">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
                 Dernière activité
               </p>
 
@@ -607,7 +654,7 @@ export default async function HomePage() {
 
             <Link
               href="/news"
-              className="text-sm font-semibold text-slate-600 transition hover:text-slate-950"
+              className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
             >
               Voir toutes les actualités →
             </Link>
@@ -621,7 +668,7 @@ export default async function HomePage() {
 
               <Link
                 href="/news/new"
-                className="mt-4 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
+                className="mt-4 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
               >
                 Créer la première actualité
               </Link>
@@ -633,7 +680,7 @@ export default async function HomePage() {
                   <Link
                     key={item.id}
                     href={`/news/${item.id}`}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
@@ -684,7 +731,7 @@ function DashboardCard({
         {label}
       </p>
 
-      <p className="mt-2 text-4xl font-bold tracking-tight text-slate-950">
+      <p className="mt-2 text-4xl font-bold tracking-tight text-blue-700">
         {value}
       </p>
 
@@ -723,12 +770,12 @@ function ModuleItem({
   status: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-4 py-3">
+    <div className="flex items-center justify-between rounded-xl border border-blue-900/70 bg-blue-950/40 px-4 py-3">
       <span className="text-sm font-semibold text-slate-200">
         {label}
       </span>
 
-      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-400">
+      <span className="rounded-full bg-blue-900/60 px-2.5 py-1 text-xs font-semibold text-blue-200">
         {status}
       </span>
     </div>
@@ -789,12 +836,12 @@ function PublicationAction({
       className={`block rounded-2xl border p-5 shadow-sm transition hover:shadow-md ${
         tone === "error"
           ? "border-red-200 bg-white hover:border-red-300"
-          : "border-slate-200 bg-white hover:border-slate-300"
+          : "border-slate-200 bg-white hover:border-blue-200"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
             {
               channelLabels[
                 publication.channel
@@ -831,7 +878,7 @@ function PublicationAction({
             </p>
           ) : null}
 
-          <p className="mt-1 text-xs font-semibold text-slate-400">
+          <p className="mt-1 text-xs font-semibold text-blue-700">
             Ouvrir →
           </p>
         </div>
@@ -870,8 +917,7 @@ function NewsStatusBadge({
         "bg-slate-100 text-slate-600"
       }`}
     >
-      {labels[status] ??
-        status}
+      {labels[status] ?? status}
     </span>
   );
 }
