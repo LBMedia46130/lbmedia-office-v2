@@ -66,6 +66,13 @@ function getPublicationHref(
   publication: PlanningPublication
 ) {
   if (publication.news_id) {
+    if (
+      publication.channel !==
+      "website"
+    ) {
+      return `/news/${publication.news_id}?channel=${publication.channel}`;
+    }
+
     return `/news/${publication.news_id}`;
   }
 
