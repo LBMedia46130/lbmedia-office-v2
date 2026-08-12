@@ -1,4 +1,5 @@
 import CompaniesExplorer from "@/components/companies/CompaniesExplorer";
+import ImportCompaniesButton from "@/components/companies/ImportCompaniesButton";
 import NewCompanyButton from "@/components/companies/NewCompanyButton";
 import PageBanner from "@/components/dashboard/PageBanner";
 
@@ -33,7 +34,9 @@ export default async function CompaniesPage() {
           description="Clients, prospects, partenaires et suivi commercial LBMedia."
         />
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex flex-wrap items-start justify-end gap-3">
+          <ImportCompaniesButton />
+
           <NewCompanyButton />
         </div>
 
@@ -60,11 +63,14 @@ export default async function CompaniesPage() {
               </h2>
 
               <p className="mt-3 text-slate-500">
-                Commence par créer la
-                première entreprise.
+                Ajoute une entreprise
+                ou importe directement
+                tes clients Zoho.
               </p>
 
-              <div className="mt-8 flex justify-center">
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <ImportCompaniesButton />
+
                 <NewCompanyButton />
               </div>
             </div>
