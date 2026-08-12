@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type NavigationItem = {
@@ -97,25 +98,26 @@ const navigation: NavigationItem[] = [
 export default function AppSidebar() {
   return (
     <aside className="flex w-full shrink-0 flex-col border-b border-slate-200 bg-slate-950 text-white lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:border-b-0 lg:border-r lg:border-slate-800">
-      <div className="flex h-20 items-center gap-3 border-b border-slate-800 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-950">
-          LB
-        </div>
+      <div className="border-b border-slate-800 px-5 py-5">
+        <Link href="/" className="block">
+          <Image
+            src="/brand/lbmedia-logo.png"
+            alt="LBMedia"
+            width={190}
+            height={70}
+            priority
+            className="h-auto w-full max-w-[190px] object-contain object-left"
+          />
+        </Link>
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-bold tracking-tight">
-              LBMedia Office
-            </p>
-
-            <span className="rounded-md bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-300">
-              V2
-            </span>
-          </div>
-
-          <p className="mt-0.5 text-xs text-slate-400">
-            Espace de pilotage
+        <div className="mt-3 flex items-center gap-2">
+          <p className="text-xs font-semibold text-slate-400">
+            LBMedia Office
           </p>
+
+          <span className="rounded-md bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-300">
+            V2
+          </span>
         </div>
       </div>
 
@@ -172,6 +174,7 @@ export default function AppSidebar() {
             <p className="text-xs font-semibold text-slate-300">
               LBMedia Office V2
             </p>
+
             <p className="mt-1 text-[11px] leading-4 text-slate-500">
               Environnement de développement
             </p>
