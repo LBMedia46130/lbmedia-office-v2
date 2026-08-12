@@ -21,6 +21,17 @@ type GeneratedArticle = {
   image_alt: string;
 };
 
+type WebsitePublication = {
+  id: string;
+  status: string;
+  focus_keyword: string | null;
+  secondary_keywords: string | null;
+  slug: string | null;
+  seo_title: string | null;
+  meta_description: string | null;
+  image_alt: string | null;
+};
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -96,8 +107,17 @@ export async function POST(
       );
     }
 
+    /*
+     * La publication website existe normalement
+     * lorsque l'actualité a déjà été ouverte dans
+     * l'éditeur.
+     *
+     * Lorsqu'une actualité vient directement de
+     * Pénélope, elle peut ne pas encore exister.
+     * On la crée donc automatiquement si besoin.
+     */
     const {
-      data: websitePublication,
+      data: existingWebsitePublication,
       error: publicationError,
     } = await supabaseAdmin
       .from("publications")
@@ -123,15 +143,99 @@ export async function POST(
       );
     }
 
+    let websitePublication =
+      existingWebsitePublication as WebsitePublication | null;
+
+    if (!websitePublication) {
+      const {
+        data: createdWebsitePublication,
+        error: creationError,
+      } = await supabaseAdmin
+        .from("publications")
+        .upsert(
+          {
+            news_id: id,
+            channel: "website",
+            title: news.title,
+            content: news.content ?? "",
+            status: "draft",
+          },
+          {
+            onConflict:
+              "news_id,channel",
+            ignoreDuplicates: true,
+          }
+        )
+        .select(
+          "id, status, focus_keyword, secondary_keywords, slug, seo_title, meta_description, image_alt"
+        )
+        .maybeSingle();
+
+      if (creationError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Impossible de préparer la publication WordPress.",
+            error:
+              creationError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      websitePublication =
+        createdWebsitePublication as WebsitePublication | null;
+
+      /*
+       * Avec ignoreDuplicates, une requête concurrente
+       * peut avoir créé la publication entre-temps.
+       * Si Supabase ne nous retourne rien, on la relit.
+       */
+      if (!websitePublication) {
+        const {
+          data: reloadedWebsitePublication,
+          error: reloadError,
+        } = await supabaseAdmin
+          .from("publications")
+          .select(
+            "id, status, focus_keyword, secondary_keywords, slug, seo_title, meta_description, image_alt"
+          )
+          .eq("news_id", id)
+          .eq("channel", "website")
+          .maybeSingle();
+
+        if (reloadError) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "Impossible de charger la publication WordPress préparée.",
+              error:
+                reloadError.message,
+            },
+            {
+              status: 500,
+            }
+          );
+        }
+
+        websitePublication =
+          reloadedWebsitePublication as WebsitePublication | null;
+      }
+    }
+
     if (!websitePublication) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "La publication WordPress associée est introuvable.",
+            "La publication WordPress associée n’a pas pu être préparée.",
         },
         {
-          status: 404,
+          status: 500,
         }
       );
     }
