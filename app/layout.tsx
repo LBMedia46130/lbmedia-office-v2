@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   Geist,
   Geist_Mono,
 } from "next/font/google";
+
+import AppSidebar from "@/components/layout/AppSidebar";
 
 import "./globals.css";
 
@@ -20,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "LBMedia Office V2",
   description:
-    "Pilotage éditorial et publications LBMedia",
+    "Pilotage et écosystème LBMedia",
 };
 
 export default function RootLayout({
@@ -32,70 +33,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-slate-50 text-slate-950">
-        <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-            <Link
-              href="/"
-              className="flex items-center gap-3"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-sm font-bold text-white">
-                LB
-              </div>
+        <div className="min-h-screen lg:flex">
+          <AppSidebar />
 
-              <div>
-                <p className="text-sm font-bold tracking-tight text-slate-950">
-                  LBMedia Office V2
-                </p>
-
-                <p className="text-xs text-slate-500">
-                  Pilotage éditorial
-                </p>
-              </div>
-            </Link>
-
-            <nav
-              aria-label="Navigation principale"
-              className="flex items-center gap-2"
-            >
-              <Link
-                href="/"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
-              >
-                Pilotage
-              </Link>
-
-              <Link
-                href="/news"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
-              >
-                Actualités
-              </Link>
-
-              <Link
-                href="/planning"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
-              >
-                Planning
-              </Link>
-
-              <Link
-                href="/publications/new"
-                className="ml-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
-              >
-                + Nouveau post
-              </Link>
-
-              <Link
-                href="/news/new"
-                className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                + Nouvelle actualité
-              </Link>
-            </nav>
-          </div>
-        </header>
-
-        {children}
+          <main className="min-w-0 flex-1 lg:ml-64">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );
