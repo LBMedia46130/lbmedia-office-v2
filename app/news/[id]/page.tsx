@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import PageBanner from "@/components/dashboard/PageBanner";
+import DeclinationTabs from "@/components/news/DeclinationTabs";
 import NewsEditor from "@/components/news/NewsEditor";
-import PublicationEditor from "@/components/news/PublicationEditor";
+
 import type {
   Publication,
   PublicationChannel,
 } from "@/lib/news";
+
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -42,11 +45,6 @@ const allChannels: {
     label: "Facebook",
   },
 ];
-
-const visibleChannels = allChannels.filter(
-  (channel) =>
-    channel.key !== "website"
-);
 
 export default async function NewsPage({
   params,
@@ -151,12 +149,15 @@ export default async function NewsPage({
     );
   }
 
-  const websitePublication = (
-    publications ?? []
-  ).find(
-    (publication: Publication) =>
-      publication.channel === "website"
-  );
+  const publicationList =
+    (publications ?? []) as Publication[];
+
+  const websitePublication =
+    publicationList.find(
+      (publication) =>
+        publication.channel ===
+        "website"
+    );
 
   if (!websitePublication) {
     throw new Error(
@@ -164,47 +165,41 @@ export default async function NewsPage({
     );
   }
 
-  const publicationTargets = (
-    publications ?? []
-  ).map(
-    (
-      publication: Publication
-    ) => ({
-      id: publication.id,
-      channel:
-        publication.channel,
-    })
-  );
+  const publicationTargets =
+    publicationList.map(
+      (publication) => ({
+        id: publication.id,
+        channel:
+          publication.channel,
+      })
+    );
+
+  const declinations =
+    publicationList.filter(
+      (publication) =>
+        publication.channel !==
+        "website"
+    );
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-8">
-      <div className="mx-auto max-w-5xl">
-        <Link
-          href="/"
-          className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-        >
-          ← Retour aux actualités
-        </Link>
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <PageBanner
+          eyebrow="Module éditorial"
+          title={news.title || "Actualité"}
+          description="Prépare l’article principal LBMedia puis ses déclinaisons pour les différents supports."
+        />
 
-        <div className="mt-6">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-            LBMedia Office
-          </p>
-
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-            Actualité
-          </h1>
-
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            L’actualité est l’article
-            principal destiné au site
-            LBMedia. Pénélope prépare
-            ensuite ses déclinaisons
-            pour les autres supports.
-          </p>
+        <div className="mt-5">
+          <Link
+            href="/news"
+            className="text-sm font-semibold text-slate-500 transition hover:text-slate-950"
+          >
+            ← Retour aux actualités
+          </Link>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-6">
           <NewsEditor
             news={news}
             publications={
@@ -216,49 +211,29 @@ export default async function NewsPage({
           />
         </div>
 
-        <section className="mt-10">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-            Déclinaisons
-          </h2>
+        <section className="mt-10 pb-10">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+              Diffusion
+            </p>
 
-          <p className="mt-2 text-sm text-slate-600">
-            Versions adaptées de
-            l’actualité pour chaque
-            support de communication.
-          </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+              Déclinaisons
+            </h2>
 
-          <div className="mt-6 grid gap-5">
-            {visibleChannels.map(
-              (channel) => {
-                const publication = (
-                  publications ?? []
-                ).find(
-                  (
-                    item: Publication
-                  ) =>
-                    item.channel ===
-                    channel.key
-                );
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Versions adaptées de
+              l’actualité pour chaque
+              support de communication.
+            </p>
+          </div>
 
-                if (!publication) {
-                  return null;
-                }
-
-                return (
-                  <PublicationEditor
-                    key={
-                      publication.id
-                    }
-                    publication={
-                      publication
-                    }
-                    label={
-                      channel.label
-                    }
-                  />
-                );
+          <div className="mt-6">
+            <DeclinationTabs
+              publications={
+                declinations
               }
-            )}
+            />
           </div>
         </section>
       </div>
