@@ -151,7 +151,7 @@ export default function WeeklyTopics() {
 
       const generateResponse =
         await fetch(
-          `/api/news/${newsId}/generate`,
+          `/api/news/${newsId}/generate-article`,
           {
             method: "POST",
           }
