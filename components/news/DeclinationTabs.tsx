@@ -1,7 +1,12 @@
 "use client";
 
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
 
 import PublicationEditor from "@/components/news/PublicationEditor";
 
@@ -68,6 +73,35 @@ export default function DeclinationTabs({
       initialChannel
     );
 
+  const tabsRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  useEffect(() => {
+    if (
+      !isDeclinationChannel(
+        requestedChannel
+      )
+    ) {
+      return;
+    }
+
+    const timeout =
+      window.setTimeout(() => {
+        tabsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+
+    return () => {
+      window.clearTimeout(
+        timeout
+      );
+    };
+  }, [requestedChannel]);
+
   const activePublication =
     publications.find(
       (publication) =>
@@ -83,7 +117,10 @@ export default function DeclinationTabs({
     );
 
   return (
-    <div>
+    <div
+      ref={tabsRef}
+      className="scroll-mt-6"
+    >
       <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
         {channels.map(
           (channel) => {
