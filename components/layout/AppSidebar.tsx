@@ -61,22 +61,6 @@ function PlanningIcon() {
   );
 }
 
-function PlusIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-      aria-hidden="true"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
 const navigation: NavigationItem[] = [
   {
     label: "Tableau de bord",
@@ -144,30 +128,6 @@ export default function AppSidebar() {
             </Link>
           ))}
         </nav>
-
-        <div className="my-5 border-t border-slate-800" />
-
-        <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-          Création
-        </p>
-
-        <div className="space-y-2">
-          <Link
-            href="/news/new"
-            className="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-slate-100"
-          >
-            <PlusIcon />
-            Nouvelle actualité
-          </Link>
-
-          <Link
-            href="/publications/new"
-            className="flex items-center gap-3 rounded-xl border border-slate-700 px-3 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white"
-          >
-            <PlusIcon />
-            Nouveau post
-          </Link>
-        </div>
 
         <div className="mt-auto hidden pt-8 lg:block">
           <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3">

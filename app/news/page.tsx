@@ -40,12 +40,21 @@ export default async function NewsPage() {
             </p>
           </div>
 
-          <Link
-            href="/news/new"
-            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            + Nouvelle actualité
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/news/new"
+              className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              + Nouvelle actualité
+            </Link>
+
+            <Link
+              href="/publications/new"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
+            >
+              + Nouveau post
+            </Link>
+          </div>
         </div>
 
         {news.length === 0 ? (
