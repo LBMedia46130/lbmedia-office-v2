@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import LiveDateTimeBanner from "@/components/dashboard/LiveDateTimeBanner";
 import WeeklyTopics from "@/components/penelope/WeeklyTopics";
 import type {
   PublicationChannel,
@@ -37,7 +38,10 @@ type DashboardNews = {
   updated_at: string;
 };
 
-const channelLabels: Record<PublicationChannel, string> = {
+const channelLabels: Record<
+  PublicationChannel,
+  string
+> = {
   website: "Actualité / WordPress",
   brevo: "Brevo",
   google_business: "Google Business",
@@ -66,15 +70,16 @@ function getPublicationHref(
 }
 
 function getParisDateKey(value: Date) {
-  const parts = new Intl.DateTimeFormat(
-    "en-CA",
-    {
-      timeZone: "Europe/Paris",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }
-  ).formatToParts(value);
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone: "Europe/Paris",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }
+    ).formatToParts(value);
 
   const year =
     parts.find(
@@ -152,11 +157,13 @@ function formatCurrentTime() {
       timeZone: "Europe/Paris",
       hour: "2-digit",
       minute: "2-digit",
+      second: "2-digit",
       hour12: false,
     }
   )
     .format(new Date())
-    .replace(":", "h");
+    .replace(":", "h")
+    .replace(":", "m");
 }
 
 export default async function HomePage() {
@@ -270,53 +277,19 @@ export default async function HomePage() {
     readyToSchedule.length +
     failed.length;
 
-  const todayDate = formatTodayDate();
-  const currentTime = formatCurrentTime();
+  const todayDate =
+    formatTodayDate();
+
+  const currentTime =
+    formatCurrentTime();
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-sky-500 px-6 py-5 text-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-5">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100">
-                Aujourd’hui
-              </p>
-
-              <p className="mt-1 text-lg font-semibold">
-                Nous sommes le {todayDate}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-xl bg-white/10 px-5 py-3 backdrop-blur-sm">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="h-6 w-6 text-blue-100"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="9"
-                />
-                <path d="M12 7v5l3 2" />
-              </svg>
-
-              <div>
-                <p className="text-xs font-medium text-blue-100">
-                  Il est
-                </p>
-
-                <p className="text-xl font-bold tracking-tight">
-                  {currentTime}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <LiveDateTimeBanner
+          initialDate={todayDate}
+          initialTime={currentTime}
+        />
 
         <div className="mt-8">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
@@ -337,7 +310,9 @@ export default async function HomePage() {
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           <DashboardCard
             label="À traiter"
-            value={attentionCount}
+            value={
+              attentionCount
+            }
             description="Éléments qui demandent ton attention."
           />
 
@@ -349,7 +324,9 @@ export default async function HomePage() {
 
           <DashboardCard
             label="Publiées"
-            value={publishedCount}
+            value={
+              publishedCount
+            }
             description="Publications déjà diffusées."
           />
         </section>
@@ -367,11 +344,13 @@ export default async function HomePage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-red-800">
-                  {failed.length} publication
+                  {failed.length}{" "}
+                  publication
                   {failed.length > 1
                     ? "s ont"
                     : " a"}{" "}
-                  rencontré un problème.
+                  rencontré un
+                  problème.
                 </p>
               </div>
             </div>
@@ -380,7 +359,9 @@ export default async function HomePage() {
               {failed.map(
                 (publication) => (
                   <PublicationAction
-                    key={publication.id}
+                    key={
+                      publication.id
+                    }
                     publication={
                       publication
                     }
@@ -405,8 +386,10 @@ export default async function HomePage() {
                 </h2>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                  Préparation, planification et
-                  suivi des contenus LBMedia.
+                  Préparation,
+                  planification et
+                  suivi des contenus
+                  LBMedia.
                 </p>
               </div>
 
@@ -421,22 +404,30 @@ export default async function HomePage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Counter
                 label="À préparer"
-                value={toPrepare.length}
+                value={
+                  toPrepare.length
+                }
               />
 
               <Counter
                 label="Prêtes"
-                value={readyToSchedule.length}
+                value={
+                  readyToSchedule.length
+                }
               />
 
               <Counter
                 label="Planifiées"
-                value={scheduledCount}
+                value={
+                  scheduledCount
+                }
               />
 
               <Counter
                 label="Publiées"
-                value={publishedCount}
+                value={
+                  publishedCount
+                }
               />
             </div>
 
@@ -455,9 +446,11 @@ export default async function HomePage() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Le dashboard V2 accueillera
-              progressivement les différents
-              outils métier LBMedia.
+              Le dashboard V2
+              accueillera
+              progressivement les
+              différents outils métier
+              LBMedia.
             </p>
 
             <div className="mt-6 space-y-3">
@@ -491,24 +484,30 @@ export default async function HomePage() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-600">
-                Ce qui doit partir aujourd’hui.
+                Ce qui doit partir
+                aujourd’hui.
               </p>
             </div>
 
             <span className="text-sm font-semibold text-slate-600">
-              {today.length} publication
-              {today.length > 1 ? "s" : ""}
+              {today.length}{" "}
+              publication
+              {today.length > 1
+                ? "s"
+                : ""}
             </span>
           </div>
 
           {today.length === 0 ? (
             <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-white/70 px-6 py-10 text-center">
               <p className="font-semibold text-slate-900">
-                Rien à publier aujourd’hui
+                Rien à publier
+                aujourd’hui
               </p>
 
               <p className="mt-2 text-sm text-slate-500">
-                Le planning est libre pour aujourd’hui.
+                Le planning est libre
+                pour aujourd’hui.
               </p>
             </div>
           ) : (
@@ -516,7 +515,9 @@ export default async function HomePage() {
               {today.map(
                 (publication) => (
                   <PublicationAction
-                    key={publication.id}
+                    key={
+                      publication.id
+                    }
                     publication={
                       publication
                     }
@@ -541,7 +542,8 @@ export default async function HomePage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Contenus validés qui attendent une date.
+                  Contenus validés qui
+                  attendent une date.
                 </p>
               </div>
 
@@ -593,7 +595,8 @@ export default async function HomePage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Actualités encore vides ou à rédiger.
+                  Actualités encore
+                  vides ou à rédiger.
                 </p>
               </div>
 
@@ -622,11 +625,14 @@ export default async function HomePage() {
                       className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-blue-200 hover:bg-blue-50/40"
                     >
                       <h3 className="font-semibold text-slate-950">
-                        {item.title}
+                        {
+                          item.title
+                        }
                       </h3>
 
                       <p className="mt-2 text-xs font-medium text-blue-700">
-                        Ouvrir l’actualité →
+                        Ouvrir
+                        l’actualité →
                       </p>
                     </Link>
                   ))}
@@ -647,8 +653,9 @@ export default async function HomePage() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Les derniers contenus travaillés
-                dans LBMedia Office.
+                Les derniers contenus
+                travaillés dans
+                LBMedia Office.
               </p>
             </div>
 
@@ -670,7 +677,8 @@ export default async function HomePage() {
                 href="/news/new"
                 className="mt-4 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
               >
-                Créer la première actualité
+                Créer la première
+                actualité
               </Link>
             </div>
           ) : (
@@ -685,7 +693,9 @@ export default async function HomePage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
                         <h3 className="font-bold text-slate-950">
-                          {item.title}
+                          {
+                            item.title
+                          }
                         </h3>
 
                         <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
@@ -695,7 +705,9 @@ export default async function HomePage() {
                       </div>
 
                       <NewsStatusBadge
-                        status={item.status}
+                        status={
+                          item.status
+                        }
                       />
                     </div>
 
@@ -892,14 +904,20 @@ function NewsStatusBadge({
 }: {
   status: string;
 }) {
-  const labels: Record<string, string> = {
+  const labels: Record<
+    string,
+    string
+  > = {
     draft: "Brouillon",
     ready: "Prête",
     scheduled: "Planifiée",
     published: "Publiée",
   };
 
-  const classes: Record<string, string> = {
+  const classes: Record<
+    string,
+    string
+  > = {
     draft:
       "bg-slate-100 text-slate-600",
     ready:
@@ -917,7 +935,8 @@ function NewsStatusBadge({
         "bg-slate-100 text-slate-600"
       }`}
     >
-      {labels[status] ?? status}
+      {labels[status] ??
+        status}
     </span>
   );
 }
