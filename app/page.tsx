@@ -7,8 +7,7 @@ import type {
 } from "@/lib/news";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export const dynamic =
-  "force-dynamic";
+export const dynamic = "force-dynamic";
 
 type DashboardPublication = {
   id: string;
@@ -38,15 +37,10 @@ type DashboardNews = {
   updated_at: string;
 };
 
-const channelLabels: Record<
-  PublicationChannel,
-  string
-> = {
-  website:
-    "Actualité / WordPress",
+const channelLabels: Record<PublicationChannel, string> = {
+  website: "Actualité / WordPress",
   brevo: "Brevo",
-  google_business:
-    "Google Business",
+  google_business: "Google Business",
   linkedin: "LinkedIn",
   facebook: "Facebook",
 };
@@ -55,16 +49,10 @@ function getNewsTitle(
   relation: DashboardPublication["news"]
 ) {
   if (Array.isArray(relation)) {
-    return (
-      relation[0]?.title ??
-      "Actualité"
-    );
+    return relation[0]?.title ?? "Actualité";
   }
 
-  return (
-    relation?.title ??
-    "Actualité"
-  );
+  return relation?.title ?? "Actualité";
 }
 
 function getPublicationHref(
@@ -77,62 +65,47 @@ function getPublicationHref(
   return `/publications/${publication.id}`;
 }
 
-function getParisDateKey(
-  value: Date
-) {
-  const parts =
-    new Intl.DateTimeFormat(
-      "en-CA",
-      {
-        timeZone:
-          "Europe/Paris",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }
-    ).formatToParts(value);
+function getParisDateKey(value: Date) {
+  const parts = new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      timeZone: "Europe/Paris",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }
+  ).formatToParts(value);
 
   const year =
     parts.find(
-      (part) =>
-        part.type === "year"
+      (part) => part.type === "year"
     )?.value ?? "";
 
   const month =
     parts.find(
-      (part) =>
-        part.type === "month"
+      (part) => part.type === "month"
     )?.value ?? "";
 
   const day =
     parts.find(
-      (part) =>
-        part.type === "day"
+      (part) => part.type === "day"
     )?.value ?? "";
 
   return `${year}-${month}-${day}`;
 }
 
-function isToday(
-  value: string | null
-) {
+function isToday(value: string | null) {
   if (!value) {
     return false;
   }
 
   return (
-    getParisDateKey(
-      new Date(value)
-    ) ===
-    getParisDateKey(
-      new Date()
-    )
+    getParisDateKey(new Date(value)) ===
+    getParisDateKey(new Date())
   );
 }
 
-function formatTime(
-  value: string | null
-) {
+function formatTime(value: string | null) {
   if (!value) {
     return "";
   }
@@ -140,31 +113,23 @@ function formatTime(
   return new Intl.DateTimeFormat(
     "fr-FR",
     {
-      timeZone:
-        "Europe/Paris",
+      timeZone: "Europe/Paris",
       hour: "2-digit",
       minute: "2-digit",
     }
-  ).format(
-    new Date(value)
-  );
+  ).format(new Date(value));
 }
 
-function formatDate(
-  value: string
-) {
+function formatDate(value: string) {
   return new Intl.DateTimeFormat(
     "fr-FR",
     {
-      timeZone:
-        "Europe/Paris",
+      timeZone: "Europe/Paris",
       day: "2-digit",
       month: "short",
       year: "numeric",
     }
-  ).format(
-    new Date(value)
-  );
+  ).format(new Date(value));
 }
 
 export default async function HomePage() {
@@ -175,12 +140,9 @@ export default async function HomePage() {
     supabaseAdmin
       .from("news")
       .select("*")
-      .order(
-        "updated_at",
-        {
-          ascending: false,
-        }
-      ),
+      .order("updated_at", {
+        ascending: false,
+      }),
 
     supabaseAdmin
       .from("publications")
@@ -197,12 +159,9 @@ export default async function HomePage() {
           title
         )
       `)
-      .order(
-        "updated_at",
-        {
-          ascending: false,
-        }
-      ),
+      .order("updated_at", {
+        ascending: false,
+      }),
   ]);
 
   if (newsResult.error) {
@@ -211,17 +170,14 @@ export default async function HomePage() {
     );
   }
 
-  if (
-    publicationsResult.error
-  ) {
+  if (publicationsResult.error) {
     throw new Error(
       `Impossible de charger les publications : ${publicationsResult.error.message}`
     );
   }
 
   const news =
-    (newsResult.data ??
-      []) as DashboardNews[];
+    (newsResult.data ?? []) as DashboardNews[];
 
   const publications =
     (publicationsResult.data ??
@@ -230,16 +186,14 @@ export default async function HomePage() {
   const toPrepare =
     news.filter(
       (item) =>
-        item.status ===
-          "draft" &&
+        item.status === "draft" &&
         !item.content.trim()
     );
 
   const readyToSchedule =
     publications.filter(
       (publication) =>
-        publication.status ===
-        "ready"
+        publication.status === "ready"
     );
 
   const today =
@@ -282,27 +236,30 @@ export default async function HomePage() {
     ).length;
 
   const recentNews =
-    news.slice(0, 6);
+    news.slice(0, 4);
+
+  const attentionCount =
+    toPrepare.length +
+    readyToSchedule.length +
+    failed.length;
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-7xl px-6 py-10">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              LBMedia Office
+              LBMedia Office V2
             </p>
 
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-              Pilotage éditorial
+              Tableau de bord
             </h1>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Ce qui demande ton
-              attention aujourd’hui,
-              puis l’accès aux
-              actualités et au
-              planning.
+              Vue d’ensemble de l’activité
+              LBMedia et accès rapide aux
+              actions importantes.
             </p>
           </div>
 
@@ -330,37 +287,23 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="mt-8">
-          <WeeklyTopics />
-        </div>
-
-        <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Counter
-            label="À préparer"
-            value={
-              toPrepare.length
-            }
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          <DashboardCard
+            label="À traiter"
+            value={attentionCount}
+            description="Éléments qui demandent ton attention."
           />
 
-          <Counter
-            label="Prêtes à planifier"
-            value={
-              readyToSchedule.length
-            }
+          <DashboardCard
+            label="Aujourd’hui"
+            value={today.length}
+            description="Publications prévues aujourd’hui."
           />
 
-          <Counter
-            label="Planifiées"
-            value={
-              scheduledCount
-            }
-          />
-
-          <Counter
+          <DashboardCard
             label="Publiées"
-            value={
-              publishedCount
-            }
+            value={publishedCount}
+            description="Publications déjà diffusées."
           />
         </section>
 
@@ -368,20 +311,20 @@ export default async function HomePage() {
           <section className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-red-950">
-                  À corriger
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-700">
+                  Attention
+                </p>
+
+                <h2 className="mt-2 text-xl font-bold text-red-950">
+                  Publications à corriger
                 </h2>
 
                 <p className="mt-1 text-sm text-red-800">
-                  {
-                    failed.length
-                  }{" "}
-                  publication
+                  {failed.length} publication
                   {failed.length > 1
                     ? "s ont"
                     : " a"}{" "}
-                  rencontré un
-                  problème.
+                  rencontré un problème.
                 </p>
               </div>
             </div>
@@ -390,9 +333,7 @@ export default async function HomePage() {
               {failed.map(
                 (publication) => (
                   <PublicationAction
-                    key={
-                      publication.id
-                    }
+                    key={publication.id}
                     publication={
                       publication
                     }
@@ -404,38 +345,123 @@ export default async function HomePage() {
           </section>
         ) : null}
 
-        <section className="mt-10 rounded-2xl border border-blue-200 bg-blue-50 p-6">
+        <div className="mt-8 grid gap-8 xl:grid-cols-[1.35fr_0.65fr]">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                  Module éditorial
+                </p>
+
+                <h2 className="mt-2 text-2xl font-bold text-slate-950">
+                  Pilotage éditorial
+                </h2>
+
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                  Préparation, planification et
+                  suivi des contenus LBMedia.
+                </p>
+              </div>
+
+              <Link
+                href="/news"
+                className="text-sm font-semibold text-slate-600 transition hover:text-slate-950"
+              >
+                Voir les actualités →
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Counter
+                label="À préparer"
+                value={toPrepare.length}
+              />
+
+              <Counter
+                label="Prêtes"
+                value={readyToSchedule.length}
+              />
+
+              <Counter
+                label="Planifiées"
+                value={scheduledCount}
+              />
+
+              <Counter
+                label="Publiées"
+                value={publishedCount}
+              />
+            </div>
+
+            <div className="mt-6">
+              <WeeklyTopics />
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Écosystème LBMedia
+            </p>
+
+            <h2 className="mt-2 text-xl font-bold">
+              Modules
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Le dashboard V2 accueillera
+              progressivement les différents
+              outils métier LBMedia.
+            </p>
+
+            <div className="mt-6 space-y-3">
+              <ModuleItem
+                label="Éditorial"
+                status="Actif"
+              />
+
+              <ModuleItem
+                label="Planning"
+                status="Actif"
+              />
+
+              <ModuleItem
+                label="Autres modules"
+                status="À venir"
+              />
+            </div>
+          </section>
+        </div>
+
+        <section className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-950">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
                 Aujourd’hui
+              </p>
+
+              <h2 className="mt-2 text-xl font-bold text-slate-950">
+                Publications prévues
               </h2>
 
               <p className="mt-1 text-sm text-slate-600">
-                Publications prévues
-                aujourd’hui.
+                Ce qui doit partir aujourd’hui.
               </p>
             </div>
 
             <span className="text-sm font-semibold text-slate-600">
-              {today.length}{" "}
-              publication
-              {today.length > 1
-                ? "s"
-                : ""}
+              {today.length} publication
+              {today.length > 1 ? "s" : ""}
             </span>
           </div>
 
           {today.length === 0 ? (
             <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-white/70 px-6 py-10 text-center">
               <p className="font-semibold text-slate-900">
-                Rien à publier
-                aujourd’hui
+                Rien à publier aujourd’hui
               </p>
 
               <p className="mt-2 text-sm text-slate-500">
-                Le planning est libre
-                pour aujourd’hui.
+                Le planning est libre pour aujourd’hui.
               </p>
             </div>
           ) : (
@@ -443,9 +469,7 @@ export default async function HomePage() {
               {today.map(
                 (publication) => (
                   <PublicationAction
-                    key={
-                      publication.id
-                    }
+                    key={publication.id}
                     publication={
                       publication
                     }
@@ -457,18 +481,20 @@ export default async function HomePage() {
           )}
         </section>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-2">
-          <section>
+        <div className="mt-8 grid gap-8 lg:grid-cols-2">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950">
-                  Prêtes à
-                  planifier
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  À faire
+                </p>
+
+                <h2 className="mt-2 text-xl font-bold text-slate-950">
+                  Prêtes à planifier
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Contenus validés qui
-                  attendent une date.
+                  Contenus validés qui attendent une date.
                 </p>
               </div>
 
@@ -476,21 +502,20 @@ export default async function HomePage() {
                 href="/planning"
                 className="text-sm font-semibold text-slate-600 transition hover:text-slate-950"
               >
-                Voir le planning →
+                Planning →
               </Link>
             </div>
 
             {readyToSchedule.length ===
             0 ? (
-              <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
-                <p className="font-semibold text-slate-900">
-                  Rien en attente
-                </p>
-              </div>
+              <EmptyState
+                title="Rien en attente"
+                description="Aucun contenu validé n’attend de planification."
+              />
             ) : (
               <div className="mt-5 grid gap-3">
                 {readyToSchedule
-                  .slice(0, 5)
+                  .slice(0, 4)
                   .map(
                     (
                       publication
@@ -509,16 +534,19 @@ export default async function HomePage() {
             )}
           </section>
 
-          <section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950">
-                  À préparer
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  À faire
+                </p>
+
+                <h2 className="mt-2 text-xl font-bold text-slate-950">
+                  Actualités à préparer
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Actualités encore
-                  vides ou à rédiger.
+                  Actualités encore vides ou à rédiger.
                 </p>
               </div>
 
@@ -526,42 +554,32 @@ export default async function HomePage() {
                 href="/news/new"
                 className="text-sm font-semibold text-slate-600 transition hover:text-slate-950"
               >
-                Nouvelle actualité →
+                Nouvelle →
               </Link>
             </div>
 
             {toPrepare.length ===
             0 ? (
-              <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
-                <p className="font-semibold text-slate-900">
-                  Rien à préparer
-                </p>
-
-                <p className="mt-2 text-sm text-slate-500">
-                  Toutes les
-                  actualités disposent
-                  déjà d’un contenu.
-                </p>
-              </div>
+              <EmptyState
+                title="Rien à préparer"
+                description="Toutes les actualités disposent déjà d’un contenu."
+              />
             ) : (
               <div className="mt-5 grid gap-3">
                 {toPrepare
-                  .slice(0, 5)
+                  .slice(0, 4)
                   .map((item) => (
                     <Link
                       key={item.id}
                       href={`/news/${item.id}`}
-                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
                     >
                       <h3 className="font-semibold text-slate-950">
-                        {
-                          item.title
-                        }
+                        {item.title}
                       </h3>
 
                       <p className="mt-2 text-xs font-medium text-slate-400">
-                        Ouvrir
-                        l’actualité →
+                        Ouvrir l’actualité →
                       </p>
                     </Link>
                   ))}
@@ -570,17 +588,20 @@ export default async function HomePage() {
           </section>
         </div>
 
-        <section className="mt-12 pb-10">
+        <section className="mt-8 pb-10">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-950">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Dernière activité
+              </p>
+
+              <h2 className="mt-2 text-xl font-bold text-slate-950">
                 Actualités récentes
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Les derniers contenus
-                travaillés dans
-                LBMedia Office.
+                Les derniers contenus travaillés
+                dans LBMedia Office.
               </p>
             </div>
 
@@ -602,12 +623,11 @@ export default async function HomePage() {
                 href="/news/new"
                 className="mt-4 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
               >
-                Créer la première
-                actualité
+                Créer la première actualité
               </Link>
             </div>
           ) : (
-            <div className="mt-5 grid gap-4">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
               {recentNews.map(
                 (item) => (
                   <Link
@@ -618,9 +638,7 @@ export default async function HomePage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
                         <h3 className="font-bold text-slate-950">
-                          {
-                            item.title
-                          }
+                          {item.title}
                         </h3>
 
                         <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
@@ -630,9 +648,7 @@ export default async function HomePage() {
                       </div>
 
                       <NewsStatusBadge
-                        status={
-                          item.status
-                        }
+                        status={item.status}
                       />
                     </div>
 
@@ -653,6 +669,32 @@ export default async function HomePage() {
   );
 }
 
+function DashboardCard({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: number;
+  description: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="text-sm font-semibold text-slate-500">
+        {label}
+      </p>
+
+      <p className="mt-2 text-4xl font-bold tracking-tight text-slate-950">
+        {value}
+      </p>
+
+      <p className="mt-3 text-sm leading-6 text-slate-500">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 function Counter({
   label,
   value,
@@ -661,13 +703,53 @@ function Counter({
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-xs font-medium text-slate-500">
         {label}
       </p>
 
-      <p className="mt-2 text-3xl font-bold text-slate-950">
+      <p className="mt-2 text-2xl font-bold text-slate-950">
         {value}
+      </p>
+    </div>
+  );
+}
+
+function ModuleItem({
+  label,
+  status,
+}: {
+  label: string;
+  status: string;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-4 py-3">
+      <span className="text-sm font-semibold text-slate-200">
+        {label}
+      </span>
+
+      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-400">
+        {status}
+      </span>
+    </div>
+  );
+}
+
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+      <p className="font-semibold text-slate-900">
+        {title}
+      </p>
+
+      <p className="mt-2 text-sm text-slate-500">
+        {description}
       </p>
     </div>
   );
@@ -763,20 +845,14 @@ function NewsStatusBadge({
 }: {
   status: string;
 }) {
-  const labels: Record<
-    string,
-    string
-  > = {
+  const labels: Record<string, string> = {
     draft: "Brouillon",
     ready: "Prête",
     scheduled: "Planifiée",
     published: "Publiée",
   };
 
-  const classes: Record<
-    string,
-    string
-  > = {
+  const classes: Record<string, string> = {
     draft:
       "bg-slate-100 text-slate-600",
     ready:
