@@ -4,17 +4,44 @@ import * as XLSX from "xlsx";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-type ZohoRow = {
-  CONTACT_ID?: unknown;
-  Nom?: unknown;
-  "Nom de l’entreprise"?: unknown;
-  "E-mail"?: unknown;
-  "Comptes débiteurs"?: unknown;
-};
+type ZohoRow = Record<
+  string,
+  unknown
+>;
 
 type ExistingCompany = {
+  id: string;
   name: string;
   email: string | null;
+  customer_number: string | null;
+  zoho_contact_id: string | null;
+};
+
+type CompanyPayload = {
+  id?: string;
+
+  name: string;
+  legal_name: string | null;
+
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+
+  address: string | null;
+  address_line_2: string | null;
+  postal_code: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+
+  customer_number: string | null;
+  siret: string | null;
+  notes: string | null;
+  zoho_contact_id: string | null;
+
+  is_active: boolean;
+  relationship_status: "client";
+  pipeline_stage: "client";
 };
 
 function cleanValue(
@@ -28,6 +55,15 @@ function cleanValue(
   }
 
   return String(value).trim();
+}
+
+function nullableValue(
+  value: unknown
+): string | null {
+  const cleaned =
+    cleanValue(value);
+
+  return cleaned || null;
 }
 
 function normalizeText(
@@ -50,6 +86,36 @@ function normalizeEmail(
   return value
     .trim()
     .toLocaleLowerCase("fr");
+}
+
+function getSiret(
+  row: ZohoRow
+) {
+  return (
+    nullableValue(row["CF.Siret"]) ??
+    nullableValue(row["SIRET"]) ??
+    null
+  );
+}
+
+function isActiveStatus(
+  value: unknown
+) {
+  return (
+    normalizeText(
+      cleanValue(value)
+    ) === "active"
+  );
+}
+
+function hasRealPersonName(
+  firstName: string,
+  lastName: string
+) {
+  return Boolean(
+    firstName.trim() ||
+      lastName.trim()
+  );
 }
 
 export async function POST(
@@ -149,7 +215,9 @@ export async function POST(
       error: existingError,
     } = await supabaseAdmin
       .from("companies")
-      .select("name, email");
+      .select(
+        "id, name, email, customer_number, zoho_contact_id"
+      );
 
     if (existingError) {
       throw new Error(
@@ -161,60 +229,108 @@ export async function POST(
       (existingData ??
         []) as ExistingCompany[];
 
-    const knownNames =
-      new Set(
-        existingCompanies.map(
-          (company) =>
-            normalizeText(
-              company.name
-            )
-        )
+    const byCustomerNumber =
+      new Map<
+        string,
+        ExistingCompany
+      >();
+
+    const byZohoId =
+      new Map<
+        string,
+        ExistingCompany
+      >();
+
+    const byName =
+      new Map<
+        string,
+        ExistingCompany
+      >();
+
+    const byEmail =
+      new Map<
+        string,
+        ExistingCompany
+      >();
+
+    for (
+      const company of
+      existingCompanies
+    ) {
+      if (
+        company.customer_number
+      ) {
+        byCustomerNumber.set(
+          company.customer_number,
+          company
+        );
+      }
+
+      if (
+        company.zoho_contact_id
+      ) {
+        byZohoId.set(
+          company.zoho_contact_id,
+          company
+        );
+      }
+
+      byName.set(
+        normalizeText(
+          company.name
+        ),
+        company
       );
 
-    const knownEmails =
-      new Set(
-        existingCompanies
-          .map((company) =>
+      if (company.email) {
+        byEmail.set(
+          normalizeEmail(
             company.email
-              ? normalizeEmail(
-                  company.email
-                )
-              : ""
-          )
-          .filter(Boolean)
-      );
+          ),
+          company
+        );
+      }
+    }
 
-    const newCompanies: {
-      name: string;
-      email: string | null;
-      is_active: boolean;
-      relationship_status:
-        | "client";
-      pipeline_stage:
-        | "client";
-    }[] = [];
+    const companiesToUpdate:
+      CompanyPayload[] = [];
 
-    let skipped = 0;
+    const companiesToInsert:
+      CompanyPayload[] = [];
+
     let invalid = 0;
 
     for (const row of rows) {
       const companyName =
         cleanValue(
-          row[
-            "Nom de l’entreprise"
-          ]
+          row["Company Name"]
         ) ||
-        cleanValue(row.Nom);
-
-      const email =
         cleanValue(
-          row["E-mail"]
+          row["Display Name"]
+        ) ||
+        cleanValue(
+          row["Contact Name"]
         );
 
       if (!companyName) {
         invalid += 1;
         continue;
       }
+
+      const customerNumber =
+        cleanValue(
+          row["Customer Number"]
+        );
+
+      const zohoContactId =
+        cleanValue(
+          row["Contact ID"]
+        );
+
+      const email =
+        cleanValue(
+          row["EmailID"]
+        );
 
       const normalizedName =
         normalizeText(
@@ -223,90 +339,462 @@ export async function POST(
 
       const normalizedEmail =
         email
-          ? normalizeEmail(email)
+          ? normalizeEmail(
+              email
+            )
           : "";
 
-      const duplicateName =
-        knownNames.has(
+      const existing =
+        (customerNumber
+          ? byCustomerNumber.get(
+              customerNumber
+            )
+          : undefined) ??
+        (zohoContactId
+          ? byZohoId.get(
+              zohoContactId
+            )
+          : undefined) ??
+        byName.get(
           normalizedName
-        );
-
-      const duplicateEmail =
-        normalizedEmail
-          ? knownEmails.has(
+        ) ??
+        (normalizedEmail
+          ? byEmail.get(
               normalizedEmail
             )
-          : false;
+          : undefined);
 
-      if (
-        duplicateName ||
-        duplicateEmail
-      ) {
-        skipped += 1;
-        continue;
-      }
-
-      newCompanies.push({
+      const payload:
+        CompanyPayload = {
         name: companyName,
+
+        legal_name: null,
+
         email:
           email || null,
-        is_active: true,
+
+        phone:
+          nullableValue(
+            row["Billing Phone"]
+          ) ??
+          nullableValue(
+            row["Phone"]
+          ),
+
+        website:
+          nullableValue(
+            row["Website"]
+          ),
+
+        address:
+          nullableValue(
+            row["Billing Address"]
+          ),
+
+        address_line_2:
+          nullableValue(
+            row["Billing Street2"]
+          ),
+
+        postal_code:
+          nullableValue(
+            row["Billing Code"]
+          ),
+
+        city:
+          nullableValue(
+            row["Billing City"]
+          ),
+
+        state:
+          nullableValue(
+            row["Billing State"]
+          ),
+
+        country:
+          nullableValue(
+            row["Billing Country"]
+          ),
+
+        customer_number:
+          customerNumber ||
+          null,
+
+        siret:
+          getSiret(row),
+
+        notes:
+          nullableValue(
+            row["Notes"]
+          ),
+
+        zoho_contact_id:
+          zohoContactId ||
+          null,
+
+        is_active:
+          isActiveStatus(
+            row["Status"]
+          ),
+
         relationship_status:
           "client",
+
         pipeline_stage:
           "client",
-      });
+      };
 
-      knownNames.add(
-        normalizedName
-      );
-
-      if (normalizedEmail) {
-        knownEmails.add(
-          normalizedEmail
+      if (existing) {
+        companiesToUpdate.push({
+          ...payload,
+          id: existing.id,
+        });
+      } else {
+        companiesToInsert.push(
+          payload
         );
       }
     }
 
+    /*
+     * Mise à jour en bloc des sociétés
+     * déjà connues.
+     */
     if (
-      newCompanies.length > 0
+      companiesToUpdate.length >
+      0
     ) {
-      const { error: insertError } =
-        await supabaseAdmin
-          .from("companies")
-          .insert(
-            newCompanies
-          );
+      const {
+        error: updateError,
+      } = await supabaseAdmin
+        .from("companies")
+        .upsert(
+          companiesToUpdate,
+          {
+            onConflict: "id",
+          }
+        );
+
+      if (updateError) {
+        throw new Error(
+          `Impossible de mettre à jour les clients existants : ${updateError.message}`
+        );
+      }
+    }
+
+    /*
+     * Ajout des nouveaux clients.
+     */
+    if (
+      companiesToInsert.length >
+      0
+    ) {
+      const {
+        error: insertError,
+      } = await supabaseAdmin
+        .from("companies")
+        .insert(
+          companiesToInsert
+        );
 
       if (insertError) {
         throw new Error(
-          `Impossible d’importer les clients : ${insertError.message}`
+          `Impossible d’ajouter les nouveaux clients : ${insertError.message}`
         );
+      }
+    }
+
+    /*
+     * On recharge les entreprises après
+     * synchronisation pour rattacher les
+     * contacts principaux.
+     */
+    const {
+      data: syncedCompanies,
+      error: syncReadError,
+    } = await supabaseAdmin
+      .from("companies")
+      .select(
+        "id, name, email, customer_number, zoho_contact_id"
+      );
+
+    if (syncReadError) {
+      throw new Error(
+        `Impossible de relire les entreprises synchronisées : ${syncReadError.message}`
+      );
+    }
+
+    const syncedByCustomer =
+      new Map<
+        string,
+        ExistingCompany
+      >();
+
+    const syncedByName =
+      new Map<
+        string,
+        ExistingCompany
+      >();
+
+    for (
+      const company of
+      (syncedCompanies ??
+        []) as ExistingCompany[]
+    ) {
+      if (
+        company.customer_number
+      ) {
+        syncedByCustomer.set(
+          company.customer_number,
+          company
+        );
+      }
+
+      syncedByName.set(
+        normalizeText(
+          company.name
+        ),
+        company
+      );
+    }
+
+    let contactsCreated = 0;
+    let contactsUpdated = 0;
+
+    for (const row of rows) {
+      const firstName =
+        cleanValue(
+          row["First Name"]
+        );
+
+      const lastName =
+        cleanValue(
+          row["Last Name"]
+        );
+
+      if (
+        !hasRealPersonName(
+          firstName,
+          lastName
+        )
+      ) {
+        continue;
+      }
+
+      const companyName =
+        cleanValue(
+          row["Company Name"]
+        ) ||
+        cleanValue(
+          row["Display Name"]
+        );
+
+      const customerNumber =
+        cleanValue(
+          row["Customer Number"]
+        );
+
+      const company =
+        (customerNumber
+          ? syncedByCustomer.get(
+              customerNumber
+            )
+          : undefined) ??
+        syncedByName.get(
+          normalizeText(
+            companyName
+          )
+        );
+
+      if (!company) {
+        continue;
+      }
+
+      const primaryContactId =
+        cleanValue(
+          row[
+            "Primary Contact ID"
+          ]
+        ) ||
+        cleanValue(
+          row["Contact ID"]
+        );
+
+      let existingContact:
+        | {
+            id: string;
+          }
+        | null = null;
+
+      if (primaryContactId) {
+        const {
+          data,
+          error,
+        } = await supabaseAdmin
+          .from(
+            "company_contacts"
+          )
+          .select("id")
+          .eq(
+            "zoho_contact_id",
+            primaryContactId
+          )
+          .maybeSingle();
+
+        if (error) {
+          throw new Error(
+            `Impossible de vérifier un contact Zoho : ${error.message}`
+          );
+        }
+
+        existingContact = data;
+      }
+
+      const contactPayload = {
+        company_id:
+          company.id,
+
+        first_name:
+          firstName ||
+          "Contact",
+
+        last_name:
+          lastName || "",
+
+        job_title:
+          nullableValue(
+            row["Designation"]
+          ),
+
+        email:
+          nullableValue(
+            row["EmailID"]
+          ),
+
+        phone:
+          nullableValue(
+            row["Phone"]
+          ),
+
+        mobile:
+          nullableValue(
+            row["MobilePhone"]
+          ),
+
+        is_primary: true,
+
+        zoho_contact_id:
+          primaryContactId ||
+          null,
+      };
+
+      /*
+       * Un seul contact principal
+       * par entreprise.
+       */
+      const {
+        error: resetError,
+      } = await supabaseAdmin
+        .from(
+          "company_contacts"
+        )
+        .update({
+          is_primary: false,
+        })
+        .eq(
+          "company_id",
+          company.id
+        );
+
+      if (resetError) {
+        throw new Error(
+          `Impossible de préparer le contact principal : ${resetError.message}`
+        );
+      }
+
+      if (existingContact) {
+        const {
+          error:
+            contactUpdateError,
+        } = await supabaseAdmin
+          .from(
+            "company_contacts"
+          )
+          .update(
+            contactPayload
+          )
+          .eq(
+            "id",
+            existingContact.id
+          );
+
+        if (
+          contactUpdateError
+        ) {
+          throw new Error(
+            `Impossible de mettre à jour un contact : ${contactUpdateError.message}`
+          );
+        }
+
+        contactsUpdated += 1;
+      } else {
+        const {
+          error:
+            contactInsertError,
+        } = await supabaseAdmin
+          .from(
+            "company_contacts"
+          )
+          .insert(
+            contactPayload
+          );
+
+        if (
+          contactInsertError
+        ) {
+          throw new Error(
+            `Impossible d’ajouter un contact : ${contactInsertError.message}`
+          );
+        }
+
+        contactsCreated += 1;
       }
     }
 
     return NextResponse.json({
       success: true,
+
       message:
-        "Import terminé.",
+        "Synchronisation Zoho terminée.",
+
+      updated:
+        companiesToUpdate.length,
+
       created:
-        newCompanies.length,
-      skipped,
+        companiesToInsert.length,
+
       invalid,
+
+      contacts_created:
+        contactsCreated,
+
+      contacts_updated:
+        contactsUpdated,
     });
   } catch (error) {
     console.error(
-      "Companies import error:",
+      "Zoho companies sync error:",
       error
     );
 
     return NextResponse.json(
       {
         success: false,
+
         message:
           error instanceof Error
             ? error.message
-            : "Impossible d’importer les clients.",
+            : "Impossible de synchroniser les clients Zoho.",
       },
       {
         status: 500,
