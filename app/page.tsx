@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import LiveDateTimeBanner from "@/components/dashboard/LiveDateTimeBanner";
 import WeeklyTopics from "@/components/penelope/WeeklyTopics";
 import type {
   PublicationChannel,
@@ -122,35 +121,6 @@ function formatTime(value: string | null) {
   ).format(new Date(value));
 }
 
-function formatTodayDate() {
-  return new Intl.DateTimeFormat(
-    "fr-FR",
-    {
-      timeZone: "Europe/Paris",
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }
-  ).format(new Date());
-}
-
-function formatCurrentTime() {
-  return new Intl.DateTimeFormat(
-    "fr-FR",
-    {
-      timeZone: "Europe/Paris",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    }
-  )
-    .format(new Date())
-    .replace(":", "h")
-    .replace(":", "m");
-}
-
 export default async function HomePage() {
   const [
     newsResult,
@@ -252,21 +222,10 @@ export default async function HomePage() {
     readyToSchedule.length +
     failed.length;
 
-  const todayDate =
-    formatTodayDate();
-
-  const currentTime =
-    formatCurrentTime();
-
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <LiveDateTimeBanner
-          initialDate={todayDate}
-          initialTime={currentTime}
-        />
-
-        <div className="mt-8">
+        <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
             LBMedia Office V2
           </p>
