@@ -916,7 +916,7 @@ export default function NewsEditor({
         );
       }
 
-      router.push("/");
+      router.push("/news");
       router.refresh();
     } catch (deleteError) {
       setError(
