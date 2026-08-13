@@ -25,16 +25,18 @@ export async function GET() {
     );
   }
 
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope:
-      "https://www.googleapis.com/auth/calendar.events.readonly",
-    access_type: "offline",
-    prompt: "consent",
-    include_granted_scopes: "true",
-  });
+  const params =
+    new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope:
+        "https://www.googleapis.com/auth/calendar.events.readonly",
+      access_type: "offline",
+      prompt: "consent",
+      include_granted_scopes:
+        "true",
+    });
 
   return NextResponse.redirect(
     `${GOOGLE_AUTH_URL}?${params.toString()}`
