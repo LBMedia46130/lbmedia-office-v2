@@ -51,12 +51,31 @@ export default async function CompanyPage({
     ),
   ]);
 
-  const location = [
-    company.postal_code,
-    company.city,
+  const fullAddress = [
+    company.address,
+    company.address_line_2,
+    [
+      company.postal_code,
+      company.city,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    company.state,
+    company.country,
   ]
     .filter(Boolean)
-    .join(" ");
+    .join("\n");
+
+  const hasAdministrativeInfo =
+    Boolean(
+      company.customer_number ||
+        company.siret
+    );
+
+  const hasNotes =
+    Boolean(
+      company.notes?.trim()
+    );
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -126,11 +145,12 @@ export default async function CompanyPage({
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <InfoBlock
-              label="Localisation"
+              label="Adresse"
               value={
-                location ||
+                fullAddress ||
                 "Non renseignée"
               }
+              multiline
             />
 
             <InfoBlock
@@ -172,6 +192,50 @@ export default async function CompanyPage({
               external
             />
           </div>
+
+          {hasAdministrativeInfo ? (
+            <div className="mt-8 border-t border-slate-200 pt-8">
+              <div className="mb-5">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Informations administratives
+                </p>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                {company.customer_number ? (
+                  <InfoBlock
+                    label="N° client"
+                    value={
+                      company.customer_number
+                    }
+                  />
+                ) : null}
+
+                {company.siret ? (
+                  <InfoBlock
+                    label="SIRET"
+                    value={
+                      company.siret
+                    }
+                  />
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {hasNotes ? (
+            <div className="mt-8 border-t border-slate-200 pt-8">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Notes
+              </p>
+
+              <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                  {company.notes}
+                </p>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <div className="mt-8">
@@ -205,6 +269,7 @@ type InfoBlockProps = {
   value: string;
   href?: string;
   external?: boolean;
+  multiline?: boolean;
 };
 
 function InfoBlock({
@@ -212,6 +277,7 @@ function InfoBlock({
   value,
   href,
   external = false,
+  multiline = false,
 }: InfoBlockProps) {
   return (
     <div className="rounded-2xl border border-slate-200 p-5">
@@ -232,12 +298,18 @@ function InfoBlock({
               ? "noreferrer"
               : undefined
           }
-          className="mt-2 block font-semibold text-blue-600 transition hover:text-blue-700"
+          className="mt-2 block break-words font-semibold text-blue-600 transition hover:text-blue-700"
         >
           {value}
         </a>
       ) : (
-        <p className="mt-2 font-semibold text-slate-800">
+        <p
+          className={`mt-2 font-semibold text-slate-800 ${
+            multiline
+              ? "whitespace-pre-line leading-7"
+              : ""
+          }`}
+        >
           {value}
         </p>
       )}
