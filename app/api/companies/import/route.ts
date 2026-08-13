@@ -4,10 +4,7 @@ import * as XLSX from "xlsx";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-type ZohoRow = Record<
-  string,
-  unknown
->;
+type ZohoRow = Record<string, unknown>;
 
 type ExistingCompany = {
   id: string;
@@ -68,7 +65,7 @@ function nullableValue(
 
 function normalizeText(
   value: string
-) {
+): string {
   return value
     .normalize("NFD")
     .replace(
@@ -82,7 +79,7 @@ function normalizeText(
 
 function normalizeEmail(
   value: string
-) {
+): string {
   return value
     .trim()
     .toLocaleLowerCase("fr");
@@ -90,17 +87,21 @@ function normalizeEmail(
 
 function getSiret(
   row: ZohoRow
-) {
+): string | null {
   return (
-    nullableValue(row["CF.Siret"]) ??
-    nullableValue(row["SIRET"]) ??
+    nullableValue(
+      row["CF.Siret"]
+    ) ??
+    nullableValue(
+      row["SIRET"]
+    ) ??
     null
   );
 }
 
 function isActiveStatus(
   value: unknown
-) {
+): boolean {
   return (
     normalizeText(
       cleanValue(value)
@@ -111,11 +112,93 @@ function isActiveStatus(
 function hasRealPersonName(
   firstName: string,
   lastName: string
-) {
+): boolean {
   return Boolean(
     firstName.trim() ||
       lastName.trim()
   );
+}
+
+function mergePayload(
+  current: CompanyPayload,
+  incoming: CompanyPayload
+): CompanyPayload {
+  return {
+    ...current,
+
+    name:
+      incoming.name ||
+      current.name,
+
+    legal_name:
+      incoming.legal_name ??
+      current.legal_name,
+
+    email:
+      incoming.email ??
+      current.email,
+
+    phone:
+      incoming.phone ??
+      current.phone,
+
+    website:
+      incoming.website ??
+      current.website,
+
+    address:
+      incoming.address ??
+      current.address,
+
+    address_line_2:
+      incoming.address_line_2 ??
+      current.address_line_2,
+
+    postal_code:
+      incoming.postal_code ??
+      current.postal_code,
+
+    city:
+      incoming.city ??
+      current.city,
+
+    state:
+      incoming.state ??
+      current.state,
+
+    country:
+      incoming.country ??
+      current.country,
+
+    customer_number:
+      incoming.customer_number ??
+      current.customer_number,
+
+    siret:
+      incoming.siret ??
+      current.siret,
+
+    notes:
+      incoming.notes ??
+      current.notes,
+
+    zoho_contact_id:
+      incoming.zoho_contact_id ??
+      current.zoho_contact_id,
+
+    is_active:
+      incoming.is_active,
+
+    relationship_status:
+      "client",
+
+    pipeline_stage:
+      "client",
+
+    id:
+      current.id ??
+      incoming.id,
+  };
 }
 
 export async function POST(
@@ -292,13 +375,29 @@ export async function POST(
       }
     }
 
-    const companiesToUpdate:
-      CompanyPayload[] = [];
+    /*
+     * Maps utilisées volontairement ici :
+     * une entreprise ne peut apparaître
+     * qu'une seule fois dans chaque lot.
+     *
+     * Cela évite l'erreur PostgreSQL :
+     * ON CONFLICT DO UPDATE command cannot
+     * affect row a second time.
+     */
+    const updatesById =
+      new Map<
+        string,
+        CompanyPayload
+      >();
 
-    const companiesToInsert:
-      CompanyPayload[] = [];
+    const insertsByKey =
+      new Map<
+        string,
+        CompanyPayload
+      >();
 
     let invalid = 0;
+    let mergedDuplicates = 0;
 
     for (const row of rows) {
       const companyName =
@@ -445,20 +544,89 @@ export async function POST(
       };
 
       if (existing) {
-        companiesToUpdate.push({
+        const previous =
+          updatesById.get(
+            existing.id
+          );
+
+        const nextPayload = {
           ...payload,
           id: existing.id,
-        });
+        };
+
+        if (previous) {
+          updatesById.set(
+            existing.id,
+            mergePayload(
+              previous,
+              nextPayload
+            )
+          );
+
+          mergedDuplicates += 1;
+        } else {
+          updatesById.set(
+            existing.id,
+            nextPayload
+          );
+        }
+
+        continue;
+      }
+
+      /*
+       * Pour les entreprises qui ne sont
+       * pas encore dans Supabase, on crée
+       * une clé stable afin de ne pas les
+       * insérer plusieurs fois si Zoho
+       * contient plusieurs lignes pour
+       * la même société.
+       */
+      const insertKey =
+        customerNumber
+          ? `customer:${customerNumber}`
+          : normalizedName
+            ? `name:${normalizedName}`
+            : normalizedEmail
+              ? `email:${normalizedEmail}`
+              : `zoho:${zohoContactId}`;
+
+      const previous =
+        insertsByKey.get(
+          insertKey
+        );
+
+      if (previous) {
+        insertsByKey.set(
+          insertKey,
+          mergePayload(
+            previous,
+            payload
+          )
+        );
+
+        mergedDuplicates += 1;
       } else {
-        companiesToInsert.push(
+        insertsByKey.set(
+          insertKey,
           payload
         );
       }
     }
 
+    const companiesToUpdate =
+      Array.from(
+        updatesById.values()
+      );
+
+    const companiesToInsert =
+      Array.from(
+        insertsByKey.values()
+      );
+
     /*
-     * Mise à jour en bloc des sociétés
-     * déjà connues.
+     * Chaque id est maintenant unique
+     * dans le lot envoyé à PostgreSQL.
      */
     if (
       companiesToUpdate.length >
@@ -482,9 +650,6 @@ export async function POST(
       }
     }
 
-    /*
-     * Ajout des nouveaux clients.
-     */
     if (
       companiesToInsert.length >
       0
@@ -505,9 +670,8 @@ export async function POST(
     }
 
     /*
-     * On recharge les entreprises après
-     * synchronisation pour rattacher les
-     * contacts principaux.
+     * Relecture après synchronisation
+     * pour rattacher les contacts.
      */
     const {
       data: syncedCompanies,
@@ -560,6 +724,14 @@ export async function POST(
 
     let contactsCreated = 0;
     let contactsUpdated = 0;
+
+    /*
+     * Évite également de traiter plusieurs
+     * fois exactement le même contact Zoho
+     * au sein du même fichier.
+     */
+    const processedContacts =
+      new Set<string>();
 
     for (const row of rows) {
       const firstName =
@@ -620,6 +792,25 @@ export async function POST(
           row["Contact ID"]
         );
 
+      const contactKey =
+        primaryContactId
+          ? `zoho:${primaryContactId}`
+          : `company:${company.id}:${normalizeText(
+              `${firstName} ${lastName}`
+            )}`;
+
+      if (
+        processedContacts.has(
+          contactKey
+        )
+      ) {
+        continue;
+      }
+
+      processedContacts.add(
+        contactKey
+      );
+
       let existingContact:
         | {
             id: string;
@@ -647,7 +838,8 @@ export async function POST(
           );
         }
 
-        existingContact = data;
+        existingContact =
+          data;
       }
 
       const contactPayload = {
@@ -688,10 +880,6 @@ export async function POST(
           null,
       };
 
-      /*
-       * Un seul contact principal
-       * par entreprise.
-       */
       const {
         error: resetError,
       } = await supabaseAdmin
@@ -772,6 +960,9 @@ export async function POST(
 
       created:
         companiesToInsert.length,
+
+      merged_duplicates:
+        mergedDuplicates,
 
       invalid,
 
