@@ -99,6 +99,36 @@ function PlanningIcon() {
   );
 }
 
+function CalendarIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="16"
+        rx="2"
+      />
+
+      <path d="M16 3v4" />
+      <path d="M8 3v4" />
+      <path d="M3 10h18" />
+
+      <path d="M8 14h2" />
+      <path d="M14 14h2" />
+      <path d="M8 17h2" />
+      <path d="M14 17h2" />
+    </svg>
+  );
+}
+
 function CompaniesIcon() {
   return (
     <svg
@@ -135,6 +165,11 @@ const navigation: NavigationItem[] = [
     label: "Planning",
     href: "/planning",
     icon: <PlanningIcon />,
+  },
+  {
+    label: "Calendrier",
+    href: "/calendar",
+    icon: <CalendarIcon />,
   },
   {
     label: "Entreprises",
