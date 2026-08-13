@@ -8,6 +8,7 @@ import type {
 } from "@/lib/companies";
 
 import CompanyGrid from "./CompanyGrid";
+
 import {
   getPipelineStageMeta,
   pipelineStageOptions,
@@ -41,31 +42,50 @@ export default function CompaniesExplorer({
 }: Props) {
   const [search, setSearch] = useState("");
 
-  const [activityFilter, setActivityFilter] =
-    useState<ActivityFilter>("all");
+  const [
+    activityFilter,
+    setActivityFilter,
+  ] =
+    useState<ActivityFilter>(
+      "active"
+    );
 
   const [
     relationshipFilter,
     setRelationshipFilter,
   ] =
-    useState<RelationshipFilter>("all");
+    useState<RelationshipFilter>(
+      "all"
+    );
 
-  const [pipelineFilter, setPipelineFilter] =
-    useState<PipelineFilter>("all");
+  const [
+    pipelineFilter,
+    setPipelineFilter,
+  ] =
+    useState<PipelineFilter>(
+      "all"
+    );
 
-  const [sortOption, setSortOption] =
-    useState<SortOption>("name-asc");
+  const [
+    sortOption,
+    setSortOption,
+  ] =
+    useState<SortOption>(
+      "name-asc"
+    );
 
   const activeCount = useMemo(
     () =>
       companies.filter(
-        (company) => company.is_active
+        (company) =>
+          company.is_active
       ).length,
     [companies]
   );
 
   const inactiveCount =
-    companies.length - activeCount;
+    companies.length -
+    activeCount;
 
   const clientCount = useMemo(
     () =>
@@ -87,104 +107,144 @@ export default function CompaniesExplorer({
     [companies]
   );
 
-  const pipelineCounts = useMemo(() => {
-    const counts: Record<
-      PipelineStage,
-      number
-    > = {
-      new: 0,
-      contact: 0,
-      meeting: 0,
-      proposal: 0,
-      negotiation: 0,
-      client: 0,
-      lost: 0,
-    };
+  const pipelineCounts =
+    useMemo(() => {
+      const counts: Record<
+        PipelineStage,
+        number
+      > = {
+        new: 0,
+        contact: 0,
+        meeting: 0,
+        proposal: 0,
+        negotiation: 0,
+        client: 0,
+        lost: 0,
+      };
 
-    companies.forEach((company) => {
-      counts[company.pipeline_stage] += 1;
-    });
-
-    return counts;
-  }, [companies]);
-
-  const visibleCompanies = useMemo(() => {
-    const normalizedSearch =
-      normalizeText(search);
-
-    const filteredCompanies =
-      companies.filter((company) => {
-        const matchesActivity =
-          activityFilter === "all" ||
-          (activityFilter === "active" &&
-            company.is_active) ||
-          (activityFilter === "inactive" &&
-            !company.is_active);
-
-        const matchesRelationship =
-          relationshipFilter === "all" ||
-          company.relationship_status ===
-            relationshipFilter;
-
-        const matchesPipeline =
-          pipelineFilter === "all" ||
-          company.pipeline_stage ===
-            pipelineFilter;
-
-        if (
-          !matchesActivity ||
-          !matchesRelationship ||
-          !matchesPipeline
-        ) {
-          return false;
-        }
-
-        if (!normalizedSearch) {
-          return true;
-        }
-
-        const pipelineLabel =
-          getPipelineStageMeta(
+      companies.forEach(
+        (company) => {
+          counts[
             company.pipeline_stage
-          ).label;
-
-        const searchableContent = [
-          company.name,
-          company.legal_name,
-          company.email,
-          company.phone,
-          company.website,
-          company.postal_code,
-          company.city,
-          company.relationship_status,
-          pipelineLabel,
-        ]
-          .filter(Boolean)
-          .join(" ");
-
-        return normalizeText(
-          searchableContent
-        ).includes(normalizedSearch);
-      });
-
-    return [...filteredCompanies].sort(
-      (companyA, companyB) => {
-        if (sortOption === "name-desc") {
-          return compareText(
-            companyB.name,
-            companyA.name
-          );
+          ] += 1;
         }
+      );
 
-        if (sortOption === "city-asc") {
-          const cityComparison =
-            compareText(
-              companyA.city || "",
-              companyB.city || ""
+      return counts;
+    }, [companies]);
+
+  const visibleCompanies =
+    useMemo(() => {
+      const normalizedSearch =
+        normalizeText(search);
+
+      const filteredCompanies =
+        companies.filter(
+          (company) => {
+            const matchesActivity =
+              activityFilter ===
+                "all" ||
+              (activityFilter ===
+                "active" &&
+                company.is_active) ||
+              (activityFilter ===
+                "inactive" &&
+                !company.is_active);
+
+            const matchesRelationship =
+              relationshipFilter ===
+                "all" ||
+              company.relationship_status ===
+                relationshipFilter;
+
+            const matchesPipeline =
+              pipelineFilter ===
+                "all" ||
+              company.pipeline_stage ===
+                pipelineFilter;
+
+            if (
+              !matchesActivity ||
+              !matchesRelationship ||
+              !matchesPipeline
+            ) {
+              return false;
+            }
+
+            if (
+              !normalizedSearch
+            ) {
+              return true;
+            }
+
+            const pipelineLabel =
+              getPipelineStageMeta(
+                company.pipeline_stage
+              ).label;
+
+            const searchableContent =
+              [
+                company.name,
+                company.legal_name,
+                company.email,
+                company.phone,
+                company.website,
+                company.postal_code,
+                company.city,
+                company.relationship_status,
+                pipelineLabel,
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+            return normalizeText(
+              searchableContent
+            ).includes(
+              normalizedSearch
             );
+          }
+        );
 
-          if (cityComparison !== 0) {
-            return cityComparison;
+      return [
+        ...filteredCompanies,
+      ].sort(
+        (
+          companyA,
+          companyB
+        ) => {
+          if (
+            sortOption ===
+            "name-desc"
+          ) {
+            return compareText(
+              companyB.name,
+              companyA.name
+            );
+          }
+
+          if (
+            sortOption ===
+            "city-asc"
+          ) {
+            const cityComparison =
+              compareText(
+                companyA.city ||
+                  "",
+                companyB.city ||
+                  ""
+              );
+
+            if (
+              cityComparison !==
+              0
+            ) {
+              return cityComparison;
+            }
+
+            return compareText(
+              companyA.name,
+              companyB.name
+            );
           }
 
           return compareText(
@@ -192,74 +252,116 @@ export default function CompaniesExplorer({
             companyB.name
           );
         }
-
-        return compareText(
-          companyA.name,
-          companyB.name
-        );
-      }
-    );
-  }, [
-    companies,
-    search,
-    activityFilter,
-    relationshipFilter,
-    pipelineFilter,
-    sortOption,
-  ]);
+      );
+    }, [
+      companies,
+      search,
+      activityFilter,
+      relationshipFilter,
+      pipelineFilter,
+      sortOption,
+    ]);
 
   function resetFilters() {
     setSearch("");
-    setActivityFilter("all");
-    setRelationshipFilter("all");
-    setPipelineFilter("all");
-    setSortOption("name-asc");
+    setActivityFilter(
+      "active"
+    );
+    setRelationshipFilter(
+      "all"
+    );
+    setPipelineFilter(
+      "all"
+    );
+    setSortOption(
+      "name-asc"
+    );
   }
 
   function showAllCompanies() {
-    setActivityFilter("all");
-    setRelationshipFilter("all");
-    setPipelineFilter("all");
+    setActivityFilter(
+      "all"
+    );
+    setRelationshipFilter(
+      "all"
+    );
+    setPipelineFilter(
+      "all"
+    );
   }
 
   function showClients() {
-    setActivityFilter("all");
-    setRelationshipFilter("client");
-    setPipelineFilter("all");
+    setActivityFilter(
+      "all"
+    );
+    setRelationshipFilter(
+      "client"
+    );
+    setPipelineFilter(
+      "all"
+    );
   }
 
   function showProspects() {
-    setActivityFilter("all");
-    setRelationshipFilter("prospect");
-    setPipelineFilter("all");
+    setActivityFilter(
+      "all"
+    );
+    setRelationshipFilter(
+      "prospect"
+    );
+    setPipelineFilter(
+      "all"
+    );
   }
 
   function showActiveCompanies() {
-    setActivityFilter("active");
-    setRelationshipFilter("all");
-    setPipelineFilter("all");
+    setActivityFilter(
+      "active"
+    );
+    setRelationshipFilter(
+      "all"
+    );
+    setPipelineFilter(
+      "all"
+    );
   }
 
   function showInactiveCompanies() {
-    setActivityFilter("inactive");
-    setRelationshipFilter("all");
-    setPipelineFilter("all");
+    setActivityFilter(
+      "inactive"
+    );
+    setRelationshipFilter(
+      "all"
+    );
+    setPipelineFilter(
+      "all"
+    );
   }
 
   function showPipelineStage(
     stage: PipelineStage
   ) {
-    setActivityFilter("all");
-    setRelationshipFilter("all");
-    setPipelineFilter(stage);
+    setActivityFilter(
+      "all"
+    );
+    setRelationshipFilter(
+      "all"
+    );
+    setPipelineFilter(
+      stage
+    );
   }
 
   const hasActiveFilters =
     search.trim() !== "" ||
-    activityFilter !== "all" ||
-    relationshipFilter !== "all" ||
-    pipelineFilter !== "all" ||
-    sortOption !== "name-asc";
+    activityFilter !==
+      "active" ||
+    relationshipFilter !==
+      "all" ||
+    pipelineFilter !==
+      "all" ||
+    sortOption !==
+      "name-asc";
 
   return (
     <div className="space-y-6">
@@ -294,10 +396,15 @@ export default function CompaniesExplorer({
               <input
                 id="company-search"
                 type="search"
-                value={search}
-                onChange={(event) =>
+                value={
+                  search
+                }
+                onChange={(
+                  event
+                ) =>
                   setSearch(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="Nom, ville, email, téléphone..."
@@ -309,8 +416,12 @@ export default function CompaniesExplorer({
           <SelectField
             id="company-relationship"
             label="Relation"
-            value={relationshipFilter}
-            onChange={(value) =>
+            value={
+              relationshipFilter
+            }
+            onChange={(
+              value
+            ) =>
               setRelationshipFilter(
                 value as RelationshipFilter
               )
@@ -332,8 +443,12 @@ export default function CompaniesExplorer({
           <SelectField
             id="company-activity"
             label="Activité"
-            value={activityFilter}
-            onChange={(value) =>
+            value={
+              activityFilter
+            }
+            onChange={(
+              value
+            ) =>
               setActivityFilter(
                 value as ActivityFilter
               )
@@ -355,8 +470,12 @@ export default function CompaniesExplorer({
           <SelectField
             id="company-pipeline"
             label="Pipeline"
-            value={pipelineFilter}
-            onChange={(value) =>
+            value={
+              pipelineFilter
+            }
+            onChange={(
+              value
+            ) =>
               setPipelineFilter(
                 value as PipelineFilter
               )
@@ -369,10 +488,16 @@ export default function CompaniesExplorer({
             {pipelineStageOptions.map(
               (stage) => (
                 <option
-                  key={stage.value}
-                  value={stage.value}
+                  key={
+                    stage.value
+                  }
+                  value={
+                    stage.value
+                  }
                 >
-                  {stage.label}
+                  {
+                    stage.label
+                  }
                 </option>
               )
             )}
@@ -381,8 +506,12 @@ export default function CompaniesExplorer({
           <SelectField
             id="company-sort"
             label="Trier par"
-            value={sortOption}
-            onChange={(value) =>
+            value={
+              sortOption
+            }
+            onChange={(
+              value
+            ) =>
               setSortOption(
                 value as SortOption
               )
@@ -406,14 +535,19 @@ export default function CompaniesExplorer({
           <div className="flex flex-wrap gap-2">
             <FilterButton
               active={
-                activityFilter === "all" &&
-                relationshipFilter === "all" &&
-                pipelineFilter === "all"
+                activityFilter ===
+                  "all" &&
+                relationshipFilter ===
+                  "all" &&
+                pipelineFilter ===
+                  "all"
               }
               label={`Toutes · ${companies.length}`}
               activeClassName="bg-blue-600 text-white"
               inactiveClassName="bg-slate-100 text-slate-600 hover:bg-slate-200"
-              onClick={showAllCompanies}
+              onClick={
+                showAllCompanies
+              }
             />
 
             <FilterButton
@@ -424,7 +558,9 @@ export default function CompaniesExplorer({
               label={`Clients · ${clientCount}`}
               activeClassName="bg-blue-600 text-white"
               inactiveClassName="bg-blue-50 text-blue-700 hover:bg-blue-100"
-              onClick={showClients}
+              onClick={
+                showClients
+              }
             />
 
             <FilterButton
@@ -435,12 +571,15 @@ export default function CompaniesExplorer({
               label={`Prospects · ${prospectCount}`}
               activeClassName="bg-amber-500 text-white"
               inactiveClassName="bg-amber-50 text-amber-700 hover:bg-amber-100"
-              onClick={showProspects}
+              onClick={
+                showProspects
+              }
             />
 
             <FilterButton
               active={
-                activityFilter === "active"
+                activityFilter ===
+                "active"
               }
               label={`Actives · ${activeCount}`}
               activeClassName="bg-emerald-600 text-white"
@@ -466,22 +605,27 @@ export default function CompaniesExplorer({
 
           <div className="flex items-center gap-4">
             <p className="text-sm font-medium text-slate-500">
-              {visibleCompanies.length}{" "}
+              {
+                visibleCompanies.length
+              }{" "}
               résultat
-              {visibleCompanies.length > 1
+              {visibleCompanies.length >
+              1
                 ? "s"
                 : ""}
             </p>
 
-            {hasActiveFilters && (
+            {hasActiveFilters ? (
               <button
                 type="button"
-                onClick={resetFilters}
+                onClick={
+                  resetFilters
+                }
                 className="cursor-pointer text-sm font-semibold text-blue-600 transition hover:text-blue-700"
               >
                 Réinitialiser
               </button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -504,7 +648,9 @@ export default function CompaniesExplorer({
 
                 return (
                   <button
-                    key={stage.value}
+                    key={
+                      stage.value
+                    }
                     type="button"
                     onClick={() =>
                       showPipelineStage(
@@ -516,22 +662,29 @@ export default function CompaniesExplorer({
                       active
                         ? meta.badgeClassName
                         : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-                    ].join(" ")}
+                    ].join(
+                      " "
+                    )}
                   >
                     <span
                       className={[
                         "h-2.5 w-2.5 rounded-full",
                         meta.dotClassName,
-                      ].join(" ")}
+                      ].join(
+                        " "
+                      )}
                     />
 
-                    {meta.label}
+                    {
+                      meta.label
+                    }
 
                     <span className="opacity-70">
                       ·{" "}
                       {
                         pipelineCounts[
-                          stage.value
+                          stage
+                            .value
                         ]
                       }
                     </span>
@@ -543,9 +696,12 @@ export default function CompaniesExplorer({
         </div>
       </section>
 
-      {visibleCompanies.length > 0 ? (
+      {visibleCompanies.length >
+      0 ? (
         <CompanyGrid
-          companies={visibleCompanies}
+          companies={
+            visibleCompanies
+          }
         />
       ) : (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
@@ -560,10 +716,12 @@ export default function CompaniesExplorer({
 
           <button
             type="button"
-            onClick={resetFilters}
+            onClick={
+              resetFilters
+            }
             className="mt-6 cursor-pointer rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
-            Afficher toutes les entreprises
+            Afficher les entreprises actives
           </button>
         </div>
       )}
@@ -575,7 +733,9 @@ type SelectFieldProps = {
   id: string;
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string
+  ) => void;
   children: React.ReactNode;
 };
 
@@ -598,8 +758,13 @@ function SelectField({
       <select
         id={id}
         value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
+        onChange={(
+          event
+        ) =>
+          onChange(
+            event.target
+              .value
+          )
         }
         className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
       >
@@ -627,7 +792,9 @@ function FilterButton({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={
+        onClick
+      }
       className={[
         "cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition",
         active
@@ -640,12 +807,22 @@ function FilterButton({
   );
 }
 
-function normalizeText(value: string) {
+function normalizeText(
+  value: string
+) {
   return value
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("fr")
-    .replace(/\s+/g, " ")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLocaleLowerCase(
+      "fr"
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
     .trim();
 }
 
@@ -657,8 +834,10 @@ function compareText(
     valueB,
     "fr",
     {
-      sensitivity: "base",
-      ignorePunctuation: true,
+      sensitivity:
+        "base",
+      ignorePunctuation:
+        true,
     }
   );
 }
