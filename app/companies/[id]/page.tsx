@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PageBanner from "@/components/dashboard/PageBanner";
 import CompanyContacts from "@/components/companies/CompanyContacts";
 import CompanyOpportunities from "@/components/companies/CompanyOpportunities";
+import CompanyLegalSearch from "@/components/companies/CompanyLegalSearch";
 import DeleteCompanyButton from "@/components/companies/DeleteCompanyButton";
 import PipelineBadge from "@/components/ui/PipelineBadge";
 
@@ -69,7 +70,14 @@ export default async function CompanyPage({
   const hasAdministrativeInfo =
     Boolean(
       company.customer_number ||
-        company.siret
+        company.siren ||
+        company.siret ||
+        company.vat_number ||
+        company.legal_form ||
+        company.ape_code ||
+        company.ape_label ||
+        company.creation_date ||
+        company.employee_range
     );
 
   const hasNotes =
@@ -193,15 +201,46 @@ export default async function CompanyPage({
             />
           </div>
 
+          <div className="mt-8 border-t border-slate-200 pt-8">
+            <CompanyLegalSearch
+              companyId={
+                company.id
+              }
+              initialName={
+                company.name
+              }
+              initialSiren={
+                company.siren
+              }
+              initialSiret={
+                company.siret
+              }
+              initialPostalCode={
+                company.postal_code
+              }
+            />
+          </div>
+
           {hasAdministrativeInfo ? (
             <div className="mt-8 border-t border-slate-200 pt-8">
-              <div className="mb-5">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Informations administratives
-                </p>
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                    Données légales
+                  </p>
+
+                  {company.legal_data_updated_at ? (
+                    <p className="mt-1 text-xs text-slate-400">
+                      Mise à jour{" "}
+                      {formatDateTime(
+                        company.legal_data_updated_at
+                      )}
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {company.customer_number ? (
                   <InfoBlock
                     label="N° client"
@@ -211,11 +250,85 @@ export default async function CompanyPage({
                   />
                 ) : null}
 
+                {company.legal_name ? (
+                  <InfoBlock
+                    label="Raison sociale"
+                    value={
+                      company.legal_name
+                    }
+                  />
+                ) : null}
+
+                {company.legal_form ? (
+                  <InfoBlock
+                    label="Forme juridique"
+                    value={
+                      company.legal_form
+                    }
+                  />
+                ) : null}
+
+                {company.siren ? (
+                  <InfoBlock
+                    label="SIREN"
+                    value={
+                      company.siren
+                    }
+                  />
+                ) : null}
+
                 {company.siret ? (
                   <InfoBlock
-                    label="SIRET"
+                    label="SIRET du siège"
                     value={
                       company.siret
+                    }
+                  />
+                ) : null}
+
+                {company.vat_number ? (
+                  <InfoBlock
+                    label="TVA intracommunautaire"
+                    value={
+                      company.vat_number
+                    }
+                  />
+                ) : null}
+
+                {company.ape_code ? (
+                  <InfoBlock
+                    label="Code APE / NAF"
+                    value={
+                      company.ape_code
+                    }
+                  />
+                ) : null}
+
+                {company.ape_label ? (
+                  <InfoBlock
+                    label="Activité principale"
+                    value={
+                      company.ape_label
+                    }
+                  />
+                ) : null}
+
+                {company.creation_date ? (
+                  <InfoBlock
+                    label="Date de création"
+                    value={
+                      formatDate(
+                        company.creation_date
+                      )
+                    }
+                  />
+                ) : null}
+
+                {company.employee_range ? (
+                  <InfoBlock
+                    label="Tranche d’effectif"
+                    value={
+                      company.employee_range
                     }
                   />
                 ) : null}
@@ -315,4 +428,48 @@ function InfoBlock({
       )}
     </div>
   );
+}
+
+function formatDate(
+  value: string
+) {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(
+    "fr-FR"
+  ).format(date);
+}
+
+function formatDateTime(
+  value: string
+) {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(
+    "fr-FR",
+    {
+      dateStyle:
+        "short",
+      timeStyle:
+        "short",
+    }
+  ).format(date);
 }

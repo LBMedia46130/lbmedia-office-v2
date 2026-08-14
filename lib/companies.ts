@@ -31,7 +31,21 @@ export type Company = {
   country: string | null;
 
   customer_number: string | null;
+
+  siren: string | null;
   siret: string | null;
+  vat_number: string | null;
+
+  legal_form: string | null;
+
+  ape_code: string | null;
+  ape_label: string | null;
+
+  creation_date: string | null;
+  employee_range: string | null;
+
+  legal_data_updated_at: string | null;
+
   notes: string | null;
   zoho_contact_id: string | null;
 
@@ -82,7 +96,21 @@ export type UpdateCompanyInput = {
   country?: string | null;
 
   customer_number?: string | null;
+
+  siren?: string | null;
   siret?: string | null;
+  vat_number?: string | null;
+
+  legal_form?: string | null;
+
+  ape_code?: string | null;
+  ape_label?: string | null;
+
+  creation_date?: string | null;
+  employee_range?: string | null;
+
+  legal_data_updated_at?: string | null;
+
   notes?: string | null;
   zoho_contact_id?: string | null;
 
