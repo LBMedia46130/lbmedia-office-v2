@@ -37,6 +37,11 @@ type DashboardNews = {
   updated_at: string;
 };
 
+type DashboardTone =
+  | "amber"
+  | "cyan"
+  | "emerald";
+
 const channelLabels: Record<
   PublicationChannel,
   string
@@ -226,7 +231,7 @@ export default async function HomePage() {
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">
             LBMedia Office V2
           </p>
 
@@ -246,23 +251,26 @@ export default async function HomePage() {
             label="À traiter"
             value={attentionCount}
             description="Éléments qui demandent ton attention."
+            tone="amber"
           />
 
           <DashboardCard
             label="Aujourd’hui"
             value={today.length}
             description="Publications prévues aujourd’hui."
+            tone="cyan"
           />
 
           <DashboardCard
             label="Publiées"
             value={publishedCount}
             description="Publications déjà diffusées."
+            tone="emerald"
           />
         </section>
 
         {failed.length > 0 ? (
-          <section className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-6">
+          <section className="mt-8 rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-rose-50 p-6 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-700">
@@ -301,47 +309,57 @@ export default async function HomePage() {
         ) : null}
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[1.35fr_0.65fr]">
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                  Pénélope
-                </p>
+          <section className="overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-white via-blue-50/40 to-cyan-50/70 shadow-sm">
+            <div className="border-b border-blue-100 bg-white/60 p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white shadow-sm">
+                      P
+                    </span>
 
-                <h2 className="mt-2 text-2xl font-bold text-slate-950">
-                  Préparer la semaine
-                </h2>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                      Pénélope
+                    </p>
+                  </div>
 
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                  Préparer les prochains
-                  sujets éditoriaux
-                  LBMedia.
-                </p>
+                  <h2 className="mt-3 text-2xl font-bold text-slate-950">
+                    Préparer la semaine
+                  </h2>
+
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                    Préparer les prochains
+                    sujets éditoriaux
+                    LBMedia.
+                  </p>
+                </div>
+
+                <Link
+                  href="/news"
+                  className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 hover:text-blue-900"
+                >
+                  Voir les actualités →
+                </Link>
               </div>
-
-              <Link
-                href="/news"
-                className="text-sm font-semibold text-blue-700 transition hover:text-blue-900"
-              >
-                Voir les actualités →
-              </Link>
             </div>
 
-            <div className="mt-6">
+            <div className="p-6">
               <WeeklyTopics />
             </div>
           </section>
 
-          <section className="rounded-2xl border border-blue-900 bg-gradient-to-b from-blue-950 to-slate-950 p-6 text-white shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">
-              Écosystème LBMedia
-            </p>
+          <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 p-6 text-white shadow-sm">
+            <div className="inline-flex rounded-lg bg-cyan-400/10 px-3 py-1.5 ring-1 ring-inset ring-cyan-300/20">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                Écosystème LBMedia
+              </p>
+            </div>
 
-            <h2 className="mt-2 text-xl font-bold">
+            <h2 className="mt-4 text-xl font-bold">
               Modules
             </h2>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-blue-100/70">
               Le dashboard V2
               accueillera
               progressivement les
@@ -353,11 +371,13 @@ export default async function HomePage() {
               <ModuleItem
                 label="Éditorial"
                 status="Actif"
+                active
               />
 
               <ModuleItem
                 label="Planning"
                 status="Actif"
+                active
               />
 
               <ModuleItem
@@ -368,12 +388,16 @@ export default async function HomePage() {
           </section>
         </div>
 
-        <section className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-6">
+        <section className="mt-8 rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 via-sky-50 to-white p-6 shadow-sm">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                Aujourd’hui
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-cyan-500" />
+
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+                  Aujourd’hui
+                </p>
+              </div>
 
               <h2 className="mt-2 text-xl font-bold text-slate-950">
                 Publications prévues
@@ -385,7 +409,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <span className="text-sm font-semibold text-slate-600">
+            <span className="rounded-full border border-cyan-200 bg-white px-3 py-1.5 text-sm font-semibold text-cyan-800 shadow-sm">
               {today.length}{" "}
               publication
               {today.length > 1
@@ -395,7 +419,7 @@ export default async function HomePage() {
           </div>
 
           {today.length === 0 ? (
-            <div className="mt-5 rounded-xl border border-dashed border-blue-200 bg-white/70 px-6 py-10 text-center">
+            <div className="mt-5 rounded-xl border border-dashed border-cyan-200 bg-white/80 px-6 py-10 text-center">
               <p className="font-semibold text-slate-900">
                 Rien à publier
                 aujourd’hui
@@ -433,18 +457,78 @@ function DashboardCard({
   label,
   value,
   description,
+  tone,
 }: {
   label: string;
   value: number;
   description: string;
+  tone: DashboardTone;
 }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-semibold text-slate-500">
-        {label}
-      </p>
+  const styles: Record<
+    DashboardTone,
+    {
+      card: string;
+      label: string;
+      value: string;
+      dot: string;
+    }
+  > = {
+    amber: {
+      card:
+        "border-amber-200 bg-gradient-to-br from-white to-amber-50",
+      label:
+        "text-amber-700",
+      value:
+        "text-amber-700",
+      dot:
+        "bg-amber-400",
+    },
 
-      <p className="mt-2 text-4xl font-bold tracking-tight text-blue-700">
+    cyan: {
+      card:
+        "border-cyan-200 bg-gradient-to-br from-white to-cyan-50",
+      label:
+        "text-cyan-700",
+      value:
+        "text-cyan-700",
+      dot:
+        "bg-cyan-500",
+    },
+
+    emerald: {
+      card:
+        "border-emerald-200 bg-gradient-to-br from-white to-emerald-50",
+      label:
+        "text-emerald-700",
+      value:
+        "text-emerald-700",
+      dot:
+        "bg-emerald-500",
+    },
+  };
+
+  const style =
+    styles[tone];
+
+  return (
+    <div
+      className={`rounded-2xl border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${style.card}`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={`h-2.5 w-2.5 rounded-full ${style.dot}`}
+        />
+
+        <p
+          className={`text-sm font-semibold ${style.label}`}
+        >
+          {label}
+        </p>
+      </div>
+
+      <p
+        className={`mt-3 text-4xl font-bold tracking-tight ${style.value}`}
+      >
         {value}
       </p>
 
@@ -458,17 +542,35 @@ function DashboardCard({
 function ModuleItem({
   label,
   status,
+  active = false,
 }: {
   label: string;
   status: string;
+  active?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-blue-900/70 bg-blue-950/40 px-4 py-3">
-      <span className="text-sm font-semibold text-slate-200">
-        {label}
-      </span>
+    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span
+          className={`h-2 w-2 rounded-full ${
+            active
+              ? "bg-emerald-400"
+              : "bg-slate-500"
+          }`}
+        />
 
-      <span className="rounded-full bg-blue-900/60 px-2.5 py-1 text-xs font-semibold text-blue-200">
+        <span className="text-sm font-semibold text-slate-100">
+          {label}
+        </span>
+      </div>
+
+      <span
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+          active
+            ? "bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-300/20"
+            : "bg-white/5 text-slate-400 ring-1 ring-inset ring-white/10"
+        }`}
+      >
         {status}
       </span>
     </div>
@@ -506,10 +608,10 @@ function PublicationAction({
       href={getPublicationHref(
         publication
       )}
-      className={`block rounded-2xl border p-5 shadow-sm transition hover:shadow-md ${
+      className={`block rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         tone === "error"
           ? "border-red-200 bg-white hover:border-red-300"
-          : "border-slate-200 bg-white hover:border-blue-200"
+          : "border-slate-200 bg-white hover:border-cyan-300"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
