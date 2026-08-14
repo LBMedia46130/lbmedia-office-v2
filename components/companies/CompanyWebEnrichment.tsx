@@ -53,6 +53,72 @@ export default function CompanyWebEnrichment({
     null
   );
 
+  const [
+    hasImported,
+    setHasImported,
+  ] = useState(false);
+
+  async function searchPublicInformation() {
+    const response =
+      await fetch(
+        `/api/companies/${companyId}/web-enrichment`,
+        {
+          method: "POST",
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.message ||
+          "Recherche impossible."
+      );
+    }
+
+    return data.enrichment as WebEnrichmentResult;
+  }
+
+  async function importPublicInformation(
+    result: WebEnrichmentResult
+  ) {
+    const response =
+      await fetch(
+        `/api/companies/${companyId}/web-enrichment/import`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify(
+            result
+          ),
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.message ||
+          "Import impossible."
+      );
+    }
+
+    return data;
+  }
+
   async function handleSearch() {
     setIsSearching(true);
     setError(null);
@@ -60,29 +126,11 @@ export default function CompanyWebEnrichment({
     setEnrichment(null);
 
     try {
-      const response =
-        await fetch(
-          `/api/companies/${companyId}/web-enrichment`,
-          {
-            method: "POST",
-          }
-        );
-
-      const data =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data.message ||
-            "Recherche impossible."
-        );
-      }
+      const result =
+        await searchPublicInformation();
 
       setEnrichment(
-        data.enrichment
+        result
       );
     } catch (searchError) {
       setError(
@@ -105,35 +153,10 @@ export default function CompanyWebEnrichment({
     setSuccess(null);
 
     try {
-      const response =
-        await fetch(
-          `/api/companies/${companyId}/web-enrichment/import`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify(
-              enrichment
-            ),
-          }
-        );
-
       const data =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data.message ||
-            "Import impossible."
+        await importPublicInformation(
+          enrichment
         );
-      }
 
       const updated =
         Array.isArray(
@@ -150,9 +173,12 @@ export default function CompanyWebEnrichment({
         );
       } else {
         setSuccess(
-          "Informations importées dans la fiche."
+          "Informations publiques importées."
         );
       }
+
+      setHasImported(true);
+      setEnrichment(null);
 
       router.refresh();
     } catch (importError) {
@@ -164,6 +190,82 @@ export default function CompanyWebEnrichment({
     } finally {
       setIsImporting(false);
     }
+  }
+
+  async function handleRefresh() {
+    setIsSearching(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const result =
+        await searchPublicInformation();
+
+      setEnrichment(
+        result
+      );
+
+      setHasImported(false);
+    } catch (refreshError) {
+      setError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : "Actualisation impossible."
+      );
+    } finally {
+      setIsSearching(false);
+    }
+  }
+
+  if (
+    hasImported &&
+    !enrichment
+  ) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
+              Présence web
+            </p>
+
+            <p className="mt-1 text-sm text-slate-600">
+              Les informations
+              publiques trouvées
+              ont été intégrées
+              à la fiche.
+            </p>
+
+            {success ? (
+              <p className="mt-2 text-sm font-semibold text-emerald-600">
+                {success}
+              </p>
+            ) : null}
+
+            {error ? (
+              <p className="mt-2 text-sm font-medium text-red-600">
+                {error}
+              </p>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              void handleRefresh()
+            }
+            disabled={
+              isSearching
+            }
+            className="rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSearching
+              ? "Actualisation..."
+              : "Actualiser les informations publiques"}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
