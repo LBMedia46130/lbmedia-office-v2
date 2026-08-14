@@ -23,6 +23,9 @@ export type Company = {
   phone: string | null;
   website: string | null;
 
+  linkedin_url: string | null;
+  facebook_url: string | null;
+
   address: string | null;
   address_line_2: string | null;
   postal_code: string | null;
@@ -87,6 +90,9 @@ export type UpdateCompanyInput = {
   email: string | null;
   phone: string | null;
   website: string | null;
+
+  linkedin_url?: string | null;
+  facebook_url?: string | null;
 
   address?: string | null;
   address_line_2?: string | null;
