@@ -964,179 +964,263 @@ export default function NewsEditor({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="space-y-6"
     >
-      <div className="mb-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <section className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-violet-50 shadow-sm">
+        <div className="p-6">
+          <div className="flex flex-wrap items-center justify-between gap-5">
+            <div className="flex max-w-2xl items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+                <PenelopeIcon />
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
+                  Pénélope
+                </p>
+
+                <h3 className="mt-1 text-lg font-bold text-slate-950">
+                  {penelopeTitle}
+                </h3>
+
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  {penelopeDescription}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={
+                  generateArticle
+                }
+                disabled={isBusy}
+                className="rounded-xl border border-indigo-200 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isGeneratingArticle
+                  ? "Rédaction et optimisation..."
+                  : "Rédiger / optimiser l’article"}
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  prepareCommunication
+                }
+                disabled={isBusy}
+                className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isPreparingCommunication
+                  ? "Création des déclinaisons..."
+                  : "Préparer les déclinaisons"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
+        <SectionHeader
+          eyebrow="Rédaction"
+          title="Article"
+          description="Le contenu principal qui servira de référence à toutes les déclinaisons."
+          tone="blue"
+          icon={<ArticleIcon />}
+        />
+
+        <div className="grid gap-5 p-6">
+          <div className="grid gap-5 lg:grid-cols-[1fr_220px]">
+            <div>
+              <label
+                htmlFor="title"
+                className="block text-sm font-semibold text-slate-900"
+              >
+                Titre de l’actualité
+              </label>
+
+              <input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(event) =>
+                  setTitle(
+                    event.target.value
+                  )
+                }
+                disabled={isBusy}
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50 disabled:opacity-60"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="status"
+                className="block text-sm font-semibold text-slate-900"
+              >
+                Statut
+              </label>
+
+              <select
+                id="status"
+                value={status}
+                onChange={(event) => {
+                  const nextStatus =
+                    event.target
+                      .value as NewsStatus;
+
+                  setStatus(nextStatus);
+
+                  if (
+                    nextStatus !==
+                    "scheduled"
+                  ) {
+                    setScheduledAt("");
+                  }
+                }}
+                disabled={isBusy}
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50 disabled:opacity-60"
+              >
+                {statusOptions.map(
+                  (option) => (
+                    <option
+                      key={
+                        option.value
+                      }
+                      value={
+                        option.value
+                      }
+                    >
+                      {option.label}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+          </div>
+
+          {status ===
+          "scheduled" ? (
+            <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700">
+                  <CalendarIcon />
+                </div>
+
+                <div className="flex-1">
+                  <label
+                    htmlFor="scheduledAt"
+                    className="block text-sm font-bold text-cyan-950"
+                  >
+                    Date et heure de
+                    publication
+                    WordPress
+                  </label>
+
+                  <p className="mt-1 text-xs leading-5 text-cyan-700">
+                    Cette date sera
+                    également utilisée
+                    par le planning
+                    éditorial.
+                  </p>
+
+                  <input
+                    id="scheduledAt"
+                    type="datetime-local"
+                    value={
+                      scheduledAt
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setScheduledAt(
+                        event.target
+                          .value
+                      )
+                    }
+                    disabled={isBusy}
+                    className="mt-3 w-full rounded-xl border border-cyan-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:opacity-60"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div>
-            <p className="text-sm font-semibold text-indigo-950">
-              {penelopeTitle}
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <label
+                htmlFor="content"
+                className="block text-sm font-semibold text-slate-900"
+              >
+                Contenu de
+                l’article
+              </label>
 
-            <p className="mt-1 text-sm leading-6 text-indigo-800">
-              {penelopeDescription}
-            </p>
+              <span className="text-xs text-slate-400">
+                {
+                  content.trim()
+                    .length
+                }{" "}
+                caractères
+              </span>
+            </div>
+
+            <textarea
+              id="content"
+              value={content}
+              onChange={(event) =>
+                setContent(
+                  event.target.value
+                )
+              }
+              rows={18}
+              disabled={isBusy}
+              className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-slate-50/40 px-4 py-4 text-sm leading-7 text-slate-950 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50 disabled:opacity-60"
+            />
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={
-                generateArticle
-              }
-              disabled={isBusy}
-              className="rounded-xl border border-indigo-300 bg-white px-5 py-3 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isGeneratingArticle
-                ? "Rédaction et optimisation..."
-                : "Rédiger / optimiser l’article"}
-            </button>
-
-            <button
-              type="button"
-              onClick={
-                prepareCommunication
-              }
-              disabled={isBusy}
-              className="rounded-xl bg-indigo-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isPreparingCommunication
-                ? "Création des déclinaisons..."
-                : "Préparer les déclinaisons"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-5">
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-semibold text-slate-900"
-          >
-            Titre de l’actualité
-          </label>
-
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(event) =>
-              setTitle(
-                event.target.value
-              )
-            }
-            disabled={isBusy}
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-950 disabled:opacity-60"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="status"
-            className="block text-sm font-semibold text-slate-900"
-          >
-            Statut
-          </label>
-
-          <select
-            id="status"
-            value={status}
-            onChange={(event) => {
-              const nextStatus =
-                event.target
-                  .value as NewsStatus;
-
-              setStatus(nextStatus);
-
-              if (
-                nextStatus !==
-                "scheduled"
-              ) {
-                setScheduledAt("");
-              }
-            }}
-            disabled={isBusy}
-            className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-950 disabled:opacity-60"
-          >
-            {statusOptions.map(
-              (option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              )
-            )}
-          </select>
-        </div>
-
-        {status === "scheduled" ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <div>
             <label
-              htmlFor="scheduledAt"
-              className="block text-sm font-semibold text-blue-950"
+              htmlFor="sourceUrl"
+              className="block text-sm font-semibold text-slate-900"
             >
-              Date et heure de
-              publication WordPress
+              Lien associé
             </label>
 
-            <p className="mt-1 text-xs leading-5 text-blue-700">
-              Cette date sera
-              utilisée par le
-              planning éditorial.
+            <p className="mt-1 text-xs text-slate-500">
+              Source ou page
+              éventuellement associée
+              à cette actualité.
             </p>
 
             <input
-              id="scheduledAt"
-              type="datetime-local"
-              value={scheduledAt}
+              id="sourceUrl"
+              type="url"
+              value={sourceUrl}
               onChange={(event) =>
-                setScheduledAt(
+                setSourceUrl(
                   event.target.value
                 )
               }
               disabled={isBusy}
-              className="mt-3 w-full rounded-xl border border-blue-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-700 disabled:opacity-60"
+              placeholder="https://..."
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-50 disabled:opacity-60"
             />
           </div>
-        ) : null}
-
-        <div>
-          <label
-            htmlFor="content"
-            className="block text-sm font-semibold text-slate-900"
-          >
-            Actualité
-          </label>
-
-          <textarea
-            id="content"
-            value={content}
-            onChange={(event) =>
-              setContent(
-                event.target.value
-              )
-            }
-            rows={16}
-            disabled={isBusy}
-            className="mt-2 w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-slate-950 disabled:opacity-60"
-          />
         </div>
+      </section>
 
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-          <div>
-            <p className="text-sm font-semibold text-emerald-950">
-              SEO / GEO
-            </p>
+      <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+        <SectionHeader
+          eyebrow="Référencement"
+          title="SEO / GEO"
+          description="Les éléments préparés pour WordPress, Rank Math et la visibilité du contenu."
+          tone="emerald"
+          icon={<SearchIcon />}
+        />
 
-            <p className="mt-1 text-sm leading-6 text-emerald-800">
-              Éléments préparés pour la mise en ligne dans WordPress et Rank Math.
-            </p>
-          </div>
-
-          <div className="mt-5 grid gap-5">
+        <div className="grid gap-5 p-6">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label
                 htmlFor="focusKeyword"
@@ -1148,7 +1232,9 @@ export default function NewsEditor({
               <input
                 id="focusKeyword"
                 type="text"
-                value={focusKeyword}
+                value={
+                  focusKeyword
+                }
                 onChange={(event) =>
                   setFocusKeyword(
                     event.target.value
@@ -1156,7 +1242,7 @@ export default function NewsEditor({
                 }
                 disabled={isBusy}
                 placeholder="Ex. communication locale"
-                className="mt-2 w-full rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-700 disabled:opacity-60"
+                className="mt-2 w-full rounded-xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-50 disabled:opacity-60"
               />
             </div>
 
@@ -1165,13 +1251,16 @@ export default function NewsEditor({
                 htmlFor="secondaryKeywords"
                 className="block text-sm font-semibold text-slate-900"
               >
-                Mots-clés secondaires
+                Mots-clés
+                secondaires
               </label>
 
               <input
                 id="secondaryKeywords"
                 type="text"
-                value={secondaryKeywords}
+                value={
+                  secondaryKeywords
+                }
                 onChange={(event) =>
                   setSecondaryKeywords(
                     event.target.value
@@ -1179,56 +1268,58 @@ export default function NewsEditor({
                 }
                 disabled={isBusy}
                 placeholder="Séparés par des virgules"
-                className="mt-2 w-full rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-700 disabled:opacity-60"
+                className="mt-2 w-full rounded-xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-50 disabled:opacity-60"
               />
             </div>
+          </div>
 
-            <div>
-              <label
-                htmlFor="slug"
-                className="block text-sm font-semibold text-slate-900"
-              >
-                Slug
-              </label>
+          <div>
+            <label
+              htmlFor="slug"
+              className="block text-sm font-semibold text-slate-900"
+            >
+              Slug
+            </label>
 
-              <input
-                id="slug"
-                type="text"
-                value={slug}
-                onChange={(event) =>
-                  setSlug(
-                    event.target.value
-                  )
-                }
-                disabled={isBusy}
-                placeholder="communication-locale-pme"
-                className="mt-2 w-full rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-700 disabled:opacity-60"
-              />
-            </div>
+            <input
+              id="slug"
+              type="text"
+              value={slug}
+              onChange={(event) =>
+                setSlug(
+                  event.target.value
+                )
+              }
+              disabled={isBusy}
+              placeholder="communication-locale-pme"
+              className="mt-2 w-full rounded-xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-50 disabled:opacity-60"
+            />
+          </div>
 
-            <div>
-              <label
-                htmlFor="seoTitle"
-                className="block text-sm font-semibold text-slate-900"
-              >
-                SEO title
-              </label>
+          <div>
+            <label
+              htmlFor="seoTitle"
+              className="block text-sm font-semibold text-slate-900"
+            >
+              SEO title
+            </label>
 
-              <input
-                id="seoTitle"
-                type="text"
-                value={seoTitle}
-                onChange={(event) =>
-                  setSeoTitle(
-                    event.target.value
-                  )
-                }
-                disabled={isBusy}
-                className="mt-2 w-full rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-700 disabled:opacity-60"
-              />
-            </div>
+            <input
+              id="seoTitle"
+              type="text"
+              value={seoTitle}
+              onChange={(event) =>
+                setSeoTitle(
+                  event.target.value
+                )
+              }
+              disabled={isBusy}
+              className="mt-2 w-full rounded-xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-50 disabled:opacity-60"
+            />
+          </div>
 
-            <div>
+          <div>
+            <div className="flex items-center justify-between gap-4">
               <label
                 htmlFor="metaDescription"
                 className="block text-sm font-semibold text-slate-900"
@@ -1236,64 +1327,71 @@ export default function NewsEditor({
                 Meta description
               </label>
 
-              <textarea
-                id="metaDescription"
-                value={metaDescription}
-                onChange={(event) =>
-                  setMetaDescription(
-                    event.target.value
-                  )
-                }
-                rows={3}
-                disabled={isBusy}
-                className="mt-2 w-full resize-y rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-emerald-700 disabled:opacity-60"
-              />
+              <span className="text-xs text-slate-400">
+                {
+                  metaDescription
+                    .length
+                }{" "}
+                caractères
+              </span>
             </div>
 
-            <div>
-              <label
-                htmlFor="imageAlt"
-                className="block text-sm font-semibold text-slate-900"
-              >
-                Texte ALT du visuel
-              </label>
+            <textarea
+              id="metaDescription"
+              value={
+                metaDescription
+              }
+              onChange={(event) =>
+                setMetaDescription(
+                  event.target.value
+                )
+              }
+              rows={3}
+              disabled={isBusy}
+              className="mt-2 w-full resize-y rounded-xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-50 disabled:opacity-60"
+            />
+          </div>
 
-              <input
-                id="imageAlt"
-                type="text"
-                value={imageAlt}
-                onChange={(event) =>
-                  setImageAlt(
-                    event.target.value
-                  )
-                }
-                disabled={isBusy}
-                placeholder="Description utile et naturelle du visuel"
-                className="mt-2 w-full rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-700 disabled:opacity-60"
-              />
-            </div>
+          <div>
+            <label
+              htmlFor="imageAlt"
+              className="block text-sm font-semibold text-slate-900"
+            >
+              Texte ALT du visuel
+            </label>
+
+            <input
+              id="imageAlt"
+              type="text"
+              value={imageAlt}
+              onChange={(event) =>
+                setImageAlt(
+                  event.target.value
+                )
+              }
+              disabled={isBusy}
+              placeholder="Description utile et naturelle du visuel"
+              className="mt-2 w-full rounded-xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-50 disabled:opacity-60"
+            />
           </div>
         </div>
+      </section>
 
-        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-sky-950">
-                Visuel de l’article
-              </p>
-
-              <p className="mt-1 text-sm leading-6 text-sky-800">
-                Génère un visuel éditorial à partir de l’article et des éléments SEO/GEO, puis vérifie-le avant utilisation.
-              </p>
-            </div>
-
+      <section className="overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-sm">
+        <SectionHeader
+          eyebrow="Illustration"
+          title="Visuel de l’article"
+          description="Génère et vérifie le visuel éditorial qui accompagnera le contenu."
+          tone="sky"
+          icon={<ImageIcon />}
+          action={
             <button
               type="button"
               onClick={
                 generateVisual
               }
               disabled={isBusy}
-              className="rounded-xl bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGeneratingVisual
                 ? "Génération du visuel..."
@@ -1301,10 +1399,12 @@ export default function NewsEditor({
                   ? "Regénérer le visuel"
                   : "Générer le visuel"}
             </button>
-          </div>
+          }
+        />
 
+        <div className="p-6">
           {imageUrl.trim() ? (
-            <div className="mt-5 overflow-hidden rounded-xl border border-sky-200 bg-white">
+            <div className="overflow-hidden rounded-2xl border border-sky-100 bg-slate-50 shadow-sm">
               <img
                 src={imageUrl}
                 alt={
@@ -1314,7 +1414,28 @@ export default function NewsEditor({
                 className="h-auto w-full object-cover"
               />
             </div>
-          ) : null}
+          ) : (
+            <div className="flex min-h-52 items-center justify-center rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 px-6 text-center">
+              <div>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+                  <ImageIcon />
+                </div>
+
+                <p className="mt-3 text-sm font-semibold text-slate-800">
+                  Aucun visuel
+                  généré
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Pénélope peut
+                  préparer
+                  l’illustration à
+                  partir de
+                  l’article.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="mt-5">
             <label
@@ -1335,87 +1456,92 @@ export default function NewsEditor({
               }
               disabled={isBusy}
               placeholder="https://..."
-              className="mt-2 w-full rounded-xl border border-sky-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-sky-700 disabled:opacity-60"
+              className="mt-2 w-full rounded-xl border border-sky-200 bg-sky-50/30 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-50 disabled:opacity-60"
             />
           </div>
         </div>
+      </section>
 
-        <div>
-          <label
-            htmlFor="sourceUrl"
-            className="block text-sm font-semibold text-slate-900"
-          >
-            Lien associé
-          </label>
+      <section className="overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-sm">
+        <SectionHeader
+          eyebrow="Publication"
+          title="WordPress"
+          description="Prépare le brouillon sur lbmedia.fr ou publie l’article lorsqu’il est validé."
+          tone="violet"
+          icon={<WordPressIcon />}
+        />
 
-          <input
-            id="sourceUrl"
-            type="url"
-            value={sourceUrl}
-            onChange={(event) =>
-              setSourceUrl(
-                event.target.value
-              )
-            }
-            disabled={isBusy}
-            placeholder="https://..."
-            className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-950 disabled:opacity-60"
-          />
+        <div className="p-6">
+          <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-violet-100 bg-violet-50/50 p-5">
+            <div>
+              <p className="text-sm font-bold text-slate-900">
+                {hasWordPressPost
+                  ? "Article WordPress déjà créé"
+                  : "Article non envoyé vers WordPress"}
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                {hasWordPressPost
+                  ? "Tu peux mettre à jour le brouillon avec les dernières modifications de LBMedia Office."
+                  : "Commence par créer un brouillon WordPress avant sa publication définitive."}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={
+                  sendToWordPressDraft
+                }
+                disabled={isBusy}
+                className="rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 shadow-sm transition hover:border-violet-300 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isPublishingWordPressDraft
+                  ? "Envoi vers WordPress..."
+                  : hasWordPressPost
+                    ? "Mettre à jour le brouillon"
+                    : "Envoyer en brouillon"}
+              </button>
+
+              {hasWordPressPost &&
+              websitePublication.status !==
+                "published" ? (
+                <button
+                  type="button"
+                  onClick={
+                    publishWordPressLive
+                  }
+                  disabled={isBusy}
+                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isPublishingWordPressLive
+                    ? "Publication..."
+                    : "Publier sur WordPress"}
+                </button>
+              ) : null}
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-        <button
-          type="button"
-          onClick={
-            sendToWordPressDraft
-          }
-          disabled={isBusy}
-          className="rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isPublishingWordPressDraft
-            ? "Envoi vers WordPress..."
-            : hasWordPressPost
-              ? "Mettre à jour le brouillon WordPress"
-              : "Envoyer vers WordPress en brouillon"}
-        </button>
-
-        {hasWordPressPost &&
-        websitePublication.status !==
-          "published" ? (
-          <button
-            type="button"
-            onClick={
-              publishWordPressLive
-            }
-            disabled={isBusy}
-            className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isPublishingWordPressLive
-              ? "Publication..."
-              : "Publier sur WordPress"}
-          </button>
-        ) : null}
-      </div>
+      </section>
 
       {message ? (
-        <div className="mt-6 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700 shadow-sm">
           {message}
         </div>
       ) : null}
 
       {error ? (
-        <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700 shadow-sm">
           {error}
         </div>
       ) : null}
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <button
           type="button"
           onClick={handleDelete}
           disabled={isBusy}
-          className="rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isDeleting
             ? "Suppression..."
@@ -1425,7 +1551,7 @@ export default function NewsEditor({
         <button
           type="submit"
           disabled={isBusy}
-          className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving
             ? "Enregistrement..."
@@ -1436,6 +1562,240 @@ export default function NewsEditor({
         </button>
       </div>
     </form>
+  );
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  tone,
+  icon,
+  action,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  tone:
+    | "blue"
+    | "emerald"
+    | "sky"
+    | "violet";
+  icon: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  const tones = {
+    blue: {
+      wrapper:
+        "border-blue-100 bg-gradient-to-r from-blue-50 to-white",
+      icon:
+        "bg-blue-100 text-blue-700",
+      eyebrow:
+        "text-blue-600",
+    },
+    emerald: {
+      wrapper:
+        "border-emerald-100 bg-gradient-to-r from-emerald-50 to-white",
+      icon:
+        "bg-emerald-100 text-emerald-700",
+      eyebrow:
+        "text-emerald-600",
+    },
+    sky: {
+      wrapper:
+        "border-sky-100 bg-gradient-to-r from-sky-50 to-white",
+      icon:
+        "bg-sky-100 text-sky-700",
+      eyebrow:
+        "text-sky-600",
+    },
+    violet: {
+      wrapper:
+        "border-violet-100 bg-gradient-to-r from-violet-50 to-white",
+      icon:
+        "bg-violet-100 text-violet-700",
+      eyebrow:
+        "text-violet-600",
+    },
+  };
+
+  const current =
+    tones[tone];
+
+  return (
+    <div
+      className={`flex flex-wrap items-center justify-between gap-5 border-b p-5 ${current.wrapper}`}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${current.icon}`}
+        >
+          {icon}
+        </div>
+
+        <div>
+          <p
+            className={`text-xs font-bold uppercase tracking-[0.18em] ${current.eyebrow}`}
+          >
+            {eyebrow}
+          </p>
+
+          <h3 className="mt-1 text-lg font-bold text-slate-950">
+            {title}
+          </h3>
+
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      {action}
+    </div>
+  );
+}
+
+function PenelopeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M12 3v3" />
+      <path d="M12 18v3" />
+      <path d="m4.2 4.2 2.1 2.1" />
+      <path d="m17.7 17.7 2.1 2.1" />
+      <path d="M3 12h3" />
+      <path d="M18 12h3" />
+      <path d="m4.2 19.8 2.1-2.1" />
+      <path d="m17.7 6.3 2.1-2.1" />
+      <circle
+        cx="12"
+        cy="12"
+        r="4"
+      />
+    </svg>
+  );
+}
+
+function ArticleIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <rect
+        x="4"
+        y="3"
+        width="16"
+        height="18"
+        rx="2"
+      />
+      <path d="M8 8h8" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <circle
+        cx="11"
+        cy="11"
+        r="7"
+      />
+      <path d="m20 20-4-4" />
+      <path d="M8 11h6" />
+      <path d="M11 8v6" />
+    </svg>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="4"
+        width="18"
+        height="16"
+        rx="2"
+      />
+      <circle
+        cx="8.5"
+        cy="9"
+        r="1.5"
+      />
+      <path d="m21 15-5-5L5 20" />
+    </svg>
+  );
+}
+
+function WordPressIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+      />
+      <path d="M7 8.5 10.5 17 13 11l2.5 6L18 8.5" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="16"
+        rx="2"
+      />
+      <path d="M16 3v4" />
+      <path d="M8 3v4" />
+      <path d="M3 10h18" />
+    </svg>
   );
 }
 
