@@ -21,6 +21,10 @@ import {
   getCompanyOpportunities,
 } from "@/lib/opportunities";
 
+import {
+  getCompanyWebsiteAudits,
+} from "@/lib/website-audits";
+
 export const dynamic =
   "force-dynamic";
 
@@ -46,12 +50,20 @@ export default async function CompanyPage({
   const [
     contacts,
     opportunities,
+    websiteAudits,
   ] = await Promise.all([
     getCompanyContacts(id),
     getCompanyOpportunities(
       id
     ),
+    getCompanyWebsiteAudits(
+      id
+    ),
   ]);
+
+  const latestAudit =
+    websiteAudits[0] ??
+    null;
 
   const fullAddress = [
     company.address,
@@ -84,6 +96,17 @@ export default async function CompanyPage({
     Boolean(
       company.notes?.trim()
     );
+
+  const auditUrl =
+    company.website
+      ? `/audit?companyId=${encodeURIComponent(
+          company.id
+        )}&url=${encodeURIComponent(
+          company.website
+        )}`
+      : `/audit?companyId=${encodeURIComponent(
+          company.id
+        )}`;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -242,6 +265,188 @@ export default async function CompanyPage({
                   company.business_description
                 }
               />
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-slate-200 pt-8">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
+                      Audits de site
+                    </p>
+
+                    {websiteAudits.length >
+                    0 ? (
+                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                        {
+                          websiteAudits.length
+                        }{" "}
+                        {websiteAudits.length >
+                        1
+                          ? "audits"
+                          : "audit"}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Historique des
+                    analyses du site
+                    internet de
+                    l’entreprise.
+                  </p>
+                </div>
+
+                <Link
+                  href={auditUrl}
+                  className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+                >
+                  + Nouvel audit
+                </Link>
+              </div>
+
+              {latestAudit ? (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <p className="text-sm font-semibold text-slate-900">
+                          Dernier audit
+                        </p>
+
+                        <span className="text-xs text-slate-400">
+                          {formatDateTime(
+                            latestAudit.created_at
+                          )}
+                        </span>
+                      </div>
+
+                      <a
+                        href={
+                          latestAudit.website_url
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 block truncate text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+                      >
+                        {
+                          latestAudit.website_url
+                        }
+                      </a>
+
+                      <p className="mt-2 text-xs text-slate-400">
+                        {
+                          latestAudit.pages_analyzed
+                        }{" "}
+                        {latestAudit.pages_analyzed >
+                        1
+                          ? "pages analysées"
+                          : "page analysée"}{" "}
+                        · Scoring{" "}
+                        {
+                          latestAudit.scoring_version
+                        }
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Score global
+                        </p>
+
+                        <p className="mt-1 text-3xl font-bold text-slate-900">
+                          {
+                            latestAudit.global_score
+                          }
+                          <span className="ml-1 text-sm font-medium text-slate-400">
+                            / 100
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                    <MiniScore
+                      label="Positionnement"
+                      score={
+                        latestAudit.positioning_score
+                      }
+                    />
+
+                    <MiniScore
+                      label="Conversion"
+                      score={
+                        latestAudit.conversion_score
+                      }
+                    />
+
+                    <MiniScore
+                      label="SEO"
+                      score={
+                        latestAudit.seo_score
+                      }
+                    />
+
+                    <MiniScore
+                      label="SEO local"
+                      score={
+                        latestAudit.local_seo_score
+                      }
+                    />
+
+                    <MiniScore
+                      label="GEO / IA"
+                      score={
+                        latestAudit.geo_score
+                      }
+                    />
+                  </div>
+
+                  {websiteAudits.length >
+                  1 ? (
+                    <p className="mt-4 text-xs text-slate-400">
+                      +
+                      {websiteAudits.length -
+                        1}{" "}
+                      audit
+                      {websiteAudits.length -
+                        1 >
+                      1
+                        ? "s"
+                        : ""}{" "}
+                      précédent
+                      {websiteAudits.length -
+                        1 >
+                      1
+                        ? "s"
+                        : ""}{" "}
+                      enregistré
+                      {websiteAudits.length -
+                        1 >
+                      1
+                        ? "s"
+                        : ""}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-center">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Aucun audit
+                    enregistré
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    Lancez le premier
+                    audit du site de
+                    cette entreprise.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -441,6 +646,29 @@ function InfoBlock({
           {value}
         </p>
       )}
+    </div>
+  );
+}
+
+function MiniScore({
+  label,
+  score,
+}: {
+  label: string;
+  score: number;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-1 text-lg font-bold text-slate-800">
+        {score}
+        <span className="ml-1 text-xs font-medium text-slate-400">
+          /100
+        </span>
+      </p>
     </div>
   );
 }
