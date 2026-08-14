@@ -748,181 +748,195 @@ export default async function CalendarPage({
         />
 
         <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_300px]">
-          <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                    Google Calendar
-                  </p>
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-white via-blue-50/20 to-cyan-50/40 shadow-sm">
+            <div className="border-b border-blue-100 bg-white/70 p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                        <CalendarIcon />
+                      </span>
 
-                  <span
-                    className={[
-                      "rounded-full px-3 py-1 text-xs font-semibold",
-                      calendar.connected
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800",
-                    ].join(
-                      " "
-                    )}
-                  >
-                    {calendar.connected
-                      ? "Connecté"
-                      : "Non connecté"}
-                  </span>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                        Google Calendar
+                      </p>
+                    </div>
+
+                    <span
+                      className={[
+                        "rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset",
+                        calendar.connected
+                          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                          : "bg-amber-50 text-amber-700 ring-amber-200",
+                      ].join(
+                        " "
+                      )}
+                    >
+                      {calendar.connected
+                        ? "Connecté"
+                        : "Non connecté"}
+                    </span>
+                  </div>
+
+                  <h2 className="mt-3 text-xl font-bold text-slate-950">
+                    {title}
+                  </h2>
                 </div>
 
-                <h2 className="mt-2 text-xl font-bold text-slate-950">
-                  {title}
-                </h2>
-              </div>
+                <div className="flex rounded-xl border border-blue-100 bg-blue-50/70 p-1">
+                  <ViewLink
+                    view="week"
+                    currentView={
+                      view
+                    }
+                    date={
+                      referenceDate
+                    }
+                    label="Semaine"
+                  />
 
-              <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-                <ViewLink
-                  view="week"
-                  currentView={
-                    view
-                  }
-                  date={
-                    referenceDate
-                  }
-                  label="Semaine"
-                />
+                  <ViewLink
+                    view="month"
+                    currentView={
+                      view
+                    }
+                    date={
+                      referenceDate
+                    }
+                    label="Mois"
+                  />
 
-                <ViewLink
-                  view="month"
-                  currentView={
-                    view
-                  }
-                  date={
-                    referenceDate
-                  }
-                  label="Mois"
-                />
-
-                <ViewLink
-                  view="agenda"
-                  currentView={
-                    view
-                  }
-                  date={
-                    referenceDate
-                  }
-                  label="Agenda"
-                />
+                  <ViewLink
+                    view="agenda"
+                    currentView={
+                      view
+                    }
+                    date={
+                      referenceDate
+                    }
+                    label="Agenda"
+                  />
+                </div>
               </div>
             </div>
 
-            {calendar.connected ? (
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-y border-slate-100 py-4">
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={buildCalendarHref(
-                      view,
-                      previousDate
-                    )}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    ←
-                  </Link>
+            <div className="p-6">
+              {calendar.connected ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/60 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={buildCalendarHref(
+                        view,
+                        previousDate
+                      )}
+                      className="rounded-xl border border-cyan-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50"
+                    >
+                      ←
+                    </Link>
 
-                  <Link
-                    href={buildCalendarHref(
-                      view,
-                      today
-                    )}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    Aujourd’hui
-                  </Link>
+                    <Link
+                      href={buildCalendarHref(
+                        view,
+                        today
+                      )}
+                      className="rounded-xl border border-cyan-200 bg-white px-4 py-2 text-sm font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-50"
+                    >
+                      Aujourd’hui
+                    </Link>
 
-                  <Link
-                    href={buildCalendarHref(
-                      view,
-                      nextDate
-                    )}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    →
-                  </Link>
+                    <Link
+                      href={buildCalendarHref(
+                        view,
+                        nextDate
+                      )}
+                      className="rounded-xl border border-cyan-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50"
+                    >
+                      →
+                    </Link>
+                  </div>
+
+                  <span className="rounded-full border border-cyan-200 bg-white px-3 py-1.5 text-sm font-semibold text-cyan-700 shadow-sm">
+                    {events.length}{" "}
+                    événement
+                    {events.length >
+                    1
+                      ? "s"
+                      : ""}
+                  </span>
                 </div>
+              ) : null}
 
-                <p className="text-sm font-semibold text-slate-500">
-                  {events.length}{" "}
-                  événement
-                  {events.length >
-                  1
-                    ? "s"
-                    : ""}
-                </p>
-              </div>
-            ) : null}
+              {!calendar.connected ? (
+                <div className="mt-2 rounded-2xl border border-dashed border-blue-200 bg-gradient-to-br from-blue-50 via-white to-cyan-50 px-6 py-16 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                    <CalendarIcon />
+                  </div>
 
-            {!calendar.connected ? (
-              <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-                  <CalendarIcon />
-                </div>
+                  <h3 className="mt-5 text-lg font-bold text-slate-950">
+                    Google Calendar n’est pas encore connecté
+                  </h3>
 
-                <h3 className="mt-5 text-lg font-bold text-slate-950">
-                  Google Calendar n’est pas encore connecté
-                </h3>
-
-                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                  Autorise LBMedia
-                  Office à lire ton
-                  agenda Google.
-                </p>
-
-                <a
-                  href="/api/google-calendar/connect"
-                  className="mt-6 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-                >
-                  Connecter Google Calendar
-                </a>
-
-                {calendar.message ? (
-                  <p className="mt-4 text-xs text-red-600">
-                    {
-                      calendar.message
-                    }
+                  <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
+                    Autorise LBMedia
+                    Office à lire ton
+                    agenda Google.
                   </p>
-                ) : null}
-              </div>
-            ) : view ===
-              "week" ? (
-              <WeekView
-                referenceDate={
-                  referenceDate
-                }
-                events={
-                  events
-                }
-              />
-            ) : view ===
-              "month" ? (
-              <MonthView
-                referenceDate={
-                  referenceDate
-                }
-                events={
-                  events
-                }
-              />
-            ) : (
-              <AgendaView
-                events={
-                  events
-                }
-              />
-            )}
+
+                  <a
+                    href="/api/google-calendar/connect"
+                    className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                  >
+                    Connecter Google Calendar
+                  </a>
+
+                  {calendar.message ? (
+                    <p className="mt-4 text-xs text-red-600">
+                      {
+                        calendar.message
+                      }
+                    </p>
+                  ) : null}
+                </div>
+              ) : view ===
+                "week" ? (
+                <WeekView
+                  referenceDate={
+                    referenceDate
+                  }
+                  events={
+                    events
+                  }
+                />
+              ) : view ===
+                "month" ? (
+                <MonthView
+                  referenceDate={
+                    referenceDate
+                  }
+                  events={
+                    events
+                  }
+                />
+              ) : (
+                <AgendaView
+                  events={
+                    events
+                  }
+                />
+              )}
+            </div>
           </div>
 
           <aside className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Aujourd’hui
-              </p>
+            <div className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-cyan-500" />
+
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+                  Aujourd’hui
+                </p>
+              </div>
 
               <h2 className="mt-2 text-lg font-bold text-slate-950">
                 Rendez-vous
@@ -931,7 +945,7 @@ export default async function CalendarPage({
               {!calendar.connected ||
               todayEvents.length ===
                 0 ? (
-                <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+                <div className="mt-5 rounded-xl border border-dashed border-cyan-200 bg-white/80 px-4 py-8 text-center">
                   <p className="text-sm font-semibold text-slate-700">
                     Aucun rendez-vous
                   </p>
@@ -960,16 +974,20 @@ export default async function CalendarPage({
               )}
             </div>
 
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                Synchronisation
-              </p>
+            <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-indigo-50 to-white p-6 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
 
-              <h2 className="mt-2 text-lg font-bold text-blue-950">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-700">
+                  Synchronisation
+                </p>
+              </div>
+
+              <h2 className="mt-2 text-lg font-bold text-slate-950">
                 Google reste la référence
               </h2>
 
-              <p className="mt-2 text-sm leading-6 text-blue-800">
+              <p className="mt-2 text-sm leading-6 text-slate-600">
                 LBMedia Office
                 affiche les
                 événements de Google
@@ -1010,8 +1028,8 @@ function ViewLink({
       className={[
         "rounded-lg px-4 py-2 text-sm font-semibold transition",
         active
-          ? "bg-white text-blue-700 shadow-sm"
-          : "text-slate-500 hover:text-slate-950",
+          ? "bg-white text-blue-700 shadow-sm ring-1 ring-inset ring-blue-100"
+          : "text-slate-500 hover:bg-white/70 hover:text-slate-950",
       ].join(" ")}
     >
       {label}
@@ -1064,7 +1082,7 @@ function WeekView({
     );
 
   return (
-    <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+    <div className="mt-6 overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
       <div className="grid grid-cols-1 divide-y divide-slate-200 lg:grid-cols-7 lg:divide-x lg:divide-y-0">
         {days.map(
           (day) => {
@@ -1088,14 +1106,19 @@ function WeekView({
             return (
               <div
                 key={key}
-                className="min-h-72 bg-white"
+                className={[
+                  "min-h-72",
+                  isToday
+                    ? "bg-cyan-50/30"
+                    : "bg-white",
+                ].join(" ")}
               >
                 <div
                   className={[
                     "border-b border-slate-100 px-3 py-3 text-center",
                     isToday
-                      ? "bg-blue-50"
-                      : "bg-slate-50",
+                      ? "bg-gradient-to-br from-cyan-50 to-blue-50"
+                      : "bg-slate-50/80",
                   ].join(
                     " "
                   )}
@@ -1104,7 +1127,7 @@ function WeekView({
                     className={[
                       "text-xs font-bold uppercase tracking-wide",
                       isToday
-                        ? "text-blue-700"
+                        ? "text-cyan-700"
                         : "text-slate-500",
                     ].join(
                       " "
@@ -1119,7 +1142,7 @@ function WeekView({
                     className={[
                       "mt-1 text-xl font-bold",
                       isToday
-                        ? "text-blue-700"
+                        ? "text-cyan-700"
                         : "text-slate-950",
                     ].join(
                       " "
@@ -1132,7 +1155,7 @@ function WeekView({
                 <div className="space-y-2 p-2">
                   {dayEvents.length ===
                   0 ? (
-                    <p className="px-2 py-5 text-center text-xs text-slate-400">
+                    <p className="px-2 py-5 text-center text-xs text-slate-300">
                       —
                     </p>
                   ) : (
@@ -1204,8 +1227,8 @@ function MonthView({
     );
 
   return (
-    <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
-      <div className="hidden grid-cols-7 border-b border-slate-200 bg-slate-50 lg:grid">
+    <div className="mt-6 overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
+      <div className="hidden grid-cols-7 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-cyan-50 lg:grid">
         {[
           "Lun",
           "Mar",
@@ -1220,7 +1243,7 @@ function MonthView({
               key={
                 label
               }
-              className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500"
+              className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-blue-700"
             >
               {label}
             </div>
@@ -1259,9 +1282,11 @@ function MonthView({
                 key={key}
                 className={[
                   "min-h-32 border-b border-r border-slate-100 p-2",
-                  currentMonth
-                    ? "bg-white"
-                    : "bg-slate-50",
+                  isToday
+                    ? "bg-cyan-50/50"
+                    : currentMonth
+                      ? "bg-white"
+                      : "bg-slate-50/70",
                 ].join(
                   " "
                 )}
@@ -1277,7 +1302,7 @@ function MonthView({
                     className={[
                       "flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold",
                       isToday
-                        ? "bg-blue-700 text-white"
+                        ? "bg-cyan-500 text-white shadow-sm"
                         : currentMonth
                           ? "text-slate-900"
                           : "text-slate-400",
@@ -1312,7 +1337,7 @@ function MonthView({
 
                   {dayEvents.length >
                   3 ? (
-                    <p className="px-1 text-[11px] font-semibold text-blue-700">
+                    <p className="px-1 text-[11px] font-semibold text-violet-700">
                       +
                       {dayEvents.length -
                         3}{" "}
@@ -1343,7 +1368,7 @@ function AgendaView({
     events.length === 0
   ) {
     return (
-      <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center">
+      <div className="mt-6 rounded-2xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50 via-white to-blue-50 px-6 py-16 text-center">
         <p className="font-semibold text-slate-900">
           Aucun événement à venir
         </p>
@@ -1390,7 +1415,7 @@ function AgendaView({
                   ? "noreferrer"
                   : undefined
               }
-              className="block rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-blue-200 hover:shadow-sm"
+              className="block rounded-2xl border border-blue-100 bg-gradient-to-r from-white to-blue-50/40 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -1416,7 +1441,7 @@ function AgendaView({
                   ) : null}
                 </div>
 
-                <p className="text-sm font-bold text-slate-950">
+                <p className="rounded-lg bg-cyan-50 px-3 py-2 text-sm font-bold text-cyan-700">
                   {formatEventTime(
                     event
                   )}
@@ -1460,7 +1485,7 @@ function EventWeekCard({
         }
         target="_blank"
         rel="noreferrer"
-        className="block rounded-lg border border-blue-100 bg-blue-50 p-2 transition hover:border-blue-300"
+        className="block rounded-lg border border-blue-100 bg-gradient-to-br from-blue-50 to-cyan-50 p-2 transition hover:border-cyan-300 hover:shadow-sm"
       >
         {content}
       </a>
@@ -1468,7 +1493,7 @@ function EventWeekCard({
   }
 
   return (
-    <div className="rounded-lg border border-blue-100 bg-blue-50 p-2">
+    <div className="rounded-lg border border-blue-100 bg-gradient-to-br from-blue-50 to-cyan-50 p-2">
       {content}
     </div>
   );
@@ -1513,7 +1538,7 @@ function EventMonthCard({
         }
         target="_blank"
         rel="noreferrer"
-        className="block rounded-md bg-blue-50 px-2 py-1 transition hover:bg-blue-100"
+        className="block rounded-md border border-blue-100 bg-blue-50 px-2 py-1 transition hover:border-cyan-200 hover:bg-cyan-50"
       >
         {content}
       </a>
@@ -1521,7 +1546,7 @@ function EventMonthCard({
   }
 
   return (
-    <div className="rounded-md bg-blue-50 px-2 py-1">
+    <div className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1">
       {content}
     </div>
   );
@@ -1548,14 +1573,14 @@ function EventMiniCard({
           ? "noreferrer"
           : undefined
       }
-      className="block rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 transition hover:border-blue-300"
+      className="block rounded-xl border border-cyan-100 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md"
     >
       <p className="text-sm font-semibold text-slate-950">
         {event.summary ??
           "Événement"}
       </p>
 
-      <p className="mt-1 text-xs font-semibold text-blue-700">
+      <p className="mt-1 text-xs font-semibold text-cyan-700">
         {formatEventTime(
           event
         )}
@@ -1571,7 +1596,7 @@ function CalendarIcon() {
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-7 w-7"
+      className="h-6 w-6"
       aria-hidden="true"
     >
       <rect
