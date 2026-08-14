@@ -5,6 +5,7 @@ import PageBanner from "@/components/dashboard/PageBanner";
 import CompanyContacts from "@/components/companies/CompanyContacts";
 import CompanyOpportunities from "@/components/companies/CompanyOpportunities";
 import CompanyLegalSearch from "@/components/companies/CompanyLegalSearch";
+import CompanyWebEnrichment from "@/components/companies/CompanyWebEnrichment";
 import DeleteCompanyButton from "@/components/companies/DeleteCompanyButton";
 import PipelineBadge from "@/components/ui/PipelineBadge";
 
@@ -225,6 +226,14 @@ export default async function CompanyPage({
                 company.postal_code
               }
             />
+
+            <div className="mt-6">
+              <CompanyWebEnrichment
+                companyId={
+                  company.id
+                }
+              />
+            </div>
           </div>
 
           {hasAdministrativeInfo ? (
