@@ -23,18 +23,71 @@ type PageData = {
   structuredData: boolean;
 };
 
-type AuditResult = {
+type AuditScores = {
   globalScore: number;
   positioningScore: number;
   conversionScore: number;
   seoScore: number;
   localSeoScore: number;
   geoScore: number;
+};
+
+type QualitativeAudit = {
   summary: string;
   strengths: string[];
   weaknesses: string[];
   limitations: string[];
   priorities: string[];
+};
+
+type AuditResult =
+  AuditScores &
+  QualitativeAudit;
+
+type SiteSignals = {
+  pagesCount: number;
+
+  pagesWithTitle: number;
+  pagesWithMetaDescription: number;
+  pagesWithCanonical: number;
+  pagesWithViewport: number;
+  pagesWithOpenGraph: number;
+  pagesWithStructuredData: number;
+  pagesWithH1: number;
+  pagesWithH2: number;
+
+  totalTextLength: number;
+  averageTextLength: number;
+
+  hasContactPage: boolean;
+  hasAboutPage: boolean;
+  hasServicesPage: boolean;
+  hasPricingPage: boolean;
+  hasBlogOrNews: boolean;
+
+  hasPhone: boolean;
+  hasEmail: boolean;
+  hasPostalCode: boolean;
+  hasAddressSignal: boolean;
+  hasLocationSignal: boolean;
+  hasServiceAreaSignal: boolean;
+
+  hasPrimaryCTA: boolean;
+  hasSecondaryCTA: boolean;
+  hasQuoteCTA: boolean;
+  hasContactCTA: boolean;
+
+  hasPricingSignal: boolean;
+  hasExperienceSignal: boolean;
+  hasExpertiseSignal: boolean;
+  hasClientSignal: boolean;
+  hasTestimonialSignal: boolean;
+  hasCaseStudySignal: boolean;
+  hasFaqSignal: boolean;
+
+  hasClearServiceVocabulary: boolean;
+  serviceVocabularyCount: number;
+  geographicVocabularyCount: number;
 };
 
 function normalizeUrl(value: string) {
@@ -59,8 +112,12 @@ function decodeHtmlEntities(value: string) {
     .replace(/&apos;/gi, "'")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
-    .replace(/&#(\d+);/g, (_, code) =>
-      String.fromCharCode(Number(code))
+    .replace(
+      /&#(\d+);/g,
+      (_, code) =>
+        String.fromCharCode(
+          Number(code)
+        )
     );
 }
 
@@ -79,7 +136,10 @@ function cleanHtml(html: string) {
         /<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi,
         " "
       )
-      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(
+        /<!--[\s\S]*?-->/g,
+        " "
+      )
       .replace(/<[^>]+>/g, " ")
   )
     .replace(/\s+/g, " ")
@@ -91,16 +151,24 @@ function extractTitle(html: string) {
     /<title[^>]*>([\s\S]*?)<\/title>/i
   );
 
-  return match ? cleanHtml(match[1]) : null;
+  return match
+    ? cleanHtml(match[1])
+    : null;
 }
 
-function extractMetaDescription(html: string) {
+function extractMetaDescription(
+  html: string
+) {
   const metaTags =
-    html.match(/<meta\b[^>]*>/gi) ?? [];
+    html.match(
+      /<meta\b[^>]*>/gi
+    ) ?? [];
 
   for (const tag of metaTags) {
     if (
-      /name\s*=\s*["']description["']/i.test(tag)
+      /name\s*=\s*["']description["']/i.test(
+        tag
+      )
     ) {
       const content = tag.match(
         /content\s*=\s*["']([^"']*)["']/i
@@ -125,7 +193,9 @@ function extractHeadings(html: string) {
   );
 
   for (const match of matches) {
-    const text = cleanHtml(match[2]);
+    const text = cleanHtml(
+      match[2]
+    );
 
     if (text) {
       headings.push(
@@ -142,7 +212,9 @@ function extractHeadings(html: string) {
 }
 
 function hasJsonLd(html: string) {
-  return /application\/ld\+json/i.test(html);
+  return /application\/ld\+json/i.test(
+    html
+  );
 }
 
 function hasCanonical(html: string) {
@@ -158,10 +230,14 @@ function hasViewport(html: string) {
 }
 
 function hasOpenGraph(html: string) {
-  return /property\s*=\s*["']og:/i.test(html);
+  return /property\s*=\s*["']og:/i.test(
+    html
+  );
 }
 
-function normalizeComparableHost(hostname: string) {
+function normalizeComparableHost(
+  hostname: string
+) {
   return hostname
     .toLowerCase()
     .replace(/^www\./, "");
@@ -172,8 +248,12 @@ function isSameWebsite(
   second: URL
 ) {
   return (
-    normalizeComparableHost(first.hostname) ===
-    normalizeComparableHost(second.hostname)
+    normalizeComparableHost(
+      first.hostname
+    ) ===
+    normalizeComparableHost(
+      second.hostname
+    )
   );
 }
 
@@ -188,15 +268,19 @@ function cleanDiscoveredUrl(
     );
 
     if (
-      !["http:", "https:"].includes(
-        candidate.protocol
-      )
+      ![
+        "http:",
+        "https:",
+      ].includes(candidate.protocol)
     ) {
       return null;
     }
 
     if (
-      !isSameWebsite(candidate, baseUrl)
+      !isSameWebsite(
+        candidate,
+        baseUrl
+      )
     ) {
       return null;
     }
@@ -212,7 +296,9 @@ function cleanDiscoveredUrl(
       "fbclid",
       "gclid",
     ]) {
-      candidate.searchParams.delete(key);
+      candidate.searchParams.delete(
+        key
+      );
     }
 
     const pathname =
@@ -232,8 +318,11 @@ function cleanDiscoveredUrl(
   }
 }
 
-function scoreCandidate(url: string) {
-  const lower = url.toLowerCase();
+function scoreCandidate(
+  url: string
+) {
+  const lower =
+    url.toLowerCase();
 
   let score = 0;
 
@@ -273,26 +362,41 @@ function scoreCandidate(url: string) {
     "login",
   ];
 
-  for (const keyword of highPriority) {
-    if (lower.includes(keyword)) {
+  for (
+    const keyword of
+    highPriority
+  ) {
+    if (
+      lower.includes(keyword)
+    ) {
       score += 20;
     }
   }
 
-  for (const keyword of mediumPriority) {
-    if (lower.includes(keyword)) {
+  for (
+    const keyword of
+    mediumPriority
+  ) {
+    if (
+      lower.includes(keyword)
+    ) {
       score += 8;
     }
   }
 
-  for (const keyword of lowPriority) {
-    if (lower.includes(keyword)) {
+  for (
+    const keyword of
+    lowPriority
+  ) {
+    if (
+      lower.includes(keyword)
+    ) {
       score -= 30;
     }
   }
 
-  const depth = new URL(url).pathname
-    .split("/")
+  const depth = new URL(url)
+    .pathname.split("/")
     .filter(Boolean).length;
 
   score -= depth * 2;
@@ -304,17 +408,20 @@ function discoverInternalLinks(
   html: string,
   baseUrl: URL
 ) {
-  const urls = new Set<string>();
+  const urls =
+    new Set<string>();
 
-  const matches = html.matchAll(
-    /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi
-  );
+  const matches =
+    html.matchAll(
+      /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi
+    );
 
   for (const match of matches) {
-    const url = cleanDiscoveredUrl(
-      match[1],
-      baseUrl
-    );
+    const url =
+      cleanDiscoveredUrl(
+        match[1],
+        baseUrl
+      );
 
     if (url) {
       urls.add(url);
@@ -322,24 +429,40 @@ function discoverInternalLinks(
   }
 
   return [...urls].sort(
-    (a, b) =>
-      scoreCandidate(b) -
-      scoreCandidate(a)
+    (a, b) => {
+      const scoreDifference =
+        scoreCandidate(b) -
+        scoreCandidate(a);
+
+      if (
+        scoreDifference !== 0
+      ) {
+        return scoreDifference;
+      }
+
+      return a.localeCompare(b);
+    }
   );
 }
 
-async function fetchHtml(url: string) {
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; LBMediaOffice/2.1; WebsiteAudit)",
-      Accept:
-        "text/html,application/xhtml+xml",
-    },
-    redirect: "follow",
-    signal: AbortSignal.timeout(12000),
-  });
+async function fetchHtml(
+  url: string
+) {
+  const response =
+    await fetch(url, {
+      method: "GET",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; LBMediaOffice/2.1; WebsiteAudit)",
+        Accept:
+          "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+      signal:
+        AbortSignal.timeout(
+          12000
+        ),
+    });
 
   if (!response.ok) {
     throw new Error(
@@ -353,18 +476,22 @@ async function fetchHtml(url: string) {
     ) ?? "";
 
   if (
-    !contentType.includes("text/html")
+    !contentType.includes(
+      "text/html"
+    )
   ) {
     throw new Error(
       "Contenu non HTML"
     );
   }
 
-  const html = await response.text();
+  const html =
+    await response.text();
 
   return {
     html,
-    finalUrl: response.url || url,
+    finalUrl:
+      response.url || url,
   };
 }
 
@@ -374,37 +501,938 @@ function buildPageData(
 ): PageData {
   return {
     url,
-    title: extractTitle(html),
+    title:
+      extractTitle(html),
     metaDescription:
-      extractMetaDescription(html),
-    headings: extractHeadings(html),
+      extractMetaDescription(
+        html
+      ),
+    headings:
+      extractHeadings(html),
     text: cleanHtml(html).slice(
       0,
       MAX_TEXT_PER_PAGE
     ),
-    canonical: hasCanonical(html),
-    viewport: hasViewport(html),
-    openGraph: hasOpenGraph(html),
-    structuredData: hasJsonLd(html),
+    canonical:
+      hasCanonical(html),
+    viewport:
+      hasViewport(html),
+    openGraph:
+      hasOpenGraph(html),
+    structuredData:
+      hasJsonLd(html),
   };
 }
 
-function numberBetween0And100(
-  value: unknown
+function includesAny(
+  text: string,
+  terms: string[]
 ) {
-  const number = Number(value);
+  const normalized =
+    text.toLowerCase();
 
-  if (!Number.isFinite(number)) {
-    return 0;
-  }
+  return terms.some((term) =>
+    normalized.includes(
+      term.toLowerCase()
+    )
+  );
+}
 
+function countTerms(
+  text: string,
+  terms: string[]
+) {
+  const normalized =
+    text.toLowerCase();
+
+  return terms.filter((term) =>
+    normalized.includes(
+      term.toLowerCase()
+    )
+  ).length;
+}
+
+function pageUrlIncludes(
+  pages: PageData[],
+  terms: string[]
+) {
+  return pages.some((page) =>
+    includesAny(
+      page.url,
+      terms
+    )
+  );
+}
+
+function buildSiteSignals(
+  pages: PageData[]
+): SiteSignals {
+  const combinedText =
+    pages
+      .map(
+        (page) =>
+          `${page.title ?? ""} ${
+            page.metaDescription ??
+            ""
+          } ${page.headings.join(
+            " "
+          )} ${page.text}`
+      )
+      .join(" ")
+      .toLowerCase();
+
+  const pagesWithTitle =
+    pages.filter(
+      (page) =>
+        Boolean(
+          page.title?.trim()
+        )
+    ).length;
+
+  const pagesWithMetaDescription =
+    pages.filter(
+      (page) =>
+        Boolean(
+          page.metaDescription?.trim()
+        )
+    ).length;
+
+  const pagesWithCanonical =
+    pages.filter(
+      (page) =>
+        page.canonical
+    ).length;
+
+  const pagesWithViewport =
+    pages.filter(
+      (page) =>
+        page.viewport
+    ).length;
+
+  const pagesWithOpenGraph =
+    pages.filter(
+      (page) =>
+        page.openGraph
+    ).length;
+
+  const pagesWithStructuredData =
+    pages.filter(
+      (page) =>
+        page.structuredData
+    ).length;
+
+  const pagesWithH1 =
+    pages.filter((page) =>
+      page.headings.some(
+        (heading) =>
+          heading.startsWith(
+            "H1 :"
+          )
+      )
+    ).length;
+
+  const pagesWithH2 =
+    pages.filter((page) =>
+      page.headings.some(
+        (heading) =>
+          heading.startsWith(
+            "H2 :"
+          )
+      )
+    ).length;
+
+  const totalTextLength =
+    pages.reduce(
+      (total, page) =>
+        total +
+        page.text.length,
+      0
+    );
+
+  const averageTextLength =
+    pages.length > 0
+      ? Math.round(
+          totalTextLength /
+            pages.length
+        )
+      : 0;
+
+  const serviceTerms = [
+    "service",
+    "services",
+    "prestation",
+    "prestations",
+    "solution",
+    "solutions",
+    "création",
+    "creation",
+    "accompagnement",
+    "conseil",
+    "audit",
+    "site internet",
+    "sites internet",
+    "référencement",
+    "referencement",
+    "seo",
+    "communication",
+    "publicité",
+    "publicite",
+  ];
+
+  const geographicTerms = [
+    "lot",
+    "occitanie",
+    "local",
+    "locale",
+    "région",
+    "region",
+    "ville",
+    "commune",
+    "département",
+    "departement",
+    "zone",
+    "secteur",
+    "proximité",
+    "proximite",
+    "france",
+  ];
+
+  const primaryCtaTerms = [
+    "contactez",
+    "contact",
+    "demandez",
+    "demander",
+    "découvrir",
+    "decouvrir",
+    "en savoir plus",
+    "prendre rendez-vous",
+    "prendre rendez vous",
+    "réserver",
+    "reserver",
+    "commencer",
+  ];
+
+  const secondaryCtaTerms = [
+    "voir nos",
+    "voir les",
+    "nos services",
+    "nos offres",
+    "nos tarifs",
+    "découvrez",
+    "decouvrez",
+    "lire",
+    "consulter",
+  ];
+
+  const quoteTerms = [
+    "devis",
+    "estimation",
+    "audit gratuit",
+    "demande de tarif",
+    "demandez un tarif",
+  ];
+
+  const contactTerms = [
+    "téléphone",
+    "telephone",
+    "appelez",
+    "appeler",
+    "contact",
+    "e-mail",
+    "email",
+    "mail",
+  ];
+
+  const expertiseTerms = [
+    "expertise",
+    "expert",
+    "spécialiste",
+    "specialiste",
+    "expérience",
+    "experience",
+    "savoir-faire",
+    "conseil",
+  ];
+
+  const clientTerms = [
+    "client",
+    "clients",
+    "référence",
+    "reference",
+    "références",
+    "references",
+    "ils nous font confiance",
+    "partenaire",
+  ];
+
+  const testimonialTerms = [
+    "témoignage",
+    "temoignage",
+    "avis client",
+    "avis clients",
+    "ce que disent nos clients",
+  ];
+
+  const caseStudyTerms = [
+    "étude de cas",
+    "etude de cas",
+    "cas client",
+    "réalisation",
+    "realisation",
+    "portfolio",
+    "projet client",
+  ];
+
+  const faqTerms = [
+    "faq",
+    "questions fréquentes",
+    "questions frequentes",
+    "foire aux questions",
+  ];
+
+  return {
+    pagesCount:
+      pages.length,
+
+    pagesWithTitle,
+    pagesWithMetaDescription,
+    pagesWithCanonical,
+    pagesWithViewport,
+    pagesWithOpenGraph,
+    pagesWithStructuredData,
+    pagesWithH1,
+    pagesWithH2,
+
+    totalTextLength,
+    averageTextLength,
+
+    hasContactPage:
+      pageUrlIncludes(
+        pages,
+        ["contact"]
+      ),
+
+    hasAboutPage:
+      pageUrlIncludes(
+        pages,
+        [
+          "agence",
+          "a-propos",
+          "about",
+          "qui-sommes-nous",
+        ]
+      ),
+
+    hasServicesPage:
+      pageUrlIncludes(
+        pages,
+        [
+          "service",
+          "prestation",
+          "creation",
+          "seo",
+          "referencement",
+        ]
+      ),
+
+    hasPricingPage:
+      pageUrlIncludes(
+        pages,
+        [
+          "tarif",
+          "prix",
+          "pricing",
+        ]
+      ),
+
+    hasBlogOrNews:
+      pageUrlIncludes(
+        pages,
+        [
+          "actualite",
+          "article",
+          "blog",
+          "news",
+        ]
+      ),
+
+    hasPhone:
+      /(?:\+33|0)[1-9](?:[\s.\-]?\d{2}){4}/.test(
+        combinedText
+      ),
+
+    hasEmail:
+      /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(
+        combinedText
+      ),
+
+    hasPostalCode:
+      /\b(?:0[1-9]|[1-8]\d|9[0-5])\d{3}\b/.test(
+        combinedText
+      ),
+
+    hasAddressSignal:
+      includesAny(
+        combinedText,
+        [
+          "rue ",
+          "avenue ",
+          "av. ",
+          "boulevard ",
+          "route ",
+          "place ",
+          "chemin ",
+          "impasse ",
+          "allée ",
+          "allee ",
+        ]
+      ),
+
+    hasLocationSignal:
+      countTerms(
+        combinedText,
+        geographicTerms
+      ) >= 2,
+
+    hasServiceAreaSignal:
+      includesAny(
+        combinedText,
+        [
+          "zone desservie",
+          "zones desservies",
+          "zone d'intervention",
+          "zone d’intervention",
+          "secteur d'intervention",
+          "secteur d’intervention",
+          "dans le lot",
+          "lot et",
+          "partout en france",
+          "toute la france",
+        ]
+      ),
+
+    hasPrimaryCTA:
+      includesAny(
+        combinedText,
+        primaryCtaTerms
+      ),
+
+    hasSecondaryCTA:
+      includesAny(
+        combinedText,
+        secondaryCtaTerms
+      ),
+
+    hasQuoteCTA:
+      includesAny(
+        combinedText,
+        quoteTerms
+      ),
+
+    hasContactCTA:
+      includesAny(
+        combinedText,
+        contactTerms
+      ),
+
+    hasPricingSignal:
+      includesAny(
+        combinedText,
+        [
+          "tarif",
+          "tarifs",
+          "prix",
+          "à partir de",
+          "a partir de",
+          "€",
+        ]
+      ),
+
+    hasExperienceSignal:
+      includesAny(
+        combinedText,
+        [
+          "ans d'expérience",
+          "ans d’expérience",
+          "années d'expérience",
+          "années d’expérience",
+          "depuis ",
+        ]
+      ),
+
+    hasExpertiseSignal:
+      includesAny(
+        combinedText,
+        expertiseTerms
+      ),
+
+    hasClientSignal:
+      includesAny(
+        combinedText,
+        clientTerms
+      ),
+
+    hasTestimonialSignal:
+      includesAny(
+        combinedText,
+        testimonialTerms
+      ),
+
+    hasCaseStudySignal:
+      includesAny(
+        combinedText,
+        caseStudyTerms
+      ),
+
+    hasFaqSignal:
+      includesAny(
+        combinedText,
+        faqTerms
+      ),
+
+    hasClearServiceVocabulary:
+      countTerms(
+        combinedText,
+        serviceTerms
+      ) >= 4,
+
+    serviceVocabularyCount:
+      countTerms(
+        combinedText,
+        serviceTerms
+      ),
+
+    geographicVocabularyCount:
+      countTerms(
+        combinedText,
+        geographicTerms
+      ),
+  };
+}
+
+function clampScore(
+  score: number
+) {
   return Math.max(
     0,
     Math.min(
       100,
-      Math.round(number)
+      Math.round(score)
     )
   );
+}
+
+function ratioScore(
+  value: number,
+  total: number,
+  maximumPoints: number
+) {
+  if (total <= 0) {
+    return 0;
+  }
+
+  return (
+    (value / total) *
+    maximumPoints
+  );
+}
+
+function calculatePositioningScore(
+  signals: SiteSignals
+) {
+  let score = 40;
+
+  if (
+    signals.hasClearServiceVocabulary
+  ) {
+    score += 15;
+  }
+
+  if (
+    signals.serviceVocabularyCount >=
+    7
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.hasServicesPage
+  ) {
+    score += 10;
+  }
+
+  if (
+    signals.hasAboutPage
+  ) {
+    score += 7;
+  }
+
+  if (
+    signals.hasExperienceSignal
+  ) {
+    score += 7;
+  }
+
+  if (
+    signals.hasExpertiseSignal
+  ) {
+    score += 6;
+  }
+
+  if (
+    signals.hasLocationSignal
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.averageTextLength >=
+    1500
+  ) {
+    score += 5;
+  }
+
+  return clampScore(score);
+}
+
+function calculateConversionScore(
+  signals: SiteSignals
+) {
+  let score = 30;
+
+  if (
+    signals.hasPrimaryCTA
+  ) {
+    score += 12;
+  }
+
+  if (
+    signals.hasSecondaryCTA
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.hasQuoteCTA
+  ) {
+    score += 10;
+  }
+
+  if (
+    signals.hasContactCTA
+  ) {
+    score += 8;
+  }
+
+  if (
+    signals.hasContactPage
+  ) {
+    score += 8;
+  }
+
+  if (signals.hasPhone) {
+    score += 6;
+  }
+
+  if (signals.hasEmail) {
+    score += 6;
+  }
+
+  if (
+    signals.hasPricingPage ||
+    signals.hasPricingSignal
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.hasTestimonialSignal
+  ) {
+    score += 5;
+  } else if (
+    signals.hasClientSignal
+  ) {
+    score += 3;
+  }
+
+  if (
+    signals.hasCaseStudySignal
+  ) {
+    score += 5;
+  }
+
+  return clampScore(score);
+}
+
+function calculateSeoScore(
+  signals: SiteSignals
+) {
+  const total =
+    signals.pagesCount;
+
+  let score = 10;
+
+  score += ratioScore(
+    signals.pagesWithTitle,
+    total,
+    15
+  );
+
+  score += ratioScore(
+    signals.pagesWithMetaDescription,
+    total,
+    12
+  );
+
+  score += ratioScore(
+    signals.pagesWithCanonical,
+    total,
+    10
+  );
+
+  score += ratioScore(
+    signals.pagesWithViewport,
+    total,
+    5
+  );
+
+  score += ratioScore(
+    signals.pagesWithH1,
+    total,
+    15
+  );
+
+  score += ratioScore(
+    signals.pagesWithH2,
+    total,
+    8
+  );
+
+  score += ratioScore(
+    signals.pagesWithOpenGraph,
+    total,
+    5
+  );
+
+  score += ratioScore(
+    signals.pagesWithStructuredData,
+    total,
+    5
+  );
+
+  if (
+    signals.averageTextLength >=
+    2500
+  ) {
+    score += 10;
+  } else if (
+    signals.averageTextLength >=
+    1500
+  ) {
+    score += 7;
+  } else if (
+    signals.averageTextLength >=
+    750
+  ) {
+    score += 4;
+  }
+
+  if (
+    signals.hasServicesPage
+  ) {
+    score += 3;
+  }
+
+  if (
+    signals.hasBlogOrNews
+  ) {
+    score += 2;
+  }
+
+  return clampScore(score);
+}
+
+function calculateLocalSeoScore(
+  signals: SiteSignals
+) {
+  let score = 25;
+
+  if (
+    signals.hasLocationSignal
+  ) {
+    score += 15;
+  }
+
+  if (
+    signals.geographicVocabularyCount >=
+    4
+  ) {
+    score += 8;
+  }
+
+  if (
+    signals.hasPostalCode
+  ) {
+    score += 10;
+  }
+
+  if (
+    signals.hasAddressSignal
+  ) {
+    score += 10;
+  }
+
+  if (signals.hasPhone) {
+    score += 7;
+  }
+
+  if (signals.hasEmail) {
+    score += 5;
+  }
+
+  if (
+    signals.hasContactPage
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.hasServiceAreaSignal
+  ) {
+    score += 10;
+  }
+
+  if (
+    signals.pagesWithStructuredData >
+    0
+  ) {
+    score += 5;
+  }
+
+  return clampScore(score);
+}
+
+function calculateGeoScore(
+  signals: SiteSignals
+) {
+  let score = 30;
+
+  if (
+    signals.hasClearServiceVocabulary
+  ) {
+    score += 12;
+  }
+
+  if (
+    signals.hasExpertiseSignal
+  ) {
+    score += 8;
+  }
+
+  if (
+    signals.hasExperienceSignal
+  ) {
+    score += 6;
+  }
+
+  if (
+    signals.hasLocationSignal
+  ) {
+    score += 8;
+  }
+
+  if (
+    signals.hasServicesPage
+  ) {
+    score += 7;
+  }
+
+  if (
+    signals.hasAboutPage
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.hasBlogOrNews
+  ) {
+    score += 6;
+  }
+
+  if (
+    signals.hasFaqSignal
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.pagesWithStructuredData >
+    0
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.averageTextLength >=
+    1500
+  ) {
+    score += 5;
+  }
+
+  if (
+    signals.hasCaseStudySignal
+  ) {
+    score += 3;
+  }
+
+  return clampScore(score);
+}
+
+function calculateScores(
+  signals: SiteSignals
+): AuditScores {
+  const positioningScore =
+    calculatePositioningScore(
+      signals
+    );
+
+  const conversionScore =
+    calculateConversionScore(
+      signals
+    );
+
+  const seoScore =
+    calculateSeoScore(
+      signals
+    );
+
+  const localSeoScore =
+    calculateLocalSeoScore(
+      signals
+    );
+
+  const geoScore =
+    calculateGeoScore(
+      signals
+    );
+
+  const globalScore =
+    clampScore(
+      positioningScore * 0.2 +
+        conversionScore * 0.2 +
+        seoScore * 0.25 +
+        localSeoScore * 0.15 +
+        geoScore * 0.2
+    );
+
+  return {
+    globalScore,
+    positioningScore,
+    conversionScore,
+    seoScore,
+    localSeoScore,
+    geoScore,
+  };
 }
 
 function getStringArray(
@@ -412,15 +1440,17 @@ function getStringArray(
 ) {
   return Array.isArray(value)
     ? value.filter(
-        (item): item is string =>
+        (
+          item
+        ): item is string =>
           typeof item === "string"
       )
     : [];
 }
 
-function validateAudit(
+function validateQualitativeAudit(
   value: unknown
-): AuditResult {
+): QualitativeAudit {
   if (
     !value ||
     typeof value !== "object"
@@ -436,53 +1466,40 @@ function validateAudit(
   >;
 
   return {
-    globalScore:
-      numberBetween0And100(
-        data.globalScore
-      ),
-    positioningScore:
-      numberBetween0And100(
-        data.positioningScore
-      ),
-    conversionScore:
-      numberBetween0And100(
-        data.conversionScore
-      ),
-    seoScore:
-      numberBetween0And100(
-        data.seoScore
-      ),
-    localSeoScore:
-      numberBetween0And100(
-        data.localSeoScore
-      ),
-    geoScore:
-      numberBetween0And100(
-        data.geoScore
-      ),
     summary:
-      typeof data.summary === "string"
+      typeof data.summary ===
+      "string"
         ? data.summary
         : "",
-    strengths: getStringArray(
-      data.strengths
-    ),
-    weaknesses: getStringArray(
-      data.weaknesses
-    ),
-    limitations: getStringArray(
-      data.limitations
-    ),
-    priorities: getStringArray(
-      data.priorities
-    ).slice(0, 3),
+
+    strengths:
+      getStringArray(
+        data.strengths
+      ).slice(0, 6),
+
+    weaknesses:
+      getStringArray(
+        data.weaknesses
+      ).slice(0, 6),
+
+    limitations:
+      getStringArray(
+        data.limitations
+      ).slice(0, 5),
+
+    priorities:
+      getStringArray(
+        data.priorities
+      ).slice(0, 3),
   };
 }
 
 export async function POST(
   request: NextRequest
 ) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (
+    !process.env.OPENAI_API_KEY
+  ) {
     return NextResponse.json(
       {
         success: false,
@@ -500,7 +1517,8 @@ export async function POST(
       await request.json();
 
     const rawUrl =
-      typeof body.url === "string"
+      typeof body.url ===
+      "string"
         ? body.url
         : "";
 
@@ -523,9 +1541,8 @@ export async function POST(
     let requestedParsed: URL;
 
     try {
-      requestedParsed = new URL(
-        requestedUrl
-      );
+      requestedParsed =
+        new URL(requestedUrl);
     } catch {
       return NextResponse.json(
         {
@@ -539,14 +1556,35 @@ export async function POST(
       );
     }
 
+    if (
+      ![
+        "http:",
+        "https:",
+      ].includes(
+        requestedParsed.protocol
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Seules les adresses HTTP et HTTPS sont acceptées.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const homeFetch =
       await fetchHtml(
         requestedParsed.toString()
       );
 
-    const homeUrl = new URL(
-      homeFetch.finalUrl
-    );
+    const homeUrl =
+      new URL(
+        homeFetch.finalUrl
+      );
 
     const pages: PageData[] = [
       buildPageData(
@@ -564,23 +1602,31 @@ export async function POST(
     const candidates =
       discovered.filter(
         (url) =>
-          url !== homeUrl.toString()
+          url !==
+          homeUrl.toString()
       );
 
-    for (const candidate of candidates) {
+    for (
+      const candidate of
+      candidates
+    ) {
       if (
-        pages.length >= MAX_PAGES
+        pages.length >=
+        MAX_PAGES
       ) {
         break;
       }
 
       try {
         const fetched =
-          await fetchHtml(candidate);
+          await fetchHtml(
+            candidate
+          );
 
-        const finalUrl = new URL(
-          fetched.finalUrl
-        );
+        const finalUrl =
+          new URL(
+            fetched.finalUrl
+          );
 
         if (
           !isSameWebsite(
@@ -591,11 +1637,14 @@ export async function POST(
           continue;
         }
 
+        const normalizedFinalUrl =
+          finalUrl.toString();
+
         const alreadyAdded =
           pages.some(
             (page) =>
               page.url ===
-              finalUrl.toString()
+              normalizedFinalUrl
           );
 
         if (alreadyAdded) {
@@ -604,24 +1653,35 @@ export async function POST(
 
         const page =
           buildPageData(
-            finalUrl.toString(),
+            normalizedFinalUrl,
             fetched.html
           );
 
-        if (page.text.length < 100) {
+        if (
+          page.text.length < 100
+        ) {
           continue;
         }
 
         pages.push(page);
       } catch {
-        // Une page inaccessible ne doit pas
-        // bloquer l'ensemble de l'audit.
+        // Une page inaccessible
+        // ne bloque pas l'audit.
       }
     }
 
+    const signals =
+      buildSiteSignals(pages);
+
+    const scores =
+      calculateScores(signals);
+
     const siteData = pages
       .map(
-        (page, index) => `
+        (
+          page,
+          index
+        ) => `
 ==============================
 PAGE ${index + 1}
 ==============================
@@ -633,16 +1693,40 @@ TITLE :
 ${page.title ?? "Non trouvé"}
 
 META DESCRIPTION :
-${page.metaDescription ?? "Non trouvée"}
+${
+  page.metaDescription ??
+  "Non trouvée"
+}
 
 SIGNAUX TECHNIQUES :
-- Canonical : ${page.canonical ? "oui" : "non détectée"}
-- Viewport : ${page.viewport ? "oui" : "non détecté"}
-- Open Graph : ${page.openGraph ? "oui" : "non détecté"}
-- Données structurées JSON-LD : ${page.structuredData ? "oui" : "non détectées"}
+- Canonical : ${
+          page.canonical
+            ? "oui"
+            : "non détectée"
+        }
+- Viewport : ${
+          page.viewport
+            ? "oui"
+            : "non détecté"
+        }
+- Open Graph : ${
+          page.openGraph
+            ? "oui"
+            : "non détecté"
+        }
+- Données structurées JSON-LD : ${
+          page.structuredData
+            ? "oui"
+            : "non détectées"
+        }
 
 TITRES :
-${page.headings.join("\n") || "Aucun titre détecté"}
+${
+  page.headings.join(
+    "\n"
+  ) ||
+  "Aucun titre détecté"
+}
 
 CONTENU :
 ${page.text}
@@ -653,141 +1737,151 @@ ${page.text}
     const prompt = `
 Tu réalises un pré-audit professionnel de site internet pour LBMedia.
 
-Tu disposes d'un échantillon de plusieurs pages du site.
+IMPORTANT :
+Les scores ont déjà été calculés par LBMedia Office selon une grille déterministe.
 
-Nombre de pages réellement analysées :
+TU NE DOIS PAS :
+- recalculer les scores ;
+- contester les scores ;
+- proposer d'autres notes ;
+- introduire d'autres scores dans ton texte.
+
+TON RÔLE :
+Interpréter les données observées et expliquer le diagnostic de façon professionnelle.
+
+SITE :
+${homeUrl.toString()}
+
+PAGES ANALYSÉES :
 ${pages.length}
 
+SCORES CALCULÉS PAR LBMEDIA OFFICE :
+- Global : ${scores.globalScore}/100
+- Positionnement : ${scores.positioningScore}/100
+- Conversion : ${scores.conversionScore}/100
+- SEO : ${scores.seoScore}/100
+- SEO local : ${scores.localSeoScore}/100
+- GEO / IA : ${scores.geoScore}/100
+
+SIGNAUX UTILISÉS PAR LE MOTEUR :
+${JSON.stringify(
+  signals,
+  null,
+  2
+)}
+
 RÈGLE ABSOLUE :
-Tu dois distinguer strictement :
+Distingue strictement :
 
-1. Les QUALITÉS réellement observées du site.
-2. Les POINTS PERFECTIBLES réellement observés du site.
-3. Les LIMITES DE L'ANALYSE, c'est-à-dire ce que les données collectées ne permettent pas de vérifier.
+1. Les qualités réellement observées.
+2. Les points perfectibles réellement observés.
+3. Les limites du pré-audit.
 
-Ne mélange jamais les catégories 2 et 3.
+Ne transforme jamais une limite de l'outil en défaut du site.
 
-Un élément comme :
-"Je ne peux pas vérifier la qualité exacte des données structurées"
-est une LIMITE DE L'ANALYSE.
+Exemple :
+"PageSpeed n'a pas été mesuré"
+= limitation.
 
-Ce n'est PAS un point faible du site.
+Ce n'est PAS un point faible.
 
-De même :
-- ne pas disposer de Search Console n'est pas un défaut du site ;
-- ne pas mesurer PageSpeed n'est pas un défaut du site ;
-- ne pas connaître les backlinks n'est pas un défaut du site ;
-- ne pas avoir audité Google Business n'est pas un défaut du site.
+UNE ABSENCE DANS L'ÉCHANTILLON N'EST PAS UNE CERTITUDE SUR LE SITE ENTIER.
 
-À l'inverse, une vraie observation comme :
-"plusieurs pages de services présentent des contenus très courts"
-peut apparaître dans les points perfectibles.
-
-IMPORTANT :
-Une absence dans l'échantillon ne doit jamais devenir une affirmation absolue concernant l'ensemble du site.
-
-Écris par exemple :
+Écris :
 "Aucun témoignage n'a été repéré dans les pages analysées."
 
-Et non :
-"Le site ne contient aucun témoignage."
+N'écris pas :
+"Le site ne possède aucun témoignage."
 
-TU N'AS PAS MESURÉ :
+TU N'AS PAS ACCÈS À :
 - Core Web Vitals ;
 - PageSpeed Insights ;
-- performances réelles ;
-- positions Google ;
-- trafic ;
+- Search Console ;
+- Google Analytics ;
+- statistiques de trafic ;
 - conversions réelles ;
+- positions Google ;
 - backlinks ;
 - Google Business ;
-- Search Console ;
-- Analytics.
+- avis Google.
 
-OBJECTIF :
-Produire un diagnostic professionnel, crédible, concret et utile à un dirigeant de PME.
-
-Ne cherche pas artificiellement des défauts.
-
-Un bon site peut obtenir une bonne note.
-
-ANALYSE LES AXES SUIVANTS :
-
-POSITIONNEMENT
+POSITIONNEMENT :
+Analyse :
 - compréhension de l'activité ;
 - proposition de valeur ;
-- différenciation ;
 - cible ;
-- cohérence entre les pages.
+- différenciation ;
+- cohérence de l'offre.
 
-CONVERSION
+CONVERSION :
+Analyse :
 - appels à l'action ;
-- parcours ;
+- possibilités de contact ;
 - réassurance ;
-- contact ;
-- capacité à transformer une visite en prise de contact.
+- tarifs lorsqu'ils existent ;
+- preuves commerciales ;
+- capacité du parcours à favoriser une prise de contact.
 
-SEO
+SEO :
+Analyse :
 - titles ;
 - meta descriptions ;
 - H1/H2/H3 ;
-- profondeur éditoriale ;
+- contenu éditorial ;
 - cohérence sémantique ;
 - différenciation des pages ;
 - compréhension des services.
 
-SEO LOCAL
+SEO LOCAL :
+Analyse uniquement les éléments observables :
 - localisation ;
-- zones desservies ;
+- adresse ;
 - coordonnées ;
-- signaux locaux visibles ;
-- cohérence géographique.
+- zones desservies ;
+- vocabulaire géographique ;
+- cohérence locale.
 
-Ne prétends pas avoir contrôlé Google Business.
+Ne prétends jamais avoir contrôlé la fiche Google Business.
 
-GEO / IA
-Évalue la capacité du contenu à être compris, synthétisé et potentiellement cité par les moteurs de recherche et assistants IA :
-- informations explicites ;
-- expertise identifiable ;
-- services clairement décrits ;
-- localisation ;
-- entités ;
-- réponses aux questions ;
-- précision factuelle ;
-- structure éditoriale ;
+GEO / IA :
+Analyse la capacité des contenus à être compris, synthétisés et potentiellement cités par les moteurs et assistants IA :
+- expertise explicite ;
+- entités clairement identifiées ;
+- services clairement expliqués ;
+- informations factuelles ;
+- contexte géographique ;
+- contenu structuré ;
+- réponses utiles ;
 - données structurées observables.
 
-NOTATION :
-Attribue une note sur 100 pour chaque axe.
+TON :
+- professionnel ;
+- mature ;
+- concret ;
+- compréhensible par un dirigeant de PME ;
+- jamais alarmiste ;
+- jamais complaisant ;
+- orienté amélioration et impact business.
 
-Les notes sont uniquement des indicateurs d'analyse.
+Ne cherche pas artificiellement des défauts.
 
-Le score global doit refléter l'ensemble du diagnostic.
+Ne recommande jamais une refonte complète si les observations ne la justifient pas.
 
-SITE ANALYSÉ :
-${homeUrl.toString()}
-
-DONNÉES COLLECTÉES :
+DONNÉES DES PAGES :
 ${siteData}
 
-Retourne UNIQUEMENT un objet JSON valide :
+Retourne UNIQUEMENT cet objet JSON valide :
 
 {
-  "globalScore": 0,
-  "positioningScore": 0,
-  "conversionScore": 0,
-  "seoScore": 0,
-  "localSeoScore": 0,
-  "geoScore": 0,
-  "summary": "Synthèse professionnelle de 2 à 4 paragraphes courts.",
+  "summary": "Synthèse professionnelle en 2 à 4 paragraphes courts.",
   "strengths": [
-    "Point fort précis et réellement observé"
+    "Point fort précis réellement observé"
   ],
   "weaknesses": [
-    "Point perfectible précis et réellement observé"
+    "Point perfectible précis réellement observé"
   ],
   "limitations": [
-    "Vérification complémentaire ou élément impossible à contrôler dans ce pré-audit"
+    "Élément nécessitant une vérification ou une source externe"
   ],
   "priorities": [
     "Action prioritaire concrète",
@@ -797,22 +1891,19 @@ Retourne UNIQUEMENT un objet JSON valide :
 }
 
 STRENGTHS :
-3 à 6 éléments si possible.
+3 à 6 éléments utiles.
 
 WEAKNESSES :
 3 à 6 éléments maximum.
-Uniquement des points réellement perfectibles du site.
+Pas de faux défaut pour remplir la liste.
 
 LIMITATIONS :
-Uniquement les éléments nécessitant une vérification supplémentaire ou une source de données externe.
-Entre 2 et 5 éléments utiles.
-Évite les évidences ou répétitions inutiles.
+2 à 5 éléments maximum.
+Uniquement des limites réellement importantes.
 
 PRIORITIES :
 Exactement 3 actions.
 Classe-les selon leur impact business probable.
-
-Ne recommande jamais une refonte complète si les observations ne la justifient pas.
 `.trim();
 
     const completion =
@@ -822,7 +1913,7 @@ Ne recommande jamais une refonte complète si les observations ne la justifient 
           {
             role: "system",
             content:
-              "Tu es consultant senior en stratégie web, UX, SEO et visibilité dans les moteurs de recherche et assistants IA. Tes diagnostics sont factuels, prudents, exigeants et orientés business.",
+              "Tu es consultant senior en stratégie web, UX, SEO et visibilité dans les moteurs de recherche et assistants IA. Tu interprètes les observations sans modifier la notation calculée par LBMedia Office.",
           },
           {
             role: "user",
@@ -855,16 +1946,34 @@ Ne recommande jamais une refonte complète si les observations ne la justifient 
       );
     }
 
-    const audit =
-      validateAudit(parsedAudit);
+    const qualitativeAudit =
+      validateQualitativeAudit(
+        parsedAudit
+      );
+
+    const audit: AuditResult = {
+      ...scores,
+      ...qualitativeAudit,
+    };
 
     return NextResponse.json({
       success: true,
-      url: homeUrl.toString(),
-      pagesAnalyzed: pages.length,
-      analyzedUrls: pages.map(
-        (page) => page.url
-      ),
+
+      url:
+        homeUrl.toString(),
+
+      pagesAnalyzed:
+        pages.length,
+
+      analyzedUrls:
+        pages.map(
+          (page) =>
+            page.url
+        ),
+
+      scoringVersion:
+        "1.0",
+
       audit,
     });
   } catch (error) {
@@ -876,6 +1985,7 @@ Ne recommande jamais une refonte complète si les observations ne la justifient 
     return NextResponse.json(
       {
         success: false,
+
         message:
           error instanceof Error
             ? error.message
