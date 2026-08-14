@@ -5,6 +5,26 @@ export const dynamic = "force-dynamic";
 const API_URL =
   "https://recherche-entreprises.api.gouv.fr/search";
 
+const LEGAL_FORM_LABELS: Record<string, string> = {
+  "1000": "Entrepreneur individuel",
+  "1100": "Artisan-commerçant",
+  "1200": "Commerçant",
+  "1300": "Artisan",
+  "5410": "SARL nationale",
+  "5485":
+    "Société d'exercice libéral à responsabilité limitée",
+  "5498": "SARL unipersonnelle",
+  "5499": "Société à responsabilité limitée (SARL)",
+  "5710": "SAS",
+  "5720":
+    "Société par actions simplifiée à associé unique (SASU)",
+  "6540": "Société civile immobilière (SCI)",
+};
+
+const APE_LABELS: Record<string, string> = {
+  "73.12Z": "Régie publicitaire de médias",
+};
+
 function cleanValue(value: unknown) {
   if (typeof value !== "string") {
     return "";
@@ -132,13 +152,50 @@ function buildStreetAddress(
 function getLegalForm(
   company: any
 ) {
-  return (
+  const apiLabel =
     cleanValue(
       company.libelle_nature_juridique
-    ) ||
+    );
+
+  if (apiLabel) {
+    return apiLabel;
+  }
+
+  const code =
     cleanValue(
       company.nature_juridique
-    )
+    );
+
+  if (!code) {
+    return "";
+  }
+
+  return (
+    LEGAL_FORM_LABELS[code] ||
+    code
+  );
+}
+
+function getApeLabel(
+  company: any,
+  siege: any,
+  apeCode: string
+) {
+  const apiLabel =
+    cleanValue(
+      company.libelle_activite_principale
+    ) ||
+    cleanValue(
+      siege.libelle_activite_principale
+    );
+
+  if (apiLabel) {
+    return apiLabel;
+  }
+
+  return (
+    APE_LABELS[apeCode] ||
+    ""
   );
 }
 
@@ -278,8 +335,10 @@ export async function GET(
             );
 
           const apeLabel =
-            cleanValue(
-              company.libelle_activite_principale
+            getApeLabel(
+              company,
+              siege,
+              apeCode
             );
 
           const legalForm =
@@ -290,14 +349,6 @@ export async function GET(
           const creationDate =
             cleanValue(
               company.date_creation
-            );
-
-          const employeeRange =
-            cleanValue(
-              company.tranche_effectif_salarie
-            ) ||
-            cleanValue(
-              siege.tranche_effectif_salarie
             );
 
           return {
@@ -334,9 +385,6 @@ export async function GET(
 
             creation_date:
               creationDate,
-
-            employee_range:
-              employeeRange,
           };
         }
       );
