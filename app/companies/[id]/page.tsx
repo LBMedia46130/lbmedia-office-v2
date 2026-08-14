@@ -351,7 +351,7 @@ export default async function CompanyPage({
                       </p>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex shrink-0 flex-wrap items-center gap-4">
                       <div className="text-right">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                           Score global
@@ -366,6 +366,13 @@ export default async function CompanyPage({
                           </span>
                         </p>
                       </div>
+
+                      <Link
+                        href={`/companies/${company.id}/audits/${latestAudit.id}`}
+                        className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        Voir l’audit complet
+                      </Link>
                     </div>
                   </div>
 
