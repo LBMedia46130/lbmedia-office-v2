@@ -76,8 +76,7 @@ export default async function CompanyPage({
         company.legal_form ||
         company.ape_code ||
         company.ape_label ||
-        company.creation_date ||
-        company.employee_range
+        company.creation_date
     );
 
   const hasNotes =
@@ -120,6 +119,13 @@ export default async function CompanyPage({
                 ? "Active"
                 : "Inactive"}
             </span>
+
+            <Link
+              href={`/companies/${company.id}/edit`}
+              className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
+            >
+              Modifier
+            </Link>
 
             <DeleteCompanyButton
               companyId={
@@ -320,15 +326,6 @@ export default async function CompanyPage({
                       formatDate(
                         company.creation_date
                       )
-                    }
-                  />
-                ) : null}
-
-                {company.employee_range ? (
-                  <InfoBlock
-                    label="Tranche d’effectif"
-                    value={
-                      company.employee_range
                     }
                   />
                 ) : null}
