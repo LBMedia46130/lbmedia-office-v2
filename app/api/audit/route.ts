@@ -1040,56 +1040,61 @@ function ratioScore(
 function calculatePositioningScore(
   signals: SiteSignals
 ) {
-  let score = 40;
+  let score = 15;
 
   if (
     signals.hasClearServiceVocabulary
   ) {
-    score += 15;
+    score += 22;
   }
 
   if (
     signals.serviceVocabularyCount >=
     7
   ) {
-    score += 5;
+    score += 6;
   }
 
   if (
     signals.hasServicesPage
   ) {
-    score += 10;
+    score += 14;
   }
 
   if (
     signals.hasAboutPage
   ) {
-    score += 7;
+    score += 9;
   }
 
   if (
     signals.hasExperienceSignal
   ) {
-    score += 7;
+    score += 8;
   }
 
   if (
     signals.hasExpertiseSignal
   ) {
-    score += 6;
+    score += 8;
   }
 
   if (
     signals.hasLocationSignal
   ) {
-    score += 5;
+    score += 6;
   }
 
   if (
     signals.averageTextLength >=
+    2500
+  ) {
+    score += 7;
+  } else if (
+    signals.averageTextLength >=
     1500
   ) {
-    score += 5;
+    score += 4;
   }
 
   return clampScore(score);
@@ -1098,12 +1103,12 @@ function calculatePositioningScore(
 function calculateConversionScore(
   signals: SiteSignals
 ) {
-  let score = 30;
+  let score = 10;
 
   if (
     signals.hasPrimaryCTA
   ) {
-    score += 12;
+    score += 15;
   }
 
   if (
@@ -1115,7 +1120,7 @@ function calculateConversionScore(
   if (
     signals.hasQuoteCTA
   ) {
-    score += 10;
+    score += 12;
   }
 
   if (
@@ -1127,20 +1132,30 @@ function calculateConversionScore(
   if (
     signals.hasContactPage
   ) {
-    score += 8;
+    score += 10;
   }
 
-  if (signals.hasPhone) {
+  if (
+    signals.hasPhone
+  ) {
     score += 6;
   }
 
-  if (signals.hasEmail) {
-    score += 6;
+  if (
+    signals.hasEmail
+  ) {
+    score += 5;
   }
 
   if (
     signals.hasPricingPage ||
     signals.hasPricingSignal
+  ) {
+    score += 7;
+  }
+
+  if (
+    signals.hasClientSignal
   ) {
     score += 5;
   }
@@ -1148,17 +1163,13 @@ function calculateConversionScore(
   if (
     signals.hasTestimonialSignal
   ) {
-    score += 5;
-  } else if (
-    signals.hasClientSignal
-  ) {
-    score += 3;
+    score += 9;
   }
 
   if (
     signals.hasCaseStudySignal
   ) {
-    score += 5;
+    score += 8;
   }
 
   return clampScore(score);
@@ -1170,36 +1181,36 @@ function calculateSeoScore(
   const total =
     signals.pagesCount;
 
-  let score = 10;
+  let score = 5;
 
   score += ratioScore(
     signals.pagesWithTitle,
     total,
-    15
+    14
   );
 
   score += ratioScore(
     signals.pagesWithMetaDescription,
     total,
-    12
+    11
   );
 
   score += ratioScore(
     signals.pagesWithCanonical,
     total,
-    10
+    8
   );
 
   score += ratioScore(
     signals.pagesWithViewport,
     total,
-    5
+    3
   );
 
   score += ratioScore(
     signals.pagesWithH1,
     total,
-    15
+    14
   );
 
   score += ratioScore(
@@ -1211,20 +1222,25 @@ function calculateSeoScore(
   score += ratioScore(
     signals.pagesWithOpenGraph,
     total,
-    5
+    3
   );
 
   score += ratioScore(
     signals.pagesWithStructuredData,
     total,
-    5
+    6
   );
 
   if (
     signals.averageTextLength >=
+    3500
+  ) {
+    score += 14;
+  } else if (
+    signals.averageTextLength >=
     2500
   ) {
-    score += 10;
+    score += 11;
   } else if (
     signals.averageTextLength >=
     1500
@@ -1234,19 +1250,19 @@ function calculateSeoScore(
     signals.averageTextLength >=
     750
   ) {
-    score += 4;
+    score += 3;
   }
 
   if (
     signals.hasServicesPage
   ) {
-    score += 3;
+    score += 7;
   }
 
   if (
     signals.hasBlogOrNews
   ) {
-    score += 2;
+    score += 7;
   }
 
   return clampScore(score);
@@ -1255,12 +1271,12 @@ function calculateSeoScore(
 function calculateLocalSeoScore(
   signals: SiteSignals
 ) {
-  let score = 25;
+  let score = 5;
 
   if (
     signals.hasLocationSignal
   ) {
-    score += 15;
+    score += 18;
   }
 
   if (
@@ -1282,57 +1298,80 @@ function calculateLocalSeoScore(
     score += 10;
   }
 
-  if (signals.hasPhone) {
-    score += 7;
+  if (
+    signals.hasPhone
+  ) {
+    score += 6;
   }
 
-  if (signals.hasEmail) {
-    score += 5;
+  if (
+    signals.hasEmail
+  ) {
+    score += 3;
   }
 
   if (
     signals.hasContactPage
   ) {
-    score += 5;
+    score += 6;
   }
 
   if (
     signals.hasServiceAreaSignal
   ) {
-    score += 10;
+    score += 14;
   }
 
   if (
     signals.pagesWithStructuredData >
     0
   ) {
-    score += 5;
+    score += 8;
   }
 
-  return clampScore(score);
+  /*
+   * Le pré-audit ne contrôle pas :
+   * - Google Business
+   * - citations locales
+   * - cohérence NAP externe
+   * - avis Google
+   *
+   * On limite donc volontairement le score
+   * automatique à 88.
+   */
+  return Math.min(
+    88,
+    clampScore(score)
+  );
 }
 
 function calculateGeoScore(
   signals: SiteSignals
 ) {
-  let score = 30;
+  let score = 10;
 
   if (
     signals.hasClearServiceVocabulary
   ) {
-    score += 12;
+    score += 16;
+  }
+
+  if (
+    signals.hasServicesPage
+  ) {
+    score += 10;
   }
 
   if (
     signals.hasExpertiseSignal
   ) {
-    score += 8;
+    score += 10;
   }
 
   if (
     signals.hasExperienceSignal
   ) {
-    score += 6;
+    score += 8;
   }
 
   if (
@@ -1342,41 +1381,40 @@ function calculateGeoScore(
   }
 
   if (
-    signals.hasServicesPage
+    signals.hasAboutPage
   ) {
     score += 7;
   }
 
   if (
-    signals.hasAboutPage
-  ) {
-    score += 5;
-  }
-
-  if (
     signals.hasBlogOrNews
   ) {
-    score += 6;
+    score += 8;
   }
 
   if (
     signals.hasFaqSignal
   ) {
-    score += 5;
+    score += 8;
   }
 
   if (
     signals.pagesWithStructuredData >
     0
   ) {
-    score += 5;
+    score += 7;
   }
 
   if (
     signals.averageTextLength >=
-    1500
+    2500
   ) {
     score += 5;
+  } else if (
+    signals.averageTextLength >=
+    1500
+  ) {
+    score += 3;
   }
 
   if (
@@ -1972,7 +2010,7 @@ Classe-les selon leur impact business probable.
         ),
 
       scoringVersion:
-        "1.0",
+        "1.1",
 
       audit,
     });
