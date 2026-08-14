@@ -33,6 +33,7 @@ type AuditResult = {
   summary: string;
   strengths: string[];
   weaknesses: string[];
+  limitations: string[];
   priorities: string[];
 };
 
@@ -99,9 +100,7 @@ function extractMetaDescription(html: string) {
 
   for (const tag of metaTags) {
     if (
-      /name\s*=\s*["']description["']/i.test(
-        tag
-      )
+      /name\s*=\s*["']description["']/i.test(tag)
     ) {
       const content = tag.match(
         /content\s*=\s*["']([^"']*)["']/i
@@ -159,14 +158,10 @@ function hasViewport(html: string) {
 }
 
 function hasOpenGraph(html: string) {
-  return /property\s*=\s*["']og:/i.test(
-    html
-  );
+  return /property\s*=\s*["']og:/i.test(html);
 }
 
-function normalizeComparableHost(
-  hostname: string
-) {
+function normalizeComparableHost(hostname: string) {
   return hostname
     .toLowerCase()
     .replace(/^www\./, "");
@@ -177,12 +172,8 @@ function isSameWebsite(
   second: URL
 ) {
   return (
-    normalizeComparableHost(
-      first.hostname
-    ) ===
-    normalizeComparableHost(
-      second.hostname
-    )
+    normalizeComparableHost(first.hostname) ===
+    normalizeComparableHost(second.hostname)
   );
 }
 
@@ -205,10 +196,7 @@ function cleanDiscoveredUrl(
     }
 
     if (
-      !isSameWebsite(
-        candidate,
-        baseUrl
-      )
+      !isSameWebsite(candidate, baseUrl)
     ) {
       return null;
     }
@@ -224,9 +212,7 @@ function cleanDiscoveredUrl(
       "fbclid",
       "gclid",
     ]) {
-      candidate.searchParams.delete(
-        key
-      );
+      candidate.searchParams.delete(key);
     }
 
     const pathname =
@@ -305,9 +291,7 @@ function scoreCandidate(url: string) {
     }
   }
 
-  const depth = new URL(
-    url
-  ).pathname
+  const depth = new URL(url).pathname
     .split("/")
     .filter(Boolean).length;
 
@@ -423,6 +407,17 @@ function numberBetween0And100(
   );
 }
 
+function getStringArray(
+  value: unknown
+) {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is string =>
+          typeof item === "string"
+      )
+    : [];
+}
+
 function validateAudit(
   value: unknown
 ): AuditResult {
@@ -439,18 +434,6 @@ function validateAudit(
     string,
     unknown
   >;
-
-  const strings = (
-    value: unknown
-  ) =>
-    Array.isArray(value)
-      ? value.filter(
-          (
-            item
-          ): item is string =>
-            typeof item === "string"
-        )
-      : [];
 
   return {
     globalScore:
@@ -481,13 +464,16 @@ function validateAudit(
       typeof data.summary === "string"
         ? data.summary
         : "",
-    strengths: strings(
+    strengths: getStringArray(
       data.strengths
     ),
-    weaknesses: strings(
+    weaknesses: getStringArray(
       data.weaknesses
     ),
-    priorities: strings(
+    limitations: getStringArray(
+      data.limitations
+    ),
+    priorities: getStringArray(
       data.priorities
     ).slice(0, 3),
   };
@@ -628,8 +614,8 @@ export async function POST(
 
         pages.push(page);
       } catch {
-        // Une page inaccessible ne doit
-        // pas faire échouer tout l'audit.
+        // Une page inaccessible ne doit pas
+        // bloquer l'ensemble de l'audit.
       }
     }
 
@@ -665,27 +651,48 @@ ${page.text}
       .join("\n");
 
     const prompt = `
-Tu réalises un pré-audit professionnel de site internet pour LBMedia, agence de communication spécialisée notamment dans la création de sites internet, le SEO, la visibilité locale et la communication.
+Tu réalises un pré-audit professionnel de site internet pour LBMedia.
 
-Tu disposes maintenant d'un ÉCHANTILLON DE PLUSIEURS PAGES du site.
+Tu disposes d'un échantillon de plusieurs pages du site.
 
 Nombre de pages réellement analysées :
 ${pages.length}
 
 RÈGLE ABSOLUE :
-Tu dois distinguer :
-1. ce qui a réellement été observé ;
-2. ce qui semble absent de l'échantillon ;
-3. ce qui ne peut pas être vérifié avec les données disponibles.
+Tu dois distinguer strictement :
 
-Tu ne dois JAMAIS transformer une absence dans l'échantillon en certitude sur l'ensemble du site.
+1. Les QUALITÉS réellement observées du site.
+2. Les POINTS PERFECTIBLES réellement observés du site.
+3. Les LIMITES DE L'ANALYSE, c'est-à-dire ce que les données collectées ne permettent pas de vérifier.
 
-Par exemple :
-- si aucune adresse n'apparaît, écris "aucune adresse n'a été repérée dans les pages analysées", et non "le site ne contient pas d'adresse" ;
-- si aucun témoignage n'est trouvé, ne conclus pas automatiquement qu'il n'existe aucun témoignage ailleurs ;
-- ne prétends jamais avoir audité Google Business, Search Console, Analytics ou les backlinks.
+Ne mélange jamais les catégories 2 et 3.
 
-Tu n'as PAS mesuré :
+Un élément comme :
+"Je ne peux pas vérifier la qualité exacte des données structurées"
+est une LIMITE DE L'ANALYSE.
+
+Ce n'est PAS un point faible du site.
+
+De même :
+- ne pas disposer de Search Console n'est pas un défaut du site ;
+- ne pas mesurer PageSpeed n'est pas un défaut du site ;
+- ne pas connaître les backlinks n'est pas un défaut du site ;
+- ne pas avoir audité Google Business n'est pas un défaut du site.
+
+À l'inverse, une vraie observation comme :
+"plusieurs pages de services présentent des contenus très courts"
+peut apparaître dans les points perfectibles.
+
+IMPORTANT :
+Une absence dans l'échantillon ne doit jamais devenir une affirmation absolue concernant l'ensemble du site.
+
+Écris par exemple :
+"Aucun témoignage n'a été repéré dans les pages analysées."
+
+Et non :
+"Le site ne contient aucun témoignage."
+
+TU N'AS PAS MESURÉ :
 - Core Web Vitals ;
 - PageSpeed Insights ;
 - performances réelles ;
@@ -698,14 +705,13 @@ Tu n'as PAS mesuré :
 - Analytics.
 
 OBJECTIF :
-Produire un diagnostic professionnel, crédible, utile à un dirigeant de PME et exploitable par LBMedia.
+Produire un diagnostic professionnel, crédible, concret et utile à un dirigeant de PME.
 
 Ne cherche pas artificiellement des défauts.
+
 Un bon site peut obtenir une bonne note.
 
-Ne pénalise pas un site pour une fonctionnalité qui n'est pas pertinente pour son activité.
-
-Analyse les axes suivants :
+ANALYSE LES AXES SUIVANTS :
 
 POSITIONNEMENT
 - compréhension de l'activité ;
@@ -725,7 +731,7 @@ SEO
 - titles ;
 - meta descriptions ;
 - H1/H2/H3 ;
-- qualité et profondeur éditoriale ;
+- profondeur éditoriale ;
 - cohérence sémantique ;
 - différenciation des pages ;
 - compréhension des services.
@@ -748,15 +754,15 @@ GEO / IA
 - entités ;
 - réponses aux questions ;
 - précision factuelle ;
-- contenu structuré ;
-- données structurées lorsqu'elles sont observables.
+- structure éditoriale ;
+- données structurées observables.
 
 NOTATION :
-Attribue une note de 0 à 100 pour chaque axe.
+Attribue une note sur 100 pour chaque axe.
 
-Les notes sont des INDICATEURS D'ANALYSE et non des mesures scientifiques.
+Les notes sont uniquement des indicateurs d'analyse.
 
-Le score global doit être cohérent avec l'ensemble du diagnostic.
+Le score global doit refléter l'ensemble du diagnostic.
 
 SITE ANALYSÉ :
 ${homeUrl.toString()}
@@ -775,10 +781,13 @@ Retourne UNIQUEMENT un objet JSON valide :
   "geoScore": 0,
   "summary": "Synthèse professionnelle de 2 à 4 paragraphes courts.",
   "strengths": [
-    "Point fort précis et fondé sur une observation"
+    "Point fort précis et réellement observé"
   ],
   "weaknesses": [
-    "Point perfectible précis et fondé sur une observation"
+    "Point perfectible précis et réellement observé"
+  ],
+  "limitations": [
+    "Vérification complémentaire ou élément impossible à contrôler dans ce pré-audit"
   ],
   "priorities": [
     "Action prioritaire concrète",
@@ -787,11 +796,23 @@ Retourne UNIQUEMENT un objet JSON valide :
   ]
 }
 
-Donne entre 3 et 6 points forts et entre 3 et 6 points perfectibles lorsque les données le permettent.
+STRENGTHS :
+3 à 6 éléments si possible.
 
-Les 3 priorités doivent être classées selon leur impact business probable.
+WEAKNESSES :
+3 à 6 éléments maximum.
+Uniquement des points réellement perfectibles du site.
 
-Ne recommande pas une refonte complète si les observations ne la justifient pas.
+LIMITATIONS :
+Uniquement les éléments nécessitant une vérification supplémentaire ou une source de données externe.
+Entre 2 et 5 éléments utiles.
+Évite les évidences ou répétitions inutiles.
+
+PRIORITIES :
+Exactement 3 actions.
+Classe-les selon leur impact business probable.
+
+Ne recommande jamais une refonte complète si les observations ne la justifient pas.
 `.trim();
 
     const completion =

@@ -12,7 +12,16 @@ type AuditResult = {
   summary: string;
   strengths: string[];
   weaknesses: string[];
+  limitations: string[];
   priorities: string[];
+};
+
+type AuditResponse = {
+  success: boolean;
+  url: string;
+  pagesAnalyzed: number;
+  analyzedUrls: string[];
+  audit: AuditResult;
 };
 
 export default function AuditPage() {
@@ -22,7 +31,9 @@ export default function AuditPage() {
   const [error, setError] =
     useState<string | null>(null);
   const [result, setResult] =
-    useState<AuditResult | null>(null);
+    useState<AuditResponse | null>(null);
+  const [showUrls, setShowUrls] =
+    useState(false);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -31,6 +42,7 @@ export default function AuditPage() {
 
     setError(null);
     setResult(null);
+    setShowUrls(false);
 
     const trimmedUrl = url.trim();
 
@@ -67,7 +79,7 @@ export default function AuditPage() {
         );
       }
 
-      setResult(data.audit);
+      setResult(data);
     } catch (error) {
       setError(
         error instanceof Error
@@ -169,7 +181,8 @@ export default function AuditPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-500">
-              Lecture du contenu et
+              Plusieurs pages sont
+              parcourues avant la
               préparation du diagnostic.
             </p>
           </section>
@@ -177,42 +190,103 @@ export default function AuditPage() {
 
         {result && (
           <>
+            <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">
+                    Analyse réalisée sur{" "}
+                    {result.pagesAnalyzed}{" "}
+                    {result.pagesAnalyzed > 1
+                      ? "pages"
+                      : "page"}
+                  </p>
+
+                  <p className="mt-1 text-sm text-blue-700">
+                    Site analysé :{" "}
+                    {result.url}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowUrls(
+                      (current) =>
+                        !current
+                    )
+                  }
+                  className="self-start rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 md:self-auto"
+                >
+                  {showUrls
+                    ? "Masquer les pages"
+                    : "Voir les pages analysées"}
+                </button>
+              </div>
+
+              {showUrls && (
+                <div className="mt-4 rounded-xl border border-blue-200 bg-white p-4">
+                  <ul className="space-y-2">
+                    {result.analyzedUrls.map(
+                      (analyzedUrl) => (
+                        <li
+                          key={analyzedUrl}
+                          className="break-all text-sm text-slate-600"
+                        >
+                          {analyzedUrl}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )}
+            </section>
+
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <ScoreCard
                 label="Score global"
-                score={result.globalScore}
+                score={
+                  result.audit
+                    .globalScore
+                }
                 highlighted
               />
 
               <ScoreCard
                 label="Positionnement"
                 score={
-                  result.positioningScore
+                  result.audit
+                    .positioningScore
                 }
               />
 
               <ScoreCard
                 label="Conversion"
                 score={
-                  result.conversionScore
+                  result.audit
+                    .conversionScore
                 }
               />
 
               <ScoreCard
                 label="SEO"
-                score={result.seoScore}
+                score={
+                  result.audit.seoScore
+                }
               />
 
               <ScoreCard
                 label="SEO local"
                 score={
-                  result.localSeoScore
+                  result.audit
+                    .localSeoScore
                 }
               />
 
               <ScoreCard
                 label="GEO / IA"
-                score={result.geoScore}
+                score={
+                  result.audit.geoScore
+                }
               />
             </section>
 
@@ -222,21 +296,65 @@ export default function AuditPage() {
               </h2>
 
               <p className="mt-4 whitespace-pre-line leading-7 text-slate-700">
-                {result.summary}
+                {result.audit.summary}
               </p>
             </section>
 
             <div className="grid gap-6 lg:grid-cols-2">
               <AuditList
                 title="Points forts"
-                items={result.strengths}
+                items={
+                  result.audit.strengths
+                }
               />
 
               <AuditList
                 title="Points à améliorer"
-                items={result.weaknesses}
+                items={
+                  result.audit.weaknesses
+                }
               />
             </div>
+
+            {result.audit.limitations
+              .length > 0 && (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+                <h2 className="text-xl font-bold text-slate-900">
+                  Vérifications
+                  complémentaires
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-600">
+                  Ces éléments ne peuvent
+                  pas être confirmés avec
+                  cette première analyse et
+                  nécessitent des données ou
+                  outils complémentaires.
+                </p>
+
+                <ul className="mt-5 space-y-3">
+                  {result.audit.limitations.map(
+                    (
+                      limitation,
+                      index
+                    ) => (
+                      <li
+                        key={`${limitation}-${index}`}
+                        className="flex gap-3 text-slate-700"
+                      >
+                        <span className="mt-1 text-amber-600">
+                          •
+                        </span>
+
+                        <span>
+                          {limitation}
+                        </span>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </section>
+            )}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900">
@@ -244,7 +362,7 @@ export default function AuditPage() {
               </h2>
 
               <ol className="mt-5 space-y-4">
-                {result.priorities.map(
+                {result.audit.priorities.map(
                   (priority, index) => (
                     <li
                       key={`${priority}-${index}`}
@@ -291,21 +409,17 @@ function ScoreCard({
           : "border-slate-200 bg-white"
       }`}
     >
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-slate-600">
-            {label}
-          </p>
+      <p className="text-sm font-semibold text-slate-600">
+        {label}
+      </p>
 
-          <p className="mt-2 text-3xl font-bold text-slate-900">
-            {safeScore}
-            <span className="text-base font-medium text-slate-400">
-              {" "}
-              / 100
-            </span>
-          </p>
-        </div>
-      </div>
+      <p className="mt-2 text-3xl font-bold text-slate-900">
+        {safeScore}
+        <span className="text-base font-medium text-slate-400">
+          {" "}
+          / 100
+        </span>
+      </p>
 
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
         <div

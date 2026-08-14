@@ -106,6 +106,23 @@ function CompaniesIcon() {
   );
 }
 
+function AuditIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M3 3v18h18" />
+      <path d="M7 15l4-4 3 3 5-7" />
+      <path d="M17 7h2v2" />
+    </svg>
+  );
+}
+
 const navigation: NavigationItem[] = [
   {
     label: "Tableau de bord",
@@ -131,6 +148,11 @@ const navigation: NavigationItem[] = [
     label: "Entreprises",
     href: "/companies",
     icon: <CompaniesIcon />,
+  },
+  {
+    label: "Audit de sites",
+    href: "/audit",
+    icon: <AuditIcon />,
   },
 ];
 
