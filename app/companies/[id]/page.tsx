@@ -232,6 +232,15 @@ export default async function CompanyPage({
                 companyId={
                   company.id
                 }
+                initialLinkedinUrl={
+                  company.linkedin_url
+                }
+                initialFacebookUrl={
+                  company.facebook_url
+                }
+                initialBusinessDescription={
+                  company.business_description
+                }
               />
             </div>
           </div>

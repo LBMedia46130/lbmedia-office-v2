@@ -15,12 +15,25 @@ type WebEnrichmentResult = {
 
 type CompanyWebEnrichmentProps = {
   companyId: string;
+  initialLinkedinUrl?: string | null;
+  initialFacebookUrl?: string | null;
+  initialBusinessDescription?: string | null;
 };
 
 export default function CompanyWebEnrichment({
   companyId,
+  initialLinkedinUrl,
+  initialFacebookUrl,
+  initialBusinessDescription,
 }: CompanyWebEnrichmentProps) {
   const router = useRouter();
+
+  const initiallyEnriched =
+    Boolean(
+      initialLinkedinUrl ||
+        initialFacebookUrl ||
+        initialBusinessDescription
+    );
 
   const [
     enrichment,
@@ -54,9 +67,11 @@ export default function CompanyWebEnrichment({
   );
 
   const [
-    hasImported,
-    setHasImported,
-  ] = useState(false);
+    isEnriched,
+    setIsEnriched,
+  ] = useState(
+    initiallyEnriched
+  );
 
   async function searchPublicInformation() {
     const response =
@@ -177,7 +192,7 @@ export default function CompanyWebEnrichment({
         );
       }
 
-      setHasImported(true);
+      setIsEnriched(true);
       setEnrichment(null);
 
       router.refresh();
@@ -196,6 +211,7 @@ export default function CompanyWebEnrichment({
     setIsSearching(true);
     setError(null);
     setSuccess(null);
+    setEnrichment(null);
 
     try {
       const result =
@@ -204,8 +220,6 @@ export default function CompanyWebEnrichment({
       setEnrichment(
         result
       );
-
-      setHasImported(false);
     } catch (refreshError) {
       setError(
         refreshError instanceof Error
@@ -217,57 +231,6 @@ export default function CompanyWebEnrichment({
     }
   }
 
-  if (
-    hasImported &&
-    !enrichment
-  ) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
-              Présence web
-            </p>
-
-            <p className="mt-1 text-sm text-slate-600">
-              Les informations
-              publiques trouvées
-              ont été intégrées
-              à la fiche.
-            </p>
-
-            {success ? (
-              <p className="mt-2 text-sm font-semibold text-emerald-600">
-                {success}
-              </p>
-            ) : null}
-
-            {error ? (
-              <p className="mt-2 text-sm font-medium text-red-600">
-                {error}
-              </p>
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              void handleRefresh()
-            }
-            disabled={
-              isSearching
-            }
-            className="rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSearching
-              ? "Actualisation..."
-              : "Actualiser les informations publiques"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -277,18 +240,20 @@ export default function CompanyWebEnrichment({
           </p>
 
           <p className="mt-1 text-sm text-slate-600">
-            Recherche des
-            coordonnées et de la
-            présence publique de
-            l’entreprise sur
-            Internet.
+            {isEnriched
+              ? "Les informations publiques de cette entreprise ont déjà été enrichies."
+              : "Recherche des coordonnées et de la présence publique de l’entreprise sur Internet."}
           </p>
         </div>
 
         <button
           type="button"
           onClick={() =>
-            void handleSearch()
+            void (
+              isEnriched
+                ? handleRefresh()
+                : handleSearch()
+            )
           }
           disabled={
             isSearching ||
@@ -298,9 +263,34 @@ export default function CompanyWebEnrichment({
         >
           {isSearching
             ? "Recherche en cours..."
-            : "Rechercher les informations publiques"}
+            : isEnriched
+              ? "Actualiser les informations publiques"
+              : "Rechercher les informations publiques"}
         </button>
       </div>
+
+      {isEnriched &&
+      !enrichment ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {initialLinkedinUrl ? (
+            <SocialLink
+              label="LinkedIn"
+              href={
+                initialLinkedinUrl
+              }
+            />
+          ) : null}
+
+          {initialFacebookUrl ? (
+            <SocialLink
+              label="Facebook"
+              href={
+                initialFacebookUrl
+              }
+            />
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? (
         <p className="mt-4 text-sm font-medium text-red-600">
@@ -319,8 +309,7 @@ export default function CompanyWebEnrichment({
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm font-bold text-slate-900">
-                Informations
-                trouvées
+                Informations trouvées
               </p>
 
               <ConfidenceBadge
@@ -344,7 +333,9 @@ export default function CompanyWebEnrichment({
             >
               {isImporting
                 ? "Import en cours..."
-                : "Importer dans la fiche"}
+                : isEnriched
+                  ? "Compléter la fiche"
+                  : "Importer dans la fiche"}
             </button>
           </div>
 
@@ -453,6 +444,25 @@ function ResultBlock({
         </p>
       )}
     </div>
+  );
+}
+
+function SocialLink({
+  label,
+  href,
+}: {
+  label: string;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+    >
+      {label} ↗
+    </a>
   );
 }
 
