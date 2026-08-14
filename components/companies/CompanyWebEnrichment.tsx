@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type WebEnrichmentResult = {
   website: string;
@@ -19,6 +20,8 @@ type CompanyWebEnrichmentProps = {
 export default function CompanyWebEnrichment({
   companyId,
 }: CompanyWebEnrichmentProps) {
+  const router = useRouter();
+
   const [
     enrichment,
     setEnrichment,
@@ -32,8 +35,20 @@ export default function CompanyWebEnrichment({
   ] = useState(false);
 
   const [
+    isImporting,
+    setIsImporting,
+  ] = useState(false);
+
+  const [
     error,
     setError,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    success,
+    setSuccess,
   ] = useState<string | null>(
     null
   );
@@ -41,6 +56,7 @@ export default function CompanyWebEnrichment({
   async function handleSearch() {
     setIsSearching(true);
     setError(null);
+    setSuccess(null);
     setEnrichment(null);
 
     try {
@@ -79,6 +95,77 @@ export default function CompanyWebEnrichment({
     }
   }
 
+  async function handleImport() {
+    if (!enrichment) {
+      return;
+    }
+
+    setIsImporting(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response =
+        await fetch(
+          `/api/companies/${companyId}/web-enrichment/import`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify(
+              enrichment
+            ),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data.message ||
+            "Import impossible."
+        );
+      }
+
+      const updated =
+        Array.isArray(
+          data.updated
+        )
+          ? data.updated
+          : [];
+
+      if (
+        updated.length === 0
+      ) {
+        setSuccess(
+          "Aucune donnée vide à compléter."
+        );
+      } else {
+        setSuccess(
+          "Informations importées dans la fiche."
+        );
+      }
+
+      router.refresh();
+    } catch (importError) {
+      setError(
+        importError instanceof Error
+          ? importError.message
+          : "Import impossible."
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -102,7 +189,8 @@ export default function CompanyWebEnrichment({
             void handleSearch()
           }
           disabled={
-            isSearching
+            isSearching ||
+            isImporting
           }
           className="rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -118,19 +206,44 @@ export default function CompanyWebEnrichment({
         </p>
       ) : null}
 
+      {success ? (
+        <p className="mt-4 text-sm font-semibold text-emerald-600">
+          {success}
+        </p>
+      ) : null}
+
       {enrichment ? (
         <div className="mt-5 border-t border-slate-200 pt-5">
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <p className="text-sm font-bold text-slate-900">
-              Informations
-              trouvées
-            </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm font-bold text-slate-900">
+                Informations
+                trouvées
+              </p>
 
-            <ConfidenceBadge
-              confidence={
-                enrichment.confidence
+              <ConfidenceBadge
+                confidence={
+                  enrichment.confidence
+                }
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                void handleImport()
               }
-            />
+              disabled={
+                isImporting ||
+                enrichment.confidence ===
+                  "low"
+              }
+              className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isImporting
+                ? "Import en cours..."
+                : "Importer dans la fiche"}
+            </button>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -187,12 +300,14 @@ export default function CompanyWebEnrichment({
             </div>
           ) : null}
 
-          <p className="mt-4 text-xs text-slate-400">
-            Ces informations
-            sont proposées avant
-            import. Aucune donnée
-            de la fiche n’a été
-            modifiée.
+          <p className="mt-4 text-xs leading-5 text-slate-400">
+            L’import complète
+            uniquement les champs
+            actuellement vides de
+            la fiche. Les
+            informations déjà
+            enregistrées ne sont
+            pas remplacées.
           </p>
         </div>
       ) : null}
@@ -226,7 +341,7 @@ function ResultBlock({
           href={value}
           target="_blank"
           rel="noreferrer"
-          className="mt-2 block break-all text-sm font-semibold text-blue-600 hover:text-blue-700"
+          className="mt-2 block break-all text-sm font-semibold text-blue-600 transition hover:text-blue-700"
         >
           {value}
         </a>
