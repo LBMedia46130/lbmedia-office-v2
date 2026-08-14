@@ -19,34 +19,10 @@ function DashboardIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect
-        x="3"
-        y="3"
-        width="7"
-        height="7"
-        rx="1"
-      />
-      <rect
-        x="14"
-        y="3"
-        width="7"
-        height="7"
-        rx="1"
-      />
-      <rect
-        x="3"
-        y="14"
-        width="7"
-        height="7"
-        rx="1"
-      />
-      <rect
-        x="14"
-        y="14"
-        width="7"
-        height="7"
-        rx="1"
-      />
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
     </svg>
   );
 }
@@ -61,13 +37,7 @@ function NewsIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect
-        x="4"
-        y="3"
-        width="16"
-        height="18"
-        rx="2"
-      />
+      <rect x="4" y="3" width="16" height="18" rx="2" />
       <path d="M8 7h8" />
       <path d="M8 11h8" />
       <path d="M8 15h5" />
@@ -85,13 +55,7 @@ function PlanningIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="16"
-        rx="2"
-      />
+      <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M16 3v4" />
       <path d="M8 3v4" />
       <path d="M3 10h18" />
@@ -109,18 +73,10 @@ function CalendarIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="16"
-        rx="2"
-      />
-
+      <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M16 3v4" />
       <path d="M8 3v4" />
       <path d="M3 10h18" />
-
       <path d="M8 14h2" />
       <path d="M14 14h2" />
       <path d="M8 17h2" />
@@ -193,7 +149,7 @@ export default function AppSidebar() {
   }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-slate-950 text-white">
+    <aside className="fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-blue-950 text-white shadow-xl shadow-slate-950/20">
       <div className="border-b border-white/10 px-6 py-7">
         <Link
           href="/"
@@ -206,21 +162,21 @@ export default function AppSidebar() {
           />
         </Link>
 
-        <div className="mt-5 flex items-center gap-2 text-xs font-medium text-slate-400">
+        <div className="mt-5 flex items-center gap-2 text-xs font-medium text-slate-300">
           <span>LBMedia Office</span>
 
-          <span className="rounded-md bg-blue-500/20 px-2 py-0.5 font-bold text-blue-300">
+          <span className="rounded-md bg-cyan-400/15 px-2 py-0.5 font-bold text-cyan-300 ring-1 ring-inset ring-cyan-300/20">
             V2
           </span>
         </div>
       </div>
 
       <div className="flex-1 px-4 py-6">
-        <p className="px-2 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+        <p className="px-2 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
           Navigation
         </p>
 
-        <nav className="mt-4 space-y-1">
+        <nav className="mt-4 space-y-1.5">
           {navigation.map((item) => {
             const active =
               isActive(item.href);
@@ -230,18 +186,19 @@ export default function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 className={[
-                  "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition",
+                  "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200",
                   active
-                    ? "bg-white/10 text-white"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white",
+                    ? "bg-gradient-to-r from-blue-500/25 to-cyan-400/10 text-white ring-1 ring-inset ring-white/10 shadow-sm"
+                    : "text-slate-300 hover:bg-white/7 hover:text-white",
                 ].join(" ")}
               >
                 <span
-                  className={
+                  className={[
+                    "transition-colors",
                     active
-                      ? "text-blue-400"
-                      : "text-slate-400"
-                  }
+                      ? "text-cyan-300"
+                      : "text-slate-400 group-hover:text-blue-300",
+                  ].join(" ")}
                 >
                   {item.icon}
                 </span>
@@ -249,6 +206,10 @@ export default function AppSidebar() {
                 <span>
                   {item.label}
                 </span>
+
+                {active ? (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.8)]" />
+                ) : null}
               </Link>
             );
           })}
@@ -256,12 +217,12 @@ export default function AppSidebar() {
       </div>
 
       <div className="p-4">
-        <div className="rounded-xl border border-white/10 bg-slate-900 px-4 py-3">
-          <p className="text-xs font-semibold text-slate-200">
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+          <p className="text-xs font-semibold text-slate-100">
             LBMedia Office V2
           </p>
 
-          <p className="mt-1 text-[10px] text-slate-500">
+          <p className="mt-1 text-[10px] text-slate-400">
             Environnement de développement
           </p>
         </div>
