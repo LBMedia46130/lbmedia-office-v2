@@ -23,6 +23,7 @@ type LegalDataPayload = {
   legal_form?: string;
 
   address?: string;
+  address_line_2?: string;
   postal_code?: string;
   city?: string;
 
@@ -91,6 +92,11 @@ export async function POST(
           body.address
         ),
 
+      address_line_2:
+        normalizeValue(
+          body.address_line_2
+        ),
+
       postal_code:
         normalizeValue(
           body.postal_code
@@ -126,14 +132,30 @@ export async function POST(
     };
 
     const {
+      data,
       error,
     } = await supabaseAdmin
       .from("companies")
       .update(legalData)
-      .eq("id", id);
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
       throw error;
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Entreprise introuvable.",
+        },
+        {
+          status: 404,
+        }
+      );
     }
 
     return NextResponse.json({

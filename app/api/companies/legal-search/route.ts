@@ -13,6 +13,15 @@ function cleanValue(value: unknown) {
   return value.trim();
 }
 
+function joinParts(
+  parts: Array<string | undefined | null>
+) {
+  return parts
+    .map((part) => cleanValue(part))
+    .filter(Boolean)
+    .join(" ");
+}
+
 function buildVatNumber(siren: string) {
   const normalizedSiren =
     siren.replace(/\D/g, "");
@@ -35,6 +44,102 @@ function buildVatNumber(siren: string) {
     2,
     "0"
   )}${normalizedSiren}`;
+}
+
+function getVatNumber(
+  company: any,
+  siren: string
+) {
+  const vatList =
+    Array.isArray(company.tva)
+      ? company.tva
+      : [];
+
+  const officialVat =
+    vatList
+      .map((value: unknown) =>
+        cleanValue(value)
+      )
+      .find(Boolean);
+
+  if (officialVat) {
+    return officialVat;
+  }
+
+  return buildVatNumber(siren);
+}
+
+function buildStreetAddress(
+  siege: any
+) {
+  const streetLine =
+    joinParts([
+      siege.numero_voie,
+      siege.indice_repetition,
+      siege.type_voie,
+      siege.libelle_voie,
+    ]);
+
+  if (streetLine) {
+    return streetLine;
+  }
+
+  const fullAddress =
+    cleanValue(
+      siege.adresse
+    );
+
+  const postalCode =
+    cleanValue(
+      siege.code_postal
+    );
+
+  const city =
+    cleanValue(
+      siege.libelle_commune
+    );
+
+  let fallback =
+    fullAddress;
+
+  if (
+    postalCode &&
+    city
+  ) {
+    const suffix =
+      `${postalCode} ${city}`;
+
+    if (
+      fallback
+        .toUpperCase()
+        .endsWith(
+          suffix.toUpperCase()
+        )
+    ) {
+      fallback =
+        fallback
+          .slice(
+            0,
+            -suffix.length
+          )
+          .trim();
+    }
+  }
+
+  return fallback;
+}
+
+function getLegalForm(
+  company: any
+) {
+  return (
+    cleanValue(
+      company.libelle_nature_juridique
+    ) ||
+    cleanValue(
+      company.nature_juridique
+    )
+  );
 }
 
 export async function GET(
@@ -114,7 +219,9 @@ export async function GET(
       await response.json();
 
     const results =
-      Array.isArray(data.results)
+      Array.isArray(
+        data.results
+      )
         ? data.results
         : [];
 
@@ -136,15 +243,20 @@ export async function GET(
 
           const legalName =
             cleanValue(
-              company.nom_complet
+              company.nom_raison_sociale
             ) ||
             cleanValue(
-              company.nom_raison_sociale
+              company.nom_complet
             );
 
           const address =
+            buildStreetAddress(
+              siege
+            );
+
+          const addressLine2 =
             cleanValue(
-              siege.adresse
+              siege.complement_adresse
             );
 
           const city =
@@ -160,6 +272,9 @@ export async function GET(
           const apeCode =
             cleanValue(
               company.activite_principale
+            ) ||
+            cleanValue(
+              siege.activite_principale
             );
 
           const apeLabel =
@@ -168,11 +283,8 @@ export async function GET(
             );
 
           const legalForm =
-            cleanValue(
-              company.nature_juridique
-            ) ||
-            cleanValue(
-              company.libelle_nature_juridique
+            getLegalForm(
+              company
             );
 
           const creationDate =
@@ -183,29 +295,46 @@ export async function GET(
           const employeeRange =
             cleanValue(
               company.tranche_effectif_salarie
+            ) ||
+            cleanValue(
+              siege.tranche_effectif_salarie
             );
 
           return {
             siren,
             siret,
+
             vat_number:
-              buildVatNumber(
+              getVatNumber(
+                company,
                 siren
               ),
+
             legal_name:
               legalName,
+
             legal_form:
               legalForm,
+
             address,
+
+            address_line_2:
+              addressLine2,
+
             postal_code:
               resultPostalCode,
+
             city,
+
             ape_code:
               apeCode,
+
             ape_label:
               apeLabel,
+
             creation_date:
               creationDate,
+
             employee_range:
               employeeRange,
           };
@@ -214,10 +343,13 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
+
       total:
         data.total_results ??
         companies.length,
-      results: companies,
+
+      results:
+        companies,
     });
   } catch (error) {
     console.error(
