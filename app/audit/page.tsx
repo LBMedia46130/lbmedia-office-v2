@@ -1,6 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
 
 type AuditResult = {
   globalScore: number;
@@ -21,19 +25,120 @@ type AuditResponse = {
   url: string;
   pagesAnalyzed: number;
   analyzedUrls: string[];
+  scoringVersion: string;
   audit: AuditResult;
 };
 
+type CompanyOption = {
+  id: string;
+  name: string;
+  website: string | null;
+  relationship_status:
+    | "prospect"
+    | "client";
+  is_active: boolean;
+};
+
 export default function AuditPage() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] =
+    useState("");
+
   const [loading, setLoading] =
     useState(false);
+
   const [error, setError] =
-    useState<string | null>(null);
+    useState<string | null>(
+      null
+    );
+
   const [result, setResult] =
-    useState<AuditResponse | null>(null);
-  const [showUrls, setShowUrls] =
-    useState(false);
+    useState<AuditResponse | null>(
+      null
+    );
+
+  const [
+    showUrls,
+    setShowUrls,
+  ] = useState(false);
+
+  const [
+    companies,
+    setCompanies,
+  ] = useState<CompanyOption[]>(
+    []
+  );
+
+  const [
+    companiesLoading,
+    setCompaniesLoading,
+  ] = useState(true);
+
+  const [
+    selectedCompanyId,
+    setSelectedCompanyId,
+  ] = useState("");
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
+
+  const [
+    saveError,
+    setSaveError,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    savedMessage,
+    setSavedMessage,
+  ] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    async function loadCompanies() {
+      try {
+        const response =
+          await fetch(
+            "/api/companies"
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ??
+              "Impossible de charger les entreprises."
+          );
+        }
+
+        const loadedCompanies =
+          Array.isArray(
+            data.companies
+          )
+            ? data.companies
+            : [];
+
+        setCompanies(
+          loadedCompanies
+        );
+      } catch (error) {
+        console.error(
+          "Companies loading error:",
+          error
+        );
+      } finally {
+        setCompaniesLoading(
+          false
+        );
+      }
+    }
+
+    loadCompanies();
+  }, []);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -43,8 +148,11 @@ export default function AuditPage() {
     setError(null);
     setResult(null);
     setShowUrls(false);
+    setSaveError(null);
+    setSavedMessage(null);
 
-    const trimmedUrl = url.trim();
+    const trimmedUrl =
+      url.trim();
 
     if (!trimmedUrl) {
       setError(
@@ -56,21 +164,24 @@ export default function AuditPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "/api/audit",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            url: trimmedUrl,
-          }),
-        }
-      );
+      const response =
+        await fetch(
+          "/api/audit",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body:
+              JSON.stringify({
+                url: trimmedUrl,
+              }),
+          }
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -88,6 +199,84 @@ export default function AuditPage() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSaveAudit() {
+    if (!result) {
+      return;
+    }
+
+    setSaveError(null);
+    setSavedMessage(null);
+    setSaving(true);
+
+    try {
+      const response =
+        await fetch(
+          "/api/audit/save",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body:
+              JSON.stringify({
+                companyId:
+                  selectedCompanyId ||
+                  null,
+
+                websiteUrl:
+                  result.url,
+
+                scoringVersion:
+                  result.scoringVersion ??
+                  "1.1",
+
+                pagesAnalyzed:
+                  result.pagesAnalyzed,
+
+                analyzedUrls:
+                  result.analyzedUrls,
+
+                audit:
+                  result.audit,
+              }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail ??
+            data.message ??
+            "Impossible d’enregistrer l’audit."
+        );
+      }
+
+      const company =
+        companies.find(
+          (item) =>
+            item.id ===
+            selectedCompanyId
+        );
+
+      setSavedMessage(
+        company
+          ? `Audit enregistré et rattaché à ${company.name}.`
+          : "Audit enregistré."
+      );
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue pendant l’enregistrement."
+      );
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -130,8 +319,13 @@ export default function AuditPage() {
                 id="website-url"
                 type="url"
                 value={url}
-                onChange={(event) =>
-                  setUrl(event.target.value)
+                onChange={(
+                  event
+                ) =>
+                  setUrl(
+                    event.target
+                      .value
+                  )
                 }
                 placeholder="https://www.exemple.fr"
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -158,32 +352,35 @@ export default function AuditPage() {
           </form>
         </section>
 
-        {!result && !loading && (
-          <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Aucun audit lancé
-            </h2>
+        {!result &&
+          !loading && (
+            <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Aucun audit lancé
+              </h2>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Saisissez l’adresse d’un site
-              pour lancer une première
-              analyse.
-            </p>
-          </section>
-        )}
+              <p className="mt-2 text-sm text-slate-500">
+                Saisissez l’adresse
+                d’un site pour lancer
+                une première analyse.
+              </p>
+            </section>
+          )}
 
         {loading && (
           <section className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
 
             <p className="font-medium text-slate-700">
-              Analyse du site en cours...
+              Analyse du site en
+              cours...
             </p>
 
             <p className="mt-2 text-sm text-slate-500">
               Plusieurs pages sont
               parcourues avant la
-              préparation du diagnostic.
+              préparation du
+              diagnostic.
             </p>
           </section>
         )}
@@ -194,9 +391,13 @@ export default function AuditPage() {
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-blue-900">
-                    Analyse réalisée sur{" "}
-                    {result.pagesAnalyzed}{" "}
-                    {result.pagesAnalyzed > 1
+                    Analyse réalisée
+                    sur{" "}
+                    {
+                      result.pagesAnalyzed
+                    }{" "}
+                    {result.pagesAnalyzed >
+                    1
                       ? "pages"
                       : "page"}
                   </p>
@@ -211,7 +412,9 @@ export default function AuditPage() {
                   type="button"
                   onClick={() =>
                     setShowUrls(
-                      (current) =>
+                      (
+                        current
+                      ) =>
                         !current
                     )
                   }
@@ -227,12 +430,18 @@ export default function AuditPage() {
                 <div className="mt-4 rounded-xl border border-blue-200 bg-white p-4">
                   <ul className="space-y-2">
                     {result.analyzedUrls.map(
-                      (analyzedUrl) => (
+                      (
+                        analyzedUrl
+                      ) => (
                         <li
-                          key={analyzedUrl}
+                          key={
+                            analyzedUrl
+                          }
                           className="break-all text-sm text-slate-600"
                         >
-                          {analyzedUrl}
+                          {
+                            analyzedUrl
+                          }
                         </li>
                       )
                     )}
@@ -270,7 +479,8 @@ export default function AuditPage() {
               <ScoreCard
                 label="SEO"
                 score={
-                  result.audit.seoScore
+                  result.audit
+                    .seoScore
                 }
               />
 
@@ -285,7 +495,8 @@ export default function AuditPage() {
               <ScoreCard
                 label="GEO / IA"
                 score={
-                  result.audit.geoScore
+                  result.audit
+                    .geoScore
                 }
               />
             </section>
@@ -296,7 +507,10 @@ export default function AuditPage() {
               </h2>
 
               <p className="mt-4 whitespace-pre-line leading-7 text-slate-700">
-                {result.audit.summary}
+                {
+                  result.audit
+                    .summary
+                }
               </p>
             </section>
 
@@ -304,20 +518,23 @@ export default function AuditPage() {
               <AuditList
                 title="Points forts"
                 items={
-                  result.audit.strengths
+                  result.audit
+                    .strengths
                 }
               />
 
               <AuditList
                 title="Points à améliorer"
                 items={
-                  result.audit.weaknesses
+                  result.audit
+                    .weaknesses
                 }
               />
             </div>
 
-            {result.audit.limitations
-              .length > 0 && (
+            {result.audit
+              .limitations.length >
+              0 && (
               <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
                 <h2 className="text-xl font-bold text-slate-900">
                   Vérifications
@@ -325,11 +542,13 @@ export default function AuditPage() {
                 </h2>
 
                 <p className="mt-2 text-sm text-slate-600">
-                  Ces éléments ne peuvent
-                  pas être confirmés avec
-                  cette première analyse et
-                  nécessitent des données ou
-                  outils complémentaires.
+                  Ces éléments ne
+                  peuvent pas être
+                  confirmés avec cette
+                  première analyse et
+                  nécessitent des
+                  données ou outils
+                  complémentaires.
                 </p>
 
                 <ul className="mt-5 space-y-3">
@@ -347,7 +566,9 @@ export default function AuditPage() {
                         </span>
 
                         <span>
-                          {limitation}
+                          {
+                            limitation
+                          }
                         </span>
                       </li>
                     )
@@ -363,7 +584,10 @@ export default function AuditPage() {
 
               <ol className="mt-5 space-y-4">
                 {result.audit.priorities.map(
-                  (priority, index) => (
+                  (
+                    priority,
+                    index
+                  ) => (
                     <li
                       key={`${priority}-${index}`}
                       className="flex gap-4"
@@ -379,6 +603,112 @@ export default function AuditPage() {
                   )
                 )}
               </ol>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Enregistrer
+                    l’audit
+                  </h2>
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    Vous pouvez
+                    conserver cet
+                    audit seul ou le
+                    rattacher à une
+                    entreprise du CRM.
+                  </p>
+
+                  <div className="mt-5 max-w-xl">
+                    <label
+                      htmlFor="company"
+                      className="mb-2 block text-sm font-semibold text-slate-800"
+                    >
+                      Entreprise
+                    </label>
+
+                    <select
+                      id="company"
+                      value={
+                        selectedCompanyId
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setSelectedCompanyId(
+                          event
+                            .target
+                            .value
+                        )
+                      }
+                      disabled={
+                        companiesLoading
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
+                    >
+                      <option value="">
+                        {companiesLoading
+                          ? "Chargement..."
+                          : "Aucune entreprise sélectionnée"}
+                      </option>
+
+                      {companies.map(
+                        (
+                          company
+                        ) => (
+                          <option
+                            key={
+                              company.id
+                            }
+                            value={
+                              company.id
+                            }
+                          >
+                            {
+                              company.name
+                            }
+                            {company.relationship_status ===
+                            "client"
+                              ? " — Client"
+                              : " — Prospect"}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={
+                    handleSaveAudit
+                  }
+                  disabled={
+                    saving
+                  }
+                  className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving
+                    ? "Enregistrement..."
+                    : "Enregistrer l’audit"}
+                </button>
+              </div>
+
+              {savedMessage && (
+                <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                  {
+                    savedMessage
+                  }
+                </div>
+              )}
+
+              {saveError && (
+                <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {saveError}
+                </div>
+              )}
             </section>
           </>
         )}
@@ -396,10 +726,14 @@ function ScoreCard({
   score: number;
   highlighted?: boolean;
 }) {
-  const safeScore = Math.max(
-    0,
-    Math.min(100, score)
-  );
+  const safeScore =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        score
+      )
+    );
 
   return (
     <div
@@ -447,18 +781,25 @@ function AuditList({
       </h2>
 
       <ul className="mt-5 space-y-3">
-        {items.map((item, index) => (
-          <li
-            key={`${item}-${index}`}
-            className="flex gap-3 text-slate-700"
-          >
-            <span className="mt-1 text-blue-600">
-              •
-            </span>
+        {items.map(
+          (
+            item,
+            index
+          ) => (
+            <li
+              key={`${item}-${index}`}
+              className="flex gap-3 text-slate-700"
+            >
+              <span className="mt-1 text-blue-600">
+                •
+              </span>
 
-            <span>{item}</span>
-          </li>
-        ))}
+              <span>
+                {item}
+              </span>
+            </li>
+          )
+        )}
       </ul>
     </section>
   );
