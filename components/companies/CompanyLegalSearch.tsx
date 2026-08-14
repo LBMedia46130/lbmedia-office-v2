@@ -17,6 +17,7 @@ type LegalCompanyResult = {
   legal_form: string;
 
   address: string;
+  address_line_2?: string;
   postal_code: string;
   city: string;
 
@@ -24,7 +25,6 @@ type LegalCompanyResult = {
   ape_label: string;
 
   creation_date: string;
-  employee_range: string;
 };
 
 type CompanyLegalSearchProps = {
@@ -49,6 +49,12 @@ export default function CompanyLegalSearch({
 }: CompanyLegalSearchProps) {
   const router =
     useRouter();
+
+  const hasLegalIdentity =
+    Boolean(
+      initialSiren ||
+        initialSiret
+    );
 
   const initialQuery =
     initialSiret ||
@@ -75,6 +81,11 @@ export default function CompanyLegalSearch({
   ] = useState(false);
 
   const [
+    isRefreshing,
+    setIsRefreshing,
+  ] = useState(false);
+
+  const [
     importingSiren,
     setImportingSiren,
   ] = useState<
@@ -89,9 +100,153 @@ export default function CompanyLegalSearch({
   >(null);
 
   const [
+    success,
+    setSuccess,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
     hasSearched,
     setHasSearched,
   ] = useState(false);
+
+  async function searchLegalData(
+    searchQuery: string
+  ): Promise<
+    LegalCompanyResult[]
+  > {
+    const params =
+      new URLSearchParams({
+        q: searchQuery,
+      });
+
+    if (
+      initialPostalCode
+    ) {
+      params.set(
+        "postal_code",
+        initialPostalCode
+      );
+    }
+
+    const response =
+      await fetch(
+        `/api/companies/legal-search?${params.toString()}`
+      );
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.message ||
+          "Recherche impossible."
+      );
+    }
+
+    return Array.isArray(
+      data.results
+    )
+      ? data.results
+      : [];
+  }
+
+  async function importLegalData(
+    company: LegalCompanyResult
+  ) {
+    const response =
+      await fetch(
+        `/api/companies/${companyId}/legal-data`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify(
+            company
+          ),
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.message ||
+          "Import impossible."
+      );
+    }
+  }
+
+  async function handleRefresh() {
+    const searchQuery =
+      initialSiret ||
+      initialSiren;
+
+    if (!searchQuery) {
+      return;
+    }
+
+    setIsRefreshing(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const legalResults =
+        await searchLegalData(
+          searchQuery
+        );
+
+      if (
+        legalResults.length ===
+        0
+      ) {
+        throw new Error(
+          "Aucune donnée légale trouvée pour cette entreprise."
+        );
+      }
+
+      const exactResult =
+        legalResults.find(
+          (result) =>
+            result.siret ===
+              initialSiret ||
+            result.siren ===
+              initialSiren
+        ) ??
+        legalResults[0];
+
+      await importLegalData(
+        exactResult
+      );
+
+      setSuccess(
+        "Données légales actualisées."
+      );
+
+      router.refresh();
+    } catch (refreshError) {
+      setError(
+        refreshError instanceof
+          Error
+          ? refreshError.message
+          : "Actualisation impossible."
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   async function handleSearch() {
     const cleanedQuery =
@@ -107,48 +262,18 @@ export default function CompanyLegalSearch({
 
     setIsSearching(true);
     setError(null);
+    setSuccess(null);
     setResults([]);
     setHasSearched(false);
 
     try {
-      const params =
-        new URLSearchParams({
-          q: cleanedQuery,
-        });
-
-      if (
-        initialPostalCode
-      ) {
-        params.set(
-          "postal_code",
-          initialPostalCode
+      const legalResults =
+        await searchLegalData(
+          cleanedQuery
         );
-      }
-
-      const response =
-        await fetch(
-          `/api/companies/legal-search?${params.toString()}`
-        );
-
-      const data =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data.message ||
-            "Recherche impossible."
-        );
-      }
 
       setResults(
-        Array.isArray(
-          data.results
-        )
-          ? data.results
-          : []
+        legalResults
       );
 
       setHasSearched(true);
@@ -171,40 +296,19 @@ export default function CompanyLegalSearch({
     );
 
     setError(null);
+    setSuccess(null);
 
     try {
-      const response =
-        await fetch(
-          `/api/companies/${companyId}/legal-data`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify(
-              company
-            ),
-          }
-        );
-
-      const data =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data.message ||
-            "Import impossible."
-        );
-      }
+      await importLegalData(
+        company
+      );
 
       setResults([]);
       setHasSearched(false);
+
+      setSuccess(
+        "Données légales importées."
+      );
 
       router.refresh();
     } catch (importError) {
@@ -220,6 +324,52 @@ export default function CompanyLegalSearch({
     }
   }
 
+  if (hasLegalIdentity) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
+            Données officielles
+          </p>
+
+          <p className="mt-1 text-sm text-slate-600">
+            Les données légales
+            de cette entreprise
+            ont déjà été
+            identifiées.
+          </p>
+
+          {error ? (
+            <p className="mt-2 text-sm font-medium text-red-600">
+              {error}
+            </p>
+          ) : null}
+
+          {success ? (
+            <p className="mt-2 text-sm font-medium text-emerald-600">
+              {success}
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            void handleRefresh()
+          }
+          disabled={
+            isRefreshing
+          }
+          className="rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isRefreshing
+            ? "Actualisation..."
+            : "Actualiser les données légales"}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
       <div>
@@ -228,7 +378,8 @@ export default function CompanyLegalSearch({
         </p>
 
         <h3 className="mt-1 font-bold text-slate-900">
-          Données légales officielles
+          Données légales
+          officielles
         </h3>
 
         <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -280,6 +431,12 @@ export default function CompanyLegalSearch({
       {error ? (
         <p className="mt-3 text-sm font-medium text-red-600">
           {error}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p className="mt-3 text-sm font-medium text-emerald-600">
+          {success}
         </p>
       ) : null}
 
