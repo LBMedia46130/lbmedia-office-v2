@@ -2,10 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const MAX_PAGES = 8;
+const MAX_TEXT_PER_PAGE = 9000;
+
+type PageData = {
+  url: string;
+  title: string | null;
+  metaDescription: string | null;
+  headings: string[];
+  text: string;
+  canonical: boolean;
+  viewport: boolean;
+  openGraph: boolean;
+  structuredData: boolean;
+};
 
 type AuditResult = {
   globalScore: number;
@@ -33,28 +49,38 @@ function normalizeUrl(value: string) {
   return `https://${trimmed}`;
 }
 
-function cleanHtml(html: string) {
-  return html
-    .replace(
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      " "
-    )
-    .replace(
-      /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi,
-      " "
-    )
-    .replace(
-      /<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi,
-      " "
-    )
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/<[^>]+>/g, " ")
+function decodeHtmlEntities(value: string) {
+  return value
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
+    .replace(/&#(\d+);/g, (_, code) =>
+      String.fromCharCode(Number(code))
+    );
+}
+
+function cleanHtml(html: string) {
+  return decodeHtmlEntities(
+    html
+      .replace(
+        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+        " "
+      )
+      .replace(
+        /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi,
+        " "
+      )
+      .replace(
+        /<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi,
+        " "
+      )
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/<[^>]+>/g, " ")
+  )
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -64,22 +90,28 @@ function extractTitle(html: string) {
     /<title[^>]*>([\s\S]*?)<\/title>/i
   );
 
-  return match
-    ? cleanHtml(match[1])
-    : null;
+  return match ? cleanHtml(match[1]) : null;
 }
 
 function extractMetaDescription(html: string) {
-  const patterns = [
-    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["'][^>]*>/i,
-    /<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["'][^>]*>/i,
-  ];
+  const metaTags =
+    html.match(/<meta\b[^>]*>/gi) ?? [];
 
-  for (const pattern of patterns) {
-    const match = html.match(pattern);
+  for (const tag of metaTags) {
+    if (
+      /name\s*=\s*["']description["']/i.test(
+        tag
+      )
+    ) {
+      const content = tag.match(
+        /content\s*=\s*["']([^"']*)["']/i
+      );
 
-    if (match?.[1]) {
-      return match[1].trim();
+      if (content?.[1]) {
+        return decodeHtmlEntities(
+          content[1]
+        ).trim();
+      }
     }
   }
 
@@ -102,7 +134,7 @@ function extractHeadings(html: string) {
       );
     }
 
-    if (headings.length >= 40) {
+    if (headings.length >= 35) {
       break;
     }
   }
@@ -110,49 +142,272 @@ function extractHeadings(html: string) {
   return headings;
 }
 
-function extractLinks(html: string) {
-  const links: string[] = [];
-
-  const matches = html.matchAll(
-    /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
-  );
-
-  for (const match of matches) {
-    const text = cleanHtml(match[2]);
-
-    if (text) {
-      links.push(text);
-    }
-
-    if (links.length >= 50) {
-      break;
-    }
-  }
-
-  return links;
-}
-
 function hasJsonLd(html: string) {
   return /application\/ld\+json/i.test(html);
 }
 
 function hasCanonical(html: string) {
-  return /<link[^>]+rel=["']canonical["']/i.test(
+  return /<link[^>]+rel\s*=\s*["']canonical["']/i.test(
     html
   );
 }
 
 function hasViewport(html: string) {
-  return /<meta[^>]+name=["']viewport["']/i.test(
+  return /<meta[^>]+name\s*=\s*["']viewport["']/i.test(
     html
   );
 }
 
 function hasOpenGraph(html: string) {
-  return /property=["']og:/i.test(html);
+  return /property\s*=\s*["']og:/i.test(
+    html
+  );
 }
 
-function numberBetween0And100(value: unknown) {
+function normalizeComparableHost(
+  hostname: string
+) {
+  return hostname
+    .toLowerCase()
+    .replace(/^www\./, "");
+}
+
+function isSameWebsite(
+  first: URL,
+  second: URL
+) {
+  return (
+    normalizeComparableHost(
+      first.hostname
+    ) ===
+    normalizeComparableHost(
+      second.hostname
+    )
+  );
+}
+
+function cleanDiscoveredUrl(
+  href: string,
+  baseUrl: URL
+) {
+  try {
+    const candidate = new URL(
+      href,
+      baseUrl
+    );
+
+    if (
+      !["http:", "https:"].includes(
+        candidate.protocol
+      )
+    ) {
+      return null;
+    }
+
+    if (
+      !isSameWebsite(
+        candidate,
+        baseUrl
+      )
+    ) {
+      return null;
+    }
+
+    candidate.hash = "";
+
+    for (const key of [
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_content",
+      "utm_term",
+      "fbclid",
+      "gclid",
+    ]) {
+      candidate.searchParams.delete(
+        key
+      );
+    }
+
+    const pathname =
+      candidate.pathname.toLowerCase();
+
+    if (
+      /\.(jpg|jpeg|png|gif|webp|svg|pdf|zip|rar|mp4|mp3|avi|mov|doc|docx|xls|xlsx|ppt|pptx)$/i.test(
+        pathname
+      )
+    ) {
+      return null;
+    }
+
+    return candidate.toString();
+  } catch {
+    return null;
+  }
+}
+
+function scoreCandidate(url: string) {
+  const lower = url.toLowerCase();
+
+  let score = 0;
+
+  const highPriority = [
+    "contact",
+    "agence",
+    "a-propos",
+    "about",
+    "service",
+    "prestation",
+    "creation",
+    "site-internet",
+    "seo",
+    "referencement",
+    "tarif",
+    "prix",
+  ];
+
+  const mediumPriority = [
+    "actualite",
+    "article",
+    "blog",
+    "realisation",
+    "portfolio",
+    "reference",
+    "client",
+    "faq",
+  ];
+
+  const lowPriority = [
+    "mentions-legales",
+    "confidentialite",
+    "privacy",
+    "cookie",
+    "cgv",
+    "connexion",
+    "login",
+  ];
+
+  for (const keyword of highPriority) {
+    if (lower.includes(keyword)) {
+      score += 20;
+    }
+  }
+
+  for (const keyword of mediumPriority) {
+    if (lower.includes(keyword)) {
+      score += 8;
+    }
+  }
+
+  for (const keyword of lowPriority) {
+    if (lower.includes(keyword)) {
+      score -= 30;
+    }
+  }
+
+  const depth = new URL(
+    url
+  ).pathname
+    .split("/")
+    .filter(Boolean).length;
+
+  score -= depth * 2;
+
+  return score;
+}
+
+function discoverInternalLinks(
+  html: string,
+  baseUrl: URL
+) {
+  const urls = new Set<string>();
+
+  const matches = html.matchAll(
+    /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi
+  );
+
+  for (const match of matches) {
+    const url = cleanDiscoveredUrl(
+      match[1],
+      baseUrl
+    );
+
+    if (url) {
+      urls.add(url);
+    }
+  }
+
+  return [...urls].sort(
+    (a, b) =>
+      scoreCandidate(b) -
+      scoreCandidate(a)
+  );
+}
+
+async function fetchHtml(url: string) {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; LBMediaOffice/2.1; WebsiteAudit)",
+      Accept:
+        "text/html,application/xhtml+xml",
+    },
+    redirect: "follow",
+    signal: AbortSignal.timeout(12000),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `HTTP ${response.status}`
+    );
+  }
+
+  const contentType =
+    response.headers.get(
+      "content-type"
+    ) ?? "";
+
+  if (
+    !contentType.includes("text/html")
+  ) {
+    throw new Error(
+      "Contenu non HTML"
+    );
+  }
+
+  const html = await response.text();
+
+  return {
+    html,
+    finalUrl: response.url || url,
+  };
+}
+
+function buildPageData(
+  url: string,
+  html: string
+): PageData {
+  return {
+    url,
+    title: extractTitle(html),
+    metaDescription:
+      extractMetaDescription(html),
+    headings: extractHeadings(html),
+    text: cleanHtml(html).slice(
+      0,
+      MAX_TEXT_PER_PAGE
+    ),
+    canonical: hasCanonical(html),
+    viewport: hasViewport(html),
+    openGraph: hasOpenGraph(html),
+    structuredData: hasJsonLd(html),
+  };
+}
+
+function numberBetween0And100(
+  value: unknown
+) {
   const number = Number(value);
 
   if (!Number.isFinite(number)) {
@@ -161,7 +416,10 @@ function numberBetween0And100(value: unknown) {
 
   return Math.max(
     0,
-    Math.min(100, Math.round(number))
+    Math.min(
+      100,
+      Math.round(number)
+    )
   );
 }
 
@@ -182,10 +440,23 @@ function validateAudit(
     unknown
   >;
 
+  const strings = (
+    value: unknown
+  ) =>
+    Array.isArray(value)
+      ? value.filter(
+          (
+            item
+          ): item is string =>
+            typeof item === "string"
+        )
+      : [];
+
   return {
-    globalScore: numberBetween0And100(
-      data.globalScore
-    ),
+    globalScore:
+      numberBetween0And100(
+        data.globalScore
+      ),
     positioningScore:
       numberBetween0And100(
         data.positioningScore
@@ -194,50 +465,31 @@ function validateAudit(
       numberBetween0And100(
         data.conversionScore
       ),
-    seoScore: numberBetween0And100(
-      data.seoScore
-    ),
+    seoScore:
+      numberBetween0And100(
+        data.seoScore
+      ),
     localSeoScore:
       numberBetween0And100(
         data.localSeoScore
       ),
-    geoScore: numberBetween0And100(
-      data.geoScore
-    ),
+    geoScore:
+      numberBetween0And100(
+        data.geoScore
+      ),
     summary:
       typeof data.summary === "string"
         ? data.summary
         : "",
-    strengths: Array.isArray(
+    strengths: strings(
       data.strengths
-    )
-      ? data.strengths.filter(
-          (
-            item
-          ): item is string =>
-            typeof item === "string"
-        )
-      : [],
-    weaknesses: Array.isArray(
+    ),
+    weaknesses: strings(
       data.weaknesses
-    )
-      ? data.weaknesses.filter(
-          (
-            item
-          ): item is string =>
-            typeof item === "string"
-        )
-      : [],
-    priorities: Array.isArray(
+    ),
+    priorities: strings(
       data.priorities
-    )
-      ? data.priorities.filter(
-          (
-            item
-          ): item is string =>
-            typeof item === "string"
-        )
-      : [],
+    ).slice(0, 3),
   };
 }
 
@@ -258,7 +510,8 @@ export async function POST(
   }
 
   try {
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const rawUrl =
       typeof body.url === "string"
@@ -278,12 +531,15 @@ export async function POST(
       );
     }
 
-    const url = normalizeUrl(rawUrl);
+    const requestedUrl =
+      normalizeUrl(rawUrl);
 
-    let parsedUrl: URL;
+    let requestedParsed: URL;
 
     try {
-      parsedUrl = new URL(url);
+      requestedParsed = new URL(
+        requestedUrl
+      );
     } catch {
       return NextResponse.json(
         {
@@ -297,178 +553,218 @@ export async function POST(
       );
     }
 
-    if (
-      !["http:", "https:"].includes(
-        parsedUrl.protocol
+    const homeFetch =
+      await fetchHtml(
+        requestedParsed.toString()
+      );
+
+    const homeUrl = new URL(
+      homeFetch.finalUrl
+    );
+
+    const pages: PageData[] = [
+      buildPageData(
+        homeUrl.toString(),
+        homeFetch.html
+      ),
+    ];
+
+    const discovered =
+      discoverInternalLinks(
+        homeFetch.html,
+        homeUrl
+      );
+
+    const candidates =
+      discovered.filter(
+        (url) =>
+          url !== homeUrl.toString()
+      );
+
+    for (const candidate of candidates) {
+      if (
+        pages.length >= MAX_PAGES
+      ) {
+        break;
+      }
+
+      try {
+        const fetched =
+          await fetchHtml(candidate);
+
+        const finalUrl = new URL(
+          fetched.finalUrl
+        );
+
+        if (
+          !isSameWebsite(
+            finalUrl,
+            homeUrl
+          )
+        ) {
+          continue;
+        }
+
+        const alreadyAdded =
+          pages.some(
+            (page) =>
+              page.url ===
+              finalUrl.toString()
+          );
+
+        if (alreadyAdded) {
+          continue;
+        }
+
+        const page =
+          buildPageData(
+            finalUrl.toString(),
+            fetched.html
+          );
+
+        if (page.text.length < 100) {
+          continue;
+        }
+
+        pages.push(page);
+      } catch {
+        // Une page inaccessible ne doit
+        // pas faire échouer tout l'audit.
+      }
+    }
+
+    const siteData = pages
+      .map(
+        (page, index) => `
+==============================
+PAGE ${index + 1}
+==============================
+
+URL :
+${page.url}
+
+TITLE :
+${page.title ?? "Non trouvé"}
+
+META DESCRIPTION :
+${page.metaDescription ?? "Non trouvée"}
+
+SIGNAUX TECHNIQUES :
+- Canonical : ${page.canonical ? "oui" : "non détectée"}
+- Viewport : ${page.viewport ? "oui" : "non détecté"}
+- Open Graph : ${page.openGraph ? "oui" : "non détecté"}
+- Données structurées JSON-LD : ${page.structuredData ? "oui" : "non détectées"}
+
+TITRES :
+${page.headings.join("\n") || "Aucun titre détecté"}
+
+CONTENU :
+${page.text}
+`
       )
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Seules les adresses HTTP et HTTPS sont acceptées.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const websiteResponse =
-      await fetch(url, {
-        method: "GET",
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (compatible; LBMediaOffice/2.1; WebsiteAudit)",
-          Accept:
-            "text/html,application/xhtml+xml",
-        },
-        redirect: "follow",
-        signal:
-          AbortSignal.timeout(15000),
-      });
-
-    if (!websiteResponse.ok) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Le site a répondu avec le code ${websiteResponse.status}.`,
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const contentType =
-      websiteResponse.headers.get(
-        "content-type"
-      ) ?? "";
-
-    if (
-      !contentType.includes("text/html")
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "L’adresse indiquée ne semble pas correspondre à une page web HTML.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const html =
-      await websiteResponse.text();
-
-    const title =
-      extractTitle(html);
-
-    const metaDescription =
-      extractMetaDescription(html);
-
-    const headings =
-      extractHeadings(html);
-
-    const linkLabels =
-      extractLinks(html);
-
-    const visibleText =
-      cleanHtml(html).slice(
-        0,
-        24000
-      );
-
-    if (visibleText.length < 150) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Le contenu de cette page est trop limité pour réaliser une analyse pertinente.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const technicalSignals = {
-      canonical: hasCanonical(html),
-      viewport: hasViewport(html),
-      openGraph: hasOpenGraph(html),
-      structuredData:
-        hasJsonLd(html),
-      titlePresent: Boolean(title),
-      metaDescriptionPresent:
-        Boolean(metaDescription),
-      headingCount:
-        headings.length,
-    };
+      .join("\n");
 
     const prompt = `
 Tu réalises un pré-audit professionnel de site internet pour LBMedia, agence de communication spécialisée notamment dans la création de sites internet, le SEO, la visibilité locale et la communication.
 
-L'objectif n'est PAS de vendre artificiellement une prestation.
-Tu dois analyser uniquement ce qui est réellement observable dans les données fournies.
+Tu disposes maintenant d'un ÉCHANTILLON DE PLUSIEURS PAGES du site.
 
-IMPORTANT :
-- Ne prétends jamais avoir mesuré ce qui n'a pas été mesuré.
-- Tu n'as PAS accès aux Core Web Vitals, PageSpeed Insights, Search Console, Analytics, backlinks, positions Google réelles ou fiche Google Business.
-- Si une information manque, n'invente rien.
-- L'analyse doit rester utile commercialement, mais crédible et factuelle.
-- Le ton doit être professionnel, mature, concret et compréhensible par un dirigeant de PME.
-- Ne sois ni excessivement sévère, ni complaisant.
+Nombre de pages réellement analysées :
+${pages.length}
+
+RÈGLE ABSOLUE :
+Tu dois distinguer :
+1. ce qui a réellement été observé ;
+2. ce qui semble absent de l'échantillon ;
+3. ce qui ne peut pas être vérifié avec les données disponibles.
+
+Tu ne dois JAMAIS transformer une absence dans l'échantillon en certitude sur l'ensemble du site.
+
+Par exemple :
+- si aucune adresse n'apparaît, écris "aucune adresse n'a été repérée dans les pages analysées", et non "le site ne contient pas d'adresse" ;
+- si aucun témoignage n'est trouvé, ne conclus pas automatiquement qu'il n'existe aucun témoignage ailleurs ;
+- ne prétends jamais avoir audité Google Business, Search Console, Analytics ou les backlinks.
+
+Tu n'as PAS mesuré :
+- Core Web Vitals ;
+- PageSpeed Insights ;
+- performances réelles ;
+- positions Google ;
+- trafic ;
+- conversions réelles ;
+- backlinks ;
+- Google Business ;
+- Search Console ;
+- Analytics.
+
+OBJECTIF :
+Produire un diagnostic professionnel, crédible, utile à un dirigeant de PME et exploitable par LBMedia.
+
+Ne cherche pas artificiellement des défauts.
+Un bon site peut obtenir une bonne note.
+
+Ne pénalise pas un site pour une fonctionnalité qui n'est pas pertinente pour son activité.
+
+Analyse les axes suivants :
+
+POSITIONNEMENT
+- compréhension de l'activité ;
+- proposition de valeur ;
+- différenciation ;
+- cible ;
+- cohérence entre les pages.
+
+CONVERSION
+- appels à l'action ;
+- parcours ;
+- réassurance ;
+- contact ;
+- capacité à transformer une visite en prise de contact.
+
+SEO
+- titles ;
+- meta descriptions ;
+- H1/H2/H3 ;
+- qualité et profondeur éditoriale ;
+- cohérence sémantique ;
+- différenciation des pages ;
+- compréhension des services.
+
+SEO LOCAL
+- localisation ;
+- zones desservies ;
+- coordonnées ;
+- signaux locaux visibles ;
+- cohérence géographique.
+
+Ne prétends pas avoir contrôlé Google Business.
+
+GEO / IA
+Évalue la capacité du contenu à être compris, synthétisé et potentiellement cité par les moteurs de recherche et assistants IA :
+- informations explicites ;
+- expertise identifiable ;
+- services clairement décrits ;
+- localisation ;
+- entités ;
+- réponses aux questions ;
+- précision factuelle ;
+- contenu structuré ;
+- données structurées lorsqu'elles sont observables.
+
+NOTATION :
+Attribue une note de 0 à 100 pour chaque axe.
+
+Les notes sont des INDICATEURS D'ANALYSE et non des mesures scientifiques.
+
+Le score global doit être cohérent avec l'ensemble du diagnostic.
 
 SITE ANALYSÉ :
-URL : ${url}
+${homeUrl.toString()}
 
-TITRE HTML :
-${title ?? "Non trouvé"}
+DONNÉES COLLECTÉES :
+${siteData}
 
-META DESCRIPTION :
-${metaDescription ?? "Non trouvée"}
-
-SIGNAUX TECHNIQUES :
-${JSON.stringify(
-  technicalSignals,
-  null,
-  2
-)}
-
-TITRES DE LA PAGE :
-${headings.join("\n") || "Aucun titre détecté"}
-
-TEXTES DES PRINCIPAUX LIENS :
-${linkLabels.join(" | ") || "Aucun lien exploitable"}
-
-CONTENU VISIBLE DE LA PAGE :
-${visibleText}
-
-Analyse le site selon ces axes :
-
-1. Positionnement
-Clarté de l'activité, proposition de valeur, compréhension immédiate de ce que propose l'entreprise et à qui.
-
-2. Conversion
-Présence et qualité des appels à l'action, capacité de la page à guider un prospect, éléments de réassurance, prise de contact.
-
-3. SEO
-Qualité observable du titre, meta description, structure de titres, contenu éditorial, sémantique et organisation de la page.
-Ne mesure pas les performances ni les positions Google.
-
-4. SEO local
-Indices visibles permettant d'identifier une implantation géographique, une zone de chalandise ou une activité locale.
-Ne prétends pas avoir audité Google Business.
-
-5. GEO / visibilité IA
-Capacité du contenu à être compris et cité par des moteurs de recherche et assistants IA : précision des informations, contexte, expertise, structure, explicitation des services, entités, localisation et réponses utiles.
-
-Attribue à chaque axe une note sur 100.
-Le score global doit correspondre à une appréciation équilibrée de l'ensemble.
-
-Retourne UNIQUEMENT un objet JSON valide, sans markdown ni commentaire, exactement sous cette forme :
+Retourne UNIQUEMENT un objet JSON valide :
 
 {
   "globalScore": 0,
@@ -477,29 +773,25 @@ Retourne UNIQUEMENT un objet JSON valide, sans markdown ni commentaire, exacteme
   "seoScore": 0,
   "localSeoScore": 0,
   "geoScore": 0,
-  "summary": "Synthèse de 2 à 4 paragraphes courts.",
+  "summary": "Synthèse professionnelle de 2 à 4 paragraphes courts.",
   "strengths": [
-    "Point fort précis",
-    "Point fort précis"
+    "Point fort précis et fondé sur une observation"
   ],
   "weaknesses": [
-    "Point à améliorer précis",
-    "Point à améliorer précis"
+    "Point perfectible précis et fondé sur une observation"
   ],
   "priorities": [
-    "Priorité concrète numéro 1",
-    "Priorité concrète numéro 2",
-    "Priorité concrète numéro 3"
+    "Action prioritaire concrète",
+    "Action prioritaire concrète",
+    "Action prioritaire concrète"
   ]
 }
 
-Pour strengths et weaknesses :
-- donne entre 3 et 6 éléments quand les données le permettent.
+Donne entre 3 et 6 points forts et entre 3 et 6 points perfectibles lorsque les données le permettent.
 
-Pour priorities :
-- donne exactement 3 priorités ;
-- classe-les par impact business potentiel ;
-- formule des actions concrètes et non des généralités.
+Les 3 priorités doivent être classées selon leur impact business probable.
+
+Ne recommande pas une refonte complète si les observations ne la justifient pas.
 `.trim();
 
     const completion =
@@ -509,7 +801,7 @@ Pour priorities :
           {
             role: "system",
             content:
-              "Tu es un consultant senior en stratégie web, UX, SEO et visibilité numérique. Tu travailles pour LBMedia.",
+              "Tu es consultant senior en stratégie web, UX, SEO et visibilité dans les moteurs de recherche et assistants IA. Tes diagnostics sont factuels, prudents, exigeants et orientés business.",
           },
           {
             role: "user",
@@ -522,8 +814,8 @@ Pour priorities :
       });
 
     const content =
-      completion.choices[0]?.message
-        ?.content;
+      completion.choices[0]
+        ?.message?.content;
 
     if (!content) {
       throw new Error(
@@ -547,7 +839,11 @@ Pour priorities :
 
     return NextResponse.json({
       success: true,
-      url,
+      url: homeUrl.toString(),
+      pagesAnalyzed: pages.length,
+      analyzedUrls: pages.map(
+        (page) => page.url
+      ),
       audit,
     });
   } catch (error) {
