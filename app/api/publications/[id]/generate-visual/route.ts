@@ -13,41 +13,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const visualSceneDirections = [
-  "une scène professionnelle ou commerciale concrète directement liée à l'idée principale du post",
-  "une interaction naturelle entre plusieurs personnes dans une situation directement liée au sujet",
-  "une composition éditoriale centrée sur une action, des objets, des documents ou des éléments métier liés au sujet",
-  "une scène locale ou professionnelle en plan large avec un environnement crédible et plusieurs niveaux de lecture",
-  "une métaphore visuelle simple et immédiatement compréhensible représentant l'idée principale du post",
-  "une composition construite autour d'objets, de matières ou de situations professionnelles spécifiques au sujet",
-];
-
-const visualFramings = [
-  "plan large avec environnement visible et profondeur",
-  "plan moyen naturel avec une composition éditoriale travaillée",
-  "cadrage légèrement décentré avec le sujet placé sur un tiers de l'image",
-  "vue immersive avec premier plan, plan intermédiaire et arrière-plan",
-  "cadrage rapproché sur une action ou des détails métier",
-  "composition horizontale laissant respirer la scène",
-];
-
-function getRandomItem<T>(
-  items: T[]
-): T {
-  return items[
-    Math.floor(
-      Math.random() * items.length
-    )
-  ];
-}
-
 export async function POST(
   _request: Request,
   context: RouteContext
 ) {
-  if (
-    !process.env.OPENAI_API_KEY
-  ) {
+  if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       {
         success: false,
@@ -136,17 +106,7 @@ export async function POST(
       publication.content
         .trim()
         .replace(/\s+/g, " ")
-        .slice(0, 2200);
-
-    const sceneDirection =
-      getRandomItem(
-        visualSceneDirections
-      );
-
-    const framingDirection =
-      getRandomItem(
-        visualFramings
-      );
+        .slice(0, 2400);
 
     const platform =
       publication.channel ===
@@ -167,68 +127,130 @@ ${
     : ""
 }
 
-OBJECTIF :
+MISSION CRÉATIVE :
 
-Comprendre d'abord l'idée principale du post.
+Ne pas commencer par imaginer une scène.
 
-Créer ensuite UNE scène visuelle forte, simple à comprendre et directement liée à cette idée.
+Commencer par comprendre le MESSAGE du post.
 
-Le visuel ne doit pas simplement illustrer des mots-clés.
-Il doit représenter une situation, une idée, un problème ou une action concrète évoquée dans le post.
+Identifier mentalement :
 
-DIRECTION VISUELLE :
+1. quelle est l'idée principale ;
+2. quel problème ou quelle question le post pose ;
+3. quelle opposition, tension ou transformation il évoque ;
+4. quelle image pourrait rendre cette idée compréhensible immédiatement, même sans lire le texte.
 
-- ${sceneDirection};
-- ${framingDirection}.
+Ensuite seulement, concevoir UNE métaphore visuelle ou UNE situation éditoriale forte.
 
-STYLE VISUEL LBMEDIA — RÈGLE PRIORITAIRE :
+Le visuel doit apporter une idée.
+Il ne doit pas seulement décorer le post.
+
+PRIORITÉ ABSOLUE :
+
+Créer une image qui illustre LE CONCEPT du post, et non son secteur d'activité.
+
+Exemples de logique attendue :
+
+- si le post parle d'un site internet inutile, montrer une présence numérique qui existe mais n'attire personne ;
+- si le post parle de visibilité, montrer une différence claire entre être présent et être réellement vu ;
+- si le post parle de conversion, montrer un passage d'une simple présence à une action concrète ;
+- si le post parle de communication inefficace, montrer un message qui existe mais n'atteint pas sa cible ;
+- si le post parle d'un choix ou d'une décision, construire une image autour de cette tension.
+
+Ces exemples illustrent une méthode de réflexion.
+Ne pas les reproduire automatiquement.
+
+STYLE LBMEDIA :
 
 Créer une ILLUSTRATION NUMÉRIQUE ÉDITORIALE CONTEMPORAINE.
 
+Le résultat doit être immédiatement identifiable comme une illustration de presse ou de magazine professionnel.
+
 CE N'EST PAS UNE PHOTOGRAPHIE.
 
-Le résultat doit ressembler à une illustration réalisée pour un média professionnel, une agence de communication ou une publication éditoriale haut de gamme.
+Le rendu doit être :
 
-Style :
-
-- figuratif ;
 - adulte ;
-- moderne ;
 - élégant ;
-- professionnel ;
-- immédiatement compréhensible ;
-- clairement illustré et non photographique ;
-- volumes doux ;
-- matières légèrement stylisées ;
-- profondeur graphique ;
-- lumière éditoriale ;
-- détails suffisamment riches sans tomber dans le photoréalisme.
+- moderne ;
+- éditorial ;
+- conceptuel mais lisible ;
+- figuratif ;
+- crédible ;
+- légèrement stylisé ;
+- visuellement sophistiqué ;
+- distinct d'une banque d'images ;
+- distinct d'une illustration corporate générique.
+
+La stylisation doit être visible.
+
+Les volumes, matières, lumières et personnages doivent rester illustrés.
+
+Ne jamais chercher un rendu hyperréaliste.
+
+DIRECTION ARTISTIQUE :
+
+- composition claire et forte ;
+- une idée visuelle principale ;
+- peu d'éléments, mais chacun doit avoir une fonction ;
+- profondeur et perspective ;
+- cadrage moderne ;
+- composition horizontale ;
+- hiérarchie visuelle nette ;
+- contraste suffisant pour fonctionner dans un fil LinkedIn ou Facebook ;
+- image lisible même en taille réduite ;
+- éviter les scènes trop narratives ou trop cinématographiques ;
+- éviter les rayons lumineux spectaculaires ou effets dramatiques artificiels ;
+- éviter toute esthétique "pub IA".
 
 IDENTITÉ VISUELLE LBMEDIA :
 
-Utiliser de manière subtile et naturelle :
+Palette récurrente mais subtile :
 
 - bleu nuit profond ;
 - bleu soutenu ;
 - cyan / bleu lumineux ;
-- blanc et tons clairs ;
-- couleurs naturelles complémentaires adaptées à la scène.
+- blanc ;
+- tons clairs ;
+- couleurs naturelles complémentaires selon le sujet.
 
-Les couleurs LBMedia doivent ponctuer la composition sans créer un filtre bleu uniforme.
+Les couleurs LBMedia doivent structurer ou ponctuer l'image.
 
-ÉVITER ABSOLUMENT :
+Ne pas appliquer un filtre bleu uniforme.
+
+Ne pas utiliser systématiquement un décor de bureau ou de commerce.
+
+La cohérence LBMedia doit venir surtout :
+
+- du niveau de stylisation ;
+- de la sophistication graphique ;
+- de la palette ;
+- de la qualité de composition ;
+- du caractère éditorial.
+
+À ÉVITER ABSOLUMENT :
 
 - photographie ;
 - photoréalisme ;
+- hyperréalisme ;
+- rendu cinématographique spectaculaire ;
+- lumière dramatique artificielle ;
+- rayon lumineux symbolique ;
 - banque d'images corporate ;
 - personne seule devant un ordinateur ;
-- personne seule regardant son smartphone ;
-- réunions génériques autour d'un laptop ;
-- pose face caméra ;
+- personne seule avec un smartphone ;
+- professionnel pensif devant son écran ;
+- commerçant regardant simplement passer des clients ;
+- réunion générique ;
 - coworking générique ;
+- portrait corporate ;
+- personnage face caméra ;
+- laptop comme sujet principal ;
+- smartphone comme sujet principal ;
+- scène de bureau sans lien précis avec l'idée ;
 - esthétique SaaS ;
 - illustration vectorielle plate ;
-- cartoon enfantin ;
+- cartoon ;
 - 3D plastique ;
 - rendu jouet ;
 - pictogrammes ;
@@ -237,17 +259,22 @@ Les couleurs LBMedia doivent ponctuer la composition sans créer un filtre bleu 
 
 PRIVILÉGIER :
 
-- situations professionnelles concrètes ;
-- commerces ;
-- entreprises locales ;
-- ateliers ;
-- interactions clients ;
-- objets métier ;
-- documents sans texte ;
-- lieux professionnels ;
-- actions réelles ;
-- compositions avec profondeur ;
-- scènes qui racontent quelque chose.
+- métaphores visuelles intelligentes ;
+- contrastes avant / après ;
+- obstacle / passage ;
+- visible / invisible ;
+- présence / efficacité ;
+- diffusion / réception ;
+- parcours / destination ;
+- ouverture / blocage ;
+- mouvement / stagnation ;
+- situations éditoriales simples et symboliques ;
+- objets ou environnements utilisés de manière conceptuelle ;
+- interactions humaines uniquement si elles sont nécessaires à l'idée.
+
+LES PERSONNES NE SONT PAS OBLIGATOIRES.
+
+Si une idée peut être mieux exprimée sans personnage, privilégier une composition sans personnage principal.
 
 INTERDICTIONS ABSOLUES :
 
@@ -267,19 +294,23 @@ INTERDICTIONS ABSOLUES :
 - AUCUN FAUX SITE INTERNET ;
 - AUCUN WIREFRAME ;
 - AUCUN ÉCRAN AVEC DU TEXTE ;
-- AUCUN DOCUMENT LISIBLE.
+- AUCUN DOCUMENT LISIBLE ;
+- AUCUN ÉLÉMENT QUI RESSEMBLE À UNE CAPTURE D'ÉCRAN.
 
-Si des documents, écrans ou supports apparaissent, ils doivent être vierges ou ne contenir que des formes abstraites non interprétables.
+Si des documents ou écrans apparaissent, ils doivent rester abstraits et non lisibles.
 
-Le visuel doit pouvoir fonctionner seul dans un fil LinkedIn ou Facebook.
+RÉSULTAT ATTENDU :
+
+Une illustration éditoriale forte, conceptuelle, immédiatement lisible et suffisamment distinctive pour que l'on puisse reconnaître progressivement une famille de visuels LBMedia.
+
+Le visuel doit donner envie de s'arrêter sur le post.
+
+Il doit sembler avoir été pensé par un directeur artistique pour CE contenu précis.
 
 Format horizontal.
 Composition équilibrée.
 Sujet lisible immédiatement.
-Image suffisamment riche mais aérée.
 Facilement recadrable.
-
-Le résultat final doit appartenir clairement à la même famille graphique que les illustrations éditoriales LBMedia.
 `.trim();
 
     const result =
