@@ -6,22 +6,65 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewsPage() {
-  const {
-    data: news,
-    error,
-  } = await supabaseAdmin
-    .from("news")
-    .select("*")
-    .order("created_at", {
-      ascending: false,
-    });
+type StandalonePublication = {
+  id: string;
+  title: string | null;
+  content: string;
+  channel: string;
+  status: string;
+  created_at: string;
+  scheduled_at: string | null;
+  published_at: string | null;
+};
 
-  if (error) {
+export default async function NewsPage() {
+  const [
+    newsResult,
+    postsResult,
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("news")
+      .select("*")
+      .order("created_at", {
+        ascending: false,
+      }),
+
+    supabaseAdmin
+      .from("publications")
+      .select(`
+        id,
+        title,
+        content,
+        channel,
+        status,
+        created_at,
+        scheduled_at,
+        published_at
+      `)
+      .is("news_id", null)
+      .order("created_at", {
+        ascending: false,
+      }),
+  ]);
+
+  if (newsResult.error) {
     throw new Error(
-      `Impossible de charger les actualités : ${error.message}`
+      `Impossible de charger les actualités : ${newsResult.error.message}`
     );
   }
+
+  if (postsResult.error) {
+    throw new Error(
+      `Impossible de charger les posts : ${postsResult.error.message}`
+    );
+  }
+
+  const news =
+    newsResult.data ?? [];
+
+  const posts =
+    (postsResult.data ??
+      []) as StandalonePublication[];
 
   const draftCount =
     news.filter(
@@ -53,7 +96,7 @@ export default async function NewsPage() {
         <PageBanner
           eyebrow="Module éditorial"
           title="Actualités"
-          description="Crée, rédige et prépare les actualités LBMedia avant leur diffusion sur les différents supports."
+          description="Crée, rédige et prépare les actualités et publications LBMedia avant leur diffusion sur les différents supports."
         />
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
@@ -173,6 +216,85 @@ export default async function NewsPage() {
           </section>
         )}
 
+        <section className="mt-8 rounded-2xl border border-violet-100 bg-gradient-to-br from-white via-violet-50/20 to-blue-50/30 p-5 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-4 px-1 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-700">
+                  Publications
+                </p>
+              </div>
+
+              <h2 className="mt-2 text-xl font-bold text-slate-950">
+                Posts indépendants
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Historique des posts
+                créés directement pour
+                LinkedIn, Facebook et
+                les autres supports.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="rounded-full border border-violet-200 bg-white px-3 py-1.5 text-sm font-semibold text-violet-700 shadow-sm">
+                {posts.length}{" "}
+                post
+                {posts.length > 1
+                  ? "s"
+                  : ""}
+              </span>
+
+              <Link
+                href="/publications/new"
+                className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+              >
+                + Nouveau post
+              </Link>
+            </div>
+          </div>
+
+          {posts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-violet-200 bg-white/70 px-6 py-10 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+                <PostIcon />
+              </div>
+
+              <h3 className="mt-4 text-base font-bold text-slate-950">
+                Aucun post indépendant
+              </h3>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Les posts créés
+                directement depuis
+                LBMedia Office
+                apparaîtront ici.
+              </p>
+
+              <Link
+                href="/publications/new"
+                className="mt-5 inline-flex rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+              >
+                Créer un post
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {posts.map(
+                (post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                  />
+                )
+              )}
+            </div>
+          )}
+        </section>
+
         <div className="pb-10" />
       </div>
     </main>
@@ -215,18 +337,8 @@ function NewsCard({
 
             <p className="text-xs font-medium text-slate-400">
               Créée le{" "}
-              {new Intl.DateTimeFormat(
-                "fr-FR",
-                {
-                  dateStyle:
-                    "medium",
-                  timeStyle:
-                    "short",
-                }
-              ).format(
-                new Date(
-                  item.created_at
-                )
+              {formatDateTime(
+                item.created_at
               )}
             </p>
           </div>
@@ -246,6 +358,203 @@ function NewsCard({
         </div>
       </div>
     </Link>
+  );
+}
+
+function PostCard({
+  post,
+}: {
+  post: StandalonePublication;
+}) {
+  const accent =
+    getStatusAccent(
+      post.status
+    );
+
+  const displayTitle =
+    post.title?.trim() ||
+    getPostTitle(
+      post.content
+    );
+
+  const dateInfo =
+    getPostDateInfo(post);
+
+  return (
+    <Link
+      href={`/publications/${post.id}`}
+      className={`group relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${accent.border}`}
+    >
+      <span
+        className={`absolute inset-y-0 left-0 w-1 ${accent.bar}`}
+      />
+
+      <div className="flex items-start justify-between gap-6 pl-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <ChannelBadge
+              channel={
+                post.channel
+              }
+            />
+
+            <StatusBadge
+              status={
+                post.status
+              }
+            />
+
+            <p className="text-xs font-medium text-slate-400">
+              {dateInfo.label}{" "}
+              {formatDateTime(
+                dateInfo.value
+              )}
+            </p>
+          </div>
+
+          <h3 className="mt-3 text-lg font-bold text-slate-950 transition group-hover:text-violet-700">
+            {displayTitle}
+          </h3>
+
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
+            {post.content ||
+              "Aucun contenu rédigé pour le moment."}
+          </p>
+        </div>
+
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition group-hover:bg-violet-50 group-hover:text-violet-600">
+          <ArrowIcon />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function getPostTitle(
+  content: string
+) {
+  const firstLine =
+    content
+      .split(/\r?\n/)
+      .map((line) =>
+        line.trim()
+      )
+      .find(Boolean);
+
+  if (firstLine) {
+    return firstLine.slice(
+      0,
+      120
+    );
+  }
+
+  return "Post sans titre";
+}
+
+function getPostDateInfo(
+  post: StandalonePublication
+) {
+  if (
+    post.status ===
+      "published" &&
+    post.published_at
+  ) {
+    return {
+      label: "Publiée le",
+      value:
+        post.published_at,
+    };
+  }
+
+  if (
+    post.status ===
+      "scheduled" &&
+    post.scheduled_at
+  ) {
+    return {
+      label: "Planifiée pour le",
+      value:
+        post.scheduled_at,
+    };
+  }
+
+  return {
+    label: "Créée le",
+    value:
+      post.created_at,
+  };
+}
+
+function formatDateTime(
+  value: string
+) {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(
+    "fr-FR",
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }
+  ).format(date);
+}
+
+function ChannelBadge({
+  channel,
+}: {
+  channel: string;
+}) {
+  const labels: Record<
+    string,
+    string
+  > = {
+    linkedin: "LinkedIn",
+    facebook: "Facebook",
+    google_business:
+      "Google Business",
+    brevo: "Brevo",
+    website: "Site web",
+  };
+
+  const classes: Record<
+    string,
+    string
+  > = {
+    linkedin:
+      "bg-sky-50 text-sky-700 ring-sky-200",
+
+    facebook:
+      "bg-blue-50 text-blue-700 ring-blue-200",
+
+    google_business:
+      "bg-emerald-50 text-emerald-700 ring-emerald-200",
+
+    brevo:
+      "bg-orange-50 text-orange-700 ring-orange-200",
+
+    website:
+      "bg-violet-50 text-violet-700 ring-violet-200",
+  };
+
+  return (
+    <span
+      className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${
+        classes[channel] ??
+        "bg-slate-100 text-slate-600 ring-slate-200"
+      }`}
+    >
+      {labels[channel] ??
+        channel}
+    </span>
   );
 }
 
@@ -315,6 +624,7 @@ function StatusBadge({
     ready: "Prête",
     scheduled: "Planifiée",
     published: "Publiée",
+    failed: "Échec",
   };
 
   const classes: Record<
@@ -332,6 +642,9 @@ function StatusBadge({
 
     published:
       "bg-emerald-50 text-emerald-700 ring-emerald-200",
+
+    failed:
+      "bg-red-50 text-red-700 ring-red-200",
   };
 
   return (
@@ -372,6 +685,13 @@ function getStatusAccent(
         bar: "bg-emerald-500",
       };
 
+    case "failed":
+      return {
+        border:
+          "border-red-100 hover:border-red-200",
+        bar: "bg-red-400",
+      };
+
     default:
       return {
         border:
@@ -402,6 +722,23 @@ function NewsIcon() {
       <path d="M8 7h8" />
       <path d="M8 11h8" />
       <path d="M8 15h5" />
+    </svg>
+  );
+}
+
+function PostIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-6 w-6"
+      aria-hidden="true"
+    >
+      <path d="M5 5h14v11H8l-3 3V5Z" />
+      <path d="M8 9h8" />
+      <path d="M8 12h5" />
     </svg>
   );
 }
