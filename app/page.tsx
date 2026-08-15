@@ -307,43 +307,6 @@ export default async function HomePage() {
           </section>
         ) : null}
 
-        <section className="mt-8 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 p-6 text-white shadow-sm">
-          <div className="inline-flex rounded-lg bg-cyan-400/10 px-3 py-1.5 ring-1 ring-inset ring-cyan-300/20">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-              Écosystème LBMedia
-            </p>
-          </div>
-
-          <h2 className="mt-4 text-xl font-bold">
-            Modules
-          </h2>
-
-          <p className="mt-2 text-sm leading-6 text-blue-100/70">
-            Le dashboard V2
-            accueillera progressivement les
-            différents outils métier LBMedia.
-          </p>
-
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
-            <ModuleItem
-              label="Éditorial"
-              status="Actif"
-              active
-            />
-
-            <ModuleItem
-              label="Planning"
-              status="Actif"
-              active
-            />
-
-            <ModuleItem
-              label="Autres modules"
-              status="À venir"
-            />
-          </div>
-        </section>
-
         <section className="mt-8 rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 via-sky-50 to-white p-6 shadow-sm">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -491,44 +454,6 @@ function DashboardCard({
       <p className="mt-3 text-sm leading-6 text-slate-500">
         {description}
       </p>
-    </div>
-  );
-}
-
-function ModuleItem({
-  label,
-  status,
-  active = false,
-}: {
-  label: string;
-  status: string;
-  active?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-      <div className="flex items-center gap-2">
-        <span
-          className={`h-2 w-2 rounded-full ${
-            active
-              ? "bg-emerald-400"
-              : "bg-slate-500"
-          }`}
-        />
-
-        <span className="text-sm font-semibold text-slate-100">
-          {label}
-        </span>
-      </div>
-
-      <span
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-          active
-            ? "bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-300/20"
-            : "bg-white/5 text-slate-400 ring-1 ring-inset ring-white/10"
-        }`}
-      >
-        {status}
-      </span>
     </div>
   );
 }
