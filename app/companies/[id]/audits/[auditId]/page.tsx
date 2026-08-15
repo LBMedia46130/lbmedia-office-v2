@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import AuditOpportunityButton from "@/components/companies/AuditOpportunityButton";
 import PageBanner from "@/components/dashboard/PageBanner";
 
 import {
@@ -80,6 +81,24 @@ export default async function AuditDetailPage({
           </Link>
 
           <div className="flex flex-wrap gap-3">
+            <AuditOpportunityButton
+              companyId={
+                companyId
+              }
+              companyName={
+                company.name
+              }
+              websiteUrl={
+                audit.website_url
+              }
+              globalScore={
+                audit.global_score
+              }
+              priorities={
+                audit.priorities
+              }
+            />
+
             <a
               href={
                 audit.website_url
@@ -93,7 +112,7 @@ export default async function AuditDetailPage({
 
             <Link
               href={`/audit?companyId=${encodeURIComponent(
-                String(company.id)
+                companyId
               )}&url=${encodeURIComponent(
                 company.website ??
                   audit.website_url
