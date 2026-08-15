@@ -106,7 +106,7 @@ export async function POST(
       publication.content
         .trim()
         .replace(/\s+/g, " ")
-        .slice(0, 2400);
+        .slice(0, 3000);
 
     const platform =
       publication.channel ===
@@ -114,167 +114,240 @@ export async function POST(
         ? "LinkedIn"
         : "Facebook";
 
-    const prompt = `
-Créer UNE ILLUSTRATION ÉDITORIALE HORIZONTALE pour accompagner une publication ${platform} de LBMedia.
+    /*
+     * ÉTAPE 1
+     * Pénélope agit comme directrice artistique.
+     * Elle analyse le post et construit un brief visuel précis.
+     */
 
-CONTENU DU POST :
+    const artDirectionResponse =
+      await openai.responses.create({
+        model: "gpt-5.4-mini",
+        input: `
+Tu es la directrice artistique de LBMedia, agence de communication.
+
+Ta mission n'est PAS de créer une image.
+Ta mission est de concevoir LE CONCEPT VISUEL le plus pertinent pour accompagner une publication ${platform}.
+
+PUBLICATION :
 
 ${postContent}
 
 ${
   publication.hashtags
-    ? `THÉMATIQUES COMPLÉMENTAIRES : ${publication.hashtags}`
+    ? `HASHTAGS : ${publication.hashtags}`
     : ""
 }
 
-MISSION CRÉATIVE :
+OBJECTIF :
 
-Ne pas commencer par imaginer une scène.
+Lis réellement la publication.
 
-Commencer par comprendre le MESSAGE du post.
+Identifie :
+- son sujet précis ;
+- son idée principale ;
+- le problème ou la question posée ;
+- ce que le lecteur doit comprendre ;
+- la meilleure manière de transformer cette idée en une image immédiatement compréhensible.
 
-Identifier mentalement :
+Le concept visuel doit avoir un rapport ÉVIDENT avec le contenu.
 
-1. quelle est l'idée principale ;
-2. quel problème ou quelle question le post pose ;
-3. quelle opposition, tension ou transformation il évoque ;
-4. quelle image pourrait rendre cette idée compréhensible immédiatement, même sans lire le texte.
+TEST OBLIGATOIRE :
 
-Ensuite seulement, concevoir UNE métaphore visuelle ou UNE situation éditoriale forte.
+Demande-toi :
 
-Le visuel doit apporter une idée.
-Il ne doit pas seulement décorer le post.
+"Si je voyais uniquement cette image, pourrais-je raisonnablement comprendre de quoi parle cette publication ?"
 
-PRIORITÉ ABSOLUE :
+Puis demande-toi :
 
-Créer une image qui illustre LE CONCEPT du post, et non son secteur d'activité.
+"Cette même image pourrait-elle illustrer facilement dix autres sujets sans modification ?"
 
-Exemples de logique attendue :
+Si oui, le concept est trop générique : recommence mentalement.
 
-- si le post parle d'un site internet inutile, montrer une présence numérique qui existe mais n'attire personne ;
-- si le post parle de visibilité, montrer une différence claire entre être présent et être réellement vu ;
-- si le post parle de conversion, montrer un passage d'une simple présence à une action concrète ;
-- si le post parle de communication inefficace, montrer un message qui existe mais n'atteint pas sa cible ;
-- si le post parle d'un choix ou d'une décision, construire une image autour de cette tension.
+IMPORTANT :
 
-Ces exemples illustrent une méthode de réflexion.
-Ne pas les reproduire automatiquement.
+Ne te contente jamais d'illustrer des mots-clés abstraits comme :
+- croissance ;
+- parcours ;
+- stratégie ;
+- visibilité ;
+- performance ;
+- réussite ;
+- communication.
 
-STYLE LBMEDIA :
+Traduis ces notions dans LA SITUATION PRÉCISE décrite par le post.
 
-Créer une ILLUSTRATION NUMÉRIQUE ÉDITORIALE CONTEMPORAINE.
+EXEMPLE DE RAISONNEMENT :
 
-Le résultat doit être immédiatement identifiable comme une illustration de presse ou de magazine professionnel.
+Si une publication explique qu'un site internet peut être joli mais ne générer aucun client, une simple flèche vers des personnes n'est pas suffisante.
+
+Il faut construire une scène qui exprime visuellement :
+- l'existence du site ;
+- son apparente qualité ;
+- l'absence de résultat ;
+- ou la différence entre simple présence et efficacité réelle.
+
+Cherche une métaphore visuelle intelligente, mais immédiatement lisible.
+
+Le concept peut utiliser :
+- architecture ;
+- vitrines ;
+- portes ;
+- chemins ;
+- objets ;
+- espaces ;
+- interactions ;
+- oppositions ;
+- transformations ;
+- situations professionnelles.
+
+Les personnages ne sont pas obligatoires.
+
+ÉVITER :
+- personne devant un ordinateur ;
+- smartphone ;
+- réunion ;
+- bureau générique ;
+- flèche abstraite vers des personnes ;
+- cible marketing générique ;
+- ampoule ;
+- fusée ;
+- puzzle ;
+- poignée de main ;
+- graphique ;
+- interface informatique ;
+- concept corporate interchangeable.
+
+CONTRAINTE :
+
+L'image finale ne devra contenir :
+- aucun texte ;
+- aucun mot ;
+- aucune lettre ;
+- aucun chiffre ;
+- aucun logo ;
+- aucune marque ;
+- aucune interface lisible.
+
+RÉPONSE ATTENDUE :
+
+Rédige uniquement un brief visuel en français de 120 à 220 mots.
+
+Le brief doit décrire précisément :
+1. LE CONCEPT ;
+2. LA SCÈNE ;
+3. LES ÉLÉMENTS ESSENTIELS ;
+4. CE QUE L'IMAGE DOIT FAIRE COMPRENDRE.
+
+Ne donne pas plusieurs propositions.
+Choisis la meilleure.
+        `.trim(),
+      });
+
+    const visualBrief =
+      artDirectionResponse.output_text?.trim();
+
+    if (!visualBrief) {
+      throw new Error(
+        "Pénélope n'a pas réussi à définir le concept visuel."
+      );
+    }
+
+    /*
+     * ÉTAPE 2
+     * Le modèle image reçoit le brief validé conceptuellement
+     * et se concentre uniquement sur sa réalisation.
+     */
+
+    const imagePrompt = `
+Créer UNE ILLUSTRATION ÉDITORIALE HORIZONTALE haut de gamme pour LBMedia.
+
+BRIEF DE LA DIRECTRICE ARTISTIQUE :
+
+${visualBrief}
+
+RÈGLE PRIORITAIRE :
+
+Respecter fidèlement le concept et la scène décrits dans le brief.
+
+Ne pas remplacer le concept par une scène corporate générique.
+
+L'objectif principal est que l'image exprime clairement l'idée définie dans le brief.
+
+STYLE GRAPHIQUE LBMEDIA :
+
+Illustration numérique éditoriale contemporaine.
 
 CE N'EST PAS UNE PHOTOGRAPHIE.
 
-Le rendu doit être :
+Le rendu doit évoquer :
+- une illustration de presse contemporaine ;
+- un magazine économique ou professionnel ;
+- une agence de communication haut de gamme.
 
+Style :
+- figuratif ;
 - adulte ;
 - élégant ;
 - moderne ;
-- éditorial ;
-- conceptuel mais lisible ;
-- figuratif ;
-- crédible ;
 - légèrement stylisé ;
-- visuellement sophistiqué ;
-- distinct d'une banque d'images ;
-- distinct d'une illustration corporate générique.
+- volumes doux ;
+- matières illustrées ;
+- profondeur graphique ;
+- composition sophistiquée ;
+- lumière naturelle et éditoriale.
 
-La stylisation doit être visible.
+Éviter le photoréalisme et l'hyperréalisme.
 
-Les volumes, matières, lumières et personnages doivent rester illustrés.
+L'image doit clairement rester une illustration.
 
-Ne jamais chercher un rendu hyperréaliste.
+IDENTITÉ LBMEDIA :
 
-DIRECTION ARTISTIQUE :
-
-- composition claire et forte ;
-- une idée visuelle principale ;
-- peu d'éléments, mais chacun doit avoir une fonction ;
-- profondeur et perspective ;
-- cadrage moderne ;
-- composition horizontale ;
-- hiérarchie visuelle nette ;
-- contraste suffisant pour fonctionner dans un fil LinkedIn ou Facebook ;
-- image lisible même en taille réduite ;
-- éviter les scènes trop narratives ou trop cinématographiques ;
-- éviter les rayons lumineux spectaculaires ou effets dramatiques artificiels ;
-- éviter toute esthétique "pub IA".
-
-IDENTITÉ VISUELLE LBMEDIA :
-
-Palette récurrente mais subtile :
-
+Utiliser subtilement :
 - bleu nuit profond ;
 - bleu soutenu ;
-- cyan / bleu lumineux ;
+- cyan lumineux ;
 - blanc ;
 - tons clairs ;
-- couleurs naturelles complémentaires selon le sujet.
+- couleurs naturelles complémentaires adaptées au sujet.
 
-Les couleurs LBMedia doivent structurer ou ponctuer l'image.
+Pas de filtre bleu uniforme.
 
-Ne pas appliquer un filtre bleu uniforme.
+COMPOSITION :
 
-Ne pas utiliser systématiquement un décor de bureau ou de commerce.
+- format horizontal ;
+- idée principale immédiatement visible ;
+- hiérarchie visuelle forte ;
+- composition aérée ;
+- nombre limité d'éléments ;
+- profondeur ;
+- lisibilité en petit format ;
+- facilement recadrable ;
+- pas d'effet spectaculaire inutile.
 
-La cohérence LBMedia doit venir surtout :
-
-- du niveau de stylisation ;
-- de la sophistication graphique ;
-- de la palette ;
-- de la qualité de composition ;
-- du caractère éditorial.
-
-À ÉVITER ABSOLUMENT :
+ÉVITER ABSOLUMENT :
 
 - photographie ;
 - photoréalisme ;
-- hyperréalisme ;
-- rendu cinématographique spectaculaire ;
-- lumière dramatique artificielle ;
-- rayon lumineux symbolique ;
-- banque d'images corporate ;
+- esthétique banque d'images ;
+- esthétique publicitaire IA ;
+- rayon lumineux spectaculaire ;
 - personne seule devant un ordinateur ;
-- personne seule avec un smartphone ;
-- professionnel pensif devant son écran ;
-- commerçant regardant simplement passer des clients ;
-- réunion générique ;
-- coworking générique ;
-- portrait corporate ;
-- personnage face caméra ;
-- laptop comme sujet principal ;
-- smartphone comme sujet principal ;
-- scène de bureau sans lien précis avec l'idée ;
-- esthétique SaaS ;
+- smartphone comme sujet ;
+- réunion corporate ;
+- coworking ;
+- portrait face caméra ;
+- flèche abstraite ;
+- cible marketing ;
+- fusée ;
+- ampoule ;
+- puzzle ;
+- poignée de main ;
 - illustration vectorielle plate ;
-- cartoon ;
+- cartoon enfantin ;
 - 3D plastique ;
 - rendu jouet ;
-- pictogrammes ;
-- collage ;
 - infographie.
-
-PRIVILÉGIER :
-
-- métaphores visuelles intelligentes ;
-- contrastes avant / après ;
-- obstacle / passage ;
-- visible / invisible ;
-- présence / efficacité ;
-- diffusion / réception ;
-- parcours / destination ;
-- ouverture / blocage ;
-- mouvement / stagnation ;
-- situations éditoriales simples et symboliques ;
-- objets ou environnements utilisés de manière conceptuelle ;
-- interactions humaines uniquement si elles sont nécessaires à l'idée.
-
-LES PERSONNES NE SONT PAS OBLIGATOIRES.
-
-Si une idée peut être mieux exprimée sans personnage, privilégier une composition sans personnage principal.
 
 INTERDICTIONS ABSOLUES :
 
@@ -290,40 +363,31 @@ INTERDICTIONS ABSOLUES :
 - AUCUN FILIGRANE ;
 - AUCUNE INFOGRAPHIE ;
 - AUCUN GRAPHIQUE ;
-- AUCUNE INTERFACE ;
+- AUCUNE INTERFACE LISIBLE ;
 - AUCUN FAUX SITE INTERNET ;
-- AUCUN WIREFRAME ;
-- AUCUN ÉCRAN AVEC DU TEXTE ;
-- AUCUN DOCUMENT LISIBLE ;
-- AUCUN ÉLÉMENT QUI RESSEMBLE À UNE CAPTURE D'ÉCRAN.
+- AUCUN DOCUMENT LISIBLE.
 
-Si des documents ou écrans apparaissent, ils doivent rester abstraits et non lisibles.
+Si un écran ou document est indispensable au concept, son contenu doit être totalement abstrait et illisible.
 
 RÉSULTAT ATTENDU :
 
-Une illustration éditoriale forte, conceptuelle, immédiatement lisible et suffisamment distinctive pour que l'on puisse reconnaître progressivement une famille de visuels LBMedia.
+Une image conçue spécifiquement pour CE post.
 
-Le visuel doit donner envie de s'arrêter sur le post.
+Le rapport entre le concept visuel et le sujet doit être évident.
 
-Il doit sembler avoir été pensé par un directeur artistique pour CE contenu précis.
-
-Format horizontal.
-Composition équilibrée.
-Sujet lisible immédiatement.
-Facilement recadrable.
-`.trim();
+Le résultat doit ressembler à une véritable illustration éditoriale commandée par LBMedia, pas à une image générique générée par IA.
+    `.trim();
 
     const result =
       await openai.images.generate({
         model: "gpt-image-2",
-        prompt,
+        prompt: imagePrompt,
         size: "1536x1024",
         quality: "medium",
       });
 
     const imageBase64 =
-      result.data?.[0]
-        ?.b64_json;
+      result.data?.[0]?.b64_json;
 
     if (!imageBase64) {
       throw new Error(
@@ -366,9 +430,7 @@ Facilement recadrable.
       data: publicUrlData,
     } = supabaseAdmin.storage
       .from("news-visuals")
-      .getPublicUrl(
-        fileName
-      );
+      .getPublicUrl(fileName);
 
     const imageUrl =
       publicUrlData.publicUrl;
@@ -407,10 +469,14 @@ Facilement recadrable.
       success: true,
       message:
         "Visuel généré et enregistré.",
-      image_url:
-        imageUrl,
+      image_url: imageUrl,
       publication:
         updatedPublication,
+
+      // Conservé pour faciliter nos tests.
+      // On pourra éventuellement l'afficher plus tard
+      // dans Office si cela présente un intérêt.
+      visual_brief: visualBrief,
     });
   } catch (error) {
     console.error(
