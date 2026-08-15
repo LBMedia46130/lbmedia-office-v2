@@ -41,8 +41,21 @@ export default async function AuditDetailPage({
 
   if (
     !company ||
-    !audit ||
-    audit.company_id !== id
+    !audit
+  ) {
+    notFound();
+  }
+
+  const auditCompanyId =
+    String(
+      audit.company_id ?? ""
+    );
+
+  const companyId =
+    String(company.id);
+
+  if (
+    auditCompanyId !== companyId
   ) {
     notFound();
   }
@@ -80,7 +93,7 @@ export default async function AuditDetailPage({
 
             <Link
               href={`/audit?companyId=${encodeURIComponent(
-                company.id
+                String(company.id)
               )}&url=${encodeURIComponent(
                 company.website ??
                   audit.website_url
