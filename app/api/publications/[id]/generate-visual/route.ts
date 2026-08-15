@@ -145,11 +145,22 @@ SUJET DE L'ILLUSTRATION :
 
 Interprète librement ce titre et trouve toi-même la meilleure idée visuelle pour représenter clairement et immédiatement son sujet.
 
+Interprète le sens et l'intention du titre, et non ses expressions au sens littéral.
+
+Ne transforme pas une métaphore verbale en représentation littérale.
+
+Par exemple, si le titre demande si un site internet "travaille" pour une entreprise, ne représente pas le site comme une machine, un robot, une usine ou une chaîne de production.
+
+L'image doit illustrer le sujet concret et l'enjeu exprimé par le titre.
+
 L'illustration doit rester directement ancrée dans le sujet du titre.
 
 Si le titre parle d'un site internet, le visuel doit clairement évoquer un site internet.
+
 Si le titre parle de radio, le visuel doit clairement évoquer la radio.
+
 Si le titre parle de référencement, de recherche ou de visibilité en ligne, le visuel doit clairement évoquer cet univers.
+
 Si le titre parle d'intelligence artificielle, le visuel doit clairement évoquer ce sujet.
 
 Ne remplace pas le sujet concret par une métaphore générique.
@@ -163,6 +174,18 @@ Le rendu doit être illustré et légèrement stylisé, comme une illustration c
 Ce n'est pas une photographie.
 
 Éviter le photoréalisme, les banques d'images corporate et les clichés visuels génériques.
+
+Privilégier une illustration éditoriale premium et naturelle.
+
+Éviter l'esthétique technologique générique :
+- robots ;
+- engrenages ;
+- circuits ;
+- mécanismes ;
+- univers SaaS ;
+- imagerie artificiellement futuriste ;
+
+sauf si le sujet porte réellement sur ces éléments.
 
 IDENTITÉ LBMEDIA :
 
@@ -193,6 +216,7 @@ Aucun filigrane.
 Si un écran, une page web ou une interface est utile pour représenter le sujet, ils sont AUTORISÉS, mais leur contenu doit rester graphique, abstrait et sans texte lisible.
 
 Le résultat doit avant tout être une bonne illustration du sujet :
+
 « ${visualTitle} »
     `.trim();
 
