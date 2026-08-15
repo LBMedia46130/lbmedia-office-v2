@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import PageBanner from "@/components/dashboard/PageBanner";
+import WeeklyTopics from "@/components/penelope/WeeklyTopics";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -98,6 +99,36 @@ export default async function NewsPage() {
             </Link>
           </div>
         </div>
+
+        <section className="mt-8 overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-white via-blue-50/40 to-cyan-50/70 shadow-sm">
+          <div className="border-b border-blue-100 bg-white/60 p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white shadow-sm">
+                P
+              </span>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                  Pénélope
+                </p>
+
+                <h2 className="mt-2 text-xl font-bold text-slate-950">
+                  Préparer la semaine
+                </h2>
+
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  Préparer les prochains
+                  sujets éditoriaux
+                  LBMedia.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <WeeklyTopics />
+          </div>
+        </section>
 
         {news.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-blue-200 bg-gradient-to-br from-blue-50 via-white to-cyan-50 px-6 py-16 text-center shadow-sm">

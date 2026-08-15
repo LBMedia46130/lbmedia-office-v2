@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import WeeklyTopics from "@/components/penelope/WeeklyTopics";
 import type {
   PublicationChannel,
   PublicationStatus,
@@ -308,85 +307,42 @@ export default async function HomePage() {
           </section>
         ) : null}
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[1.35fr_0.65fr]">
-          <section className="overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-white via-blue-50/40 to-cyan-50/70 shadow-sm">
-            <div className="border-b border-blue-100 bg-white/60 p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white shadow-sm">
-                      P
-                    </span>
-
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                      Pénélope
-                    </p>
-                  </div>
-
-                  <h2 className="mt-3 text-2xl font-bold text-slate-950">
-                    Préparer la semaine
-                  </h2>
-
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                    Préparer les prochains
-                    sujets éditoriaux
-                    LBMedia.
-                  </p>
-                </div>
-
-                <Link
-                  href="/news"
-                  className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 hover:text-blue-900"
-                >
-                  Voir les actualités →
-                </Link>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <WeeklyTopics />
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 p-6 text-white shadow-sm">
-            <div className="inline-flex rounded-lg bg-cyan-400/10 px-3 py-1.5 ring-1 ring-inset ring-cyan-300/20">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                Écosystème LBMedia
-              </p>
-            </div>
-
-            <h2 className="mt-4 text-xl font-bold">
-              Modules
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-blue-100/70">
-              Le dashboard V2
-              accueillera
-              progressivement les
-              différents outils métier
-              LBMedia.
+        <section className="mt-8 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 p-6 text-white shadow-sm">
+          <div className="inline-flex rounded-lg bg-cyan-400/10 px-3 py-1.5 ring-1 ring-inset ring-cyan-300/20">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+              Écosystème LBMedia
             </p>
+          </div>
 
-            <div className="mt-6 space-y-3">
-              <ModuleItem
-                label="Éditorial"
-                status="Actif"
-                active
-              />
+          <h2 className="mt-4 text-xl font-bold">
+            Modules
+          </h2>
 
-              <ModuleItem
-                label="Planning"
-                status="Actif"
-                active
-              />
+          <p className="mt-2 text-sm leading-6 text-blue-100/70">
+            Le dashboard V2
+            accueillera progressivement les
+            différents outils métier LBMedia.
+          </p>
 
-              <ModuleItem
-                label="Autres modules"
-                status="À venir"
-              />
-            </div>
-          </section>
-        </div>
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <ModuleItem
+              label="Éditorial"
+              status="Actif"
+              active
+            />
+
+            <ModuleItem
+              label="Planning"
+              status="Actif"
+              active
+            />
+
+            <ModuleItem
+              label="Autres modules"
+              status="À venir"
+            />
+          </div>
+        </section>
 
         <section className="mt-8 rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 via-sky-50 to-white p-6 shadow-sm">
           <div className="flex flex-wrap items-end justify-between gap-4">
