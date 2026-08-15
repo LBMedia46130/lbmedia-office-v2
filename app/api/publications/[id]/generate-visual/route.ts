@@ -13,6 +13,29 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+function getVisualTitle(
+  title: string | null,
+  content: string
+) {
+  if (title?.trim()) {
+    return title.trim();
+  }
+
+  const firstLine =
+    content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean);
+
+  if (firstLine) {
+    return firstLine.slice(0, 300);
+  }
+
+  return content
+    .trim()
+    .slice(0, 300);
+}
+
 export async function POST(
   _request: Request,
   context: RouteContext
@@ -44,7 +67,6 @@ export async function POST(
         channel,
         title,
         content,
-        hashtags,
         image_url
       `)
       .eq("id", id)
@@ -102,11 +124,11 @@ export async function POST(
       );
     }
 
-    const postContent =
-      publication.content
-        .trim()
-        .replace(/\s+/g, " ")
-        .slice(0, 3000);
+    const visualTitle =
+      getVisualTitle(
+        publication.title,
+        publication.content
+      );
 
     const platform =
       publication.channel ===
@@ -114,274 +136,70 @@ export async function POST(
         ? "LinkedIn"
         : "Facebook";
 
-    /*
-     * ÉTAPE 1
-     * Pénélope agit comme directrice artistique.
-     * Elle analyse le post et construit un brief visuel précis.
-     */
+    const prompt = `
+Crée une illustration éditoriale horizontale pour accompagner une publication ${platform} de LBMedia.
 
-    const artDirectionResponse =
-      await openai.responses.create({
-        model: "gpt-5.4-mini",
-        input: `
-Tu es la directrice artistique de LBMedia, agence de communication.
+SUJET DE L'ILLUSTRATION :
 
-Ta mission n'est PAS de créer une image.
-Ta mission est de concevoir LE CONCEPT VISUEL le plus pertinent pour accompagner une publication ${platform}.
+« ${visualTitle} »
 
-PUBLICATION :
+Interprète librement ce titre et trouve toi-même la meilleure idée visuelle pour représenter clairement et immédiatement son sujet.
 
-${postContent}
+L'illustration doit rester directement ancrée dans le sujet du titre.
 
-${
-  publication.hashtags
-    ? `HASHTAGS : ${publication.hashtags}`
-    : ""
-}
+Si le titre parle d'un site internet, le visuel doit clairement évoquer un site internet.
+Si le titre parle de radio, le visuel doit clairement évoquer la radio.
+Si le titre parle de référencement, de recherche ou de visibilité en ligne, le visuel doit clairement évoquer cet univers.
+Si le titre parle d'intelligence artificielle, le visuel doit clairement évoquer ce sujet.
 
-OBJECTIF :
+Ne remplace pas le sujet concret par une métaphore générique.
 
-Lis réellement la publication.
+STYLE :
 
-Identifie :
-- son sujet précis ;
-- son idée principale ;
-- le problème ou la question posée ;
-- ce que le lecteur doit comprendre ;
-- la meilleure manière de transformer cette idée en une image immédiatement compréhensible.
+Illustration numérique éditoriale contemporaine, professionnelle, élégante et moderne.
 
-Le concept visuel doit avoir un rapport ÉVIDENT avec le contenu.
+Le rendu doit être illustré et légèrement stylisé, comme une illustration créée pour un média professionnel ou une agence de communication.
 
-TEST OBLIGATOIRE :
+Ce n'est pas une photographie.
 
-Demande-toi :
-
-"Si je voyais uniquement cette image, pourrais-je raisonnablement comprendre de quoi parle cette publication ?"
-
-Puis demande-toi :
-
-"Cette même image pourrait-elle illustrer facilement dix autres sujets sans modification ?"
-
-Si oui, le concept est trop générique : recommence mentalement.
-
-IMPORTANT :
-
-Ne te contente jamais d'illustrer des mots-clés abstraits comme :
-- croissance ;
-- parcours ;
-- stratégie ;
-- visibilité ;
-- performance ;
-- réussite ;
-- communication.
-
-Traduis ces notions dans LA SITUATION PRÉCISE décrite par le post.
-
-EXEMPLE DE RAISONNEMENT :
-
-Si une publication explique qu'un site internet peut être joli mais ne générer aucun client, une simple flèche vers des personnes n'est pas suffisante.
-
-Il faut construire une scène qui exprime visuellement :
-- l'existence du site ;
-- son apparente qualité ;
-- l'absence de résultat ;
-- ou la différence entre simple présence et efficacité réelle.
-
-Cherche une métaphore visuelle intelligente, mais immédiatement lisible.
-
-Le concept peut utiliser :
-- architecture ;
-- vitrines ;
-- portes ;
-- chemins ;
-- objets ;
-- espaces ;
-- interactions ;
-- oppositions ;
-- transformations ;
-- situations professionnelles.
-
-Les personnages ne sont pas obligatoires.
-
-ÉVITER :
-- personne devant un ordinateur ;
-- smartphone ;
-- réunion ;
-- bureau générique ;
-- flèche abstraite vers des personnes ;
-- cible marketing générique ;
-- ampoule ;
-- fusée ;
-- puzzle ;
-- poignée de main ;
-- graphique ;
-- interface informatique ;
-- concept corporate interchangeable.
-
-CONTRAINTE :
-
-L'image finale ne devra contenir :
-- aucun texte ;
-- aucun mot ;
-- aucune lettre ;
-- aucun chiffre ;
-- aucun logo ;
-- aucune marque ;
-- aucune interface lisible.
-
-RÉPONSE ATTENDUE :
-
-Rédige uniquement un brief visuel en français de 120 à 220 mots.
-
-Le brief doit décrire précisément :
-1. LE CONCEPT ;
-2. LA SCÈNE ;
-3. LES ÉLÉMENTS ESSENTIELS ;
-4. CE QUE L'IMAGE DOIT FAIRE COMPRENDRE.
-
-Ne donne pas plusieurs propositions.
-Choisis la meilleure.
-        `.trim(),
-      });
-
-    const visualBrief =
-      artDirectionResponse.output_text?.trim();
-
-    if (!visualBrief) {
-      throw new Error(
-        "Pénélope n'a pas réussi à définir le concept visuel."
-      );
-    }
-
-    /*
-     * ÉTAPE 2
-     * Le modèle image reçoit le brief validé conceptuellement
-     * et se concentre uniquement sur sa réalisation.
-     */
-
-    const imagePrompt = `
-Créer UNE ILLUSTRATION ÉDITORIALE HORIZONTALE haut de gamme pour LBMedia.
-
-BRIEF DE LA DIRECTRICE ARTISTIQUE :
-
-${visualBrief}
-
-RÈGLE PRIORITAIRE :
-
-Respecter fidèlement le concept et la scène décrits dans le brief.
-
-Ne pas remplacer le concept par une scène corporate générique.
-
-L'objectif principal est que l'image exprime clairement l'idée définie dans le brief.
-
-STYLE GRAPHIQUE LBMEDIA :
-
-Illustration numérique éditoriale contemporaine.
-
-CE N'EST PAS UNE PHOTOGRAPHIE.
-
-Le rendu doit évoquer :
-- une illustration de presse contemporaine ;
-- un magazine économique ou professionnel ;
-- une agence de communication haut de gamme.
-
-Style :
-- figuratif ;
-- adulte ;
-- élégant ;
-- moderne ;
-- légèrement stylisé ;
-- volumes doux ;
-- matières illustrées ;
-- profondeur graphique ;
-- composition sophistiquée ;
-- lumière naturelle et éditoriale.
-
-Éviter le photoréalisme et l'hyperréalisme.
-
-L'image doit clairement rester une illustration.
+Éviter le photoréalisme, les banques d'images corporate et les clichés visuels génériques.
 
 IDENTITÉ LBMEDIA :
 
-Utiliser subtilement :
-- bleu nuit profond ;
+Utiliser naturellement et avec subtilité une palette comprenant :
+- bleu nuit ;
 - bleu soutenu ;
 - cyan lumineux ;
-- blanc ;
-- tons clairs ;
-- couleurs naturelles complémentaires adaptées au sujet.
+- blanc et tons clairs ;
+- autres couleurs naturelles si elles servent l'illustration.
 
-Pas de filtre bleu uniforme.
+Le bleu ne doit pas devenir un filtre uniforme.
 
 COMPOSITION :
 
 - format horizontal ;
-- idée principale immédiatement visible ;
-- hiérarchie visuelle forte ;
-- composition aérée ;
-- nombre limité d'éléments ;
-- profondeur ;
-- lisibilité en petit format ;
-- facilement recadrable ;
-- pas d'effet spectaculaire inutile.
+- sujet immédiatement identifiable ;
+- composition claire et aérée ;
+- visuel professionnel ;
+- suffisamment fort pour attirer l'attention dans un fil LinkedIn ou Facebook.
 
-ÉVITER ABSOLUMENT :
+Aucun texte lisible.
+Aucun titre.
+Aucun slogan.
+Aucun logo.
+Aucune marque.
+Aucun filigrane.
 
-- photographie ;
-- photoréalisme ;
-- esthétique banque d'images ;
-- esthétique publicitaire IA ;
-- rayon lumineux spectaculaire ;
-- personne seule devant un ordinateur ;
-- smartphone comme sujet ;
-- réunion corporate ;
-- coworking ;
-- portrait face caméra ;
-- flèche abstraite ;
-- cible marketing ;
-- fusée ;
-- ampoule ;
-- puzzle ;
-- poignée de main ;
-- illustration vectorielle plate ;
-- cartoon enfantin ;
-- 3D plastique ;
-- rendu jouet ;
-- infographie.
+Si un écran, une page web ou une interface est utile pour représenter le sujet, ils sont AUTORISÉS, mais leur contenu doit rester graphique, abstrait et sans texte lisible.
 
-INTERDICTIONS ABSOLUES :
-
-- AUCUN TEXTE ;
-- AUCUNE LETTRE ;
-- AUCUN MOT ;
-- AUCUN CHIFFRE ;
-- AUCUNE TYPOGRAPHIE ;
-- AUCUN TITRE ;
-- AUCUN SLOGAN ;
-- AUCUN LOGO ;
-- AUCUNE MARQUE ;
-- AUCUN FILIGRANE ;
-- AUCUNE INFOGRAPHIE ;
-- AUCUN GRAPHIQUE ;
-- AUCUNE INTERFACE LISIBLE ;
-- AUCUN FAUX SITE INTERNET ;
-- AUCUN DOCUMENT LISIBLE.
-
-Si un écran ou document est indispensable au concept, son contenu doit être totalement abstrait et illisible.
-
-RÉSULTAT ATTENDU :
-
-Une image conçue spécifiquement pour CE post.
-
-Le rapport entre le concept visuel et le sujet doit être évident.
-
-Le résultat doit ressembler à une véritable illustration éditoriale commandée par LBMedia, pas à une image générique générée par IA.
+Le résultat doit avant tout être une bonne illustration du sujet :
+« ${visualTitle} »
     `.trim();
 
     const result =
       await openai.images.generate({
         model: "gpt-image-2",
-        prompt: imagePrompt,
+        prompt,
         size: "1536x1024",
         quality: "medium",
       });
@@ -472,11 +290,7 @@ Le résultat doit ressembler à une véritable illustration éditoriale command�
       image_url: imageUrl,
       publication:
         updatedPublication,
-
-      // Conservé pour faciliter nos tests.
-      // On pourra éventuellement l'afficher plus tard
-      // dans Office si cela présente un intérêt.
-      visual_brief: visualBrief,
+      visual_title: visualTitle,
     });
   } catch (error) {
     console.error(
