@@ -74,6 +74,7 @@ export type Publication = {
   focus_keyword: string | null;
   secondary_keywords: string | null;
   image_alt: string | null;
+  image_url: string | null;
 
   subject: string | null;
   preview_text: string | null;
@@ -107,6 +108,7 @@ export type UpdatePublicationInput = {
   focus_keyword?: string | null;
   secondary_keywords?: string | null;
   image_alt?: string | null;
+  image_url?: string | null;
 
   subject?: string | null;
   preview_text?: string | null;

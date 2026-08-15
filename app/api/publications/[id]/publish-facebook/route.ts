@@ -10,10 +10,11 @@ type RouteContext = {
 
 type FacebookPublication = {
   id: string;
-  news_id: string;
+  news_id: string | null;
   channel: string;
   content: string;
   link_url: string | null;
+  image_url: string | null;
   status: string;
   published_at: string | null;
 };
@@ -55,6 +56,7 @@ export async function POST(
         channel,
         content,
         link_url,
+        image_url,
         status,
         published_at
       `)
@@ -157,34 +159,47 @@ export async function POST(
       );
     }
 
-    const {
-      data: news,
-      error: newsError,
-    } = await supabaseAdmin
-      .from("news")
-      .select(`
-        id,
-        image_url
-      `)
-      .eq(
-        "id",
-        facebookPublication.news_id
-      )
-      .maybeSingle();
+    let newsImageUrl:
+      | string
+      | null = null;
 
-    if (newsError) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Impossible de charger le visuel associé à l'actualité.",
-          error:
-            newsError.message,
-        },
-        {
-          status: 500,
-        }
-      );
+    if (
+      !facebookPublication.image_url &&
+      facebookPublication.news_id
+    ) {
+      const {
+        data: news,
+        error: newsError,
+      } = await supabaseAdmin
+        .from("news")
+        .select(`
+          id,
+          image_url
+        `)
+        .eq(
+          "id",
+          facebookPublication.news_id
+        )
+        .maybeSingle();
+
+      if (newsError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Impossible de charger le visuel associé à l'actualité.",
+            error:
+              newsError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      newsImageUrl =
+        news?.image_url?.trim() ||
+        null;
     }
 
     const messageParts = [
@@ -203,7 +218,8 @@ export async function POST(
       messageParts.join("\n\n");
 
     const imageUrl =
-      news?.image_url?.trim() ||
+      facebookPublication.image_url?.trim() ||
+      newsImageUrl ||
       null;
 
     let metaData: unknown = null;

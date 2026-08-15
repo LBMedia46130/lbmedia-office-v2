@@ -239,6 +239,14 @@ export async function PATCH(
   }
 
   if (
+    body.image_url !== undefined
+  ) {
+    updateData.image_url =
+      body.image_url?.trim() ||
+      null;
+  }
+
+  if (
     body.subject !== undefined
   ) {
     updateData.subject =

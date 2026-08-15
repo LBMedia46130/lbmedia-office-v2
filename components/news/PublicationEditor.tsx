@@ -112,6 +112,13 @@ export default function PublicationEditor({
       ""
   );
 
+  const [
+    imageUrl,
+    setImageUrl,
+  ] = useState(
+    publication.image_url ?? ""
+  );
+
   const [subject, setSubject] =
     useState(
       publication.subject ?? ""
@@ -165,6 +172,11 @@ export default function PublicationEditor({
   ] = useState(false);
 
   const [
+    isGeneratingVisual,
+    setIsGeneratingVisual,
+  ] = useState(false);
+
+  const [
     isChangingStatus,
     setIsChangingStatus,
   ] = useState(false);
@@ -206,6 +218,10 @@ export default function PublicationEditor({
   const channel =
     publication.channel as PublicationChannel;
 
+  const supportsVisual =
+    channel === "linkedin" ||
+    channel === "facebook";
+
   useEffect(() => {
     syncFields(publication);
   }, [publication]);
@@ -230,6 +246,8 @@ export default function PublicationEditor({
       seo_title: seoTitle,
       meta_description:
         metaDescription,
+      image_url:
+        imageUrl || null,
       subject,
       preview_text:
         previewText,
@@ -541,6 +559,93 @@ export default function PublicationEditor({
     }
   }
 
+  async function generateVisual() {
+    if (!supportsVisual) {
+      return;
+    }
+
+    if (!content.trim()) {
+      setMessage(null);
+      setError(
+        "Le contenu du post doit être renseigné avant de générer un visuel."
+      );
+
+      return;
+    }
+
+    const confirmed =
+      !imageUrl ||
+      window.confirm(
+        "Le visuel actuel sera remplacé par une nouvelle proposition. Continuer ?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsGeneratingVisual(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      await updatePublication(
+        status,
+        scheduledAt
+      );
+
+      const response =
+        await fetch(
+          `/api/publications/${publication.id}/generate-visual`,
+          {
+            method: "POST",
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        throw new Error(
+          result.message ??
+            "Impossible de générer le visuel."
+        );
+      }
+
+      if (
+        result.publication
+      ) {
+        syncFields(
+          result.publication
+        );
+      } else if (
+        result.image_url
+      ) {
+        setImageUrl(
+          result.image_url
+        );
+      }
+
+      setMessage(
+        imageUrl
+          ? "Nouveau visuel généré et enregistré."
+          : "Visuel généré et enregistré."
+      );
+    } catch (
+      visualError
+    ) {
+      setError(
+        visualError instanceof Error
+          ? visualError.message
+          : "Une erreur est survenue."
+      );
+    } finally {
+      setIsGeneratingVisual(false);
+    }
+  }
+
   async function saveBrevoBeforeDraft() {
     await updatePublication(
       status,
@@ -846,7 +951,9 @@ export default function PublicationEditor({
       }
 
       setMessage(
-        "Publication Facebook effectuée."
+        imageUrl
+          ? "Publication Facebook avec visuel effectuée."
+          : "Publication Facebook effectuée."
       );
     } catch (
       facebookError
@@ -901,6 +1008,11 @@ export default function PublicationEditor({
         ""
     );
 
+    setImageUrl(
+      updatedPublication.image_url ??
+        ""
+    );
+
     setSubject(
       updatedPublication.subject ??
         ""
@@ -934,6 +1046,7 @@ export default function PublicationEditor({
   const isBusy =
     isSaving ||
     isGenerating ||
+    isGeneratingVisual ||
     isChangingStatus ||
     isCreatingBrevoDraft ||
     isApprovingBrevoSend ||
@@ -1525,6 +1638,72 @@ export default function PublicationEditor({
           </div>
         </section>
 
+        {supportsVisual ? (
+          <section className="mt-5 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/70 via-white to-sky-50/60 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-600">
+                  Visuel
+                </p>
+
+                <h4 className="mt-1 text-lg font-bold text-slate-950">
+                  Visuel du post
+                </h4>
+
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                  Pénélope génère une illustration éditoriale LBMedia à partir du contenu de la publication.
+                </p>
+              </div>
+
+              {canEdit ? (
+                <button
+                  type="button"
+                  onClick={
+                    generateVisual
+                  }
+                  disabled={
+                    isBusy ||
+                    !content.trim()
+                  }
+                  className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isGeneratingVisual
+                    ? "Génération du visuel..."
+                    : imageUrl
+                      ? "Régénérer le visuel"
+                      : "Générer le visuel"}
+                </button>
+              ) : null}
+            </div>
+
+            {imageUrl ? (
+              <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="aspect-[3/2] w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="mt-5 flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-violet-200 bg-white/80 px-6 py-10 text-center">
+                <div>
+                  <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                    <ImageIcon />
+                  </div>
+
+                  <p className="mt-3 text-sm font-bold text-slate-900">
+                    Aucun visuel généré
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Le visuel sera créé à partir du texte du post.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : null}
+
         {message ? (
           <p className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700">
             {message}
@@ -2051,6 +2230,35 @@ function CalendarIcon() {
       <path d="M16 3v4" />
       <path d="M8 3v4" />
       <path d="M3 10h18" />
+    </svg>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="4"
+        width="18"
+        height="16"
+        rx="2"
+      />
+
+      <circle
+        cx="8.5"
+        cy="9"
+        r="1.5"
+      />
+
+      <path d="m4 17 4.5-4.5 3.5 3 2.5-2.5L20 18" />
     </svg>
   );
 }
