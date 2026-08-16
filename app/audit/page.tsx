@@ -3,6 +3,7 @@
 import {
   FormEvent,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -74,6 +75,11 @@ export default function AuditPage() {
   ] = useState(true);
 
   const [
+    companySearch,
+    setCompanySearch,
+  ] = useState("");
+
+  const [
     selectedCompanyId,
     setSelectedCompanyId,
   ] = useState("");
@@ -96,6 +102,59 @@ export default function AuditPage() {
   ] = useState<string | null>(
     null
   );
+
+  const filteredCompanies =
+    useMemo(() => {
+      const search =
+        companySearch
+          .trim()
+          .toLocaleLowerCase(
+            "fr-FR"
+          );
+
+      if (!search) {
+        return companies;
+      }
+
+      return companies.filter(
+        (company) => {
+          const name =
+            company.name
+              .toLocaleLowerCase(
+                "fr-FR"
+              );
+
+          const website =
+            (
+              company.website ??
+              ""
+            ).toLocaleLowerCase(
+              "fr-FR"
+            );
+
+          const relationship =
+            company.relationship_status ===
+            "client"
+              ? "client"
+              : "prospect";
+
+          return (
+            name.includes(
+              search
+            ) ||
+            website.includes(
+              search
+            ) ||
+            relationship.includes(
+              search
+            )
+          );
+        }
+      );
+    }, [
+      companies,
+      companySearch,
+    ]);
 
   useEffect(() => {
     async function loadCompanies() {
@@ -623,60 +682,120 @@ export default function AuditPage() {
 
                   <div className="mt-5 max-w-xl">
                     <label
-                      htmlFor="company"
+                      htmlFor="company-search"
                       className="mb-2 block text-sm font-semibold text-slate-800"
                     >
-                      Entreprise
+                      Rechercher une
+                      entreprise
                     </label>
 
-                    <select
-                      id="company"
+                    <input
+                      id="company-search"
+                      type="search"
                       value={
-                        selectedCompanyId
+                        companySearch
                       }
                       onChange={(
                         event
                       ) =>
-                        setSelectedCompanyId(
-                          event
-                            .target
+                        setCompanySearch(
+                          event.target
                             .value
                         )
                       }
                       disabled={
                         companiesLoading
                       }
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
-                    >
-                      <option value="">
-                        {companiesLoading
-                          ? "Chargement..."
-                          : "Aucune entreprise sélectionnée"}
-                      </option>
+                      placeholder="Nom de l’entreprise ou site internet..."
+                      autoComplete="off"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
+                    />
 
-                      {companies.map(
-                        (
-                          company
-                        ) => (
-                          <option
-                            key={
-                              company.id
-                            }
-                            value={
-                              company.id
-                            }
-                          >
-                            {
-                              company.name
-                            }
-                            {company.relationship_status ===
-                            "client"
-                              ? " — Client"
-                              : " — Prospect"}
-                          </option>
-                        )
-                      )}
-                    </select>
+                    <div className="mt-4">
+                      <label
+                        htmlFor="company"
+                        className="mb-2 block text-sm font-semibold text-slate-800"
+                      >
+                        Entreprise
+                      </label>
+
+                      <select
+                        id="company"
+                        value={
+                          selectedCompanyId
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setSelectedCompanyId(
+                            event
+                              .target
+                              .value
+                          )
+                        }
+                        disabled={
+                          companiesLoading
+                        }
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
+                      >
+                        <option value="">
+                          {companiesLoading
+                            ? "Chargement..."
+                            : "Aucune entreprise sélectionnée"}
+                        </option>
+
+                        {filteredCompanies.map(
+                          (
+                            company
+                          ) => (
+                            <option
+                              key={
+                                company.id
+                              }
+                              value={
+                                company.id
+                              }
+                            >
+                              {
+                                company.name
+                              }
+                              {company.relationship_status ===
+                              "client"
+                                ? " — Client"
+                                : " — Prospect"}
+                            </option>
+                          )
+                        )}
+                      </select>
+
+                      {!companiesLoading &&
+                      companySearch.trim() &&
+                      filteredCompanies.length ===
+                        0 ? (
+                        <p className="mt-2 text-sm text-slate-500">
+                          Aucune
+                          entreprise ne
+                          correspond à
+                          cette
+                          recherche.
+                        </p>
+                      ) : null}
+
+                      {!companiesLoading &&
+                      companySearch.trim() &&
+                      filteredCompanies.length >
+                        0 ? (
+                        <p className="mt-2 text-xs text-slate-400">
+                          {
+                            filteredCompanies.length
+                          }{" "}
+                          {filteredCompanies.length >
+                          1
+                            ? "entreprises trouvées"
+                            : "entreprise trouvée"}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
 
