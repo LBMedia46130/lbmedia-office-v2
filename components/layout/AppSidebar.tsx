@@ -172,21 +172,21 @@ export default function AppSidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-blue-950 text-white shadow-xl shadow-slate-950/20">
-      <div className="border-b border-white/10 px-6 py-7">
+      <div className="border-b border-white/10 px-6 py-7 text-center">
         <Link
           href="/"
-          className="block"
+          className="flex flex-col items-center"
         >
           <img
             src="/brand/lbmedia-logo.png"
             alt="LBMedia"
             className="h-auto w-36"
           />
-        </Link>
 
-        <div className="mt-5 text-xs font-medium text-slate-300">
-          LBMedia Office
-        </div>
+          <span className="mt-5 text-sm font-semibold text-slate-200">
+            LBMedia Office
+          </span>
+        </Link>
       </div>
 
       <div className="flex-1 px-4 py-6">
