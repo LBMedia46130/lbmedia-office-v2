@@ -231,7 +231,7 @@ export default async function HomePage() {
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">
-            LBMedia Office V2
+            LBMedia Office
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">

@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LBMedia Office V2",
+  title: "LBMedia Office",
   description:
     "Pilotage et écosystème LBMedia",
 };

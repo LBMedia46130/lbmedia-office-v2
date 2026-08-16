@@ -184,12 +184,8 @@ export default function AppSidebar() {
           />
         </Link>
 
-        <div className="mt-5 flex items-center gap-2 text-xs font-medium text-slate-300">
-          <span>LBMedia Office</span>
-
-          <span className="rounded-md bg-cyan-400/15 px-2 py-0.5 font-bold text-cyan-300 ring-1 ring-inset ring-cyan-300/20">
-            V2
-          </span>
+        <div className="mt-5 text-xs font-medium text-slate-300">
+          LBMedia Office
         </div>
       </div>
 
@@ -241,11 +237,11 @@ export default function AppSidebar() {
       <div className="p-4">
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
           <p className="text-xs font-semibold text-slate-100">
-            LBMedia Office V2
+            LBMedia Office
           </p>
 
           <p className="mt-1 text-[10px] text-slate-400">
-            Environnement de développement
+            Version 2.1
           </p>
         </div>
       </div>
