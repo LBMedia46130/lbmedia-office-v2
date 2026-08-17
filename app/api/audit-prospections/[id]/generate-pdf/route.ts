@@ -15,6 +15,11 @@ import {
   PDFDocument,
   StandardFonts,
   rgb,
+  pushGraphicsState,
+  popGraphicsState,
+  rectangle,
+  clip,
+  endPath,
 } from "pdf-lib";
 
 import {
@@ -39,6 +44,25 @@ type RouteContext = {
   }>;
 };
 
+type ImageAsset = {
+  bytes: Uint8Array;
+  mimeType: string;
+};
+
+type AuditContent = {
+  priorities:
+    | string[]
+    | null;
+
+  weaknesses:
+    | string[]
+    | null;
+
+  summary:
+    | string
+    | null;
+};
+
 export async function POST(
   _request: NextRequest,
   context: RouteContext
@@ -58,6 +82,7 @@ export async function POST(
         `
           id,
           company_id,
+          website_audit_id,
           before_image_url,
           after_image_url
         `
@@ -103,29 +128,60 @@ export async function POST(
       );
     }
 
-    const {
-      data: company,
-      error: companyError,
-    } = await supabaseAdmin
-      .from("companies")
-      .select(
-        `
-          id,
-          name,
-          website
-        `
-      )
-      .eq(
-        "id",
-        prospection.company_id
-      )
-      .maybeSingle();
+    const [
+      companyResult,
+      auditResult,
+    ] = await Promise.all([
+      supabaseAdmin
+        .from(
+          "companies"
+        )
+        .select(
+          `
+            id,
+            name,
+            website
+          `
+        )
+        .eq(
+          "id",
+          prospection.company_id
+        )
+        .maybeSingle(),
 
-    if (companyError) {
+      prospection.website_audit_id
+        ? supabaseAdmin
+            .from(
+              "website_audits"
+            )
+            .select(
+              `
+                priorities,
+                weaknesses,
+                summary
+              `
+            )
+            .eq(
+              "id",
+              prospection.website_audit_id
+            )
+            .maybeSingle()
+        : Promise.resolve({
+            data: null,
+            error: null,
+          }),
+    ]);
+
+    if (
+      companyResult.error
+    ) {
       throw new Error(
-        `Impossible de charger l’entreprise : ${companyError.message}`
+        `Impossible de charger l’entreprise : ${companyResult.error.message}`
       );
     }
+
+    const company =
+      companyResult.data;
 
     if (!company) {
       return NextResponse.json(
@@ -139,6 +195,24 @@ export async function POST(
         }
       );
     }
+
+    if (
+      auditResult.error
+    ) {
+      console.warn(
+        "Impossible de charger le détail de l’audit pour le PDF :",
+        auditResult.error.message
+      );
+    }
+
+    const audit =
+      (auditResult.data ??
+        null) as AuditContent | null;
+
+    const improvementPoints =
+      buildImprovementPoints(
+        audit
+      );
 
     const [
       beforeAsset,
@@ -190,9 +264,12 @@ export async function POST(
      */
     page.drawRectangle({
       x: 0,
+
       y:
         height - 72,
+
       width,
+
       height: 72,
 
       color:
@@ -219,6 +296,7 @@ export async function POST(
       Math.min(
         logoBoxWidth /
           logoDimensions.width,
+
         logoBoxHeight /
           logoDimensions.height
       );
@@ -346,7 +424,7 @@ export async function POST(
     );
 
     page.drawText(
-      "et non une maquette définitive. L'objectif est simplement de rendre la piste d'amélioration plus concrète.",
+      "et non une maquette définitive. L'objectif est de rendre les pistes d'amélioration relevées dans l'audit plus concrètes.",
       {
         x: 42,
 
@@ -382,13 +460,13 @@ export async function POST(
       height - 205;
 
     /*
-     * Un peu plus haut que la
-     * première version afin de
-     * mieux valoriser la capture
-     * verticale du site actuel.
+     * On réduit légèrement
+     * la hauteur du comparatif
+     * pour réserver de la place
+     * au bloc d'explication.
      */
     const imageHeight =
-      305;
+      220;
 
     page.drawText(
       "AUJOURD'HUI",
@@ -454,7 +532,17 @@ export async function POST(
       imageHeight
     );
 
-    await drawContainedImage(
+    /*
+     * Capture actuelle :
+     * on cadre volontairement
+     * le haut du site.
+     *
+     * La capture pleine hauteur
+     * reste stockée, mais le PDF
+     * montre une zone lisible et
+     * comparable à la proposition.
+     */
+    await drawTopCroppedImage(
       pdf,
       page,
       beforeAsset,
@@ -466,6 +554,12 @@ export async function POST(
       imageHeight - 12
     );
 
+    /*
+     * Proposition :
+     * on conserve toute l'image,
+     * car elle est déjà pensée
+     * comme une maquette horizontale.
+     */
     await drawContainedImage(
       pdf,
       page,
@@ -479,16 +573,197 @@ export async function POST(
     );
 
     /*
+     * Bloc :
+     * Pourquoi cette piste est meilleure
+     */
+    const reasonsTop =
+      imageTop -
+      imageHeight -
+      24;
+
+    const reasonsX =
+      42;
+
+    const reasonsWidth =
+      width - 84;
+
+    const reasonsHeight =
+      105;
+
+    page.drawRectangle({
+      x:
+        reasonsX,
+
+      y:
+        reasonsTop -
+        reasonsHeight,
+
+      width:
+        reasonsWidth,
+
+      height:
+        reasonsHeight,
+
+      borderWidth:
+        1,
+
+      borderColor:
+        rgb(
+          0.82,
+          0.87,
+          0.96
+        ),
+
+      color:
+        rgb(
+          0.965,
+          0.98,
+          1
+        ),
+    });
+
+    page.drawText(
+      "POURQUOI CETTE PISTE EST MEILLEURE",
+      {
+        x:
+          reasonsX + 14,
+
+        y:
+          reasonsTop - 20,
+
+        size: 9,
+
+        font:
+          boldFont,
+
+        color:
+          rgb(
+            0.1,
+            0.3,
+            0.9
+          ),
+      }
+    );
+
+    page.drawText(
+      "Cette proposition ne cherche pas simplement à moderniser l'apparence : elle traduit plusieurs priorités relevées dans l'audit.",
+      {
+        x:
+          reasonsX + 14,
+
+        y:
+          reasonsTop - 36,
+
+        size: 8.5,
+
+        font,
+
+        color:
+          rgb(
+            0.28,
+            0.33,
+            0.42
+          ),
+      }
+    );
+
+    let bulletY =
+      reasonsTop - 53;
+
+    for (
+      const point of
+      improvementPoints
+    ) {
+      const lines =
+        wrapText(
+          point,
+          font,
+          8.2,
+          reasonsWidth - 46
+        );
+
+      page.drawText(
+        "•",
+        {
+          x:
+            reasonsX + 16,
+
+          y:
+            bulletY,
+
+          size:
+            9,
+
+          font:
+            boldFont,
+
+          color:
+            rgb(
+              0.1,
+              0.3,
+              0.9
+            ),
+        }
+      );
+
+      for (
+        const line of
+        lines.slice(
+          0,
+          2
+        )
+      ) {
+        page.drawText(
+          line,
+          {
+            x:
+              reasonsX + 29,
+
+            y:
+              bulletY,
+
+            size:
+              8.2,
+
+            font,
+
+            color:
+              rgb(
+                0.2,
+                0.25,
+                0.34
+              ),
+          }
+        );
+
+        bulletY -=
+          10;
+      }
+
+      bulletY -=
+        3;
+
+      if (
+        bulletY <
+        reasonsTop -
+          reasonsHeight +
+          12
+      ) {
+        break;
+      }
+    }
+
+    /*
      * Mention de bas de page
      */
     page.drawText(
-      "Ce document constitue un exemple de réflexion réalisé par LBMedia à partir des éléments visibles du site.",
+      "Ce document constitue un exemple de réflexion réalisé par LBMedia à partir des éléments visibles du site et des constats de l'audit.",
       {
         x: 42,
 
-        y: 28,
+        y: 18,
 
-        size: 8.5,
+        size: 8,
 
         font,
 
@@ -583,11 +858,6 @@ export async function POST(
   }
 }
 
-type ImageAsset = {
-  bytes: Uint8Array;
-  mimeType: string;
-};
-
 async function loadLbmediaLogo() {
   const logoPath =
     join(
@@ -644,6 +914,25 @@ async function fetchImage(
   };
 }
 
+async function embedImage(
+  pdf: PDFDocument,
+  asset: ImageAsset
+) {
+  if (
+    asset.mimeType.includes(
+      "png"
+    )
+  ) {
+    return pdf.embedPng(
+      asset.bytes
+    );
+  }
+
+  return pdf.embedJpg(
+    asset.bytes
+  );
+}
+
 async function drawContainedImage(
   pdf: PDFDocument,
   page: ReturnType<
@@ -656,15 +945,10 @@ async function drawContainedImage(
   height: number
 ) {
   const image =
-    asset.mimeType.includes(
-      "png"
-    )
-      ? await pdf.embedPng(
-          asset.bytes
-        )
-      : await pdf.embedJpg(
-          asset.bytes
-        );
+    await embedImage(
+      pdf,
+      asset
+    );
 
   const dimensions =
     image.scale(1);
@@ -710,6 +994,96 @@ async function drawContainedImage(
   );
 }
 
+async function drawTopCroppedImage(
+  pdf: PDFDocument,
+  page: ReturnType<
+    PDFDocument["addPage"]
+  >,
+  asset: ImageAsset,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  const image =
+    await embedImage(
+      pdf,
+      asset
+    );
+
+  const dimensions =
+    image.scale(1);
+
+  /*
+   * On remplit toute la largeur
+   * du cadre.
+   */
+  const ratio =
+    width /
+    dimensions.width;
+
+  const drawWidth =
+    dimensions.width *
+    ratio;
+
+  const drawHeight =
+    dimensions.height *
+    ratio;
+
+  /*
+   * Le haut de l'image est aligné
+   * avec le haut du cadre.
+   *
+   * Le reste est simplement masqué
+   * par le clipping PDF.
+   */
+  const drawY =
+    y +
+    height -
+    drawHeight;
+
+  page.pushOperators(
+    pushGraphicsState()
+  );
+
+  page.pushOperators(
+    rectangle(
+      x,
+      y,
+      width,
+      height
+    )
+  );
+
+  page.pushOperators(
+    clip()
+  );
+
+  page.pushOperators(
+    endPath()
+  );
+
+  page.drawImage(
+    image,
+    {
+      x,
+
+      y:
+        drawY,
+
+      width:
+        drawWidth,
+
+      height:
+        drawHeight,
+    }
+  );
+
+  page.pushOperators(
+    popGraphicsState()
+  );
+}
+
 function drawImageFrame(
   page: ReturnType<
     PDFDocument["addPage"]
@@ -741,4 +1115,163 @@ function drawImageFrame(
         0.995
       ),
   });
+}
+
+function buildImprovementPoints(
+  audit:
+    | AuditContent
+    | null
+) {
+  const priorities =
+    normalizeStringArray(
+      audit?.priorities
+    );
+
+  const weaknesses =
+    normalizeStringArray(
+      audit?.weaknesses
+    );
+
+  const candidates = [
+    ...priorities,
+    ...weaknesses,
+  ];
+
+  const unique =
+    Array.from(
+      new Set(
+        candidates
+          .map((value) =>
+            cleanImprovementText(
+              value
+            )
+          )
+          .filter(Boolean)
+      )
+    );
+
+  if (
+    unique.length > 0
+  ) {
+    return unique.slice(
+      0,
+      3
+    );
+  }
+
+  return [
+    "Clarifier immédiatement l'offre et faciliter la compréhension du positionnement.",
+    "Mettre davantage en valeur les éléments de confiance et les raisons de choisir l'établissement.",
+    "Créer un parcours plus direct vers les actions importantes : découverte, contact ou réservation.",
+  ];
+}
+
+function normalizeStringArray(
+  value:
+    | string[]
+    | null
+    | undefined
+) {
+  if (
+    !Array.isArray(
+      value
+    )
+  ) {
+    return [];
+  }
+
+  return value.filter(
+    (
+      item
+    ): item is string =>
+      typeof item ===
+        "string" &&
+      Boolean(
+        item.trim()
+      )
+  );
+}
+
+function cleanImprovementText(
+  value: string
+) {
+  return value
+    .replace(
+      /^\s*[-•]\s*/,
+      ""
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
+    .trim();
+}
+
+function wrapText(
+  text: string,
+  font: Awaited<
+    ReturnType<
+      PDFDocument["embedFont"]
+    >
+  >,
+  size: number,
+  maxWidth: number
+) {
+  const words =
+    text.split(
+      /\s+/
+    );
+
+  const lines:
+    string[] = [];
+
+  let currentLine =
+    "";
+
+  for (
+    const word of
+    words
+  ) {
+    const candidate =
+      currentLine
+        ? `${currentLine} ${word}`
+        : word;
+
+    const candidateWidth =
+      font.widthOfTextAtSize(
+        candidate,
+        size
+      );
+
+    if (
+      candidateWidth <=
+      maxWidth
+    ) {
+      currentLine =
+        candidate;
+
+      continue;
+    }
+
+    if (
+      currentLine
+    ) {
+      lines.push(
+        currentLine
+      );
+    }
+
+    currentLine =
+      word;
+  }
+
+  if (
+    currentLine
+  ) {
+    lines.push(
+      currentLine
+    );
+  }
+
+  return lines;
 }
