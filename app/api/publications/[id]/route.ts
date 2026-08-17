@@ -29,12 +29,14 @@ export async function PATCH(
   request: Request,
   context: RouteContext
 ) {
-  const { id } = await context.params;
+  const { id } =
+    await context.params;
 
   let body: UpdatePublicationInput;
 
   try {
-    body = await request.json();
+    body =
+      await request.json();
   } catch {
     return NextResponse.json(
       {
@@ -68,7 +70,8 @@ export async function PATCH(
 
   const {
     data: currentPublication,
-    error: currentPublicationError,
+    error:
+      currentPublicationError,
   } = await supabaseAdmin
     .from("publications")
     .select(`
@@ -82,7 +85,9 @@ export async function PATCH(
     .eq("id", id)
     .maybeSingle();
 
-  if (currentPublicationError) {
+  if (
+    currentPublicationError
+  ) {
     return NextResponse.json(
       {
         success: false,
@@ -115,12 +120,14 @@ export async function PATCH(
     currentPublication.status;
 
   const nextScheduledAt =
-    body.scheduled_at !== undefined
+    body.scheduled_at !==
+    undefined
       ? body.scheduled_at
       : currentPublication.scheduled_at;
 
   if (
-    nextStatus === "scheduled" &&
+    nextStatus ===
+      "scheduled" &&
     !nextScheduledAt
   ) {
     return NextResponse.json(
@@ -145,22 +152,30 @@ export async function PATCH(
     updated_at: now,
   };
 
-  if (body.title !== undefined) {
+  if (
+    body.title !== undefined
+  ) {
     updateData.title =
-      body.title?.trim() || null;
+      body.title?.trim() ||
+      null;
   }
 
-  if (body.content !== undefined) {
+  if (
+    body.content !== undefined
+  ) {
     updateData.content =
       body.content.trim();
   }
 
-  if (body.status !== undefined) {
+  if (
+    body.status !== undefined
+  ) {
     updateData.status =
       body.status;
 
     if (
-      body.status === "published"
+      body.status ===
+      "published"
     ) {
       updateData.published_at =
         currentPublication.published_at ??
@@ -174,8 +189,10 @@ export async function PATCH(
     }
 
     if (
-      body.status !== "scheduled" &&
-      body.status !== "published"
+      body.status !==
+        "scheduled" &&
+      body.status !==
+        "published"
     ) {
       updateData.scheduled_at =
         null;
@@ -184,20 +201,25 @@ export async function PATCH(
     if (
       currentPublication.channel ===
         "brevo" &&
-      body.status !== "scheduled"
+      body.status !==
+        "scheduled"
     ) {
       updateData.brevo_send_approved_at =
         null;
     }
   }
 
-  if (body.slug !== undefined) {
+  if (
+    body.slug !== undefined
+  ) {
     updateData.slug =
-      body.slug?.trim() || null;
+      body.slug?.trim() ||
+      null;
   }
 
   if (
-    body.seo_title !== undefined
+    body.seo_title !==
+    undefined
   ) {
     updateData.seo_title =
       body.seo_title?.trim() ||
@@ -214,7 +236,8 @@ export async function PATCH(
   }
 
   if (
-    body.focus_keyword !== undefined
+    body.focus_keyword !==
+    undefined
   ) {
     updateData.focus_keyword =
       body.focus_keyword?.trim() ||
@@ -231,7 +254,8 @@ export async function PATCH(
   }
 
   if (
-    body.image_alt !== undefined
+    body.image_alt !==
+    undefined
   ) {
     updateData.image_alt =
       body.image_alt?.trim() ||
@@ -239,7 +263,8 @@ export async function PATCH(
   }
 
   if (
-    body.image_url !== undefined
+    body.image_url !==
+    undefined
   ) {
     updateData.image_url =
       body.image_url?.trim() ||
@@ -255,7 +280,8 @@ export async function PATCH(
   }
 
   if (
-    body.preview_text !== undefined
+    body.preview_text !==
+    undefined
   ) {
     updateData.preview_text =
       body.preview_text?.trim() ||
@@ -263,7 +289,8 @@ export async function PATCH(
   }
 
   if (
-    body.call_to_action !== undefined
+    body.call_to_action !==
+    undefined
   ) {
     updateData.call_to_action =
       body.call_to_action?.trim() ||
@@ -287,11 +314,23 @@ export async function PATCH(
   }
 
   if (
-    body.scheduled_at !== undefined
+    body.follow_up_text !==
+    undefined
+  ) {
+    updateData.follow_up_text =
+      body.follow_up_text?.trim() ||
+      null;
+  }
+
+  if (
+    body.scheduled_at !==
+    undefined
   ) {
     updateData.scheduled_at =
-      nextStatus === "scheduled" ||
-      nextStatus === "published"
+      nextStatus ===
+        "scheduled" ||
+      nextStatus ===
+        "published"
         ? body.scheduled_at
         : null;
   }
@@ -329,7 +368,8 @@ export async function PATCH(
         success: false,
         message:
           "Impossible d’enregistrer la déclinaison.",
-        error: error.message,
+        error:
+          error.message,
       },
       {
         status: 500,

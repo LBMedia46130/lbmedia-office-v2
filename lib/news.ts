@@ -83,6 +83,8 @@ export type Publication = {
   link_url: string | null;
   hashtags: string | null;
 
+  follow_up_text: string | null;
+
   scheduled_at: string | null;
   published_at: string | null;
   published_url: string | null;
@@ -116,6 +118,8 @@ export type UpdatePublicationInput = {
   call_to_action?: string | null;
   link_url?: string | null;
   hashtags?: string | null;
+
+  follow_up_text?: string | null;
 
   scheduled_at?: string | null;
 

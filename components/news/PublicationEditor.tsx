@@ -155,6 +155,13 @@ export default function PublicationEditor({
   );
 
   const [
+    followUpText,
+    setFollowUpText,
+  ] = useState(
+    publication.follow_up_text ?? ""
+  );
+
+  const [
     brevoSendApprovedAt,
     setBrevoSendApprovedAt,
   ] = useState(
@@ -174,6 +181,11 @@ export default function PublicationEditor({
   const [
     isGeneratingVisual,
     setIsGeneratingVisual,
+  ] = useState(false);
+
+  const [
+    isGeneratingFollowUp,
+    setIsGeneratingFollowUp,
   ] = useState(false);
 
   const [
@@ -255,6 +267,8 @@ export default function PublicationEditor({
         callToAction,
       link_url: linkUrl,
       hashtags,
+      follow_up_text:
+        followUpText || null,
     };
   }
 
@@ -643,6 +657,91 @@ export default function PublicationEditor({
       );
     } finally {
       setIsGeneratingVisual(false);
+    }
+  }
+
+  async function generateFollowUp() {
+    if (channel !== "linkedin") {
+      return;
+    }
+
+    if (!content.trim()) {
+      setMessage(null);
+      setError(
+        "Le post LinkedIn doit être rédigé avant de générer une relance."
+      );
+
+      return;
+    }
+
+    const confirmed =
+      !followUpText ||
+      window.confirm(
+        "La relance actuelle sera remplacée par une nouvelle proposition. Continuer ?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsGeneratingFollowUp(
+      true
+    );
+    setMessage(null);
+    setError(null);
+
+    try {
+      await updatePublication(
+        status,
+        scheduledAt
+      );
+
+      const response =
+        await fetch(
+          `/api/publications/${publication.id}/generate-follow-up`,
+          {
+            method: "POST",
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        throw new Error(
+          result.message ??
+            "Impossible de générer la relance."
+        );
+      }
+
+      if (
+        result.publication
+      ) {
+        syncFields(
+          result.publication
+        );
+      }
+
+      setMessage(
+        followUpText
+          ? "Nouvelle relance générée et enregistrée."
+          : "Relance générée et enregistrée."
+      );
+    } catch (
+      followUpError
+    ) {
+      setError(
+        followUpError instanceof Error
+          ? followUpError.message
+          : "Une erreur est survenue."
+      );
+    } finally {
+      setIsGeneratingFollowUp(
+        false
+      );
     }
   }
 
@@ -1038,6 +1137,11 @@ export default function PublicationEditor({
         ""
     );
 
+    setFollowUpText(
+      updatedPublication.follow_up_text ??
+        ""
+    );
+
     setBrevoSendApprovedAt(
       updatedPublication.brevo_send_approved_at
     );
@@ -1047,6 +1151,7 @@ export default function PublicationEditor({
     isSaving ||
     isGenerating ||
     isGeneratingVisual ||
+    isGeneratingFollowUp ||
     isChangingStatus ||
     isCreatingBrevoDraft ||
     isApprovingBrevoSend ||
@@ -1595,6 +1700,60 @@ export default function PublicationEditor({
                       theme.fieldTone
                     }
                   />
+                </div>
+
+                <div className="rounded-2xl border border-sky-200 bg-white p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-600">
+                        Relance LinkedIn
+                      </p>
+
+                      <h5 className="mt-1 text-base font-bold text-slate-950">
+                        Phrase de relance
+                      </h5>
+
+                      <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                        Pénélope prépare une courte relance à publier quelques jours après le post pour le remettre naturellement en avant.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={
+                        generateFollowUp
+                      }
+                      disabled={
+                        isBusy ||
+                        !content.trim()
+                      }
+                      className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isGeneratingFollowUp
+                        ? "Génération de la relance..."
+                        : followUpText
+                          ? "Régénérer la relance"
+                          : "Générer la relance"}
+                    </button>
+                  </div>
+
+                  <div className="mt-4">
+                    <TextArea
+                      label="Texte de relance"
+                      value={followUpText}
+                      onChange={
+                        setFollowUpText
+                      }
+                      rows={3}
+                      disabled={
+                        !canEdit ||
+                        isBusy
+                      }
+                      tone={
+                        theme.fieldTone
+                      }
+                    />
+                  </div>
                 </div>
               </>
             ) : null}
