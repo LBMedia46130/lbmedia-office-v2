@@ -206,9 +206,20 @@ export async function POST(
       "image/png";
 
     const prompt = `
-À partir de la capture fournie, crée une proposition visuelle d'amélioration de cette page web.
+À partir de la capture du site fournie, crée une PROJECTION VISUELLE D'AMÉLIORATION de sa page d'accueil.
 
-Il s'agit d'une piste de réflexion réalisée par LBMedia pour permettre au prospect de visualiser une évolution possible de son site.
+Cette image sera présentée commercialement par LBMedia à l'entreprise comme une piste possible d'évolution.
+
+IMPORTANT :
+il ne s'agit PAS de reproduire toute la page visible dans la capture.
+
+Il faut créer une projection lisible et convaincante du HAUT DE LA PAGE D'ACCUEIL :
+- header / navigation ;
+- zone d'accroche principale ;
+- premiers contenus ou services importants ;
+- premiers éléments de réassurance ou de conversion pertinents.
+
+La projection doit ressembler à une véritable capture d'écran desktop d'un site web professionnel.
 
 ==================================================
 ENTREPRISE
@@ -276,120 +287,170 @@ ${
 }
 
 ==================================================
-PRINCIPE FONDAMENTAL
+OBJECTIF DE LA PROJECTION
 ==================================================
 
-La capture originale est la référence visuelle principale.
+Ne te contente PAS de déplacer légèrement les blocs existants.
 
-Il ne s'agit PAS de créer un nouveau site à partir de zéro.
+Propose une évolution visuelle réellement perceptible et commercialement intéressante.
 
-Il faut proposer une évolution réaliste de la page existante.
+Le prospect doit pouvoir regarder l'image et comprendre immédiatement :
 
-Le résultat doit rester immédiatement reconnaissable comme le site de cette entreprise.
+"Mon site pourrait être plus clair, plus actuel et mieux mettre en valeur mon activité."
+
+Travaille particulièrement :
+
+- la hiérarchie des informations ;
+- l'impact du premier écran ;
+- les respirations ;
+- la taille et le rôle des différents blocs ;
+- la lisibilité ;
+- la mise en valeur des contenus importants ;
+- les appels à l'action lorsqu'ils sont pertinents ;
+- les éléments de confiance réellement disponibles ;
+- la compréhension immédiate de l'activité ;
+- la qualité perçue de l'entreprise.
+
+Le résultat doit être sensiblement plus moderne et mieux structuré que l'original.
+
+Il doit montrer une vraie direction créative.
 
 ==================================================
-À CONSERVER
+FIDÉLITÉ À L'ENTREPRISE
 ==================================================
+
+La capture fournie reste la référence de marque.
+
+Le résultat doit être immédiatement reconnaissable comme une évolution du site de CETTE entreprise.
 
 Conserve autant que possible :
 
+- le vrai logo visible dans la capture ;
 - le nom de l'entreprise ;
-- le logo visible ;
-- les couleurs principales ;
-- les photographies existantes ;
-- l'identité graphique ;
-- l'univers de marque ;
-- la nature réelle de l'activité ;
-- les éléments de contenu importants déjà visibles.
+- ses couleurs caractéristiques ;
+- son univers graphique ;
+- les photographies pertinentes déjà présentes ;
+- les éléments éditoriaux réellement visibles ;
+- la nature exacte de son activité.
+
+Tu peux faire évoluer :
+
+- la disposition ;
+- les proportions ;
+- les espacements ;
+- les fonds ;
+- la hiérarchie ;
+- la typographie ;
+- les cartes et encadrés ;
+- la présentation de la navigation ;
+- la mise en scène des visuels ;
+- la structure du premier écran.
+
+Tu as donc une vraie liberté de DESIGN tout en restant fidèle à l'IDENTITÉ.
 
 ==================================================
-À AMÉLIORER
+CONTENU
 ==================================================
 
-Utilise les conclusions de l'audit pour améliorer notamment, lorsque cela est pertinent :
+Utilise uniquement des informations établies par :
 
-- la hiérarchie visuelle ;
-- la compréhension immédiate de l'activité ;
-- la présentation des contenus ;
-- la visibilité des prestations ;
-- la mise en valeur de l'expérience ;
-- les éléments de confiance ;
-- les appels à l'action ;
-- la lisibilité ;
-- l'espacement ;
-- la structure des sections ;
-- la modernité générale de la présentation.
+1. la capture du site ;
+2. les informations sur l'entreprise fournies ci-dessus ;
+3. les constats de l'audit.
+
+N'invente aucune nouvelle activité ou promesse commerciale.
+
+Lorsque les vrais textes sont lisibles, conserve-les ou utilise-les comme base.
+
+Tu peux raccourcir une formulation pour rendre la projection visuellement crédible, à condition de ne pas changer son sens.
+
+Si un texte précis n'est pas lisible, utilise un traitement graphique sobre plutôt que d'inventer une affirmation.
 
 ==================================================
-INTERDICTIONS
+INTERDICTIONS ABSOLUES
 ==================================================
 
 N'invente jamais :
 
 - un nouveau logo ;
 - une nouvelle marque ;
-- un nouveau service ;
 - une nouvelle activité ;
+- de nouveaux services non établis ;
 - de faux clients ;
 - de faux témoignages ;
+- de faux avis ;
+- de faux partenaires ;
 - de fausses références ;
 - de faux chiffres ;
 - de faux prix ;
 - de faux résultats ;
-- de faux partenaires.
+- de fausses récompenses.
 
-Ne remplace pas les photographies existantes par des images génériques si leur conservation est possible.
+Ne remplace pas sans raison les photographies caractéristiques du site par des images génériques.
 
-Ne transforme pas arbitrairement le site en maquette de startup blanche et bleue.
+Ne transforme pas automatiquement le site en startup technologique.
 
-Ne fais pas disparaître l'identité originale simplement pour rendre le design plus moderne.
+Ne lui applique pas arbitrairement une palette bleue.
 
-==================================================
-TEXTE
-==================================================
-
-Conserve les vrais textes visibles lorsqu'ils sont suffisamment lisibles.
-
-Tu peux :
-
-- mieux les hiérarchiser ;
-- les déplacer ;
-- raccourcir visuellement certains blocs ;
-- améliorer leur présentation.
-
-Si une information n'est pas clairement lisible dans la capture, n'invente pas son contenu.
+Ne crée pas une maquette générique qui pourrait appartenir à n'importe quelle entreprise.
 
 ==================================================
-STYLE
+DIRECTION GRAPHIQUE
 ==================================================
 
-La nouvelle version doit être :
+La projection doit être :
 
 - professionnelle ;
 - contemporaine ;
-- claire ;
 - élégante ;
 - crédible ;
-- structurée ;
+- plus aérée ;
+- visuellement plus forte ;
 - réaliste ;
 - adaptée à une vraie entreprise française.
 
-L'objectif est une amélioration, pas une révolution graphique.
+Le design peut être nettement meilleur que l'original.
+
+La fidélité à l'entreprise ne signifie PAS fidélité à la mise en page actuelle.
+
+L'objectif est une évolution visible, pas une simple copie nettoyée.
 
 ==================================================
-FORMAT
+CADRAGE
 ==================================================
 
-Produis une seule proposition visuelle de page web.
+IMPORTANT :
+
+Ne cherche PAS à faire entrer toute la page d'accueil dans l'image.
+
+Concentre la projection sur environ les 1 à 2 premiers écrans desktop du site.
+
+Les éléments doivent être suffisamment grands pour être lisibles dans une présentation commerciale.
+
+La projection doit occuper tout le visuel.
+
+Pas de navigateur autour.
+Pas d'ordinateur.
+Pas de téléphone.
+Pas de mockup posé dans un décor.
+
+L'image doit ressembler directement à une capture d'écran du site amélioré.
+
+==================================================
+RÉSULTAT
+==================================================
+
+Produis UNE seule image horizontale représentant cette projection.
 
 Aucun logo LBMedia.
 Aucune mention LBMedia.
 Aucun texte "avant".
 Aucun texte "après".
+Aucun commentaire.
+Aucune annotation.
 Aucun cadre de présentation.
-Aucune explication extérieure à la page.
 
-Uniquement la proposition de page web améliorée.
+Uniquement la projection du site amélioré.
 `.trim();
 
     const formData =
