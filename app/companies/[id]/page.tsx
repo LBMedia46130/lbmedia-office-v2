@@ -25,6 +25,14 @@ import {
   getCompanyWebsiteAudits,
 } from "@/lib/website-audits";
 
+import {
+  getAuditProspectionByAuditId,
+} from "@/lib/audit-prospections";
+
+import {
+  prepareAuditProspection,
+} from "./auditProspectionActions";
+
 export const dynamic =
   "force-dynamic";
 
@@ -64,6 +72,13 @@ export default async function CompanyPage({
   const latestAudit =
     websiteAudits[0] ??
     null;
+
+  const latestProspection =
+    latestAudit
+      ? await getAuditProspectionByAuditId(
+          latestAudit.id
+        )
+      : null;
 
   const fullAddress = [
     company.address,
@@ -457,6 +472,116 @@ export default async function CompanyPage({
             </div>
           </div>
 
+          {latestAudit ? (
+            <div className="mt-8 border-t border-slate-200 pt-8">
+              <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-6">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
+                        Prospection après audit
+                      </p>
+
+                      {latestProspection ? (
+                        <ProspectionStatusBadge
+                          status={
+                            latestProspection.status
+                          }
+                        />
+                      ) : null}
+                    </div>
+
+                    <h3 className="mt-2 text-xl font-bold text-slate-900">
+                      Transformer l’audit
+                      en prise de contact
+                    </h3>
+
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                      Préparer une approche
+                      commerciale personnalisée
+                      à partir des points relevés
+                      dans le dernier audit.
+                    </p>
+                  </div>
+
+                  {latestProspection ? (
+                    <div className="shrink-0">
+                      <p className="text-sm font-semibold text-slate-800">
+                        Prospection créée
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatDateTime(
+                          latestProspection.created_at
+                        )}
+                      </p>
+                    </div>
+                  ) : (
+                    <form
+                      action={prepareAuditProspection.bind(
+                        null,
+                        company.id,
+                        latestAudit.id,
+                        company.email
+                      )}
+                    >
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                      >
+                        Préparer la prospection
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {latestProspection ? (
+                  <div className="mt-6 grid gap-4 border-t border-indigo-200 pt-5 sm:grid-cols-2 lg:grid-cols-3">
+                    <ProspectionInfo
+                      label="Destinataire"
+                      value={
+                        latestProspection.recipient_email ||
+                        company.email ||
+                        "À renseigner"
+                      }
+                    />
+
+                    <ProspectionInfo
+                      label="Objet"
+                      value={
+                        latestProspection.subject ||
+                        "À générer"
+                      }
+                    />
+
+                    <ProspectionInfo
+                      label="Angle commercial"
+                      value={
+                        latestProspection.sales_angle ||
+                        "À définir"
+                      }
+                    />
+                  </div>
+                ) : null}
+
+                {latestProspection ? (
+                  <div className="mt-5 rounded-xl border border-indigo-100 bg-white px-4 py-4">
+                    <p className="text-sm font-semibold text-slate-800">
+                      Prochaine étape
+                    </p>
+
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Générer l’angle commercial
+                      et le mail de prospection
+                      directement à partir des
+                      résultats de l’audit.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
           {hasAdministrativeInfo ? (
             <div className="mt-8 border-t border-slate-200 pt-8">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -677,6 +802,51 @@ function MiniScore({
         </span>
       </p>
     </div>
+  );
+}
+
+function ProspectionInfo({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-indigo-100 bg-white px-4 py-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-400">
+        {label}
+      </p>
+
+      <p className="mt-2 break-words text-sm font-semibold text-slate-800">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ProspectionStatusBadge({
+  status,
+}: {
+  status:
+    | "draft"
+    | "ready"
+    | "sent"
+    | "follow_up"
+    | "replied";
+}) {
+  const labels = {
+    draft: "À préparer",
+    ready: "Prête",
+    sent: "Envoyée",
+    follow_up: "Relance à faire",
+    replied: "Réponse reçue",
+  };
+
+  return (
+    <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+      {labels[status]}
+    </span>
   );
 }
 
