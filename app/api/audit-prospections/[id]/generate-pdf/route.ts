@@ -4,6 +4,14 @@ import {
 } from "next/server";
 
 import {
+  readFile,
+} from "node:fs/promises";
+
+import {
+  join,
+} from "node:path";
+
+import {
   PDFDocument,
   StandardFonts,
   rgb,
@@ -135,6 +143,7 @@ export async function POST(
     const [
       beforeAsset,
       afterAsset,
+      logoBytes,
     ] = await Promise.all([
       fetchImage(
         prospection.before_image_url
@@ -143,6 +152,8 @@ export async function POST(
       fetchImage(
         prospection.after_image_url
       ),
+
+      loadLbmediaLogo(),
     ]);
 
     const pdf =
@@ -158,6 +169,11 @@ export async function POST(
         StandardFonts.HelveticaBold
       );
 
+    const logo =
+      await pdf.embedPng(
+        logoBytes
+      );
+
     const page =
       pdf.addPage([
         841.89,
@@ -169,12 +185,16 @@ export async function POST(
       height,
     } = page.getSize();
 
+    /*
+     * Bandeau principal
+     */
     page.drawRectangle({
       x: 0,
       y:
         height - 72,
       width,
       height: 72,
+
       color:
         rgb(
           0.04,
@@ -183,43 +203,90 @@ export async function POST(
         ),
     });
 
-    page.drawText(
-      "LBMedia",
+    /*
+     * Logo officiel LBMedia
+     */
+    const logoBoxWidth =
+      92;
+
+    const logoBoxHeight =
+      34;
+
+    const logoDimensions =
+      logo.scale(1);
+
+    const logoRatio =
+      Math.min(
+        logoBoxWidth /
+          logoDimensions.width,
+        logoBoxHeight /
+          logoDimensions.height
+      );
+
+    const logoWidth =
+      logoDimensions.width *
+      logoRatio;
+
+    const logoHeight =
+      logoDimensions.height *
+      logoRatio;
+
+    page.drawImage(
+      logo,
       {
         x: 42,
+
         y:
-          height - 43,
-        size: 19,
-        font:
-          boldFont,
-        color:
-          rgb(1, 1, 1),
+          height -
+          36 -
+          logoHeight / 2,
+
+        width:
+          logoWidth,
+
+        height:
+          logoHeight,
       }
     );
 
     page.drawText(
       "Une piste d'amélioration pour votre site",
       {
-        x: 132,
+        x: 155,
+
         y:
           height - 41,
+
         size: 17,
+
         font:
           boldFont,
+
         color:
-          rgb(1, 1, 1),
+          rgb(
+            1,
+            1,
+            1
+          ),
       }
     );
 
+    /*
+     * Prospect
+     */
     page.drawText(
       company.name,
       {
         x: 42,
+
         y:
           height - 103,
+
         size: 18,
+
         font:
           boldFont,
+
         color:
           rgb(
             0.08,
@@ -236,10 +303,14 @@ export async function POST(
         company.website,
         {
           x: 42,
+
           y:
             height - 121,
+
           size: 9,
+
           font,
+
           color:
             rgb(
               0.35,
@@ -250,14 +321,21 @@ export async function POST(
       );
     }
 
+    /*
+     * Mention explicative
+     */
     page.drawText(
       "L'idée présentée ci-dessous est volontairement illustrative : elle montre une direction possible,",
       {
         x: 42,
+
         y:
           height - 148,
+
         size: 9.5,
+
         font,
+
         color:
           rgb(
             0.22,
@@ -271,10 +349,14 @@ export async function POST(
       "et non une maquette définitive. L'objectif est simplement de rendre la piste d'amélioration plus concrète.",
       {
         x: 42,
+
         y:
           height - 162,
+
         size: 9.5,
+
         font,
+
         color:
           rgb(
             0.22,
@@ -284,6 +366,9 @@ export async function POST(
       }
     );
 
+    /*
+     * Comparatif
+     */
     const leftX =
       42;
 
@@ -296,18 +381,29 @@ export async function POST(
     const imageTop =
       height - 205;
 
+    /*
+     * Un peu plus haut que la
+     * première version afin de
+     * mieux valoriser la capture
+     * verticale du site actuel.
+     */
     const imageHeight =
-      280;
+      305;
 
     page.drawText(
       "AUJOURD'HUI",
       {
-        x: leftX,
+        x:
+          leftX,
+
         y:
           imageTop + 16,
+
         size: 9,
+
         font:
           boldFont,
+
         color:
           rgb(
             0.35,
@@ -320,12 +416,17 @@ export async function POST(
     page.drawText(
       "UNE PISTE POSSIBLE",
       {
-        x: rightX,
+        x:
+          rightX,
+
         y:
           imageTop + 16,
+
         size: 9,
+
         font:
           boldFont,
+
         color:
           rgb(
             0.1,
@@ -377,13 +478,20 @@ export async function POST(
       imageHeight - 12
     );
 
+    /*
+     * Mention de bas de page
+     */
     page.drawText(
       "Ce document constitue un exemple de réflexion réalisé par LBMedia à partir des éléments visibles du site.",
       {
         x: 42,
-        y: 39,
+
+        y: 28,
+
         size: 8.5,
+
         font,
+
         color:
           rgb(
             0.45,
@@ -411,7 +519,8 @@ export async function POST(
           contentType:
             "application/pdf",
 
-          upsert: true,
+          upsert:
+            true,
 
           cacheControl:
             "3600",
@@ -446,7 +555,9 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+
       attachmentUrl,
+
       prospection:
         updated,
     });
@@ -477,13 +588,41 @@ type ImageAsset = {
   mimeType: string;
 };
 
+async function loadLbmediaLogo() {
+  const logoPath =
+    join(
+      process.cwd(),
+      "public",
+      "brand",
+      "lbmedia-logo.png"
+    );
+
+  try {
+    return await readFile(
+      logoPath
+    );
+  } catch {
+    throw new Error(
+      "Le logo officiel LBMedia est introuvable dans public/brand/lbmedia-logo.png."
+    );
+  }
+}
+
 async function fetchImage(
   url: string
 ): Promise<ImageAsset> {
   const response =
-    await fetch(url);
+    await fetch(
+      url,
+      {
+        cache:
+          "no-store",
+      }
+    );
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
       "Impossible de récupérer l’un des visuels."
     );
@@ -534,6 +673,7 @@ async function drawContainedImage(
     Math.min(
       width /
         dimensions.width,
+
       height /
         dimensions.height
     );
@@ -584,13 +724,16 @@ function drawImageFrame(
     y,
     width,
     height,
+
     borderWidth: 1,
+
     borderColor:
       rgb(
         0.82,
         0.85,
         0.9
       ),
+
     color:
       rgb(
         0.98,
