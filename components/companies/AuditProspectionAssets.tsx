@@ -58,10 +58,11 @@ export default function AuditProspectionAssets({
     loadingKind,
     setLoadingKind,
   ] = useState<
-    "before" |
-    "after" |
-    "pdf" |
-    null
+    | "before"
+    | "after"
+    | "proposal"
+    | "pdf"
+    | null
   >(null);
 
   const [
@@ -130,7 +131,9 @@ export default function AuditProspectionAssets({
         );
       }
 
-      setAttachmentUrl(null);
+      setAttachmentUrl(
+        null
+      );
 
       router.refresh();
     } catch (error) {
@@ -140,12 +143,87 @@ export default function AuditProspectionAssets({
           : "Une erreur est survenue."
       );
     } finally {
-      setLoadingKind(null);
+      setLoadingKind(
+        null
+      );
+    }
+  }
+
+  async function generateProposal() {
+    if (!beforeImageUrl) {
+      setError(
+        "Importez d’abord la capture du site actuel."
+      );
+      return;
+    }
+
+    setLoadingKind(
+      "proposal"
+    );
+
+    setError(null);
+
+    try {
+      const response =
+        await fetch(
+          `/api/audit-prospections/${prospectionId}/generate-proposal`,
+          {
+            method:
+              "POST",
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        throw new Error(
+          result.message ??
+            "Impossible de générer la proposition visuelle."
+        );
+      }
+
+      const imageUrl =
+        result.image_url ??
+        result.prospection
+          ?.after_image_url;
+
+      if (!imageUrl) {
+        throw new Error(
+          "La proposition a été générée mais aucune image n’a été retournée."
+        );
+      }
+
+      setAfterImageUrl(
+        imageUrl
+      );
+
+      setAttachmentUrl(
+        null
+      );
+
+      router.refresh();
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue."
+      );
+    } finally {
+      setLoadingKind(
+        null
+      );
     }
   }
 
   async function generatePdf() {
-    setLoadingKind("pdf");
+    setLoadingKind(
+      "pdf"
+    );
+
     setError(null);
 
     try {
@@ -153,7 +231,8 @@ export default function AuditProspectionAssets({
         await fetch(
           `/api/audit-prospections/${prospectionId}/generate-pdf`,
           {
-            method: "POST",
+            method:
+              "POST",
           }
         );
 
@@ -182,9 +261,14 @@ export default function AuditProspectionAssets({
           : "Une erreur est survenue."
       );
     } finally {
-      setLoadingKind(null);
+      setLoadingKind(
+        null
+      );
     }
   }
+
+  const isBusy =
+    loadingKind !== null;
 
   return (
     <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-5">
@@ -195,9 +279,9 @@ export default function AuditProspectionAssets({
 
         <p className="mt-1 text-sm text-slate-500">
           Ajoutez une capture du
-          site actuel et la piste
-          visuelle proposée par
-          LBMedia.
+          site actuel, puis laissez
+          Pénélope imaginer une
+          piste d’amélioration.
         </p>
       </div>
 
@@ -219,28 +303,112 @@ export default function AuditProspectionAssets({
           }
         />
 
-        <AssetCard
-          title="Piste proposée"
-          imageUrl={
-            afterImageUrl
-          }
-          loading={
-            loadingKind ===
-            "after"
-          }
-          onFile={(file) =>
-            uploadFile(
-              "after",
-              file
-            )
-          }
-        />
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+            Piste proposée
+          </p>
+
+          {afterImageUrl ? (
+            <a
+              href={
+                afterImageUrl
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 block overflow-hidden rounded-xl border border-slate-200 bg-white"
+            >
+              <img
+                src={
+                  afterImageUrl
+                }
+                alt="Piste proposée"
+                className="h-48 w-full object-contain"
+              />
+            </a>
+          ) : (
+            <div className="mt-3 flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-5 text-center">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">
+                  Aucune proposition
+                  générée
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Importez d’abord
+                  la capture du site
+                  actuel.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={
+                generateProposal
+              }
+              disabled={
+                !beforeImageUrl ||
+                isBusy
+              }
+              className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loadingKind ===
+              "proposal"
+                ? "Génération en cours..."
+                : afterImageUrl
+                  ? "Régénérer la proposition"
+                  : "Générer une proposition LBMedia"}
+            </button>
+
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50">
+              {loadingKind ===
+              "after"
+                ? "Import en cours..."
+                : afterImageUrl
+                  ? "Remplacer manuellement"
+                  : "Importer un visuel"}
+
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                disabled={
+                  isBusy
+                }
+                className="hidden"
+                onChange={(
+                  event
+                ) => {
+                  const file =
+                    event
+                      .target
+                      .files?.[0];
+
+                  if (
+                    file
+                  ) {
+                    uploadFile(
+                      "after",
+                      file
+                    );
+                  }
+
+                  event.target.value =
+                    "";
+                }}
+              />
+            </label>
+          </div>
+        </div>
       </div>
 
       {error ? (
-        <p className="mt-4 text-sm font-semibold text-red-600">
-          {error}
-        </p>
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm font-semibold text-red-700">
+            {error}
+          </p>
+        </div>
       ) : null}
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-5">
@@ -264,9 +432,10 @@ export default function AuditProspectionAssets({
             </>
           ) : (
             <p className="text-sm text-slate-500">
-              Le PDF sera disponible
-              lorsque les deux visuels
-              seront prêts.
+              Une fois les deux
+              visuels validés, vous
+              pourrez générer la
+              présentation PDF.
             </p>
           )}
         </div>
@@ -279,8 +448,7 @@ export default function AuditProspectionAssets({
           disabled={
             !beforeImageUrl ||
             !afterImageUrl ||
-            loadingKind !==
-              null
+            isBusy
           }
           className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -298,6 +466,7 @@ export default function AuditProspectionAssets({
 
 type AssetCardProps = {
   title: string;
+
   imageUrl:
     | string
     | null;
@@ -323,13 +492,17 @@ function AssetCard({
 
       {imageUrl ? (
         <a
-          href={imageUrl}
+          href={
+            imageUrl
+          }
           target="_blank"
           rel="noreferrer"
           className="mt-3 block overflow-hidden rounded-xl border border-slate-200 bg-white"
         >
           <img
-            src={imageUrl}
+            src={
+              imageUrl
+            }
             alt={title}
             className="h-48 w-full object-contain"
           />
@@ -344,13 +517,15 @@ function AssetCard({
         {loading
           ? "Import en cours..."
           : imageUrl
-            ? "Remplacer le visuel"
-            : "Importer le visuel"}
+            ? "Remplacer la capture"
+            : "Importer la capture"}
 
         <input
           type="file"
           accept="image/png,image/jpeg,image/webp"
-          disabled={loading}
+          disabled={
+            loading
+          }
           className="hidden"
           onChange={(
             event
@@ -361,7 +536,9 @@ function AssetCard({
                 .files?.[0];
 
             if (file) {
-              onFile(file);
+              onFile(
+                file
+              );
             }
 
             event.target.value =

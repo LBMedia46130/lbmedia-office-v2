@@ -1,7 +1,29 @@
-import OpenAI from "openai";
-import { NextResponse } from "next/server";
+import {
+  NextResponse,
+} from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  getWebsiteAuditById,
+} from "@/lib/website-audits";
+
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
+
+import {
+  updateAuditProspection,
+} from "@/lib/audit-prospections";
+
+export const dynamic =
+  "force-dynamic";
+
+export const maxDuration = 60;
+
+const OPENAI_IMAGE_EDIT_URL =
+  "https://api.openai.com/v1/images/edits";
+
+const BUCKET =
+  "audit-prospection-assets";
 
 type RouteContext = {
   params: Promise<{
@@ -9,135 +31,22 @@ type RouteContext = {
   }>;
 };
 
-type AltTextResponse = {
-  image_alt: string;
+type OpenAIImageEditResponse = {
+  data?: Array<{
+    b64_json?: string;
+  }>;
+  error?: {
+    message?: string;
+  };
 };
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-function getVisualTitle(
-  title: string | null,
-  content: string
-) {
-  if (title?.trim()) {
-    return title.trim();
-  }
-
-  const firstLine =
-    content
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .find(Boolean);
-
-  if (firstLine) {
-    return firstLine.slice(0, 300);
-  }
-
-  return content
-    .trim()
-    .slice(0, 300);
-}
-
-async function generateImageAlt(
-  imageBase64: string
-) {
-  const response =
-    await openai.responses.create({
-      model: "gpt-5-mini",
-
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: `
-Observe cette illustration générée pour une publication LBMedia.
-
-Rédige un texte alternatif en français destiné à l'accessibilité d'une image publiée sur LinkedIn ou Facebook.
-
-RÈGLES
-
-- décris ce qui est réellement visible dans l'image ;
-- reste factuel et naturel ;
-- indique les éléments visuels principaux et leur relation ;
-- ne commence pas par "Image de", "Illustration de" ou "On voit" ;
-- ne décris pas l'intention marketing ;
-- n'ajoute aucun hashtag ;
-- n'ajoute aucun texte qui n'est pas réellement visible ;
-- ne mentionne pas LBMedia sauf si la marque apparaît réellement dans l'image ;
-- reste concis ;
-- vise généralement une phrase de 100 à 220 caractères ;
-- le texte doit être immédiatement utilisable comme texte ALT sur un réseau social.
-
-Retourne uniquement un objet JSON valide.
-              `.trim(),
-            },
-            {
-              type: "input_image",
-              image_url:
-                `data:image/png;base64,${imageBase64}`,
-              detail: "auto",
-            },
-          ],
-        },
-      ],
-
-      text: {
-        format: {
-          type: "json_schema",
-          name: "image_alt",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              image_alt: {
-                type: "string",
-              },
-            },
-            required: [
-              "image_alt",
-            ],
-            additionalProperties:
-              false,
-          },
-        },
-      },
-    });
-
-  const rawOutput =
-    response.output_text.trim();
-
-  if (!rawOutput) {
-    throw new Error(
-      "Pénélope n'a retourné aucun texte ALT."
-    );
-  }
-
-  const result =
-    JSON.parse(
-      rawOutput
-    ) as AltTextResponse;
-
-  const imageAlt =
-    result.image_alt?.trim();
-
-  if (!imageAlt) {
-    throw new Error(
-      "Le texte ALT généré est vide."
-    );
-  }
-
-  return imageAlt;
-}
 
 export async function POST(
   _request: Request,
   context: RouteContext
 ) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (
+    !process.env.OPENAI_API_KEY
+  ) {
     return NextResponse.json(
       {
         success: false,
@@ -150,37 +59,44 @@ export async function POST(
     );
   }
 
-  const { id } =
-    await context.params;
-
   try {
+    const { id } =
+      await context.params;
+
     const {
-      data: publication,
-      error: publicationError,
+      data: prospection,
+      error: prospectionError,
     } = await supabaseAdmin
-      .from("publications")
-      .select(`
-        id,
-        channel,
-        title,
-        content,
-        image_url
-      `)
-      .eq("id", id)
+      .from(
+        "audit_prospections"
+      )
+      .select(
+        `
+          id,
+          company_id,
+          website_audit_id,
+          before_image_url,
+          after_image_url
+        `
+      )
+      .eq(
+        "id",
+        id
+      )
       .maybeSingle();
 
-    if (publicationError) {
+    if (prospectionError) {
       throw new Error(
-        publicationError.message
+        prospectionError.message
       );
     }
 
-    if (!publication) {
+    if (!prospection) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Publication introuvable.",
+            "Prospection introuvable.",
         },
         {
           status: 404,
@@ -189,16 +105,13 @@ export async function POST(
     }
 
     if (
-      publication.channel !==
-        "linkedin" &&
-      publication.channel !==
-        "facebook"
+      !prospection.before_image_url
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "La génération de visuel est réservée aux publications LinkedIn et Facebook.",
+            "Importez d'abord la capture du site actuel.",
         },
         {
           status: 400,
@@ -206,131 +119,337 @@ export async function POST(
       );
     }
 
-    if (
-      !publication.content?.trim()
-    ) {
+    const audit =
+      await getWebsiteAuditById(
+        prospection.website_audit_id
+      );
+
+    if (!audit) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Le contenu du post doit être rédigé avant de générer un visuel.",
+            "L'audit associé est introuvable.",
         },
         {
-          status: 400,
+          status: 404,
         }
       );
     }
 
-    const visualTitle =
-      getVisualTitle(
-        publication.title,
-        publication.content
+    const {
+      data: company,
+      error: companyError,
+    } = await supabaseAdmin
+      .from("companies")
+      .select(
+        `
+          id,
+          name,
+          legal_name,
+          website,
+          city,
+          sector,
+          business_description
+        `
+      )
+      .eq(
+        "id",
+        prospection.company_id
+      )
+      .maybeSingle();
+
+    if (companyError) {
+      throw new Error(
+        companyError.message
+      );
+    }
+
+    if (!company) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Entreprise introuvable.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const beforeResponse =
+      await fetch(
+        prospection.before_image_url,
+        {
+          cache: "no-store",
+        }
       );
 
-    const platform =
-      publication.channel ===
-      "linkedin"
-        ? "LinkedIn"
-        : "Facebook";
+    if (!beforeResponse.ok) {
+      throw new Error(
+        "Impossible de récupérer la capture du site actuel."
+      );
+    }
+
+    const beforeBytes =
+      await beforeResponse.arrayBuffer();
+
+    const beforeContentType =
+      beforeResponse.headers.get(
+        "content-type"
+      ) ??
+      "image/png";
 
     const prompt = `
-Crée une illustration éditoriale horizontale pour accompagner une publication ${platform} de LBMedia.
+À partir de la capture fournie, crée une PROPOSITION VISUELLE D'AMÉLIORATION de cette page web.
 
-SUJET DE L'ILLUSTRATION :
+Il s'agit d'une piste de réflexion réalisée par LBMedia pour montrer au prospect ce que certaines améliorations pourraient donner visuellement.
 
-« ${visualTitle} »
+==================================================
+ENTREPRISE
+==================================================
 
-Interprète librement ce titre et trouve toi-même la meilleure idée visuelle pour représenter clairement et immédiatement son sujet.
+Nom :
+${company.name}
 
-Interprète le sens et l'intention du titre, et non ses expressions au sens littéral.
+Raison sociale :
+${company.legal_name ?? "Non renseignée"}
 
-Ne transforme pas une métaphore verbale en représentation littérale.
+Site :
+${company.website ?? audit.website_url}
 
-Par exemple, si le titre demande si un site internet "travaille" pour une entreprise, ne représente pas le site comme une machine, un robot, une usine ou une chaîne de production.
+Ville :
+${company.city ?? "Non renseignée"}
 
-L'image doit illustrer le sujet concret et l'enjeu exprimé par le titre.
+Secteur :
+${company.sector ?? "Non renseigné"}
 
-L'illustration doit rester directement ancrée dans le sujet du titre.
+Description :
+${company.business_description ?? "Non renseignée"}
 
-Si le titre parle d'un site internet, le visuel doit clairement évoquer un site internet.
+==================================================
+CONSTATS ISSUS DE L'AUDIT
+==================================================
 
-Si le titre parle de radio, le visuel doit clairement évoquer la radio.
+Synthèse :
+${audit.summary}
 
-Si le titre parle de référencement, de recherche ou de visibilité en ligne, le visuel doit clairement évoquer cet univers.
+Points forts :
+${
+  audit.strengths.length
+    ? audit.strengths
+        .map(
+          (item) =>
+            `- ${item}`
+        )
+        .join("\n")
+    : "- Aucun renseigné"
+}
 
-Si le titre parle d'intelligence artificielle, le visuel doit clairement évoquer ce sujet.
+Points perfectibles :
+${
+  audit.weaknesses.length
+    ? audit.weaknesses
+        .map(
+          (item) =>
+            `- ${item}`
+        )
+        .join("\n")
+    : "- Aucun renseigné"
+}
 
-Ne remplace pas le sujet concret par une métaphore générique.
+Priorités :
+${
+  audit.priorities.length
+    ? audit.priorities
+        .map(
+          (item) =>
+            `- ${item}`
+        )
+        .join("\n")
+    : "- Aucune renseignée"
+}
 
-STYLE :
+==================================================
+OBJECTIF
+==================================================
 
-Illustration numérique éditoriale contemporaine, professionnelle, élégante et moderne.
+Améliore visuellement la page existante EN CONSERVANT SON IDENTITÉ.
 
-Le rendu doit être illustré et légèrement stylisé, comme une illustration créée pour un média professionnel ou une agence de communication.
+La proposition doit donner l'impression d'une évolution professionnelle et crédible du site actuel, pas d'un nouveau site inventé pour une autre entreprise.
 
-Ce n'est pas une photographie.
+Utilise l'audit pour décider des améliorations pertinentes.
 
-Éviter le photoréalisme, les banques d'images corporate et les clichés visuels génériques.
+Il peut s'agir par exemple de :
 
-Privilégier une illustration éditoriale premium et naturelle.
+- mieux hiérarchiser le contenu ;
+- rendre la proposition de valeur plus immédiatement compréhensible ;
+- rendre les services ou prestations plus visibles ;
+- mieux mettre en valeur l'expérience, les références ou les éléments de confiance lorsqu'ils existent réellement ;
+- améliorer les appels à l'action ;
+- rendre la page plus claire, moderne et structurée ;
+- améliorer la lisibilité ;
+- mieux organiser les différentes sections.
 
-Éviter l'esthétique technologique générique :
-- robots ;
-- engrenages ;
-- circuits ;
-- mécanismes ;
-- univers SaaS ;
-- imagerie artificiellement futuriste ;
+==================================================
+FIDÉLITÉ AU SITE EXISTANT
+==================================================
 
-sauf si le sujet porte réellement sur ces éléments.
+La capture originale est la référence principale.
 
-IDENTITÉ LBMEDIA :
+CONSERVER autant que possible :
 
-Utiliser naturellement et avec subtilité une palette comprenant :
-- bleu nuit ;
-- bleu soutenu ;
-- cyan lumineux ;
-- blanc et tons clairs ;
-- autres couleurs naturelles si elles servent l'illustration.
+- le nom de l'entreprise ;
+- son identité graphique ;
+- son univers de marque ;
+- ses couleurs caractéristiques ;
+- ses photographies et visuels existants lorsqu'ils sont visibles ;
+- son logo lorsqu'il apparaît dans la capture ;
+- la nature réelle de son activité ;
+- les éléments importants déjà présents.
 
-Le bleu ne doit pas devenir un filtre uniforme.
+NE PAS inventer :
 
-COMPOSITION :
+- un nouveau logo ;
+- une nouvelle entreprise ;
+- de nouveaux services ;
+- de fausses références ;
+- de faux clients ;
+- de faux témoignages ;
+- de fausses statistiques ;
+- de faux prix ;
+- de nouvelles activités non établies ;
+- de nouveaux visuels sans rapport avec l'entreprise.
 
-- format horizontal ;
-- sujet immédiatement identifiable ;
-- composition claire et aérée ;
-- visuel professionnel ;
-- suffisamment fort pour attirer l'attention dans un fil LinkedIn ou Facebook.
+==================================================
+DIRECTION GRAPHIQUE
+==================================================
 
-Aucun texte lisible.
-Aucun titre.
-Aucun slogan.
-Aucun logo.
-Aucune marque.
-Aucun filigrane.
+La proposition doit être :
 
-Si un écran, une page web ou une interface est utile pour représenter le sujet, ils sont AUTORISÉS, mais leur contenu doit rester graphique, abstrait et sans texte lisible.
+- professionnelle ;
+- contemporaine ;
+- crédible ;
+- élégante ;
+- claire ;
+- adaptée à une vraie PME ou entreprise française ;
+- plus structurée que la version actuelle sans devenir une maquette générique de startup.
 
-Le résultat doit avant tout être une bonne illustration du sujet :
+Évite les effets excessifs, le style futuriste et les interfaces SaaS génériques.
 
-« ${visualTitle} »
-    `.trim();
+Ne transforme pas automatiquement la page en site minimaliste blanc et bleu.
+
+Respecte au maximum la personnalité visuelle déjà présente dans la capture.
+
+==================================================
+TEXTE
+==================================================
+
+Conserve prioritairement les vrais textes visibles dans la capture lorsqu'ils sont lisibles.
+
+Tu peux raccourcir ou réorganiser un texte pour améliorer la hiérarchie visuelle.
+
+N'invente jamais une information commerciale.
+
+Si un texte précis n'est pas suffisamment lisible dans la capture, préfère une zone graphique crédible plutôt qu'une affirmation inventée.
+
+==================================================
+RÉSULTAT ATTENDU
+==================================================
+
+Produis une seule image montrant la page d'accueil améliorée.
+
+Elle doit pouvoir être présentée à côté de la capture originale sous la mention :
+
+"Une piste possible"
+
+Ce n'est PAS une maquette définitive.
+
+C'est une projection visuelle suffisamment réaliste pour permettre au prospect de comprendre immédiatement la direction proposée par LBMedia.
+
+Aucun logo LBMedia.
+Aucune mention LBMedia.
+Aucun avant/après dans l'image.
+Aucun cadre de présentation.
+Uniquement la proposition de page web elle-même.
+`.trim();
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "model",
+      "gpt-image-2"
+    );
+
+    formData.append(
+      "prompt",
+      prompt
+    );
+
+    formData.append(
+      "size",
+      "1536x1024"
+    );
+
+    formData.append(
+      "quality",
+      "medium"
+    );
+
+    formData.append(
+      "image",
+      new Blob(
+        [
+          beforeBytes,
+        ],
+        {
+          type:
+            beforeContentType,
+        }
+      ),
+      getInputFileName(
+        beforeContentType
+      )
+    );
+
+    const imageResponse =
+      await fetch(
+        OPENAI_IMAGE_EDIT_URL,
+        {
+          method: "POST",
+
+          headers: {
+            Authorization:
+              `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+
+          body:
+            formData,
+        }
+      );
 
     const result =
-      await openai.images.generate({
-        model: "gpt-image-2",
-        prompt,
-        size: "1536x1024",
-        quality: "medium",
-      });
+      await imageResponse.json() as
+        OpenAIImageEditResponse;
+
+    if (
+      !imageResponse.ok
+    ) {
+      throw new Error(
+        result.error?.message ??
+          "OpenAI n'a pas pu générer la proposition."
+      );
+    }
 
     const imageBase64 =
-      result.data?.[0]?.b64_json;
+      result.data?.[0]
+        ?.b64_json;
 
     if (!imageBase64) {
       throw new Error(
-        "OpenAI n'a retourné aucun visuel exploitable."
+        "OpenAI n'a retourné aucune proposition visuelle exploitable."
       );
     }
 
@@ -340,105 +459,120 @@ Le résultat doit avant tout être une bonne illustration du sujet :
         "base64"
       );
 
-    const imageAlt =
-      await generateImageAlt(
-        imageBase64
-      );
-
     const fileName =
-      `publications/${id}/${Date.now()}.png`;
+      `${company.id}/${id}/proposal-${Date.now()}.png`;
 
     const {
       error: uploadError,
-    } = await supabaseAdmin.storage
-      .from("news-visuals")
+    } = await supabaseAdmin
+      .storage
+      .from(BUCKET)
       .upload(
         fileName,
         imageBuffer,
         {
           contentType:
             "image/png",
+
           cacheControl:
             "3600",
-          upsert: false,
+
+          upsert:
+            false,
         }
       );
 
     if (uploadError) {
       throw new Error(
-        `Impossible d’enregistrer le visuel : ${uploadError.message}`
+        `Impossible d'enregistrer la proposition : ${uploadError.message}`
       );
     }
 
     const {
       data: publicUrlData,
-    } = supabaseAdmin.storage
-      .from("news-visuals")
-      .getPublicUrl(fileName);
+    } = supabaseAdmin
+      .storage
+      .from(BUCKET)
+      .getPublicUrl(
+        fileName
+      );
 
     const imageUrl =
       publicUrlData.publicUrl;
 
     if (!imageUrl) {
       throw new Error(
-        "Impossible de récupérer l’URL publique du visuel."
+        "Impossible de récupérer l'URL de la proposition."
       );
     }
 
-    const {
-      data: updatedPublication,
-      error: updateError,
-    } = await supabaseAdmin
-      .from("publications")
-      .update({
-        image_url: imageUrl,
-        image_alt: imageAlt,
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select("*")
-      .maybeSingle();
+    const updated =
+      await updateAuditProspection(
+        id,
+        {
+          afterImageUrl:
+            imageUrl,
 
-    if (
-      updateError ||
-      !updatedPublication
-    ) {
-      throw new Error(
-        updateError?.message ||
-          "Le visuel a été créé mais ses informations n’ont pas pu être enregistrées."
+          attachmentUrl:
+            null,
+        }
       );
-    }
 
     return NextResponse.json({
       success: true,
+
       message:
-        "Visuel et texte ALT générés et enregistrés.",
-      image_url: imageUrl,
-      image_alt: imageAlt,
-      publication:
-        updatedPublication,
-      visual_title: visualTitle,
+        "Proposition visuelle générée.",
+
+      image_url:
+        imageUrl,
+
+      prospection:
+        updated,
     });
   } catch (error) {
     console.error(
-      "Publication visual generation error:",
+      "Audit prospection proposal generation error:",
       error
     );
 
     return NextResponse.json(
       {
         success: false,
+
         message:
-          "Pénélope n'a pas pu générer le visuel.",
-        error:
           error instanceof Error
             ? error.message
-            : "Erreur inconnue",
+            : "Pénélope n'a pas pu générer la proposition visuelle.",
       },
       {
         status: 500,
       }
     );
   }
+}
+
+function getInputFileName(
+  mimeType: string
+) {
+  if (
+    mimeType.includes(
+      "jpeg"
+    ) ||
+    mimeType.includes(
+      "jpg"
+    )
+  ) {
+    return "site-actuel.jpg";
+  }
+
+  if (
+    mimeType.includes(
+      "webp"
+    )
+  ) {
+    return "site-actuel.webp";
+  }
+
+  return "site-actuel.png";
 }
