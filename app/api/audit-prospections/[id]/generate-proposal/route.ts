@@ -210,9 +210,15 @@ export async function POST(
 
 Cette image sera présentée commercialement par LBMedia à l'entreprise comme une piste possible d'évolution de son site.
 
-Il s'agit d'un exercice de WEB DESIGN et de restructuration de page.
+Il s'agit exclusivement d'un exercice de WEB DESIGN, de hiérarchisation et de restructuration VISUELLE de la page.
 
-Il ne s'agit PAS de réinventer l'entreprise, ses locaux, ses produits, ses réalisations ou son environnement réel.
+Il ne s'agit PAS :
+- de réinventer l'entreprise ;
+- de réinventer ses locaux ;
+- de réinventer ses produits ;
+- de réinventer ses réalisations ;
+- de réinventer son environnement ;
+- d'inventer de nouvelles fonctionnalités.
 
 ==================================================
 RÈGLE ABSOLUE : PRÉSERVER LA RÉALITÉ
@@ -270,6 +276,76 @@ Elle ne concerne PAS la réalité physique de l'entreprise.
 Si tu ne peux pas préserver fidèlement une photographie, préfère ne pas l'utiliser plutôt que d'en inventer une nouvelle version.
 
 ==================================================
+RÈGLE ABSOLUE : PROPOSITION VISUELLE UNIQUEMENT
+==================================================
+
+La proposition doit montrer une DIRECTION GRAPHIQUE et éditoriale.
+
+Elle ne doit PAS chercher à simuler le fonctionnement complet d'un futur site.
+
+N'invente et n'affiche AUCUN nouveau module fonctionnel.
+
+INTERDICTIONS :
+
+- aucun formulaire de réservation ;
+- aucun moteur de réservation ;
+- aucun sélecteur de dates ;
+- aucun calendrier ;
+- aucun champ arrivée / départ ;
+- aucun sélecteur du nombre de personnes ;
+- aucun formulaire de contact ;
+- aucun formulaire de demande de devis ;
+- aucun calculateur ;
+- aucun configurateur ;
+- aucun moteur de recherche interne ;
+- aucun espace client ;
+- aucun widget fonctionnel ;
+- aucun module interactif complexe ;
+- aucune interface applicative inventée.
+
+Même lorsqu'une fonctionnalité de réservation, de contact ou de demande existe déjà sur le site, NE LA REPRÉSENTE PAS sous la forme d'un formulaire ou d'un widget détaillé dans cette projection.
+
+Si une action commerciale est pertinente, représente-la uniquement par un bouton simple et discret, par exemple :
+
+- "Réserver" ;
+- "Nous contacter" ;
+- "Découvrir" ;
+- "En savoir plus" ;
+- "Demander un devis".
+
+N'affiche pas ce qui se passe après le clic.
+
+La proposition doit privilégier :
+
+- la photographie réelle ;
+- le message principal ;
+- la hiérarchie de l'offre ;
+- les contenus essentiels ;
+- les éléments de confiance ;
+- les appels à l'action simples.
+
+L'objectif est que le prospect regarde d'abord SON ENTREPRISE et la nouvelle manière de la présenter, pas une fonctionnalité inventée.
+
+==================================================
+RÈGLE DE SOBRIÉTÉ FONCTIONNELLE
+==================================================
+
+NE CONÇOIS PAS DE NOUVELLES FONCTIONNALITÉS.
+
+Réorganise et valorise principalement ce qui existe déjà.
+
+Une recommandation présente dans l'audit ne signifie pas qu'elle doit obligatoirement apparaître VISUELLEMENT dans cette proposition.
+
+Par exemple :
+
+- une recommandation SEO peut être importante sans être visible dans la maquette ;
+- une amélioration technique peut être importante sans ajouter un module à l'écran ;
+- une amélioration de conversion peut être illustrée par une meilleure hiérarchie et un bouton clair, sans créer de formulaire ;
+- une amélioration de réservation peut être illustrée par un simple bouton "Réserver", sans afficher un moteur de réservation.
+
+La projection doit rester volontairement simple, élégante et démonstrative.
+
+==================================================
 OBJECTIF
 ==================================================
 
@@ -291,7 +367,7 @@ L'amélioration doit provenir principalement de :
 - la typographie ;
 - les espacements ;
 - les proportions ;
-- les appels à l'action ;
+- les appels à l'action simples ;
 - la navigation ;
 - les blocs de contenu ;
 - la mise en valeur des informations ;
@@ -371,7 +447,7 @@ ${
 PRINCIPE DE CONCEPTION
 ==================================================
 
-La proposition doit matérialiser les recommandations pertinentes de l'audit.
+La proposition doit matérialiser VISUELLEMENT uniquement les recommandations de l'audit qui peuvent raisonnablement être traduites en amélioration de présentation.
 
 Chaque changement visible doit avoir une raison liée à au moins un de ces objectifs :
 
@@ -381,7 +457,7 @@ Chaque changement visible doit avoir une raison liée à au moins un de ces obje
 - mieux mettre en valeur les contenus existants ;
 - mieux guider le visiteur ;
 - mieux rassurer ;
-- mieux favoriser le contact, la demande ou la réservation lorsqu'ils sont pertinents.
+- mieux orienter vers une action simple lorsqu'elle est pertinente.
 
 Ne modifie pas un élément uniquement pour donner l'impression que la proposition est différente.
 
@@ -389,7 +465,14 @@ Ne cherche pas la différence pour la différence.
 
 Le résultat doit pouvoir être réellement reproduit ensuite dans un site WordPress / Elementor à partir des contenus existants de l'entreprise.
 
-Évite donc les effets graphiques impossibles, artificiels ou purement conceptuels.
+Évite donc :
+
+- les effets graphiques impossibles ;
+- les concepts irréalisables ;
+- les interfaces artificielles ;
+- les modules fonctionnels inventés ;
+- les widgets complexes ;
+- les éléments qui monopolisent inutilement l'espace.
 
 ==================================================
 FIDÉLITÉ À L'IDENTITÉ
@@ -420,13 +503,15 @@ Tu peux faire évoluer :
 - les cartes ;
 - les encadrés ;
 - la navigation ;
-- les boutons ;
+- les boutons simples ;
 - la présentation des contenus ;
 - la manière dont les photographies existantes sont mises en valeur.
 
 LIBERTÉ DE DESIGN : OUI.
 
 LIBERTÉ D'INVENTER LA RÉALITÉ DE L'ENTREPRISE : NON.
+
+LIBERTÉ D'INVENTER DES FONCTIONNALITÉS : NON.
 
 ==================================================
 CONTENU
@@ -483,7 +568,11 @@ N'invente jamais :
 - de nouveaux locaux ;
 - un nouveau produit ;
 - une nouvelle réalisation ;
-- une nouvelle photographie présentée comme réelle.
+- une nouvelle photographie présentée comme réelle ;
+- une nouvelle fonctionnalité ;
+- un nouveau formulaire ;
+- un nouveau système de réservation ;
+- un nouveau module interactif.
 
 Ne transforme pas automatiquement le site en startup technologique.
 
@@ -492,6 +581,8 @@ Ne lui applique pas arbitrairement une palette bleue.
 Ne crée pas une maquette générique qui pourrait appartenir à n'importe quelle entreprise.
 
 Ne fais pas croire que LBMedia propose de transformer physiquement l'entreprise.
+
+Ne fais pas croire que LBMedia propose une fonctionnalité qui n'a pas été étudiée ou validée.
 
 ==================================================
 DIRECTION GRAPHIQUE
@@ -513,6 +604,18 @@ Le design peut être nettement meilleur que l'original.
 La fidélité à l'entreprise ne signifie PAS fidélité à la mise en page actuelle.
 
 L'objectif est de montrer comment LES MÊMES CONTENUS et LES MÊMES VISUELS peuvent être mieux présentés.
+
+La photographie principale doit rester un élément visuel fort lorsqu'elle est pertinente.
+
+Ne masque pas inutilement une belle photographie réelle avec :
+
+- un grand formulaire ;
+- une carte massive ;
+- un panneau fonctionnel ;
+- un widget ;
+- un bloc technique.
+
+Privilégie l'espace, la lisibilité et la mise en valeur du visuel réel.
 
 ==================================================
 CADRAGE
@@ -542,11 +645,16 @@ Avant de produire l'image, vérifie mentalement :
 1. Ai-je conservé l'identité réelle de l'entreprise ?
 2. Les photographies que j'utilise correspondent-elles réellement à celles de la capture ?
 3. Ai-je inventé ou modifié un bâtiment, un lieu, un produit ou une réalisation ?
-4. Les changements portent-ils principalement sur le DESIGN DU SITE ?
-5. Les changements répondent-ils réellement aux constats de l'audit ?
-6. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
+4. Ai-je inventé une fonctionnalité ou un module qui n'est pas nécessaire à cette démonstration visuelle ?
+5. Un formulaire, calendrier, moteur de réservation ou widget occupe-t-il une partie de la proposition ? Si oui, supprime-le.
+6. Les changements portent-ils principalement sur le DESIGN DU SITE ?
+7. Les changements répondent-ils réellement aux constats de l'audit ?
+8. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
+9. La photographie réelle reste-t-elle suffisamment visible et valorisée ?
 
 Si une photographie risque d'être réinterprétée ou inventée, ne l'utilise pas.
+
+Si une fonctionnalité risque de détourner l'attention de la proposition visuelle, ne l'affiche pas.
 
 ==================================================
 RÉSULTAT
@@ -561,8 +669,12 @@ Aucun texte "après".
 Aucun commentaire.
 Aucune annotation.
 Aucun cadre de présentation.
+Aucun formulaire.
+Aucun calendrier.
+Aucun moteur de réservation.
+Aucun widget fonctionnel.
 
-Uniquement la projection du site amélioré, construite à partir de la réalité visuelle de l'entreprise.
+Uniquement la projection VISUELLE du site amélioré, construite à partir de la réalité visuelle de l'entreprise.
 `.trim();
 
     const formData =
