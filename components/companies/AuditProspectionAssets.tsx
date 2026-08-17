@@ -47,6 +47,19 @@ type ApiResult = {
   };
 };
 
+const MAX_UPLOAD_BYTES =
+  2.5 * 1024 * 1024;
+
+const MAX_IMAGE_DIMENSION =
+  2400;
+
+const JPEG_QUALITIES = [
+  0.88,
+  0.8,
+  0.72,
+  0.64,
+];
+
 export default function AuditProspectionAssets({
   prospectionId,
   initialBeforeImageUrl,
@@ -146,7 +159,7 @@ export default function AuditProspectionAssets({
           )
       ) {
         throw new Error(
-          `Le serveur a renvoyé une erreur HTTP ${response.status} au lieu d’une réponse JSON. Consultez les logs Vercel de la requête.`
+          `Le serveur a renvoyé une erreur HTTP ${response.status} au lieu d’une réponse JSON.`
         );
       }
 
@@ -159,6 +172,185 @@ export default function AuditProspectionAssets({
     }
   }
 
+  async function prepareImageForUpload(
+    file: File
+  ): Promise<File> {
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
+      throw new Error(
+        "Le fichier sélectionné n’est pas une image valide."
+      );
+    }
+
+    const image =
+      await loadImage(file);
+
+    let width =
+      image.naturalWidth;
+
+    let height =
+      image.naturalHeight;
+
+    if (
+      width <= 0 ||
+      height <= 0
+    ) {
+      throw new Error(
+        "Impossible de lire les dimensions de l’image."
+      );
+    }
+
+    const largestDimension =
+      Math.max(
+        width,
+        height
+      );
+
+    if (
+      largestDimension >
+      MAX_IMAGE_DIMENSION
+    ) {
+      const ratio =
+        MAX_IMAGE_DIMENSION /
+        largestDimension;
+
+      width =
+        Math.round(
+          width * ratio
+        );
+
+      height =
+        Math.round(
+          height * ratio
+        );
+    }
+
+    let currentWidth =
+      width;
+
+    let currentHeight =
+      height;
+
+    /*
+     * Plusieurs tentatives sont possibles :
+     * d'abord en jouant sur la qualité JPEG,
+     * puis en réduisant encore les dimensions
+     * si l'image reste trop volumineuse.
+     */
+    for (
+      let resizeAttempt = 0;
+      resizeAttempt < 4;
+      resizeAttempt += 1
+    ) {
+      const canvas =
+        document.createElement(
+          "canvas"
+        );
+
+      canvas.width =
+        currentWidth;
+
+      canvas.height =
+        currentHeight;
+
+      const context =
+        canvas.getContext(
+          "2d"
+        );
+
+      if (!context) {
+        throw new Error(
+          "Impossible de préparer la capture pour l’envoi."
+        );
+      }
+
+      /*
+       * Fond blanc avant conversion JPEG.
+       * Cela évite un fond noir si le PNG
+       * d'origine contient de la transparence.
+       */
+      context.fillStyle =
+        "#ffffff";
+
+      context.fillRect(
+        0,
+        0,
+        currentWidth,
+        currentHeight
+      );
+
+      context.drawImage(
+        image,
+        0,
+        0,
+        currentWidth,
+        currentHeight
+      );
+
+      for (
+        const quality of
+        JPEG_QUALITIES
+      ) {
+        const blob =
+          await canvasToBlob(
+            canvas,
+            "image/jpeg",
+            quality
+          );
+
+        if (
+          blob.size <=
+          MAX_UPLOAD_BYTES
+        ) {
+          const baseName =
+            removeFileExtension(
+              file.name
+            ) ||
+            "capture";
+
+          return new File(
+            [
+              blob,
+            ],
+            `${baseName}-lbmedia.jpg`,
+            {
+              type:
+                "image/jpeg",
+
+              lastModified:
+                Date.now(),
+            }
+          );
+        }
+      }
+
+      currentWidth =
+        Math.max(
+          800,
+          Math.round(
+            currentWidth *
+              0.78
+          )
+        );
+
+      currentHeight =
+        Math.max(
+          800,
+          Math.round(
+            currentHeight *
+              0.78
+          )
+        );
+    }
+
+    throw new Error(
+      "La capture reste trop volumineuse après optimisation. Essayez avec une image légèrement moins grande."
+    );
+  }
+
   async function uploadFile(
     kind:
       | "before"
@@ -169,6 +361,31 @@ export default function AuditProspectionAssets({
     setError(null);
 
     try {
+      const preparedFile =
+        await prepareImageForUpload(
+          file
+        );
+
+      console.info(
+        "Capture préparée pour upload",
+        {
+          originalName:
+            file.name,
+
+          originalSize:
+            file.size,
+
+          uploadedName:
+            preparedFile.name,
+
+          uploadedSize:
+            preparedFile.size,
+
+          uploadedType:
+            preparedFile.type,
+        }
+      );
+
       const formData =
         new FormData();
 
@@ -179,7 +396,7 @@ export default function AuditProspectionAssets({
 
       formData.append(
         "file",
-        file
+        preparedFile
       );
 
       const response =
@@ -241,6 +458,10 @@ export default function AuditProspectionAssets({
         );
       }
 
+      /*
+       * Toute modification d'un visuel
+       * invalide le PDF précédemment généré.
+       */
       setAttachmentUrl(
         null
       );
@@ -691,7 +912,7 @@ function AssetCard({
         }`}
       >
         {loading
-          ? "Import en cours..."
+          ? "Optimisation et import..."
           : imageUrl
             ? "Remplacer la capture"
             : "Importer la capture"}
@@ -723,5 +944,105 @@ function AssetCard({
         />
       </label>
     </div>
+  );
+}
+
+function loadImage(
+  file: File
+): Promise<HTMLImageElement> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      const image =
+        new Image();
+
+      const objectUrl =
+        URL.createObjectURL(
+          file
+        );
+
+      image.onload =
+        () => {
+          URL.revokeObjectURL(
+            objectUrl
+          );
+
+          resolve(
+            image
+          );
+        };
+
+      image.onerror =
+        () => {
+          URL.revokeObjectURL(
+            objectUrl
+          );
+
+          reject(
+            new Error(
+              "Impossible de lire l’image sélectionnée."
+            )
+          );
+        };
+
+      image.src =
+        objectUrl;
+    }
+  );
+}
+
+function canvasToBlob(
+  canvas:
+    HTMLCanvasElement,
+  type: string,
+  quality: number
+): Promise<Blob> {
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(
+              new Error(
+                "Impossible d’optimiser la capture."
+              )
+            );
+
+            return;
+          }
+
+          resolve(
+            blob
+          );
+        },
+        type,
+        quality
+      );
+    }
+  );
+}
+
+function removeFileExtension(
+  filename: string
+) {
+  const lastDot =
+    filename.lastIndexOf(
+      "."
+    );
+
+  if (
+    lastDot <= 0
+  ) {
+    return filename;
+  }
+
+  return filename.slice(
+    0,
+    lastDot
   );
 }
