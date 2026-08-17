@@ -50,14 +50,6 @@ type ApiResult = {
 const MAX_UPLOAD_BYTES =
   2.5 * 1024 * 1024;
 
-/*
- * Pour une capture de site pleine page,
- * la largeur est la dimension importante.
- *
- * On conserve la hauteur proportionnelle
- * afin de ne pas écraser toute la page
- * dans une image minuscule.
- */
 const MAX_SCREENSHOT_WIDTH =
   1600;
 
@@ -226,15 +218,6 @@ export default function AuditProspectionAssets({
     let height =
       originalHeight;
 
-    /*
-     * "before" correspond généralement
-     * à une capture verticale complète
-     * d'un site.
-     *
-     * Dans ce cas on limite uniquement
-     * la largeur. La hauteur reste
-     * proportionnelle.
-     */
     if (
       kind === "before"
     ) {
@@ -256,11 +239,6 @@ export default function AuditProspectionAssets({
           );
       }
     } else {
-      /*
-       * Une proposition visuelle classique
-       * reste limitée sur sa plus grande
-       * dimension.
-       */
       const largestDimension =
         Math.max(
           width,
@@ -300,13 +278,6 @@ export default function AuditProspectionAssets({
       resizeAttempt < 5;
       resizeAttempt += 1
     ) {
-      /*
-       * Protection contre des captures
-       * exceptionnellement longues.
-       *
-       * Les navigateurs ont eux-mêmes
-       * des limites de taille de canvas.
-       */
       const totalPixels =
         currentWidth *
         currentHeight;
@@ -404,30 +375,6 @@ export default function AuditProspectionAssets({
             ) ||
             "capture";
 
-          console.info(
-            "Image optimisée",
-            {
-              kind,
-
-              originalWidth,
-              originalHeight,
-
-              optimizedWidth:
-                currentWidth,
-
-              optimizedHeight:
-                currentHeight,
-
-              originalSize:
-                file.size,
-
-              optimizedSize:
-                blob.size,
-
-              quality,
-            }
-          );
-
           return new File(
             [
               blob,
@@ -444,13 +391,6 @@ export default function AuditProspectionAssets({
         }
       }
 
-      /*
-       * Si même le JPEG le plus compressé
-       * dépasse encore notre objectif,
-       * on réduit progressivement la largeur.
-       *
-       * La hauteur suit toujours le même ratio.
-       */
       const nextWidth =
         Math.max(
           900,
@@ -509,26 +449,6 @@ export default function AuditProspectionAssets({
           file,
           kind
         );
-
-      console.info(
-        "Capture préparée pour upload",
-        {
-          originalName:
-            file.name,
-
-          originalSize:
-            file.size,
-
-          uploadedName:
-            preparedFile.name,
-
-          uploadedSize:
-            preparedFile.size,
-
-          uploadedType:
-            preparedFile.type,
-        }
-      );
 
       const formData =
         new FormData();
@@ -854,11 +774,11 @@ export default function AuditProspectionAssets({
                   afterImageUrl
                 }
                 alt="Piste proposée"
-                className="h-48 w-full object-contain"
+                className="h-56 w-full object-cover object-top"
               />
             </a>
           ) : (
-            <div className="mt-3 flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-5 text-center">
+            <div className="mt-3 flex h-56 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-5 text-center">
               <div>
                 <p className="text-sm font-semibold text-slate-500">
                   Aucune proposition
@@ -1045,14 +965,22 @@ function AssetCard({
             alt={
               title
             }
-            className="h-48 w-full object-contain"
+            className="h-56 w-full object-cover object-top"
           />
         </a>
       ) : (
-        <div className="mt-3 flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-5 text-center text-sm text-slate-400">
+        <div className="mt-3 flex h-56 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-5 text-center text-sm text-slate-400">
           Aucun visuel importé
         </div>
       )}
+
+      {imageUrl ? (
+        <p className="mt-2 text-xs text-slate-400">
+          Aperçu du haut de la capture.
+          Cliquez sur l’image pour
+          voir la page complète.
+        </p>
+      ) : null}
 
       <label
         className={`mt-4 inline-flex items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition ${
