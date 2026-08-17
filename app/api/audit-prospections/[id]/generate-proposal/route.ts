@@ -208,18 +208,99 @@ export async function POST(
     const prompt = `
 À partir de la capture du site fournie, crée une PROJECTION VISUELLE D'AMÉLIORATION de sa page d'accueil.
 
-Cette image sera présentée commercialement par LBMedia à l'entreprise comme une piste possible d'évolution.
+Cette image sera présentée commercialement par LBMedia à l'entreprise comme une piste possible d'évolution de son site.
 
-IMPORTANT :
-il ne s'agit PAS de reproduire toute la page visible dans la capture.
+Il s'agit d'un exercice de WEB DESIGN et de restructuration de page.
 
-Il faut créer une projection lisible et convaincante du HAUT DE LA PAGE D'ACCUEIL :
-- header / navigation ;
-- zone d'accroche principale ;
-- premiers contenus ou services importants ;
-- premiers éléments de réassurance ou de conversion pertinents.
+Il ne s'agit PAS de réinventer l'entreprise, ses locaux, ses produits, ses réalisations ou son environnement réel.
 
-La projection doit ressembler à une véritable capture d'écran desktop d'un site web professionnel.
+==================================================
+RÈGLE ABSOLUE : PRÉSERVER LA RÉALITÉ
+==================================================
+
+CETTE RÈGLE EST PRIORITAIRE SUR TOUTES LES AUTRES CONSIGNES.
+
+Toutes les photographies réelles visibles dans la capture constituent des ÉLÉMENTS FACTUELS.
+
+Elles doivent être considérées comme des contenus existants à réutiliser, et NON comme des références permettant de générer de nouvelles images similaires.
+
+Lorsqu'une photographie existante est réutilisée dans la proposition :
+
+- conserve exactement le même lieu ;
+- conserve exactement le même bâtiment ;
+- conserve exactement la même architecture ;
+- conserve exactement les mêmes aménagements ;
+- conserve exactement la même piscine, chambre, restaurant, produit, personne, réalisation ou environnement visible ;
+- conserve autant que possible le cadrage et le contenu photographique original.
+
+Tu peux :
+
+- recadrer légèrement une photographie existante pour l'intégrer dans une nouvelle mise en page ;
+- changer ses dimensions d'affichage ;
+- l'utiliser comme image de fond ;
+- appliquer un léger voile graphique permettant de rendre du texte lisible ;
+- repositionner cette photographie dans la page.
+
+Tu ne dois PAS :
+
+- redessiner la photographie ;
+- reconstruire le bâtiment ;
+- modifier l'architecture ;
+- changer le paysage ;
+- inventer une autre piscine ;
+- inventer une autre chambre ;
+- inventer un autre restaurant ;
+- inventer un autre produit ;
+- inventer un autre établissement ;
+- ajouter des équipements inexistants ;
+- embellir artificiellement les lieux ;
+- créer une photographie "inspirée" de l'original ;
+- remplacer un visuel réel par une image générée qui lui ressemble seulement.
+
+EXEMPLE IMPORTANT :
+
+Si la capture montre la photographie réelle d'un hôtel, la proposition doit montrer CET HÔTEL et cette photographie réelle.
+
+Elle ne doit jamais montrer une interprétation générée de l'hôtel, même si cette interprétation paraît plus belle ou plus moderne.
+
+L'amélioration proposée concerne LE SITE INTERNET.
+
+Elle ne concerne PAS la réalité physique de l'entreprise.
+
+Si tu ne peux pas préserver fidèlement une photographie, préfère ne pas l'utiliser plutôt que d'en inventer une nouvelle version.
+
+==================================================
+OBJECTIF
+==================================================
+
+Créer une nouvelle présentation du HAUT DE LA PAGE D'ACCUEIL à partir des contenus réels disponibles.
+
+La proposition doit montrer comment le même site pourrait être :
+
+- plus clair ;
+- mieux structuré ;
+- plus actuel ;
+- plus convaincant ;
+- plus facile à comprendre ;
+- plus efficace commercialement.
+
+L'amélioration doit provenir principalement de :
+
+- la structure de la page ;
+- la hiérarchie de l'information ;
+- la typographie ;
+- les espacements ;
+- les proportions ;
+- les appels à l'action ;
+- la navigation ;
+- les blocs de contenu ;
+- la mise en valeur des informations ;
+- la mise en valeur des photographies existantes ;
+- les éléments de réassurance réellement disponibles.
+
+Ne cherche PAS à rendre l'entreprise elle-même plus belle.
+
+Cherche à rendre SON SITE plus efficace pour présenter l'entreprise telle qu'elle est réellement.
 
 ==================================================
 ENTREPRISE
@@ -287,66 +368,65 @@ ${
 }
 
 ==================================================
-OBJECTIF DE LA PROJECTION
+PRINCIPE DE CONCEPTION
 ==================================================
 
-Ne te contente PAS de déplacer légèrement les blocs existants.
+La proposition doit matérialiser les recommandations pertinentes de l'audit.
 
-Propose une évolution visuelle réellement perceptible et commercialement intéressante.
+Chaque changement visible doit avoir une raison liée à au moins un de ces objectifs :
 
-Le prospect doit pouvoir regarder l'image et comprendre immédiatement :
+- mieux faire comprendre l'activité ;
+- mieux présenter l'offre ;
+- mieux hiérarchiser les informations ;
+- mieux mettre en valeur les contenus existants ;
+- mieux guider le visiteur ;
+- mieux rassurer ;
+- mieux favoriser le contact, la demande ou la réservation lorsqu'ils sont pertinents.
 
-"Mon site pourrait être plus clair, plus actuel et mieux mettre en valeur mon activité."
+Ne modifie pas un élément uniquement pour donner l'impression que la proposition est différente.
 
-Travaille particulièrement :
+Ne cherche pas la différence pour la différence.
 
-- la hiérarchie des informations ;
-- l'impact du premier écran ;
-- les respirations ;
-- la taille et le rôle des différents blocs ;
-- la lisibilité ;
-- la mise en valeur des contenus importants ;
-- les appels à l'action lorsqu'ils sont pertinents ;
-- les éléments de confiance réellement disponibles ;
-- la compréhension immédiate de l'activité ;
-- la qualité perçue de l'entreprise.
+Le résultat doit pouvoir être réellement reproduit ensuite dans un site WordPress / Elementor à partir des contenus existants de l'entreprise.
 
-Le résultat doit être sensiblement plus moderne et mieux structuré que l'original.
-
-Il doit montrer une vraie direction créative.
+Évite donc les effets graphiques impossibles, artificiels ou purement conceptuels.
 
 ==================================================
-FIDÉLITÉ À L'ENTREPRISE
+FIDÉLITÉ À L'IDENTITÉ
 ==================================================
 
-La capture fournie reste la référence de marque.
+La capture fournie est la référence de marque ET la référence factuelle.
 
 Le résultat doit être immédiatement reconnaissable comme une évolution du site de CETTE entreprise.
 
-Conserve autant que possible :
+Conserve :
 
 - le vrai logo visible dans la capture ;
-- le nom de l'entreprise ;
-- ses couleurs caractéristiques ;
-- son univers graphique ;
-- les photographies pertinentes déjà présentes ;
-- les éléments éditoriaux réellement visibles ;
-- la nature exacte de son activité.
+- le vrai nom de l'entreprise ;
+- les couleurs caractéristiques pertinentes ;
+- l'univers graphique pertinent ;
+- les photographies réelles utilisées dans la proposition ;
+- la nature exacte de l'activité ;
+- les informations commerciales établies.
 
 Tu peux faire évoluer :
 
 - la disposition ;
 - les proportions ;
 - les espacements ;
-- les fonds ;
+- les fonds graphiques ;
 - la hiérarchie ;
 - la typographie ;
-- les cartes et encadrés ;
-- la présentation de la navigation ;
-- la mise en scène des visuels ;
-- la structure du premier écran.
+- les cartes ;
+- les encadrés ;
+- la navigation ;
+- les boutons ;
+- la présentation des contenus ;
+- la manière dont les photographies existantes sont mises en valeur.
 
-Tu as donc une vraie liberté de DESIGN tout en restant fidèle à l'IDENTITÉ.
+LIBERTÉ DE DESIGN : OUI.
+
+LIBERTÉ D'INVENTER LA RÉALITÉ DE L'ENTREPRISE : NON.
 
 ==================================================
 CONTENU
@@ -362,9 +442,31 @@ N'invente aucune nouvelle activité ou promesse commerciale.
 
 Lorsque les vrais textes sont lisibles, conserve-les ou utilise-les comme base.
 
-Tu peux raccourcir une formulation pour rendre la projection visuellement crédible, à condition de ne pas changer son sens.
+Tu peux raccourcir une formulation pour améliorer la hiérarchie visuelle, à condition de ne jamais changer son sens.
 
 Si un texte précis n'est pas lisible, utilise un traitement graphique sobre plutôt que d'inventer une affirmation.
+
+==================================================
+ÉLÉMENTS DE CONFIANCE
+==================================================
+
+N'utilise que les éléments de confiance réellement visibles ou établis dans les informations fournies.
+
+N'invente jamais :
+
+- de faux avis ;
+- de fausses notes ;
+- de faux témoignages ;
+- de faux labels ;
+- de faux partenaires ;
+- de fausses récompenses ;
+- de faux chiffres ;
+- de faux résultats ;
+- de faux clients ;
+- de fausses références ;
+- de faux prix.
+
+Si un élément de réassurance n'est pas établi, ne l'affiche pas.
 
 ==================================================
 INTERDICTIONS ABSOLUES
@@ -376,23 +478,20 @@ N'invente jamais :
 - une nouvelle marque ;
 - une nouvelle activité ;
 - de nouveaux services non établis ;
-- de faux clients ;
-- de faux témoignages ;
-- de faux avis ;
-- de faux partenaires ;
-- de fausses références ;
-- de faux chiffres ;
-- de faux prix ;
-- de faux résultats ;
-- de fausses récompenses.
-
-Ne remplace pas sans raison les photographies caractéristiques du site par des images génériques.
+- un nouveau bâtiment ;
+- un nouvel établissement ;
+- de nouveaux locaux ;
+- un nouveau produit ;
+- une nouvelle réalisation ;
+- une nouvelle photographie présentée comme réelle.
 
 Ne transforme pas automatiquement le site en startup technologique.
 
 Ne lui applique pas arbitrairement une palette bleue.
 
 Ne crée pas une maquette générique qui pourrait appartenir à n'importe quelle entreprise.
+
+Ne fais pas croire que LBMedia propose de transformer physiquement l'entreprise.
 
 ==================================================
 DIRECTION GRAPHIQUE
@@ -413,13 +512,11 @@ Le design peut être nettement meilleur que l'original.
 
 La fidélité à l'entreprise ne signifie PAS fidélité à la mise en page actuelle.
 
-L'objectif est une évolution visible, pas une simple copie nettoyée.
+L'objectif est de montrer comment LES MÊMES CONTENUS et LES MÊMES VISUELS peuvent être mieux présentés.
 
 ==================================================
 CADRAGE
 ==================================================
-
-IMPORTANT :
 
 Ne cherche PAS à faire entrer toute la page d'accueil dans l'image.
 
@@ -437,6 +534,21 @@ Pas de mockup posé dans un décor.
 L'image doit ressembler directement à une capture d'écran du site amélioré.
 
 ==================================================
+VÉRIFICATION AVANT DE PRODUIRE
+==================================================
+
+Avant de produire l'image, vérifie mentalement :
+
+1. Ai-je conservé l'identité réelle de l'entreprise ?
+2. Les photographies que j'utilise correspondent-elles réellement à celles de la capture ?
+3. Ai-je inventé ou modifié un bâtiment, un lieu, un produit ou une réalisation ?
+4. Les changements portent-ils principalement sur le DESIGN DU SITE ?
+5. Les changements répondent-ils réellement aux constats de l'audit ?
+6. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
+
+Si une photographie risque d'être réinterprétée ou inventée, ne l'utilise pas.
+
+==================================================
 RÉSULTAT
 ==================================================
 
@@ -450,7 +562,7 @@ Aucun commentaire.
 Aucune annotation.
 Aucun cadre de présentation.
 
-Uniquement la projection du site amélioré.
+Uniquement la projection du site amélioré, construite à partir de la réalité visuelle de l'entreprise.
 `.trim();
 
     const formData =

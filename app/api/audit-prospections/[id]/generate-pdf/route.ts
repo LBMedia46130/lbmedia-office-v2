@@ -63,6 +63,11 @@ type AuditContent = {
     | null;
 };
 
+type ImprovementPoint = {
+  title: string;
+  description: string;
+};
+
 export async function POST(
   _request: NextRequest,
   context: RouteContext
@@ -424,7 +429,7 @@ export async function POST(
     );
 
     page.drawText(
-      "et non une maquette définitive. L'objectif est de rendre les pistes d'amélioration relevées dans l'audit plus concrètes.",
+      "et non une maquette définitive. Elle illustre concrètement certaines pistes identifiées lors de l'analyse du site.",
       {
         x: 42,
 
@@ -459,12 +464,6 @@ export async function POST(
     const imageTop =
       height - 205;
 
-    /*
-     * On réduit légèrement
-     * la hauteur du comparatif
-     * pour réserver de la place
-     * au bloc d'explication.
-     */
     const imageHeight =
       220;
 
@@ -534,13 +533,8 @@ export async function POST(
 
     /*
      * Capture actuelle :
-     * on cadre volontairement
-     * le haut du site.
-     *
-     * La capture pleine hauteur
-     * reste stockée, mais le PDF
-     * montre une zone lisible et
-     * comparable à la proposition.
+     * affichage cadré sur le haut
+     * de la capture pleine page.
      */
     await drawTopCroppedImage(
       pdf,
@@ -556,9 +550,7 @@ export async function POST(
 
     /*
      * Proposition :
-     * on conserve toute l'image,
-     * car elle est déjà pensée
-     * comme une maquette horizontale.
+     * affichage complet dans le cadre.
      */
     await drawContainedImage(
       pdf,
@@ -574,7 +566,7 @@ export async function POST(
 
     /*
      * Bloc :
-     * Pourquoi cette piste est meilleure
+     * Ce que cette piste pourrait améliorer
      */
     const reasonsTop =
       imageTop -
@@ -623,7 +615,7 @@ export async function POST(
     });
 
     page.drawText(
-      "POURQUOI CETTE PISTE EST MEILLEURE",
+      "CE QUE CETTE PISTE POURRAIT AMÉLIORER",
       {
         x:
           reasonsX + 14,
@@ -646,7 +638,7 @@ export async function POST(
     );
 
     page.drawText(
-      "Cette proposition ne cherche pas simplement à moderniser l'apparence : elle traduit plusieurs priorités relevées dans l'audit.",
+      "Cette piste illustre comment certains constats de l'audit pourraient se traduire concrètement dans la présentation du site.",
       {
         x:
           reasonsX + 14,
@@ -674,9 +666,12 @@ export async function POST(
       const point of
       improvementPoints
     ) {
+      const fullText =
+        `${point.title} — ${point.description}`;
+
       const lines =
         wrapText(
-          point,
+          fullText,
           font,
           8.2,
           reasonsWidth - 46
@@ -1014,10 +1009,6 @@ async function drawTopCroppedImage(
   const dimensions =
     image.scale(1);
 
-  /*
-   * On remplit toute la largeur
-   * du cadre.
-   */
   const ratio =
     width /
     dimensions.width;
@@ -1030,13 +1021,6 @@ async function drawTopCroppedImage(
     dimensions.height *
     ratio;
 
-  /*
-   * Le haut de l'image est aligné
-   * avec le haut du cadre.
-   *
-   * Le reste est simplement masqué
-   * par le clipping PDF.
-   */
   const drawY =
     y +
     height -
@@ -1121,49 +1105,262 @@ function buildImprovementPoints(
   audit:
     | AuditContent
     | null
-) {
-  const priorities =
-    normalizeStringArray(
-      audit?.priorities
+): ImprovementPoint[] {
+  const sourceText =
+    [
+      audit?.summary ?? "",
+      ...normalizeStringArray(
+        audit?.priorities
+      ),
+      ...normalizeStringArray(
+        audit?.weaknesses
+      ),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+  const points:
+    ImprovementPoint[] = [];
+
+  const hasOffer =
+    containsAny(
+      sourceText,
+      [
+        "offre",
+        "service",
+        "prestation",
+        "activité",
+        "positionnement",
+        "vocabulaire",
+        "page dédiée",
+        "pages dédiées",
+        "contenu",
+        "compréhension",
+        "hiérarch",
+      ]
     );
 
-  const weaknesses =
-    normalizeStringArray(
-      audit?.weaknesses
+  const hasTrust =
+    containsAny(
+      sourceText,
+      [
+        "avis",
+        "témoign",
+        "preuve",
+        "réassurance",
+        "confiance",
+        "réalisation",
+        "cas client",
+        "étude de cas",
+        "référence",
+        "conversion",
+        "contact",
+        "réservation",
+        "cta",
+        "appel à l'action",
+        "appel à l’action",
+      ]
     );
 
-  const candidates = [
-    ...priorities,
-    ...weaknesses,
-  ];
+  const hasSeo =
+    containsAny(
+      sourceText,
+      [
+        "seo",
+        "référencement",
+        "google",
+        "canonical",
+        "meta description",
+        "serp",
+        "open graph",
+        "twitter card",
+        "indexation",
+        "schema",
+        "donnée structurée",
+        "données structurées",
+        "balise",
+      ]
+    );
 
-  const unique =
-    Array.from(
-      new Set(
-        candidates
-          .map((value) =>
-            cleanImprovementText(
-              value
-            )
-          )
-          .filter(Boolean)
-      )
+  const hasLocal =
+    containsAny(
+      sourceText,
+      [
+        "local",
+        "géolocal",
+        "ville",
+        "zone",
+        "google business",
+        "adresse",
+        "territoire",
+        "proximité",
+      ]
+    );
+
+  const hasGeo =
+    containsAny(
+      sourceText,
+      [
+        "geo",
+        "ia",
+        "intelligence artificielle",
+        "llm",
+        "chatgpt",
+        "moteur de réponse",
+        "moteurs de réponse",
+      ]
+    );
+
+  const hasMobile =
+    containsAny(
+      sourceText,
+      [
+        "mobile",
+        "responsive",
+        "smartphone",
+        "navigation",
+        "ergonomie",
+        "parcours",
+        "lisibilité",
+      ]
     );
 
   if (
-    unique.length > 0
+    hasOffer
   ) {
-    return unique.slice(
+    points.push({
+      title:
+        "Une offre plus facile à comprendre",
+      description:
+        "mieux organiser et hiérarchiser les informations pour permettre au visiteur d'identifier rapidement les activités et prestations qui l'intéressent.",
+    });
+  }
+
+  if (
+    hasTrust
+  ) {
+    points.push({
+      title:
+        "Un parcours plus convaincant",
+      description:
+        "mieux valoriser les éléments qui rassurent et guider plus naturellement le visiteur vers les actions importantes, comme le contact ou la réservation.",
+    });
+  }
+
+  if (
+    hasMobile
+  ) {
+    points.push({
+      title:
+        "Une navigation plus simple",
+      description:
+        "rendre les informations essentielles plus accessibles et faciliter le parcours des visiteurs, notamment lorsqu'ils consultent le site sur mobile.",
+    });
+  }
+
+  if (
+    hasSeo
+  ) {
+    points.push({
+      title:
+        "Une meilleure visibilité sur Google",
+      description:
+        "renforcer la structure et la présentation des pages importantes afin qu'elles soient plus faciles à comprendre et à valoriser par les moteurs de recherche.",
+    });
+  }
+
+  if (
+    hasLocal
+  ) {
+    points.push({
+      title:
+        "Une présence locale mieux valorisée",
+      description:
+        "mettre davantage en avant la localisation, la zone d'activité et les informations utiles aux personnes qui recherchent cette offre à proximité.",
+    });
+  }
+
+  if (
+    hasGeo
+  ) {
+    points.push({
+      title:
+        "Des contenus plus faciles à comprendre par les moteurs et les IA",
+      description:
+        "structurer plus clairement les informations clés de l'entreprise afin de renforcer leur compréhension et leur capacité à être reprises dans les réponses en ligne.",
+    });
+  }
+
+  if (
+    points.length >= 3
+  ) {
+    return points.slice(
       0,
       3
     );
   }
 
-  return [
-    "Clarifier immédiatement l'offre et faciliter la compréhension du positionnement.",
-    "Mettre davantage en valeur les éléments de confiance et les raisons de choisir l'établissement.",
-    "Créer un parcours plus direct vers les actions importantes : découverte, contact ou réservation.",
-  ];
+  const fallbackPoints:
+    ImprovementPoint[] = [
+      {
+        title:
+          "Une présentation plus claire",
+        description:
+          "hiérarchiser davantage les informations importantes afin que le visiteur comprenne plus rapidement l'activité et les points forts de l'entreprise.",
+      },
+      {
+        title:
+          "Une meilleure mise en valeur des contenus existants",
+        description:
+          "donner davantage de place aux informations et visuels déjà disponibles, sans modifier la réalité de l'entreprise ni inventer de nouveaux éléments.",
+      },
+      {
+        title:
+          "Un parcours plus direct",
+        description:
+          "faciliter l'accès aux informations essentielles et aux actions attendues afin de rendre la consultation du site plus simple et plus efficace.",
+      },
+    ];
+
+  for (
+    const fallback of
+    fallbackPoints
+  ) {
+    if (
+      points.length >= 3
+    ) {
+      break;
+    }
+
+    if (
+      !points.some(
+        (point) =>
+          point.title ===
+          fallback.title
+      )
+    ) {
+      points.push(
+        fallback
+      );
+    }
+  }
+
+  return points.slice(
+    0,
+    3
+  );
+}
+
+function containsAny(
+  text: string,
+  terms: string[]
+) {
+  return terms.some(
+    (term) =>
+      text.includes(
+        term
+      )
+  );
 }
 
 function normalizeStringArray(
@@ -1190,21 +1387,6 @@ function normalizeStringArray(
         item.trim()
       )
   );
-}
-
-function cleanImprovementText(
-  value: string
-) {
-  return value
-    .replace(
-      /^\s*[-•]\s*/,
-      ""
-    )
-    .replace(
-      /\s+/g,
-      " "
-    )
-    .trim();
 }
 
 function wrapText(
