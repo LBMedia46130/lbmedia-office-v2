@@ -218,7 +218,8 @@ Il ne s'agit PAS :
 - de réinventer ses produits ;
 - de réinventer ses réalisations ;
 - de réinventer son environnement ;
-- d'inventer de nouvelles fonctionnalités.
+- d'inventer de nouvelles fonctionnalités ;
+- d'inventer de nouvelles photographies.
 
 ==================================================
 RÈGLE ABSOLUE : PRÉSERVER LA RÉALITÉ
@@ -274,6 +275,126 @@ L'amélioration proposée concerne LE SITE INTERNET.
 Elle ne concerne PAS la réalité physique de l'entreprise.
 
 Si tu ne peux pas préserver fidèlement une photographie, préfère ne pas l'utiliser plutôt que d'en inventer une nouvelle version.
+
+==================================================
+RÈGLE ABSOLUE : AUCUNE PHOTOGRAPHIE INVENTÉE
+==================================================
+
+CETTE RÈGLE S'APPLIQUE À TOUTES LES IMAGES DE LA PROPOSITION, Y COMPRIS AUX PETITES PHOTOGRAPHIES ET AUX VISUELS SECONDAIRES.
+
+Toute photographie affichée dans la proposition doit correspondre à une photographie RÉELLEMENT ET CLAIREMENT VISIBLE dans la capture source fournie.
+
+Cela concerne notamment :
+
+- les photographies principales ;
+- les photographies secondaires ;
+- les vignettes ;
+- les cartes illustrées ;
+- les galeries ;
+- les images de chambres ;
+- les images de restaurants ;
+- les images de plats ;
+- les images de piscines ;
+- les images de bâtiments ;
+- les images de produits ;
+- les images de réalisations ;
+- les images de collaborateurs ;
+- les portraits ;
+- les images d'événements ;
+- les paysages ;
+- les images utilisées en arrière-plan.
+
+NE GÉNÈRE JAMAIS une photographie pour compléter graphiquement une section.
+
+NE DÉDUIS JAMAIS l'apparence d'un élément qui n'est pas visible dans la capture.
+
+Par exemple :
+
+- si aucune chambre n'est clairement visible dans la capture, n'affiche aucune photographie de chambre ;
+- si aucun plat n'est clairement visible dans la capture, n'affiche aucune photographie de plat ;
+- si aucun restaurant n'est clairement visible dans la capture, n'invente aucune photographie de restaurant ;
+- si aucune équipe n'est visible, n'invente aucun portrait ;
+- si aucun produit n'est visible, n'invente aucune photographie de produit ;
+- si aucune réalisation n'est visible, n'invente aucune photographie de réalisation.
+
+Même si l'activité de l'entreprise permet logiquement de supposer l'existence de ces éléments, CETTE SUPPOSITION N'AUTORISE PAS LEUR GÉNÉRATION.
+
+Par exemple :
+
+Un hôtel possède probablement des chambres.
+
+Cela ne signifie PAS que tu peux inventer une photographie de chambre.
+
+Un restaurant sert probablement des plats.
+
+Cela ne signifie PAS que tu peux inventer une photographie de plat.
+
+Une entreprise de construction possède probablement des réalisations.
+
+Cela ne signifie PAS que tu peux inventer une photographie de chantier ou de maison.
+
+La logique métier n'est jamais une preuve visuelle.
+
+==================================================
+QUE FAIRE SI UNE PHOTO MANQUE ?
+==================================================
+
+Si la nouvelle mise en page nécessiterait normalement une photographie mais qu'aucune photographie réelle correspondante n'est clairement disponible dans la capture :
+
+NE CRÉE PAS CETTE PHOTOGRAPHIE.
+
+Utilise à la place, selon ce qui convient au design :
+
+- un bloc typographique élégant ;
+- un titre ;
+- une courte description ;
+- une icône simple et générique ;
+- un pictogramme sobre ;
+- un aplat de couleur ;
+- une forme graphique ;
+- une ligne ;
+- une séparation ;
+- davantage d'espace blanc ;
+- une carte sans photographie.
+
+Tu peux également simplifier la section ou la supprimer.
+
+UNE ZONE SANS PHOTO EST TOUJOURS PRÉFÉRABLE À UNE FAUSSE PHOTO.
+
+==================================================
+RÈGLE DE RÉUTILISATION DES PHOTOGRAPHIES
+==================================================
+
+Ne transforme pas une photographie source en une nouvelle photographie.
+
+Lorsque tu réutilises une photographie visible dans la capture :
+
+- traite-la comme un asset existant ;
+- conserve son contenu réel ;
+- ne change pas les personnes ;
+- ne change pas les objets ;
+- ne change pas le bâtiment ;
+- ne change pas la décoration ;
+- ne change pas le mobilier ;
+- ne change pas le paysage ;
+- ne change pas les produits ;
+- ne change pas les plats ;
+- ne change pas les véhicules ;
+- ne change pas les équipements.
+
+Une photographie source peut être :
+
+- déplacée ;
+- agrandie ;
+- réduite ;
+- légèrement recadrée ;
+- intégrée dans une carte ;
+- utilisée en arrière-plan ;
+- accompagnée de texte.
+
+Elle ne doit pas être recréée ou réinterprétée.
+
+Si tu n'es pas certain qu'un visuel de la proposition correspond réellement à une photographie présente dans la capture source, SUPPRIME CE VISUEL.
 
 ==================================================
 RÈGLE ABSOLUE : PROPOSITION VISUELLE UNIQUEMENT
@@ -511,6 +632,8 @@ LIBERTÉ DE DESIGN : OUI.
 
 LIBERTÉ D'INVENTER LA RÉALITÉ DE L'ENTREPRISE : NON.
 
+LIBERTÉ D'INVENTER DES PHOTOGRAPHIES : NON.
+
 LIBERTÉ D'INVENTER DES FONCTIONNALITÉS : NON.
 
 ==================================================
@@ -569,6 +692,14 @@ N'invente jamais :
 - un nouveau produit ;
 - une nouvelle réalisation ;
 - une nouvelle photographie présentée comme réelle ;
+- une photographie secondaire absente de la capture ;
+- une vignette photographique absente de la capture ;
+- une image de chambre absente de la capture ;
+- une image de restaurant absente de la capture ;
+- une image de plat absente de la capture ;
+- une image de produit absente de la capture ;
+- une image de réalisation absente de la capture ;
+- une image de personne absente de la capture ;
 - une nouvelle fonctionnalité ;
 - un nouveau formulaire ;
 - un nouveau système de réservation ;
@@ -615,6 +746,13 @@ Ne masque pas inutilement une belle photographie réelle avec :
 - un widget ;
 - un bloc technique.
 
+Pour les sections secondaires :
+
+- utilise une photographie uniquement si cette photographie existe clairement dans la capture source ;
+- sinon, privilégie une présentation typographique ou iconographique ;
+- ne remplis jamais artificiellement une grille avec des photographies générées ;
+- une mise en page sobre avec moins d'images est préférable à une mise en page riche contenant de fausses images.
+
 Privilégie l'espace, la lisibilité et la mise en valeur du visuel réel.
 
 ==================================================
@@ -643,14 +781,21 @@ VÉRIFICATION AVANT DE PRODUIRE
 Avant de produire l'image, vérifie mentalement :
 
 1. Ai-je conservé l'identité réelle de l'entreprise ?
-2. Les photographies que j'utilise correspondent-elles réellement à celles de la capture ?
-3. Ai-je inventé ou modifié un bâtiment, un lieu, un produit ou une réalisation ?
-4. Ai-je inventé une fonctionnalité ou un module qui n'est pas nécessaire à cette démonstration visuelle ?
-5. Un formulaire, calendrier, moteur de réservation ou widget occupe-t-il une partie de la proposition ? Si oui, supprime-le.
-6. Les changements portent-ils principalement sur le DESIGN DU SITE ?
-7. Les changements répondent-ils réellement aux constats de l'audit ?
-8. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
-9. La photographie réelle reste-t-elle suffisamment visible et valorisée ?
+2. CHAQUE photographie utilisée existe-t-elle réellement dans la capture source ?
+3. Pour CHAQUE petite vignette photographique, puis-je identifier clairement son équivalent dans la capture source ?
+4. Ai-je inventé ou modifié un bâtiment, un lieu, un produit ou une réalisation ?
+5. Ai-je inventé une chambre, un plat, un restaurant, une équipe, un produit ou une réalisation simplement parce que l'activité de l'entreprise le suggère ?
+6. Ai-je inventé une fonctionnalité ou un module qui n'est pas nécessaire à cette démonstration visuelle ?
+7. Un formulaire, calendrier, moteur de réservation ou widget occupe-t-il une partie de la proposition ? Si oui, supprime-le.
+8. Les changements portent-ils principalement sur le DESIGN DU SITE ?
+9. Les changements répondent-ils réellement aux constats de l'audit ?
+10. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
+11. La photographie réelle reste-t-elle suffisamment visible et valorisée ?
+
+SI LA RÉPONSE À LA QUESTION 2 OU 3 EST NON OU INCERTAINE :
+SUPPRIME LA PHOTOGRAPHIE CONCERNÉE.
+
+Ne la remplace surtout pas par une photographie générée.
 
 Si une photographie risque d'être réinterprétée ou inventée, ne l'utilise pas.
 
@@ -673,6 +818,7 @@ Aucun formulaire.
 Aucun calendrier.
 Aucun moteur de réservation.
 Aucun widget fonctionnel.
+AUCUNE photographie qui ne soit pas clairement présente dans la capture source.
 
 Uniquement la projection VISUELLE du site amélioré, construite à partir de la réalité visuelle de l'entreprise.
 `.trim();
