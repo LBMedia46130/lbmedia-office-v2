@@ -4,6 +4,7 @@ import {
 } from "next/server";
 
 import {
+  deleteAuditProspection,
   updateAuditProspection,
 } from "@/lib/audit-prospections";
 
@@ -119,6 +120,45 @@ export async function PATCH(
           error instanceof Error
             ? error.message
             : "Impossible d’enregistrer la prospection.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  context: RouteContext
+) {
+  try {
+    const { id } =
+      await context.params;
+
+    await deleteAuditProspection(
+      id
+    );
+
+    return NextResponse.json({
+      success: true,
+      message:
+        "Prospection supprimée.",
+    });
+  } catch (error) {
+    console.error(
+      "Audit prospection delete error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+
+        message:
+          error instanceof Error
+            ? error.message
+            : "Impossible de supprimer la prospection.",
       },
       {
         status: 500,

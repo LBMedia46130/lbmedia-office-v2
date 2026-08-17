@@ -7,6 +7,7 @@ import CompanyOpportunities from "@/components/companies/CompanyOpportunities";
 import CompanyLegalSearch from "@/components/companies/CompanyLegalSearch";
 import CompanyWebEnrichment from "@/components/companies/CompanyWebEnrichment";
 import DeleteCompanyButton from "@/components/companies/DeleteCompanyButton";
+import DeleteAuditProspectionButton from "@/components/companies/DeleteAuditProspectionButton";
 import AuditProspectionGenerator from "@/components/companies/AuditProspectionGenerator";
 import AuditProspectionEditor from "@/components/companies/AuditProspectionEditor";
 import AuditProspectionAssets from "@/components/companies/AuditProspectionAssets";
@@ -508,16 +509,24 @@ export default async function CompanyPage({
                   </div>
 
                   {latestProspection ? (
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold text-slate-800">
-                        Prospection créée
-                      </p>
+                    <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
+                      <div className="text-left lg:text-right">
+                        <p className="text-sm font-semibold text-slate-800">
+                          Prospection créée
+                        </p>
 
-                      <p className="mt-1 text-xs text-slate-500">
-                        {formatDateTime(
-                          latestProspection.created_at
-                        )}
-                      </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {formatDateTime(
+                            latestProspection.created_at
+                          )}
+                        </p>
+                      </div>
+
+                      <DeleteAuditProspectionButton
+                        prospectionId={
+                          latestProspection.id
+                        }
+                      />
                     </div>
                   ) : (
                     <form

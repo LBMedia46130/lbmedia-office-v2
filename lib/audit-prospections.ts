@@ -84,6 +84,9 @@ const auditProspectionSelect = `
   updated_at
 `;
 
+const AUDIT_PROSPECTION_BUCKET =
+  "audit-prospection-assets";
+
 export async function getAuditProspectionByAuditId(
   websiteAuditId: string
 ): Promise<AuditProspection | null> {
@@ -335,4 +338,109 @@ export async function updateAuditProspection(
   }
 
   return data as AuditProspection;
+}
+
+export async function deleteAuditProspection(
+  prospectionId: string
+): Promise<void> {
+  const {
+    data: prospection,
+    error: loadError,
+  } = await supabaseAdmin
+    .from("audit_prospections")
+    .select(
+      `
+        id,
+        company_id
+      `
+    )
+    .eq(
+      "id",
+      prospectionId
+    )
+    .maybeSingle();
+
+  if (loadError) {
+    throw new Error(
+      `Impossible de charger la prospection à supprimer : ${loadError.message}`
+    );
+  }
+
+  if (!prospection) {
+    return;
+  }
+
+  const storageFolder =
+    `${prospection.company_id}/${prospection.id}`;
+
+  const {
+    data: files,
+    error: listError,
+  } = await supabaseAdmin
+    .storage
+    .from(
+      AUDIT_PROSPECTION_BUCKET
+    )
+    .list(
+      storageFolder,
+      {
+        limit: 100,
+      }
+    );
+
+  if (listError) {
+    throw new Error(
+      `Impossible de lire les fichiers de la prospection : ${listError.message}`
+    );
+  }
+
+  const filePaths =
+    (files ?? [])
+      .filter(
+        (file) =>
+          Boolean(
+            file.name
+          )
+      )
+      .map(
+        (file) =>
+          `${storageFolder}/${file.name}`
+      );
+
+  if (
+    filePaths.length > 0
+  ) {
+    const {
+      error: removeError,
+    } = await supabaseAdmin
+      .storage
+      .from(
+        AUDIT_PROSPECTION_BUCKET
+      )
+      .remove(
+        filePaths
+      );
+
+    if (removeError) {
+      throw new Error(
+        `Impossible de supprimer les fichiers de la prospection : ${removeError.message}`
+      );
+    }
+  }
+
+  const {
+    error: deleteError,
+  } = await supabaseAdmin
+    .from("audit_prospections")
+    .delete()
+    .eq(
+      "id",
+      prospectionId
+    );
+
+  if (deleteError) {
+    throw new Error(
+      `Impossible de supprimer la prospection : ${deleteError.message}`
+    );
+  }
 }
