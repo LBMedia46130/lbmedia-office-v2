@@ -8,6 +8,7 @@ import CompanyLegalSearch from "@/components/companies/CompanyLegalSearch";
 import CompanyWebEnrichment from "@/components/companies/CompanyWebEnrichment";
 import DeleteCompanyButton from "@/components/companies/DeleteCompanyButton";
 import AuditProspectionGenerator from "@/components/companies/AuditProspectionGenerator";
+import AuditProspectionEditor from "@/components/companies/AuditProspectionEditor";
 import PipelineBadge from "@/components/ui/PipelineBadge";
 
 import {
@@ -538,26 +539,18 @@ export default async function CompanyPage({
 
                 {latestProspection ? (
                   <>
-                    <div className="mt-6 grid gap-4 border-t border-indigo-200 pt-5 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-6 grid gap-4 border-t border-indigo-200 pt-5 sm:grid-cols-2">
                       <ProspectionInfo
-                        label="Destinataire"
+                        label="Statut"
                         value={
-                          latestProspection.recipient_email ||
-                          company.email ||
-                          "À renseigner"
+                          getProspectionStatusLabel(
+                            latestProspection.status
+                          )
                         }
                       />
 
                       <ProspectionInfo
-                        label="Objet"
-                        value={
-                          latestProspection.subject ||
-                          "À générer"
-                        }
-                      />
-
-                      <ProspectionInfo
-                        label="Angle commercial"
+                        label="Angle commercial interne"
                         value={
                           latestProspection.sales_angle ||
                           "À définir"
@@ -566,32 +559,54 @@ export default async function CompanyPage({
                     </div>
 
                     {latestProspection.email_content ? (
-                      <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-5">
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-500">
-                          Email proposé
-                        </p>
-
-                        <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                          {
-                            latestProspection.email_content
-                          }
-                        </p>
-                      </div>
-                    ) : null}
-
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-white px-4 py-4">
-                      <div>
+                      <AuditProspectionEditor
+                        prospectionId={
+                          latestProspection.id
+                        }
+                        initialRecipientEmail={
+                          latestProspection.recipient_email ||
+                          company.email ||
+                          ""
+                        }
+                        initialSubject={
+                          latestProspection.subject ||
+                          ""
+                        }
+                        initialEmailContent={
+                          latestProspection.email_content
+                        }
+                      />
+                    ) : (
+                      <div className="mt-5 rounded-xl border border-indigo-100 bg-white px-4 py-4">
                         <p className="text-sm font-semibold text-slate-800">
-                          {latestProspection.email_content
-                            ? "Le message peut être régénéré si nécessaire."
-                            : "La prospection est prête à être rédigée."}
+                          La prospection est
+                          prête à être rédigée.
                         </p>
 
                         <p className="mt-1 text-xs leading-5 text-slate-500">
                           Pénélope utilisera
                           directement les
-                          observations et priorités
-                          du dernier audit.
+                          observations et
+                          priorités du dernier
+                          audit.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-white px-4 py-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {latestProspection.email_content
+                            ? "Besoin d’une autre proposition ?"
+                            : "Générer une première proposition."}
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          Une nouvelle génération
+                          remplacera l’objet,
+                          l’angle commercial et
+                          le message actuellement
+                          enregistrés.
                         </p>
                       </div>
 
@@ -860,19 +875,34 @@ function ProspectionStatusBadge({
     | "follow_up"
     | "replied";
 }) {
+  return (
+    <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+      {getProspectionStatusLabel(
+        status
+      )}
+    </span>
+  );
+}
+
+function getProspectionStatusLabel(
+  status:
+    | "draft"
+    | "ready"
+    | "sent"
+    | "follow_up"
+    | "replied"
+) {
   const labels = {
     draft: "À préparer",
     ready: "Prête",
     sent: "Envoyée",
-    follow_up: "Relance à faire",
-    replied: "Réponse reçue",
+    follow_up:
+      "Relance à faire",
+    replied:
+      "Réponse reçue",
   };
 
-  return (
-    <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
-      {labels[status]}
-    </span>
-  );
+  return labels[status];
 }
 
 function formatDate(
