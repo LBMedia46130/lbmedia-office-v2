@@ -2,6 +2,10 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 import { getLbmediaContext } from "@/lib/lbmedia-context";
+import {
+  publicationChannels,
+  type PublicationChannel,
+} from "@/lib/news";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type WeeklyTopic = {
@@ -12,6 +16,10 @@ type WeeklyTopic = {
 
 type WeeklyTopicsResponse = {
   topics: WeeklyTopic[];
+};
+
+type WeeklyTopicsRequest = {
+  channel?: PublicationChannel;
 };
 
 type RecentNewsItem = {
@@ -40,6 +48,95 @@ type EditorialHistoryItem = {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const channelTopicInstructions: Record<
+  PublicationChannel,
+  string
+> = {
+  website: `
+Les propositions sont destinées à devenir de véritables actualités ou articles publiés sur lbmedia.fr.
+
+Propose des sujets suffisamment riches pour justifier un article de fond.
+
+L'angle peut être pédagogique, analytique ou pratique, mais doit rester concret et utile aux entreprises.
+`,
+
+  brevo: `
+Les propositions sont destinées à une newsletter Brevo indépendante.
+
+Cherche des sujets qui peuvent créer un intérêt immédiat dans un email.
+
+L'angle doit pouvoir être traité de manière concise et donner envie au lecteur de poursuivre la réflexion ou de contacter LBMedia.
+
+Évite les sujets qui nécessitent un article très long pour être compris.
+`,
+
+  google_business: `
+Les propositions sont destinées à Google Business Profile.
+
+Choisis des sujets immédiatement compréhensibles, concrets et utiles.
+
+Chaque proposition doit pouvoir être traitée en une publication courte.
+
+Évite les sujets trop théoriques, les plans d'article complexes et les longues méthodes.
+`,
+
+  linkedin: `
+Les propositions sont destinées à des posts LinkedIn indépendants.
+
+IMPORTANT
+
+Ne propose PAS des sujets d'articles de blog.
+
+Ne propose PAS :
+- de checklist ;
+- de guide complet ;
+- de tutoriel ;
+- de méthode en plusieurs étapes ;
+- de titre du type "5 conseils pour..." ;
+- de titre du type "7 erreurs à éviter..." ;
+- de plan exhaustif ;
+- de sujet qui invite naturellement à écrire un mini-article.
+
+Cherche plutôt UNE idée forte pouvant donner lieu à une réflexion LinkedIn autonome.
+
+Une bonne proposition LinkedIn doit pouvoir :
+- partager une observation issue du métier ;
+- remettre en question une idée reçue ;
+- apporter du recul sur une pratique ;
+- poser une vraie question professionnelle ;
+- mettre en lumière un problème souvent mal abordé ;
+- défendre une conviction professionnelle cohérente avec LBMedia ;
+- faire réfléchir un dirigeant de TPE ou PME.
+
+Le titre doit annoncer cette idée forte, pas un plan de contenu.
+
+L'angle doit rester volontairement resserré.
+
+Il doit donner suffisamment de matière pour rédiger un post LinkedIn d'environ 800 à 1 400 caractères, mais pas davantage.
+
+Si un sujet pourrait être traité en cinq points, choisis plutôt LE point le plus intéressant et construis la proposition autour de celui-ci.
+
+Privilégie le point de vue et l'expérience métier à l'exhaustivité.
+
+Le lecteur doit pouvoir sentir derrière le sujet une entreprise expérimentée qui connaît les réalités de la communication, et non une agence qui cherche simplement un nouveau sujet de blog.
+`,
+
+  facebook: `
+Les propositions sont destinées à des publications Facebook indépendantes.
+
+Cherche des sujets simples, concrets et immédiatement accessibles.
+
+Privilégie :
+- une question rencontrée par les petites entreprises ;
+- une erreur fréquente ;
+- une observation concrète ;
+- un conseil simple ;
+- un sujet local lorsque cela est pertinent.
+
+Évite les sujets trop techniques et les plans d'article exhaustifs.
+`,
+};
 
 function cleanExcerpt(
   value: string | null,
@@ -85,7 +182,9 @@ function formatDate(
   ).format(date);
 }
 
-export async function POST() {
+export async function POST(
+  request: Request
+) {
   if (
     !process.env.OPENAI_API_KEY
   ) {
@@ -100,6 +199,40 @@ export async function POST() {
       }
     );
   }
+
+  let body: WeeklyTopicsRequest =
+    {};
+
+  try {
+    body =
+      await request.json();
+  } catch {
+    body = {};
+  }
+
+  const requestedChannel =
+    body.channel ??
+    "linkedin";
+
+  if (
+    !publicationChannels.includes(
+      requestedChannel
+    )
+  ) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Le support demandé est invalide.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+
+  const channel =
+    requestedChannel as PublicationChannel;
 
   try {
     const [
@@ -322,16 +455,22 @@ Voici la connaissance éditoriale permanente de LBMedia :
 
 ${lbmediaContext}
 
-Ta mission est de proposer des sujets réellement pertinents pour la prochaine communication hebdomadaire de LBMedia.
+Ta mission est de proposer des sujets réellement pertinents pour la prochaine communication de LBMedia.
 
-Tu disposes maintenant de plusieurs sources d'historique :
+SUPPORT DEMANDÉ
+
+${channel}
+
+Les propositions doivent être pensées dès le départ pour ce support.
+
+Tu disposes de plusieurs sources d'historique :
 - les actualités créées directement dans LBMedia Office ;
 - les posts indépendants créés directement dans LBMedia Office ;
 - l'historique éditorial antérieur importé dans LBMedia Office.
 
 Tu dois considérer l'ensemble de ces sources comme la mémoire éditoriale de LBMedia.
 
-RÈGLES
+RÈGLES GÉNÉRALES
 
 - écris en français ;
 - propose exactement 3 sujets ;
@@ -341,14 +480,17 @@ RÈGLES
 - tiens compte du fait qu'un thème peut avoir déjà été traité sur un autre support ;
 - si un thème mérite d'être repris, trouve un angle clairement différent ;
 - les trois propositions doivent être différentes les unes des autres ;
-- privilégie des sujets evergreen ou réellement utiles aux entreprises locales ;
-- les sujets doivent pouvoir devenir une véritable actualité publiée sur lbmedia.fr ;
+- privilégie des sujets evergreen ou réellement utiles aux entreprises ;
 - reste proche des activités réelles de LBMedia ;
 - évite le jargon marketing ;
 - évite les titres racoleurs ;
 - évite les formulations génériques ;
 - n'invente aucune actualité, étude, chiffre ou tendance récente ;
 - ne prétends pas disposer d'informations que le contexte ne fournit pas.
+
+ADAPTATION AU SUPPORT
+
+${channelTopicInstructions[channel]}
 
 TEMPORALITÉ ÉDITORIALE
 
@@ -360,9 +502,9 @@ TEMPORALITÉ ÉDITORIALE
 
 Pour chaque proposition :
 
-- title : titre éditorial possible ;
-- angle : ce que l'article doit réellement expliquer ou défendre ;
-- reason : pourquoi ce sujet est pertinent maintenant dans la ligne éditoriale LBMedia.
+- title : titre ou idée éditoriale adaptée au support demandé ;
+- angle : ce que la publication doit réellement expliquer, observer ou défendre ;
+- reason : pourquoi ce sujet est pertinent dans la ligne éditoriale LBMedia et pourquoi il convient au support demandé.
 
 Retourne exclusivement un objet JSON valide.
 N'utilise aucun bloc Markdown.
@@ -370,6 +512,10 @@ N'utilise aucun bloc Markdown.
 
         input: `
 Voici la mémoire éditoriale actuellement connue.
+
+SUPPORT À PRÉPARER
+
+${channel}
 
 ACTUALITÉS RÉCENTES CRÉÉES DANS LBMEDIA OFFICE
 
@@ -383,7 +529,7 @@ HISTORIQUE ÉDITORIAL ANTÉRIEUR IMPORTÉ
 
 ${importedHistoryText}
 
-À partir de la connaissance LBMedia et de l'ensemble de cette mémoire éditoriale, propose maintenant 3 sujets pour la prochaine communication hebdomadaire.
+À partir de la connaissance LBMedia, du support demandé et de l'ensemble de cette mémoire éditoriale, propose maintenant 3 sujets spécifiquement adaptés à ${channel}.
 `,
 
         text: {
@@ -478,7 +624,7 @@ ${importedHistoryText}
       {
         success: false,
         message:
-          "Pénélope n'a pas pu préparer les sujets de la semaine.",
+          "Pénélope n'a pas pu préparer les sujets.",
         error:
           error instanceof Error
             ? error.message

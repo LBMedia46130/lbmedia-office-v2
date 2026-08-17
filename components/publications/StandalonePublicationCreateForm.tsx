@@ -92,6 +92,14 @@ export default function StandalonePublicationCreateForm() {
     null
   );
 
+  function handleChannelChange(
+    nextChannel: PublicationChannel
+  ) {
+    setChannel(nextChannel);
+    setTopics([]);
+    setError(null);
+  }
+
   async function handleGenerateTopics() {
     setIsGeneratingTopics(
       true
@@ -104,6 +112,13 @@ export default function StandalonePublicationCreateForm() {
           "/api/penelope/weekly-topics",
           {
             method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              channel,
+            }),
           }
         );
 
@@ -264,7 +279,7 @@ export default function StandalonePublicationCreateForm() {
           onChange={(
             event
           ) =>
-            setChannel(
+            handleChannelChange(
               event.target
                 .value as PublicationChannel
             )
@@ -313,9 +328,15 @@ export default function StandalonePublicationCreateForm() {
 
             <p className="mt-1 text-sm leading-6 text-slate-600">
               Pénélope peut proposer
-              trois sujets en tenant
-              compte de l&apos;historique
-              éditorial de LBMedia.
+              trois sujets adaptés à{" "}
+              <span className="font-semibold">
+                {
+                  currentChannel?.label
+                }
+              </span>{" "}
+              en tenant compte de
+              l&apos;historique éditorial
+              de LBMedia.
             </p>
           </div>
 
