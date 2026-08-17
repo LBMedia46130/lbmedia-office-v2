@@ -11,6 +11,7 @@ import DeleteAuditProspectionButton from "@/components/companies/DeleteAuditPros
 import AuditProspectionGenerator from "@/components/companies/AuditProspectionGenerator";
 import AuditProspectionEditor from "@/components/companies/AuditProspectionEditor";
 import AuditProspectionAssets from "@/components/companies/AuditProspectionAssets";
+import AuditProspectionSendButton from "@/components/companies/AuditProspectionSendButton";
 import PipelineBadge from "@/components/ui/PipelineBadge";
 
 import {
@@ -380,6 +381,7 @@ export default async function CompanyPage({
                           {
                             latestAudit.global_score
                           }
+
                           <span className="ml-1 text-sm font-medium text-slate-400">
                             / 100
                           </span>
@@ -615,6 +617,26 @@ export default async function CompanyPage({
                       }
                       initialAttachmentUrl={
                         latestProspection.attachment_url
+                      }
+                    />
+
+                    <AuditProspectionSendButton
+                      prospectionId={
+                        latestProspection.id
+                      }
+                      status={
+                        latestProspection.status
+                      }
+                      recipientEmail={
+                        latestProspection.recipient_email ||
+                        company.email ||
+                        null
+                      }
+                      attachmentUrl={
+                        latestProspection.attachment_url
+                      }
+                      sentAt={
+                        latestProspection.sent_at
                       }
                     />
 
@@ -862,6 +884,7 @@ function MiniScore({
 
       <p className="mt-1 text-lg font-bold text-slate-800">
         {score}
+
         <span className="ml-1 text-xs font-medium text-slate-400">
           /100
         </span>
