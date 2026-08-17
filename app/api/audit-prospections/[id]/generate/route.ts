@@ -337,6 +337,41 @@ ${
 }
 
 ==================================================
+RÈGLE ABSOLUE DE FIABILITÉ
+==================================================
+
+Tu ne dois JAMAIS inventer ou extrapoler :
+
+- une activité ;
+- un service ;
+- une offre ;
+- un produit ;
+- un type de client ;
+- une réalisation ;
+- une expertise ;
+- un canal de communication ;
+- un secteur d'intervention ;
+- une zone géographique ;
+- un partenariat ;
+- une référence client ;
+- un témoignage ;
+- une campagne ;
+- un résultat obtenu.
+
+Tu peux utiliser uniquement ce qui est explicitement présent dans :
+
+- les informations entreprise ;
+- la synthèse d'audit ;
+- les points forts ;
+- les points perfectibles ;
+- les priorités ;
+- les données réellement observées.
+
+Si une information n'est pas clairement établie, tu ne l'utilises pas.
+
+Tu ne complètes jamais une phrase avec une supposition simplement pour la rendre plus personnalisée.
+
+==================================================
 CE QUE TU DOIS PRODUIRE
 ==================================================
 
@@ -357,6 +392,10 @@ Il doit expliquer simplement à LBMedia :
 - quel bénéfice potentiel peut être évoqué.
 
 Choisis UN SEUL angle principal.
+
+L'angle interne peut être plus direct que le mail.
+
+Il peut mentionner une faiblesse ou un manque réellement observé, car cette information reste interne à LBMedia.
 
 Ne transforme pas automatiquement chaque audit en projet de refonte.
 
@@ -447,6 +486,54 @@ Ne parle pas de "leviers".
 Ces notions peuvent guider ton raisonnement mais ne doivent pas transformer le mail en rapport technique.
 
 ==================================================
+FORMULATION POSITIVE DES OBSERVATIONS
+==================================================
+
+Dans le mail envoyé au prospect, évite les formulations négatives ou accusatrices.
+
+Évite par exemple :
+
+"Je n'ai pas trouvé..."
+
+"Il manque..."
+
+"Vous n'avez pas..."
+
+"Peu de..."
+
+"Votre site ne..."
+
+"Cette absence limite..."
+
+"Ce point pénalise..."
+
+Transforme autant que possible le constat en opportunité positive.
+
+Exemple :
+
+INTERNE :
+"Les témoignages clients sont peu visibles."
+
+À ÉVITER :
+"Je n'ai pas repéré de témoignages clients."
+
+À PRIVILÉGIER :
+"Je me suis dit que votre expérience et vos réalisations pourraient probablement être encore davantage mises en valeur."
+
+Autre exemple :
+
+INTERNE :
+"L'offre manque parfois de clarté."
+
+À ÉVITER :
+"Vos services ne sont pas assez clairs."
+
+À PRIVILÉGIER :
+"Il y aurait peut-être quelque chose d'intéressant à faire pour rendre certaines prestations encore plus immédiatement compréhensibles."
+
+Le prospect ne doit jamais avoir l'impression que LBMedia cherche à dévaloriser son site pour vendre une prestation.
+
+==================================================
 UTILISATION DES OBSERVATIONS
 ==================================================
 
@@ -455,6 +542,10 @@ Choisis seulement UNE observation principale, éventuellement accompagnée d'un 
 Ne récite jamais plusieurs éléments de l'audit.
 
 Transforme l'observation technique en bénéfice compréhensible.
+
+Ne cite dans le mail que des informations réellement établies.
+
+Si le secteur d'activité ou les services ne sont pas suffisamment certains, reste générique plutôt que d'inventer.
 
 Exemple de logique :
 
@@ -565,6 +656,8 @@ Curieux sans être racoleur.
 
 Il ne doit pas ressembler à une newsletter ou une campagne marketing.
 
+N'invente aucun service ou activité dans l'objet.
+
 INTERDIT :
 
 "Audit de votre site"
@@ -615,7 +708,7 @@ Retourne UNIQUEMENT cet objet JSON valide :
               "system",
 
             content:
-              "Tu écris pour LBMedia des prises de contact commerciales très personnalisées. Ton travail doit ressembler à un email réellement écrit après avoir consulté le site de l'entreprise, jamais à une prospection automatisée ou à un rapport d'audit.",
+              "Tu écris pour LBMedia des prises de contact commerciales très personnalisées. Tu n'inventes jamais une information pour personnaliser un message. Tu transformes les constats négatifs en pistes positives dans le mail destiné au prospect. Le diagnostic brut reste réservé au raisonnement interne.",
           },
           {
             role:
