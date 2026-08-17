@@ -22,6 +22,10 @@ type RouteContext = {
   }>;
 };
 
+type SendRequestBody = {
+  confirmedRecipientEmail?: unknown;
+};
+
 function getBooleanEnv(
   value:
     | string
@@ -32,6 +36,20 @@ function getBooleanEnv(
       ?.trim()
       .toLowerCase() ===
     "true"
+  );
+}
+
+function normalizeEmail(
+  value:
+    | string
+    | null
+    | undefined
+) {
+  return (
+    value
+      ?.trim()
+      .toLowerCase() ??
+    ""
   );
 }
 
@@ -122,7 +140,7 @@ function getPdfFilename(
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: RouteContext
 ) {
   try {
@@ -189,6 +207,42 @@ export async function POST(
         },
         {
           status: 500,
+        }
+      );
+    }
+
+    let body:
+      | SendRequestBody
+      | null = null;
+
+    try {
+      body =
+        (await request.json()) as SendRequestBody;
+    } catch {
+      body =
+        null;
+    }
+
+    const confirmedRecipientEmail =
+      typeof body
+        ?.confirmedRecipientEmail ===
+      "string"
+        ? normalizeEmail(
+            body.confirmedRecipientEmail
+          )
+        : "";
+
+    if (
+      !confirmedRecipientEmail
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Confirmation du destinataire manquante. Envoi annulé.",
+        },
+        {
+          status: 400,
         }
       );
     }
@@ -262,10 +316,64 @@ export async function POST(
       );
     }
 
+    if (
+      prospection.status !==
+      "ready"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "La prospection n’est pas au statut Prête. Envoi annulé.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
     const recipientEmail =
       prospection
         .recipient_email
         ?.trim();
+
+    const normalizedStoredRecipient =
+      normalizeEmail(
+        recipientEmail
+      );
+
+    if (!recipientEmail) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Aucune adresse e-mail destinataire n'est enregistrée.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      normalizedStoredRecipient !==
+      confirmedRecipientEmail
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+
+          message:
+            "Sécurité : le destinataire confirmé ne correspond pas au destinataire actuellement enregistré. Aucun email n’a été envoyé.",
+
+          storedRecipientEmail:
+            recipientEmail,
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
     const recipientName =
       prospection
@@ -273,8 +381,7 @@ export async function POST(
         ?.trim();
 
     const subject =
-      prospection
-        .subject
+      prospection.subject
         ?.trim();
 
     const emailContent =
@@ -286,19 +393,6 @@ export async function POST(
       prospection
         .attachment_url
         ?.trim();
-
-    if (!recipientEmail) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Aucune adresse e-mail destinataire n'est renseignée.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
 
     if (!subject) {
       return NextResponse.json(
@@ -335,6 +429,129 @@ export async function POST(
         },
         {
           status: 400,
+        }
+      );
+    }
+
+    /*
+     * Nouvelle lecture de sécurité juste avant l'envoi.
+     *
+     * Si une modification concurrente a changé le destinataire
+     * entre le chargement de la prospection et l'envoi SMTP,
+     * l'envoi est interrompu.
+     */
+    const {
+      data:
+        securityCheck,
+      error:
+        securityCheckError,
+    } = await supabaseAdmin
+      .from(
+        "audit_prospections"
+      )
+      .select(
+        `
+          id,
+          status,
+          recipient_email,
+          subject,
+          email_content,
+          attachment_url,
+          sent_at
+        `
+      )
+      .eq(
+        "id",
+        prospection.id
+      )
+      .maybeSingle();
+
+    if (
+      securityCheckError ||
+      !securityCheck
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Impossible de vérifier les informations avant l’envoi. Aucun email n’a été envoyé.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    if (
+      securityCheck.status ===
+        "sent" ||
+      securityCheck.sent_at
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Cette prospection est déjà enregistrée comme envoyée.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    if (
+      securityCheck.status !==
+      "ready"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Le statut de la prospection a changé. Aucun email n’a été envoyé.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    if (
+      normalizeEmail(
+        securityCheck.recipient_email
+      ) !==
+      confirmedRecipientEmail
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Sécurité : le destinataire enregistré a changé depuis la confirmation. Aucun email n’a été envoyé.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    if (
+      securityCheck.subject
+        ?.trim() !==
+        subject ||
+      securityCheck.email_content
+        ?.trim() !==
+        emailContent ||
+      securityCheck.attachment_url
+        ?.trim() !==
+        attachmentUrl
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Sécurité : le contenu de la prospection a changé avant l’envoi. Rechargez la fiche et vérifiez le message.",
+        },
+        {
+          status: 409,
         }
       );
     }
@@ -409,13 +626,10 @@ export async function POST(
         },
       });
 
-    const recipient =
-      recipientName
-        ? `"${recipientName.replaceAll(
-            '"',
-            '\\"'
-          )}" <${recipientEmail}>`
-        : recipientEmail;
+    /*
+     * Vérification de la connexion SMTP AVANT l'envoi.
+     */
+    await transporter.verify();
 
     const htmlContent = `
 <!doctype html>
@@ -464,7 +678,15 @@ export async function POST(
         },
 
         to:
-          recipient,
+          recipientName
+            ? {
+                name:
+                  recipientName,
+
+                address:
+                  recipientEmail,
+              }
+            : recipientEmail,
 
         replyTo:
           smtpUser,
@@ -507,6 +729,56 @@ export async function POST(
         },
       });
 
+    const accepted =
+      sendResult.accepted.map(
+        String
+      );
+
+    const wasAccepted =
+      accepted.some(
+        (acceptedAddress) =>
+          normalizeEmail(
+            acceptedAddress
+          ) ===
+          normalizedStoredRecipient
+      );
+
+    if (!wasAccepted) {
+      console.error(
+        "SMTP n'a pas accepté le destinataire",
+        {
+          prospectionId:
+            prospection.id,
+
+          recipientEmail,
+
+          accepted:
+            sendResult.accepted,
+
+          rejected:
+            sendResult.rejected,
+
+          response:
+            sendResult.response,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+
+          message:
+            "Le serveur SMTP n’a pas confirmé l’acceptation du destinataire. Le statut n’a pas été modifié.",
+
+          messageId:
+            sendResult.messageId,
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
     const sentAt =
       new Date()
         .toISOString();
@@ -532,11 +804,20 @@ export async function POST(
         "id",
         prospection.id
       )
+      .eq(
+        "status",
+        "ready"
+      )
+      .eq(
+        "recipient_email",
+        recipientEmail
+      )
       .select("*")
-      .single();
+      .maybeSingle();
 
     if (
-      updateError
+      updateError ||
+      !updated
     ) {
       console.error(
         "E-mail envoyé mais statut non enregistré",
@@ -546,6 +827,9 @@ export async function POST(
 
           messageId:
             sendResult.messageId,
+
+          recipient:
+            recipientEmail,
 
           accepted:
             sendResult.accepted,
@@ -557,17 +841,19 @@ export async function POST(
             sendResult.response,
 
           error:
-            updateError.message,
+            updateError?.message ??
+            "Mise à jour refusée par la vérification de sécurité.",
         }
       );
 
       return NextResponse.json(
         {
           success: false,
+
           sent: true,
 
           message:
-            "L'e-mail a été envoyé, mais LBMedia Office n'a pas réussi à enregistrer le statut Envoyée. Ne renvoyez pas l'e-mail.",
+            "L'e-mail a été accepté par le serveur SMTP, mais LBMedia Office n'a pas réussi à enregistrer le statut Envoyée. Ne renvoyez pas l'e-mail.",
 
           messageId:
             sendResult.messageId,
@@ -619,6 +905,8 @@ export async function POST(
         sendResult.messageId,
 
       sentAt,
+
+      recipientEmail,
 
       prospection:
         updated,

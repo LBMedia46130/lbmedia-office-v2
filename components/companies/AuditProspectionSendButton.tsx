@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -31,6 +32,12 @@ type AuditProspectionSendButtonProps = {
     | null;
 };
 
+type EditStateEventDetail = {
+  prospectionId: string;
+  isDirty: boolean;
+  isSaving: boolean;
+};
+
 export default function AuditProspectionSendButton({
   prospectionId,
   status,
@@ -44,6 +51,18 @@ export default function AuditProspectionSendButton({
   const [
     isSending,
     setIsSending,
+  ] =
+    useState(false);
+
+  const [
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+  ] =
+    useState(false);
+
+  const [
+    editorIsSaving,
+    setEditorIsSaving,
   ] =
     useState(false);
 
@@ -62,6 +81,49 @@ export default function AuditProspectionSendButton({
     useState<
       string | null
     >(null);
+
+  useEffect(() => {
+    function handleEditState(
+      event: Event
+    ) {
+      const customEvent =
+        event as CustomEvent<EditStateEventDetail>;
+
+      if (
+        customEvent.detail
+          ?.prospectionId !==
+        prospectionId
+      ) {
+        return;
+      }
+
+      setHasUnsavedChanges(
+        Boolean(
+          customEvent.detail
+            .isDirty
+        )
+      );
+
+      setEditorIsSaving(
+        Boolean(
+          customEvent.detail
+            .isSaving
+        )
+      );
+    }
+
+    window.addEventListener(
+      "audit-prospection-edit-state",
+      handleEditState
+    );
+
+    return () => {
+      window.removeEventListener(
+        "audit-prospection-edit-state",
+        handleEditState
+      );
+    };
+  }, [prospectionId]);
 
   if (
     status === "sent"
@@ -100,36 +162,80 @@ export default function AuditProspectionSendButton({
     );
   }
 
+  const normalizedRecipient =
+    recipientEmail
+      ?.trim()
+      .toLowerCase() ??
+    "";
+
   const canSend =
     status === "ready" &&
     Boolean(
-      recipientEmail?.trim()
+      normalizedRecipient
     ) &&
     Boolean(
       attachmentUrl?.trim()
-    );
+    ) &&
+    !hasUnsavedChanges &&
+    !editorIsSaving &&
+    !isSending;
 
   async function sendEmail() {
+    if (!canSend) {
+      return;
+    }
+
+    const firstConfirmation =
+      window.confirm(
+        [
+          "ENVOI RÉEL D’UN EMAIL",
+          "",
+          `Destinataire réellement enregistré :`,
+          `${recipientEmail}`,
+          "",
+          "Le PDF actuellement enregistré sera joint.",
+          "",
+          "Voulez-vous continuer ?",
+        ].join("\n")
+      );
+
     if (
-      isSending ||
-      !canSend
+      !firstConfirmation
     ) {
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        `Envoyer maintenant cet email à ${recipientEmail} avec le PDF en pièce jointe ?\n\nCette action déclenche un véritable envoi depuis la boîte Exchange OVH de LBMedia.`
+    const typedEmail =
+      window.prompt(
+        [
+          "CONFIRMATION DE SÉCURITÉ",
+          "",
+          "Recopiez exactement l’adresse email du destinataire pour autoriser l’envoi :",
+          "",
+          `${recipientEmail}`,
+        ].join("\n")
       );
 
-    if (!confirmed) {
+    if (
+      typedEmail === null
+    ) {
       return;
     }
 
-    setIsSending(
-      true
-    );
+    if (
+      typedEmail
+        .trim()
+        .toLowerCase() !==
+      normalizedRecipient
+    ) {
+      setError(
+        "Envoi annulé : l’adresse saisie lors de la confirmation ne correspond pas au destinataire enregistré."
+      );
 
+      return;
+    }
+
+    setIsSending(true);
     setMessage(null);
     setError(null);
 
@@ -140,6 +246,17 @@ export default function AuditProspectionSendButton({
           {
             method:
               "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                confirmedRecipientEmail:
+                  normalizedRecipient,
+              }),
           }
         );
 
@@ -180,9 +297,7 @@ export default function AuditProspectionSendButton({
           : "Une erreur est survenue pendant l’envoi."
       );
     } finally {
-      setIsSending(
-        false
-      );
+      setIsSending(false);
     }
   }
 
@@ -191,7 +306,7 @@ export default function AuditProspectionSendButton({
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">
-            Envoi
+            Envoi réel
           </p>
 
           <h4 className="mt-1 text-base font-bold text-slate-900">
@@ -200,34 +315,65 @@ export default function AuditProspectionSendButton({
           </h4>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            L’email sera envoyé
-            depuis la boîte
-            Exchange OVH de
-            LBMedia avec le PDF
-            actuellement
-            enregistré en pièce
-            jointe.
+            Le destinataire
+            ci-dessous est celui
+            qui est actuellement
+            enregistré dans
+            LBMedia Office et que
+            le serveur utilisera.
           </p>
 
           {recipientEmail ? (
-            <p className="mt-2 text-xs font-semibold text-slate-500">
-              Destinataire :{" "}
-              {
-                recipientEmail
-              }
+            <div className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                Destinataire
+                réellement
+                enregistré
+              </p>
+
+              <p className="mt-1 break-all text-sm font-bold text-slate-900">
+                {
+                  recipientEmail
+                }
+              </p>
+            </div>
+          ) : null}
+
+          {hasUnsavedChanges ? (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-bold text-amber-800">
+                Envoi bloqué
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-amber-700">
+                Des modifications
+                du destinataire,
+                de l’objet ou du
+                message ne sont
+                pas encore
+                enregistrées.
+              </p>
+            </div>
+          ) : null}
+
+          {editorIsSaving ? (
+            <p className="mt-3 text-xs font-semibold text-amber-700">
+              Enregistrement en
+              cours…
             </p>
           ) : null}
 
           {!recipientEmail ? (
-            <p className="mt-2 text-xs font-semibold text-amber-700">
-              Renseigne d’abord
+            <p className="mt-3 text-xs font-semibold text-amber-700">
+              Renseigne et
+              enregistre d’abord
               l’adresse email du
               destinataire.
             </p>
           ) : null}
 
           {!attachmentUrl ? (
-            <p className="mt-2 text-xs font-semibold text-amber-700">
+            <p className="mt-3 text-xs font-semibold text-amber-700">
               Génère d’abord le
               PDF à joindre.
             </p>
@@ -235,7 +381,7 @@ export default function AuditProspectionSendButton({
 
           {status !==
             "ready" ? (
-            <p className="mt-2 text-xs font-semibold text-amber-700">
+            <p className="mt-3 text-xs font-semibold text-amber-700">
               La prospection doit
               être au statut
               « Prête » avant
@@ -250,8 +396,7 @@ export default function AuditProspectionSendButton({
             sendEmail
           }
           disabled={
-            !canSend ||
-            isSending
+            !canSend
           }
           className="inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
         >

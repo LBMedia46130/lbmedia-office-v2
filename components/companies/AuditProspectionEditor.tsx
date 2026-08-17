@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  useEffect,
+  useMemo,
   useState,
 } from "react";
+
 import {
   useRouter,
 } from "next/navigation";
@@ -45,6 +48,27 @@ export default function AuditProspectionEditor({
   );
 
   const [
+    savedRecipientEmail,
+    setSavedRecipientEmail,
+  ] = useState(
+    initialRecipientEmail
+  );
+
+  const [
+    savedSubject,
+    setSavedSubject,
+  ] = useState(
+    initialSubject
+  );
+
+  const [
+    savedEmailContent,
+    setSavedEmailContent,
+  ] = useState(
+    initialEmailContent
+  );
+
+  const [
     isSaving,
     setIsSaving,
   ] = useState(false);
@@ -63,7 +87,106 @@ export default function AuditProspectionEditor({
     string | null
   >(null);
 
+  const isDirty =
+    useMemo(() => {
+      return (
+        recipientEmail.trim() !==
+          savedRecipientEmail.trim() ||
+        subject.trim() !==
+          savedSubject.trim() ||
+        emailContent.trim() !==
+          savedEmailContent.trim()
+      );
+    }, [
+      recipientEmail,
+      subject,
+      emailContent,
+      savedRecipientEmail,
+      savedSubject,
+      savedEmailContent,
+    ]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent(
+        "audit-prospection-edit-state",
+        {
+          detail: {
+            prospectionId,
+            isDirty,
+            isSaving,
+          },
+        }
+      )
+    );
+  }, [
+    prospectionId,
+    isDirty,
+    isSaving,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent(
+          "audit-prospection-edit-state",
+          {
+            detail: {
+              prospectionId,
+              isDirty: false,
+              isSaving: false,
+            },
+          }
+        )
+      );
+    };
+  }, [prospectionId]);
+
   async function handleSave() {
+    if (
+      isSaving ||
+      !isDirty
+    ) {
+      return;
+    }
+
+    const nextRecipientEmail =
+      recipientEmail.trim();
+
+    const nextSubject =
+      subject.trim();
+
+    const nextEmailContent =
+      emailContent.trim();
+
+    if (
+      !nextRecipientEmail
+    ) {
+      setError(
+        "L’adresse email du destinataire est obligatoire."
+      );
+      setMessage(null);
+      return;
+    }
+
+    if (!nextSubject) {
+      setError(
+        "L’objet de l’email est obligatoire."
+      );
+      setMessage(null);
+      return;
+    }
+
+    if (
+      !nextEmailContent
+    ) {
+      setError(
+        "Le message est obligatoire."
+      );
+      setMessage(null);
+      return;
+    }
+
     setIsSaving(true);
     setMessage(null);
     setError(null);
@@ -83,13 +206,13 @@ export default function AuditProspectionEditor({
             body:
               JSON.stringify({
                 recipientEmail:
-                  recipientEmail.trim(),
+                  nextRecipientEmail,
 
                 subject:
-                  subject.trim(),
+                  nextSubject,
 
                 emailContent:
-                  emailContent.trim(),
+                  nextEmailContent,
               }),
           }
         );
@@ -107,15 +230,39 @@ export default function AuditProspectionEditor({
         );
       }
 
+      setRecipientEmail(
+        nextRecipientEmail
+      );
+
+      setSubject(
+        nextSubject
+      );
+
+      setEmailContent(
+        nextEmailContent
+      );
+
+      setSavedRecipientEmail(
+        nextRecipientEmail
+      );
+
+      setSavedSubject(
+        nextSubject
+      );
+
+      setSavedEmailContent(
+        nextEmailContent
+      );
+
       setMessage(
-        "Modifications enregistrées."
+        "Modifications enregistrées. L’envoi peut maintenant utiliser ces informations."
       );
 
       router.refresh();
-    } catch (error) {
+    } catch (saveError) {
       setError(
-        error instanceof Error
-          ? error.message
+        saveError instanceof Error
+          ? saveError.message
           : "Une erreur est survenue."
       );
     } finally {
@@ -123,19 +270,76 @@ export default function AuditProspectionEditor({
     }
   }
 
+  function handleRecipientChange(
+    value: string
+  ) {
+    setRecipientEmail(
+      value
+    );
+    setMessage(null);
+    setError(null);
+  }
+
+  function handleSubjectChange(
+    value: string
+  ) {
+    setSubject(value);
+    setMessage(null);
+    setError(null);
+  }
+
+  function handleContentChange(
+    value: string
+  ) {
+    setEmailContent(value);
+    setMessage(null);
+    setError(null);
+  }
+
   return (
     <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-5">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-500">
-          Préparer l’envoi
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-500">
+            Préparer l’envoi
+          </p>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Relisez et modifiez le
-          message avant de passer à
+          {isDirty ? (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+              Modifications non enregistrées
+            </span>
+          ) : (
+            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+              Enregistré
+            </span>
+          )}
+        </div>
+
+        <p className="mt-2 text-sm text-slate-500">
+          Toute modification du
+          destinataire, de l’objet
+          ou du message doit être
+          enregistrée avant
           l’envoi.
         </p>
       </div>
+
+      {isDirty ? (
+        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-bold text-amber-800">
+            Envoi temporairement
+            bloqué
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-amber-700">
+            Les informations
+            affichées ont été
+            modifiées mais ne sont
+            pas encore enregistrées
+            dans LBMedia Office.
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-5">
         <label
@@ -152,7 +356,7 @@ export default function AuditProspectionEditor({
             recipientEmail
           }
           onChange={(event) =>
-            setRecipientEmail(
+            handleRecipientChange(
               event.target.value
             )
           }
@@ -172,9 +376,11 @@ export default function AuditProspectionEditor({
         <input
           id="prospection-subject"
           type="text"
-          value={subject}
+          value={
+            subject
+          }
           onChange={(event) =>
-            setSubject(
+            handleSubjectChange(
               event.target.value
             )
           }
@@ -193,9 +399,11 @@ export default function AuditProspectionEditor({
 
         <textarea
           id="prospection-content"
-          value={emailContent}
+          value={
+            emailContent
+          }
           onChange={(event) =>
-            setEmailContent(
+            handleContentChange(
               event.target.value
             )
           }
@@ -226,13 +434,16 @@ export default function AuditProspectionEditor({
             handleSave
           }
           disabled={
-            isSaving
+            isSaving ||
+            !isDirty
           }
-          className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving
             ? "Enregistrement..."
-            : "Enregistrer les modifications"}
+            : isDirty
+              ? "Enregistrer les modifications"
+              : "Modifications enregistrées"}
         </button>
       </div>
     </div>
