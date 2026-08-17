@@ -9,6 +9,10 @@ type RouteContext = {
   }>;
 };
 
+type AltTextResponse = {
+  image_alt: string;
+};
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -34,6 +38,99 @@ function getVisualTitle(
   return content
     .trim()
     .slice(0, 300);
+}
+
+async function generateImageAlt(
+  imageBase64: string
+) {
+  const response =
+    await openai.responses.create({
+      model: "gpt-5-mini",
+
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: `
+Observe cette illustration générée pour une publication LBMedia.
+
+Rédige un texte alternatif en français destiné à l'accessibilité d'une image publiée sur LinkedIn ou Facebook.
+
+RÈGLES
+
+- décris ce qui est réellement visible dans l'image ;
+- reste factuel et naturel ;
+- indique les éléments visuels principaux et leur relation ;
+- ne commence pas par "Image de", "Illustration de" ou "On voit" ;
+- ne décris pas l'intention marketing ;
+- n'ajoute aucun hashtag ;
+- n'ajoute aucun texte qui n'est pas réellement visible ;
+- ne mentionne pas LBMedia sauf si la marque apparaît réellement dans l'image ;
+- reste concis ;
+- vise généralement une phrase de 100 à 220 caractères ;
+- le texte doit être immédiatement utilisable comme texte ALT sur un réseau social.
+
+Retourne uniquement un objet JSON valide.
+              `.trim(),
+            },
+            {
+              type: "input_image",
+              image_url:
+                `data:image/png;base64,${imageBase64}`,
+              detail: "auto",
+            },
+          ],
+        },
+      ],
+
+      text: {
+        format: {
+          type: "json_schema",
+          name: "image_alt",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              image_alt: {
+                type: "string",
+              },
+            },
+            required: [
+              "image_alt",
+            ],
+            additionalProperties:
+              false,
+          },
+        },
+      },
+    });
+
+  const rawOutput =
+    response.output_text.trim();
+
+  if (!rawOutput) {
+    throw new Error(
+      "Pénélope n'a retourné aucun texte ALT."
+    );
+  }
+
+  const result =
+    JSON.parse(
+      rawOutput
+    ) as AltTextResponse;
+
+  const imageAlt =
+    result.image_alt?.trim();
+
+  if (!imageAlt) {
+    throw new Error(
+      "Le texte ALT généré est vide."
+    );
+  }
+
+  return imageAlt;
 }
 
 export async function POST(
@@ -243,6 +340,11 @@ Le résultat doit avant tout être une bonne illustration du sujet :
         "base64"
       );
 
+    const imageAlt =
+      await generateImageAlt(
+        imageBase64
+      );
+
     const fileName =
       `publications/${id}/${Date.now()}.png`;
 
@@ -290,6 +392,7 @@ Le résultat doit avant tout être une bonne illustration du sujet :
       .from("publications")
       .update({
         image_url: imageUrl,
+        image_alt: imageAlt,
         updated_at:
           new Date().toISOString(),
       })
@@ -303,15 +406,16 @@ Le résultat doit avant tout être une bonne illustration du sujet :
     ) {
       throw new Error(
         updateError?.message ||
-          "Le visuel a été créé mais son URL n’a pas pu être enregistrée."
+          "Le visuel a été créé mais ses informations n’ont pas pu être enregistrées."
       );
     }
 
     return NextResponse.json({
       success: true,
       message:
-        "Visuel généré et enregistré.",
+        "Visuel et texte ALT générés et enregistrés.",
       image_url: imageUrl,
+      image_alt: imageAlt,
       publication:
         updatedPublication,
       visual_title: visualTitle,

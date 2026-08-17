@@ -119,6 +119,13 @@ export default function PublicationEditor({
     publication.image_url ?? ""
   );
 
+  const [
+    imageAlt,
+    setImageAlt,
+  ] = useState(
+    publication.image_alt ?? ""
+  );
+
   const [subject, setSubject] =
     useState(
       publication.subject ?? ""
@@ -260,6 +267,8 @@ export default function PublicationEditor({
         metaDescription,
       image_url:
         imageUrl || null,
+      image_alt:
+        imageAlt || null,
       subject,
       preview_text:
         previewText,
@@ -634,12 +643,22 @@ export default function PublicationEditor({
         syncFields(
           result.publication
         );
-      } else if (
-        result.image_url
-      ) {
-        setImageUrl(
+      } else {
+        if (
           result.image_url
-        );
+        ) {
+          setImageUrl(
+            result.image_url
+          );
+        }
+
+        if (
+          result.image_alt
+        ) {
+          setImageAlt(
+            result.image_alt
+          );
+        }
       }
 
       setMessage(
@@ -657,6 +676,28 @@ export default function PublicationEditor({
       );
     } finally {
       setIsGeneratingVisual(false);
+    }
+  }
+
+  async function copyImageAlt() {
+    if (!imageAlt.trim()) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        imageAlt.trim()
+      );
+
+      setError(null);
+      setMessage(
+        "Texte ALT copié dans le presse-papiers."
+      );
+    } catch {
+      setMessage(null);
+      setError(
+        "Impossible de copier automatiquement le texte ALT."
+      );
     }
   }
 
@@ -1109,6 +1150,11 @@ export default function PublicationEditor({
 
     setImageUrl(
       updatedPublication.image_url ??
+        ""
+    );
+
+    setImageAlt(
+      updatedPublication.image_alt ??
         ""
     );
 
@@ -1840,9 +1886,57 @@ export default function PublicationEditor({
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
                   <img
                     src={imageUrl}
-                    alt=""
+                    alt={imageAlt}
                     className="aspect-[3/2] w-full object-cover"
                   />
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-violet-100 bg-white p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-violet-600">
+                        Accessibilité
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                        Texte ALT du visuel
+                      </p>
+                    </div>
+
+                    {imageAlt ? (
+                      <button
+                        type="button"
+                        onClick={
+                          copyImageAlt
+                        }
+                        className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
+                      >
+                        Copier l&apos;ALT
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3">
+                    <TextArea
+                      label="Description alternative"
+                      value={imageAlt}
+                      onChange={
+                        setImageAlt
+                      }
+                      rows={3}
+                      disabled={
+                        !canEdit ||
+                        isBusy
+                      }
+                      tone="border-violet-200 focus:border-violet-500 focus:ring-violet-50"
+                    />
+                  </div>
+
+                  {!imageAlt ? (
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Le texte ALT sera généré automatiquement avec le prochain visuel.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="mt-3 flex justify-end">
