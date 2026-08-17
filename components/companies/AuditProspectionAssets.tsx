@@ -24,6 +24,29 @@ type AuditProspectionAssetsProps = {
     | null;
 };
 
+type ApiResult = {
+  success?: boolean;
+  message?: string;
+
+  image_url?: string;
+
+  attachmentUrl?: string;
+
+  prospection?: {
+    before_image_url?:
+      | string
+      | null;
+
+    after_image_url?:
+      | string
+      | null;
+
+    attachment_url?:
+      | string
+      | null;
+  };
+};
+
 export default function AuditProspectionAssets({
   prospectionId,
   initialBeforeImageUrl,
@@ -72,6 +95,70 @@ export default function AuditProspectionAssets({
     string | null
   >(null);
 
+  async function readApiResponse(
+    response: Response
+  ): Promise<ApiResult> {
+    const raw =
+      await response.text();
+
+    if (!raw.trim()) {
+      throw new Error(
+        response.ok
+          ? "Le serveur a renvoyé une réponse vide."
+          : `Le serveur a renvoyé une erreur ${response.status} sans message.`
+      );
+    }
+
+    try {
+      return JSON.parse(
+        raw
+      ) as ApiResult;
+    } catch {
+      const contentType =
+        response.headers.get(
+          "content-type"
+        );
+
+      console.error(
+        "Réponse API non JSON",
+        {
+          status:
+            response.status,
+
+          statusText:
+            response.statusText,
+
+          contentType,
+
+          body:
+            raw.slice(
+              0,
+              1000
+            ),
+        }
+      );
+
+      if (
+        raw
+          .trim()
+          .startsWith(
+            "<"
+          )
+      ) {
+        throw new Error(
+          `Le serveur a renvoyé une erreur HTTP ${response.status} au lieu d’une réponse JSON. Consultez les logs Vercel de la requête.`
+        );
+      }
+
+      throw new Error(
+        `Réponse serveur invalide (${response.status}) : ${raw.slice(
+          0,
+          300
+        )}`
+      );
+    }
+  }
+
   async function uploadFile(
     kind:
       | "before"
@@ -99,13 +186,18 @@ export default function AuditProspectionAssets({
         await fetch(
           `/api/audit-prospections/${prospectionId}/assets`,
           {
-            method: "POST",
-            body: formData,
+            method:
+              "POST",
+
+            body:
+              formData,
           }
         );
 
       const result =
-        await response.json();
+        await readApiResponse(
+          response
+        );
 
       if (
         !response.ok ||
@@ -113,21 +205,39 @@ export default function AuditProspectionAssets({
       ) {
         throw new Error(
           result.message ??
-            "Impossible d’importer le visuel."
+            `Impossible d’importer le visuel (${response.status}).`
         );
       }
 
       if (
         kind === "before"
       ) {
-        setBeforeImageUrl(
+        const newUrl =
           result.prospection
-            .before_image_url
+            ?.before_image_url;
+
+        if (!newUrl) {
+          throw new Error(
+            "L’image a été importée mais aucune URL n’a été retournée."
+          );
+        }
+
+        setBeforeImageUrl(
+          newUrl
         );
       } else {
-        setAfterImageUrl(
+        const newUrl =
           result.prospection
-            .after_image_url
+            ?.after_image_url;
+
+        if (!newUrl) {
+          throw new Error(
+            "L’image a été importée mais aucune URL n’a été retournée."
+          );
+        }
+
+        setAfterImageUrl(
+          newUrl
         );
       }
 
@@ -136,11 +246,18 @@ export default function AuditProspectionAssets({
       );
 
       router.refresh();
-    } catch (error) {
+    } catch (
+      uploadError
+    ) {
+      console.error(
+        "Erreur import visuel prospection",
+        uploadError
+      );
+
       setError(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue."
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Une erreur est survenue pendant l’import du visuel."
       );
     } finally {
       setLoadingKind(
@@ -154,6 +271,7 @@ export default function AuditProspectionAssets({
       setError(
         "Importez d’abord la capture du site actuel."
       );
+
       return;
     }
 
@@ -174,7 +292,9 @@ export default function AuditProspectionAssets({
         );
 
       const result =
-        await response.json();
+        await readApiResponse(
+          response
+        );
 
       if (
         !response.ok ||
@@ -182,7 +302,7 @@ export default function AuditProspectionAssets({
       ) {
         throw new Error(
           result.message ??
-            "Impossible de générer la proposition visuelle."
+            `Impossible de générer la proposition visuelle (${response.status}).`
         );
       }
 
@@ -206,11 +326,18 @@ export default function AuditProspectionAssets({
       );
 
       router.refresh();
-    } catch (error) {
+    } catch (
+      proposalError
+    ) {
+      console.error(
+        "Erreur génération proposition visuelle",
+        proposalError
+      );
+
       setError(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue."
+        proposalError instanceof Error
+          ? proposalError.message
+          : "Une erreur est survenue pendant la génération de la proposition."
       );
     } finally {
       setLoadingKind(
@@ -220,6 +347,17 @@ export default function AuditProspectionAssets({
   }
 
   async function generatePdf() {
+    if (
+      !beforeImageUrl ||
+      !afterImageUrl
+    ) {
+      setError(
+        "Les deux visuels doivent être disponibles avant de générer le PDF."
+      );
+
+      return;
+    }
+
     setLoadingKind(
       "pdf"
     );
@@ -237,7 +375,9 @@ export default function AuditProspectionAssets({
         );
 
       const result =
-        await response.json();
+        await readApiResponse(
+          response
+        );
 
       if (
         !response.ok ||
@@ -245,20 +385,40 @@ export default function AuditProspectionAssets({
       ) {
         throw new Error(
           result.message ??
-            "Impossible de générer le PDF."
+            `Impossible de générer le PDF (${response.status}).`
+        );
+      }
+
+      const newAttachmentUrl =
+        result.attachmentUrl ??
+        result.prospection
+          ?.attachment_url;
+
+      if (
+        !newAttachmentUrl
+      ) {
+        throw new Error(
+          "Le PDF a été généré mais aucune URL n’a été retournée."
         );
       }
 
       setAttachmentUrl(
-        result.attachmentUrl
+        newAttachmentUrl
       );
 
       router.refresh();
-    } catch (error) {
+    } catch (
+      pdfError
+    ) {
+      console.error(
+        "Erreur génération PDF prospection",
+        pdfError
+      );
+
       setError(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue."
+        pdfError instanceof Error
+          ? pdfError.message
+          : "Une erreur est survenue pendant la génération du PDF."
       );
     } finally {
       setLoadingKind(
@@ -294,6 +454,9 @@ export default function AuditProspectionAssets({
           loading={
             loadingKind ===
             "before"
+          }
+          disabled={
+            isBusy
           }
           onFile={(file) =>
             uploadFile(
@@ -362,7 +525,13 @@ export default function AuditProspectionAssets({
                   : "Générer une proposition LBMedia"}
             </button>
 
-            <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50">
+            <label
+              className={`inline-flex items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition ${
+                isBusy
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer hover:bg-indigo-50"
+              }`}
+            >
               {loadingKind ===
               "after"
                 ? "Import en cours..."
@@ -385,9 +554,7 @@ export default function AuditProspectionAssets({
                       .target
                       .files?.[0];
 
-                  if (
-                    file
-                  ) {
+                  if (file) {
                     uploadFile(
                       "after",
                       file
@@ -473,6 +640,8 @@ type AssetCardProps = {
 
   loading: boolean;
 
+  disabled: boolean;
+
   onFile: (
     file: File
   ) => void;
@@ -482,6 +651,7 @@ function AssetCard({
   title,
   imageUrl,
   loading,
+  disabled,
   onFile,
 }: AssetCardProps) {
   return (
@@ -513,7 +683,13 @@ function AssetCard({
         </div>
       )}
 
-      <label className="mt-4 inline-flex cursor-pointer items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50">
+      <label
+        className={`mt-4 inline-flex items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition ${
+          disabled
+            ? "cursor-not-allowed opacity-50"
+            : "cursor-pointer hover:bg-indigo-50"
+        }`}
+      >
         {loading
           ? "Import en cours..."
           : imageUrl
@@ -524,7 +700,7 @@ function AssetCard({
           type="file"
           accept="image/png,image/jpeg,image/webp"
           disabled={
-            loading
+            disabled
           }
           className="hidden"
           onChange={(
