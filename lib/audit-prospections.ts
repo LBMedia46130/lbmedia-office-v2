@@ -24,6 +24,8 @@ export type AuditProspection = {
 
   sales_angle: string | null;
 
+  before_image_url: string | null;
+  after_image_url: string | null;
   attachment_url: string | null;
 
   sent_at: string | null;
@@ -53,12 +55,34 @@ type UpdateAuditProspectionInput = {
 
   salesAngle?: string | null;
 
+  beforeImageUrl?: string | null;
+  afterImageUrl?: string | null;
   attachmentUrl?: string | null;
 
   sentAt?: string | null;
   followUpAt?: string | null;
   repliedAt?: string | null;
 };
+
+const auditProspectionSelect = `
+  id,
+  company_id,
+  website_audit_id,
+  status,
+  recipient_email,
+  recipient_name,
+  subject,
+  email_content,
+  sales_angle,
+  before_image_url,
+  after_image_url,
+  attachment_url,
+  sent_at,
+  follow_up_at,
+  replied_at,
+  created_at,
+  updated_at
+`;
 
 export async function getAuditProspectionByAuditId(
   websiteAuditId: string
@@ -69,23 +93,7 @@ export async function getAuditProspectionByAuditId(
   } = await supabaseAdmin
     .from("audit_prospections")
     .select(
-      `
-        id,
-        company_id,
-        website_audit_id,
-        status,
-        recipient_email,
-        recipient_name,
-        subject,
-        email_content,
-        sales_angle,
-        attachment_url,
-        sent_at,
-        follow_up_at,
-        replied_at,
-        created_at,
-        updated_at
-      `
+      auditProspectionSelect
     )
     .eq(
       "website_audit_id",
@@ -115,23 +123,7 @@ export async function getCompanyAuditProspections(
   } = await supabaseAdmin
     .from("audit_prospections")
     .select(
-      `
-        id,
-        company_id,
-        website_audit_id,
-        status,
-        recipient_email,
-        recipient_name,
-        subject,
-        email_content,
-        sales_angle,
-        attachment_url,
-        sent_at,
-        follow_up_at,
-        replied_at,
-        created_at,
-        updated_at
-      `
+      auditProspectionSelect
     )
     .eq(
       "company_id",
@@ -164,23 +156,7 @@ export async function createAuditProspection(
   } = await supabaseAdmin
     .from("audit_prospections")
     .select(
-      `
-        id,
-        company_id,
-        website_audit_id,
-        status,
-        recipient_email,
-        recipient_name,
-        subject,
-        email_content,
-        sales_angle,
-        attachment_url,
-        sent_at,
-        follow_up_at,
-        replied_at,
-        created_at,
-        updated_at
-      `
+      auditProspectionSelect
     )
     .eq(
       "website_audit_id",
@@ -206,6 +182,7 @@ export async function createAuditProspection(
     .insert({
       company_id:
         input.companyId,
+
       website_audit_id:
         input.websiteAuditId,
 
@@ -218,23 +195,7 @@ export async function createAuditProspection(
         null,
     })
     .select(
-      `
-        id,
-        company_id,
-        website_audit_id,
-        status,
-        recipient_email,
-        recipient_name,
-        subject,
-        email_content,
-        sales_angle,
-        attachment_url,
-        sent_at,
-        follow_up_at,
-        replied_at,
-        created_at,
-        updated_at
-      `
+      auditProspectionSelect
     )
     .single();
 
@@ -306,6 +267,22 @@ export async function updateAuditProspection(
   }
 
   if (
+    input.beforeImageUrl !==
+    undefined
+  ) {
+    payload.before_image_url =
+      input.beforeImageUrl;
+  }
+
+  if (
+    input.afterImageUrl !==
+    undefined
+  ) {
+    payload.after_image_url =
+      input.afterImageUrl;
+  }
+
+  if (
     input.attachmentUrl !==
     undefined
   ) {
@@ -347,23 +324,7 @@ export async function updateAuditProspection(
       prospectionId
     )
     .select(
-      `
-        id,
-        company_id,
-        website_audit_id,
-        status,
-        recipient_email,
-        recipient_name,
-        subject,
-        email_content,
-        sales_angle,
-        attachment_url,
-        sent_at,
-        follow_up_at,
-        replied_at,
-        created_at,
-        updated_at
-      `
+      auditProspectionSelect
     )
     .single();
 

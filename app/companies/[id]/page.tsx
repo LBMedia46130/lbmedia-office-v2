@@ -9,6 +9,7 @@ import CompanyWebEnrichment from "@/components/companies/CompanyWebEnrichment";
 import DeleteCompanyButton from "@/components/companies/DeleteCompanyButton";
 import AuditProspectionGenerator from "@/components/companies/AuditProspectionGenerator";
 import AuditProspectionEditor from "@/components/companies/AuditProspectionEditor";
+import AuditProspectionAssets from "@/components/companies/AuditProspectionAssets";
 import PipelineBadge from "@/components/ui/PipelineBadge";
 
 import {
@@ -592,6 +593,21 @@ export default async function CompanyPage({
                         </p>
                       </div>
                     )}
+
+                    <AuditProspectionAssets
+                      prospectionId={
+                        latestProspection.id
+                      }
+                      initialBeforeImageUrl={
+                        latestProspection.before_image_url
+                      }
+                      initialAfterImageUrl={
+                        latestProspection.after_image_url
+                      }
+                      initialAttachmentUrl={
+                        latestProspection.attachment_url
+                      }
+                    />
 
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-white px-4 py-4">
                       <div>
