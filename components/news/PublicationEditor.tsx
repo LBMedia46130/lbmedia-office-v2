@@ -1836,12 +1836,25 @@ export default function PublicationEditor({
             </div>
 
             {imageUrl ? (
-              <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
-                <img
-                  src={imageUrl}
-                  alt=""
-                  className="aspect-[3/2] w-full object-cover"
-                />
+              <div className="mt-5">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+                  <img
+                    src={imageUrl}
+                    alt=""
+                    className="aspect-[3/2] w-full object-cover"
+                  />
+                </div>
+
+                <div className="mt-3 flex justify-end">
+                  <a
+                    href={imageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-50"
+                  >
+                    Ouvrir le visuel
+                  </a>
+                </div>
               </div>
             ) : (
               <div className="mt-5 flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-violet-200 bg-white/80 px-6 py-10 text-center">
