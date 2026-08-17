@@ -7,6 +7,7 @@ import CompanyOpportunities from "@/components/companies/CompanyOpportunities";
 import CompanyLegalSearch from "@/components/companies/CompanyLegalSearch";
 import CompanyWebEnrichment from "@/components/companies/CompanyWebEnrichment";
 import DeleteCompanyButton from "@/components/companies/DeleteCompanyButton";
+import AuditProspectionGenerator from "@/components/companies/AuditProspectionGenerator";
 import PipelineBadge from "@/components/ui/PipelineBadge";
 
 import {
@@ -475,7 +476,7 @@ export default async function CompanyPage({
           {latestAudit ? (
             <div className="mt-8 border-t border-slate-200 pt-8">
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-6">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
@@ -505,7 +506,7 @@ export default async function CompanyPage({
                   </div>
 
                   {latestProspection ? (
-                    <div className="shrink-0">
+                    <div className="shrink-0 text-right">
                       <p className="text-sm font-semibold text-slate-800">
                         Prospection créée
                       </p>
@@ -536,47 +537,71 @@ export default async function CompanyPage({
                 </div>
 
                 {latestProspection ? (
-                  <div className="mt-6 grid gap-4 border-t border-indigo-200 pt-5 sm:grid-cols-2 lg:grid-cols-3">
-                    <ProspectionInfo
-                      label="Destinataire"
-                      value={
-                        latestProspection.recipient_email ||
-                        company.email ||
-                        "À renseigner"
-                      }
-                    />
+                  <>
+                    <div className="mt-6 grid gap-4 border-t border-indigo-200 pt-5 sm:grid-cols-2 lg:grid-cols-3">
+                      <ProspectionInfo
+                        label="Destinataire"
+                        value={
+                          latestProspection.recipient_email ||
+                          company.email ||
+                          "À renseigner"
+                        }
+                      />
 
-                    <ProspectionInfo
-                      label="Objet"
-                      value={
-                        latestProspection.subject ||
-                        "À générer"
-                      }
-                    />
+                      <ProspectionInfo
+                        label="Objet"
+                        value={
+                          latestProspection.subject ||
+                          "À générer"
+                        }
+                      />
 
-                    <ProspectionInfo
-                      label="Angle commercial"
-                      value={
-                        latestProspection.sales_angle ||
-                        "À définir"
-                      }
-                    />
-                  </div>
-                ) : null}
+                      <ProspectionInfo
+                        label="Angle commercial"
+                        value={
+                          latestProspection.sales_angle ||
+                          "À définir"
+                        }
+                      />
+                    </div>
 
-                {latestProspection ? (
-                  <div className="mt-5 rounded-xl border border-indigo-100 bg-white px-4 py-4">
-                    <p className="text-sm font-semibold text-slate-800">
-                      Prochaine étape
-                    </p>
+                    {latestProspection.email_content ? (
+                      <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-5">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-500">
+                          Email proposé
+                        </p>
 
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      Générer l’angle commercial
-                      et le mail de prospection
-                      directement à partir des
-                      résultats de l’audit.
-                    </p>
-                  </div>
+                        <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                          {
+                            latestProspection.email_content
+                          }
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-white px-4 py-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {latestProspection.email_content
+                            ? "Le message peut être régénéré si nécessaire."
+                            : "La prospection est prête à être rédigée."}
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          Pénélope utilisera
+                          directement les
+                          observations et priorités
+                          du dernier audit.
+                        </p>
+                      </div>
+
+                      <AuditProspectionGenerator
+                        prospectionId={
+                          latestProspection.id
+                        }
+                      />
+                    </div>
+                  </>
                 ) : null}
               </div>
             </div>
