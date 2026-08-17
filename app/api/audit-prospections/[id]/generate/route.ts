@@ -216,15 +216,17 @@ export async function POST(
     }
 
     const prompt = `
-Tu prépares un email de prospection commerciale pour LBMedia.
+Tu écris un premier email de prise de contact pour LBMedia.
 
-CONTEXTE :
+Ce message est destiné à une entreprise dont LBMedia a réellement consulté et pré-audité le site internet.
 
-LBMedia accompagne les entreprises dans la création, la refonte et l'optimisation de leur site internet, ainsi que dans leur visibilité sur Google et dans les moteurs et assistants IA.
+L'AUDIT EST UNE SOURCE DE RÉFLEXION INTERNE.
 
-Cet email fait suite à un pré-audit réel du site internet du prospect.
+Le destinataire ne doit pas avoir l'impression de recevoir un rapport d'audit automatisé.
 
-ENTREPRISE :
+==================================================
+ENTREPRISE
+==================================================
 
 Nom :
 ${company.name}
@@ -250,9 +252,11 @@ ${company.target_audience ?? "Non renseignée"}
 Zone géographique :
 ${company.geographic_area ?? "Non renseignée"}
 
-AUDIT RÉALISÉ :
+==================================================
+OBSERVATIONS INTERNES ISSUES DU PRÉ-AUDIT
+==================================================
 
-URL :
+Site :
 ${audit.website_url}
 
 Pages analysées :
@@ -280,7 +284,7 @@ SYNTHÈSE :
 
 ${audit.summary}
 
-POINTS FORTS OBSERVÉS :
+POINTS FORTS :
 
 ${
   audit.strengths.length
@@ -293,7 +297,7 @@ ${
     : "- Aucun élément renseigné"
 }
 
-POINTS PERFECTIBLES OBSERVÉS :
+POINTS PERFECTIBLES :
 
 ${
   audit.weaknesses.length
@@ -306,7 +310,7 @@ ${
     : "- Aucun élément renseigné"
 }
 
-PRIORITÉS IDENTIFIÉES :
+PRIORITÉS :
 
 ${
   audit.priorities.length
@@ -332,120 +336,271 @@ ${
     : "- Aucune limitation renseignée"
 }
 
-OBJECTIF :
+==================================================
+CE QUE TU DOIS PRODUIRE
+==================================================
 
-Transformer cet audit en une prise de contact commerciale pertinente.
-
-Tu dois produire :
-
-1. Un angle commercial.
+1. Un angle commercial INTERNE à LBMedia.
 2. Un objet d'email.
-3. Le corps de l'email.
+3. Un email de premier contact.
 
-ANGLE COMMERCIAL :
+==================================================
+ANGLE COMMERCIAL
+==================================================
 
-Choisis UN angle principal.
+L'angle commercial ne sera pas envoyé au prospect.
 
-Il doit être fondé sur un besoin réellement visible dans l'audit et suffisamment important pour justifier une prise de contact.
+Il doit expliquer simplement à LBMedia :
 
-Ne cherche pas systématiquement à vendre une refonte complète.
+- pourquoi ce prospect mérite d'être contacté ;
+- quelle amélioration principale semble pertinente ;
+- quel bénéfice potentiel peut être évoqué.
 
-Selon le diagnostic, l'approche peut concerner par exemple :
+Choisis UN SEUL angle principal.
 
-- l'amélioration de la conversion ;
-- la clarification du positionnement ;
-- l'optimisation SEO ;
-- la visibilité locale ;
-- la visibilité dans les moteurs et assistants IA ;
-- l'amélioration de certaines pages ;
-- une optimisation ciblée du site existant.
+Ne transforme pas automatiquement chaque audit en projet de refonte.
+
+Une optimisation ciblée peut être beaucoup plus pertinente.
+
+==================================================
+PHILOSOPHIE DE L'EMAIL
+==================================================
+
+Imagine qu'un professionnel de LBMedia a passé quelques minutes sur le site, a remarqué quelque chose d'intéressant et décide d'écrire personnellement au dirigeant.
+
+Ce n'est PAS :
+
+- un rapport d'audit ;
+- une campagne emailing ;
+- une démonstration d'expertise ;
+- une proposition commerciale ;
+- une liste de problèmes ;
+- un discours de consultant SEO.
+
+Le message doit donner cette impression :
+
+"J'ai regardé votre site. Il y a déjà de bonnes choses. J'ai remarqué une piste qui pourrait être intéressante. J'ai pris le temps d'imaginer quelque chose de concret pour vous."
+
+==================================================
+TON
+==================================================
+
+Le ton doit être :
+
+- humain ;
+- professionnel ;
+- naturel ;
+- cordial ;
+- sobre ;
+- personnalisé ;
+- curieux ;
+- respectueux du travail déjà réalisé.
+
+Écris comme une vraie personne.
+
+Privilégie des phrases simples.
+
+Évite le jargon marketing et technique.
+
+==================================================
+INTERDICTIONS
+==================================================
+
+Ne commence jamais par :
+
+"Je me permets de vous contacter"
+
+"Dans le cadre de notre activité"
+
+"Nous accompagnons..."
+
+"Suite à un audit de votre site"
+
+"Votre site présente plusieurs axes d'amélioration"
+
+Ne parle pas de "score".
+
+Ne donne aucune note.
+
+Ne parle pas de "pré-audit".
+
+Ne parle pas de "diagnostic".
+
+Ne parle pas de "faiblesses".
+
+Ne parle pas de "problèmes".
+
+Ne parle pas de "leviers".
+
+Évite autant que possible dans le mail :
+
+- conversion ;
+- SEO ;
+- GEO ;
+- réassurance ;
+- données structurées ;
+- FAQ structurée ;
+- optimisation sémantique ;
+- parcours utilisateur ;
+- CTA.
+
+Ces notions peuvent guider ton raisonnement mais ne doivent pas transformer le mail en rapport technique.
+
+==================================================
+UTILISATION DES OBSERVATIONS
+==================================================
+
+Choisis seulement UNE observation principale, éventuellement accompagnée d'un point positif.
+
+Ne récite jamais plusieurs éléments de l'audit.
+
+Transforme l'observation technique en bénéfice compréhensible.
+
+Exemple de logique :
+
+INTERNE :
+"Les services pourraient être davantage explicités."
 
 EMAIL :
+"En parcourant le site, je me suis dit qu'on pourrait probablement rendre certaines prestations encore plus immédiatement compréhensibles pour quelqu'un qui vous découvre."
 
-Le mail doit ressembler à un véritable email écrit personnellement par un professionnel qui a pris le temps de regarder le site.
+INTERNE :
+"Les preuves clients sont peu visibles."
 
-Il ne doit surtout pas ressembler à une campagne de prospection automatisée.
+EMAIL :
+"Votre activité est bien présentée, mais je pense qu'on pourrait encore mieux mettre en valeur l'expérience et les réalisations derrière l'entreprise."
 
-TON :
+==================================================
+POSITIONNEMENT COMMERCIAL
+==================================================
 
-- professionnel ;
-- humain ;
-- direct ;
-- cordial ;
-- mature ;
-- simple ;
-- personnalisé ;
-- jamais agressif ;
-- jamais alarmiste ;
-- jamais condescendant.
+LBMedia ne doit pas apparaître comme une agence qui cherche à vendre une refonte à tout prix.
 
-IMPORTANT :
+Le message peut parfaitement proposer :
 
-Ne commence pas par :
-"Je me permets de vous contacter".
+- une amélioration ciblée ;
+- une évolution de certaines pages ;
+- une meilleure mise en valeur de l'existant ;
+- une piste graphique ou éditoriale ;
+- une optimisation de la visibilité ;
+- une réflexion sur la façon dont le site présente l'entreprise.
 
-Évite également les formulations génériques de prospection telles que :
-"Dans le cadre de notre activité..."
-"Nous accompagnons de nombreuses entreprises..."
-"Votre site présente plusieurs axes d'amélioration..."
+Ne promets aucun résultat chiffré.
 
-Ne fais pas une liste de tous les défauts.
+N'affirme jamais qu'une modification "augmentera les contacts".
 
-Ne récite pas l'audit.
+Utilise plutôt :
 
-Ne surcharge pas le mail de vocabulaire SEO ou technique.
+"pourrait faciliter..."
 
-Ne prétends jamais avoir mesuré ce qui figure dans les limites du pré-audit.
+"permettrait de mieux..."
 
-Ne critique jamais brutalement le travail existant.
+"pourrait renforcer..."
 
-Commence plutôt par montrer naturellement que le site a réellement été consulté.
+"mériterait peut-être..."
 
-Mentionne un ou deux éléments maximum issus de l'audit.
+"je pense qu'il y aurait quelque chose d'intéressant à faire..."
 
-Tu peux reconnaître un point positif du site lorsqu'il permet d'introduire naturellement l'amélioration proposée.
+==================================================
+FUTURE PRÉSENTATION VISUELLE
+==================================================
 
-Le prospect doit comprendre :
-- pourquoi LBMedia le contacte ;
-- ce qui a attiré notre attention ;
-- quel bénéfice concret pourrait être obtenu ;
-- pourquoi cela mérite éventuellement une discussion.
+LBMedia pourra joindre à terme un petit document montrant visuellement une piste d'amélioration du site.
 
-Le but du premier email n'est PAS de vendre immédiatement une prestation.
+Pour cette génération, NE DIS PAS qu'une pièce jointe est présente.
 
-Le but est d'obtenir une réponse ou d'ouvrir une conversation.
+En revanche, tu peux préparer naturellement le terrain avec une formulation telle que :
 
-PIÈCE JOINTE :
+"J'ai d'ailleurs imaginé une piste assez concrète."
 
-Une présentation visuelle pourra être jointe ultérieurement à cet email.
+ou :
 
-Ne dis pas qu'une pièce jointe est présente pour le moment.
+"Plutôt que de vous faire un long discours, j'ai préféré réfléchir à quelque chose de concret."
 
-SIGNATURE :
+Uniquement si cela s'intègre naturellement.
+
+==================================================
+APPEL À L'ACTION
+==================================================
+
+Le but est d'obtenir une réponse, pas de forcer un rendez-vous.
+
+Évite les appels à l'action commerciaux comme :
+
+"Réservez un créneau"
+
+"Êtes-vous disponible 15 minutes ?"
+
+"Souhaitez-vous planifier un rendez-vous ?"
+
+Préfère une ouverture légère :
+
+"Si le sujet vous intéresse, je serais ravi d'en échanger avec vous."
+
+"Si vous êtes curieux de voir ce que j'ai en tête, je peux vous le montrer."
+
+"Si cela vous parle, nous pouvons bien sûr en discuter."
+
+Le tutoiement est interdit.
+
+==================================================
+LONGUEUR
+==================================================
+
+Environ 100 à 150 mots.
+
+Mieux vaut un email court et crédible qu'un email exhaustif.
+
+==================================================
+OBJET
+==================================================
+
+L'objet doit sembler avoir été écrit spécialement pour cette entreprise.
+
+Court.
+
+Sobre.
+
+Curieux sans être racoleur.
+
+Il ne doit pas ressembler à une newsletter ou une campagne marketing.
+
+INTERDIT :
+
+"Audit de votre site"
+
+"Proposition commerciale"
+
+"3 actions pour..."
+
+"Améliorez..."
+
+"Boostez..."
+
+"Optimisez..."
+
+"Votre visibilité"
+
+"Votre SEO"
+
+==================================================
+SIGNATURE
+==================================================
 
 Ne génère aucune signature.
-LBMedia Office ajoutera la signature séparément.
 
-LONGUEUR :
+LBMedia Office l'ajoutera ultérieurement.
 
-Environ 120 à 180 mots maximum pour le corps du mail.
-
-OBJET :
-
-Court, naturel et non publicitaire.
-
-Évite :
-"Audit de votre site"
-"Proposition commerciale"
-"Améliorez votre visibilité"
-"Offre LBMedia"
+==================================================
+FORMAT DE SORTIE
+==================================================
 
 Retourne UNIQUEMENT cet objet JSON valide :
 
 {
-  "salesAngle": "Résumé interne en une ou deux phrases de l'angle commercial choisi.",
-  "subject": "Objet de l'email",
-  "emailContent": "Corps complet de l'email sans signature."
+  "salesAngle": "Angle commercial interne en une ou deux phrases.",
+  "subject": "Objet naturel et personnalisé",
+  "emailContent": "Corps complet du mail sans signature."
 }
 `.trim();
 
@@ -460,7 +615,7 @@ Retourne UNIQUEMENT cet objet JSON valide :
               "system",
 
             content:
-              "Tu es un consultant commercial senior de LBMedia. Tu transformes un diagnostic web réel en prise de contact personnalisée, sobre et crédible. Tu ne fais jamais de prospection agressive et tu n'inventes aucune observation.",
+              "Tu écris pour LBMedia des prises de contact commerciales très personnalisées. Ton travail doit ressembler à un email réellement écrit après avoir consulté le site de l'entreprise, jamais à une prospection automatisée ou à un rapport d'audit.",
           },
           {
             role:
