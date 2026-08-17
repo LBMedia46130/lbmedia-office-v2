@@ -50,7 +50,18 @@ type ApiResult = {
 const MAX_UPLOAD_BYTES =
   2.5 * 1024 * 1024;
 
-const MAX_IMAGE_DIMENSION =
+/*
+ * Pour une capture de site pleine page,
+ * la largeur est la dimension importante.
+ *
+ * On conserve la hauteur proportionnelle
+ * afin de ne pas écraser toute la page
+ * dans une image minuscule.
+ */
+const MAX_SCREENSHOT_WIDTH =
+  1600;
+
+const MAX_REGULAR_DIMENSION =
   2400;
 
 const JPEG_QUALITIES = [
@@ -58,6 +69,7 @@ const JPEG_QUALITIES = [
   0.8,
   0.72,
   0.64,
+  0.56,
 ];
 
 export default function AuditProspectionAssets({
@@ -173,7 +185,10 @@ export default function AuditProspectionAssets({
   }
 
   async function prepareImageForUpload(
-    file: File
+    file: File,
+    kind:
+      | "before"
+      | "after"
   ): Promise<File> {
     if (
       !file.type.startsWith(
@@ -186,46 +201,92 @@ export default function AuditProspectionAssets({
     }
 
     const image =
-      await loadImage(file);
+      await loadImage(
+        file
+      );
 
-    let width =
+    const originalWidth =
       image.naturalWidth;
 
-    let height =
+    const originalHeight =
       image.naturalHeight;
 
     if (
-      width <= 0 ||
-      height <= 0
+      originalWidth <= 0 ||
+      originalHeight <= 0
     ) {
       throw new Error(
         "Impossible de lire les dimensions de l’image."
       );
     }
 
-    const largestDimension =
-      Math.max(
-        width,
-        height
-      );
+    let width =
+      originalWidth;
 
+    let height =
+      originalHeight;
+
+    /*
+     * "before" correspond généralement
+     * à une capture verticale complète
+     * d'un site.
+     *
+     * Dans ce cas on limite uniquement
+     * la largeur. La hauteur reste
+     * proportionnelle.
+     */
     if (
-      largestDimension >
-      MAX_IMAGE_DIMENSION
+      kind === "before"
     ) {
-      const ratio =
-        MAX_IMAGE_DIMENSION /
-        largestDimension;
+      if (
+        width >
+        MAX_SCREENSHOT_WIDTH
+      ) {
+        const ratio =
+          MAX_SCREENSHOT_WIDTH /
+          width;
 
-      width =
-        Math.round(
-          width * ratio
+        width =
+          MAX_SCREENSHOT_WIDTH;
+
+        height =
+          Math.round(
+            height *
+              ratio
+          );
+      }
+    } else {
+      /*
+       * Une proposition visuelle classique
+       * reste limitée sur sa plus grande
+       * dimension.
+       */
+      const largestDimension =
+        Math.max(
+          width,
+          height
         );
 
-      height =
-        Math.round(
-          height * ratio
-        );
+      if (
+        largestDimension >
+        MAX_REGULAR_DIMENSION
+      ) {
+        const ratio =
+          MAX_REGULAR_DIMENSION /
+          largestDimension;
+
+        width =
+          Math.round(
+            width *
+              ratio
+          );
+
+        height =
+          Math.round(
+            height *
+              ratio
+          );
+      }
     }
 
     let currentWidth =
@@ -234,17 +295,54 @@ export default function AuditProspectionAssets({
     let currentHeight =
       height;
 
-    /*
-     * Plusieurs tentatives sont possibles :
-     * d'abord en jouant sur la qualité JPEG,
-     * puis en réduisant encore les dimensions
-     * si l'image reste trop volumineuse.
-     */
     for (
       let resizeAttempt = 0;
-      resizeAttempt < 4;
+      resizeAttempt < 5;
       resizeAttempt += 1
     ) {
+      /*
+       * Protection contre des captures
+       * exceptionnellement longues.
+       *
+       * Les navigateurs ont eux-mêmes
+       * des limites de taille de canvas.
+       */
+      const totalPixels =
+        currentWidth *
+        currentHeight;
+
+      const MAX_CANVAS_PIXELS =
+        30_000_000;
+
+      if (
+        totalPixels >
+        MAX_CANVAS_PIXELS
+      ) {
+        const pixelRatio =
+          Math.sqrt(
+            MAX_CANVAS_PIXELS /
+              totalPixels
+          );
+
+        currentWidth =
+          Math.max(
+            900,
+            Math.round(
+              currentWidth *
+                pixelRatio
+            )
+          );
+
+        currentHeight =
+          Math.max(
+            900,
+            Math.round(
+              currentHeight *
+                pixelRatio
+            )
+          );
+      }
+
       const canvas =
         document.createElement(
           "canvas"
@@ -267,11 +365,6 @@ export default function AuditProspectionAssets({
         );
       }
 
-      /*
-       * Fond blanc avant conversion JPEG.
-       * Cela évite un fond noir si le PNG
-       * d'origine contient de la transparence.
-       */
       context.fillStyle =
         "#ffffff";
 
@@ -311,6 +404,30 @@ export default function AuditProspectionAssets({
             ) ||
             "capture";
 
+          console.info(
+            "Image optimisée",
+            {
+              kind,
+
+              originalWidth,
+              originalHeight,
+
+              optimizedWidth:
+                currentWidth,
+
+              optimizedHeight:
+                currentHeight,
+
+              originalSize:
+                file.size,
+
+              optimizedSize:
+                blob.size,
+
+              quality,
+            }
+          );
+
           return new File(
             [
               blob,
@@ -327,27 +444,48 @@ export default function AuditProspectionAssets({
         }
       }
 
-      currentWidth =
+      /*
+       * Si même le JPEG le plus compressé
+       * dépasse encore notre objectif,
+       * on réduit progressivement la largeur.
+       *
+       * La hauteur suit toujours le même ratio.
+       */
+      const nextWidth =
         Math.max(
-          800,
+          900,
           Math.round(
             currentWidth *
-              0.78
+              0.82
           )
         );
 
+      if (
+        nextWidth ===
+        currentWidth
+      ) {
+        break;
+      }
+
+      const ratio =
+        nextWidth /
+        currentWidth;
+
+      currentWidth =
+        nextWidth;
+
       currentHeight =
         Math.max(
-          800,
+          900,
           Math.round(
             currentHeight *
-              0.78
+              ratio
           )
         );
     }
 
     throw new Error(
-      "La capture reste trop volumineuse après optimisation. Essayez avec une image légèrement moins grande."
+      "La capture reste trop volumineuse après optimisation. Essayez avec une capture légèrement moins grande."
     );
   }
 
@@ -357,13 +495,19 @@ export default function AuditProspectionAssets({
       | "after",
     file: File
   ) {
-    setLoadingKind(kind);
-    setError(null);
+    setLoadingKind(
+      kind
+    );
+
+    setError(
+      null
+    );
 
     try {
       const preparedFile =
         await prepareImageForUpload(
-          file
+          file,
+          kind
         );
 
       console.info(
@@ -427,7 +571,8 @@ export default function AuditProspectionAssets({
       }
 
       if (
-        kind === "before"
+        kind ===
+        "before"
       ) {
         const newUrl =
           result.prospection
@@ -458,10 +603,6 @@ export default function AuditProspectionAssets({
         );
       }
 
-      /*
-       * Toute modification d'un visuel
-       * invalide le PDF précédemment généré.
-       */
       setAttachmentUrl(
         null
       );
@@ -488,7 +629,9 @@ export default function AuditProspectionAssets({
   }
 
   async function generateProposal() {
-    if (!beforeImageUrl) {
+    if (
+      !beforeImageUrl
+    ) {
       setError(
         "Importez d’abord la capture du site actuel."
       );
@@ -500,7 +643,9 @@ export default function AuditProspectionAssets({
       "proposal"
     );
 
-    setError(null);
+    setError(
+      null
+    );
 
     try {
       const response =
@@ -583,7 +728,9 @@ export default function AuditProspectionAssets({
       "pdf"
     );
 
-    setError(null);
+    setError(
+      null
+    );
 
     try {
       const response =
@@ -649,7 +796,8 @@ export default function AuditProspectionAssets({
   }
 
   const isBusy =
-    loadingKind !== null;
+    loadingKind !==
+    null;
 
   return (
     <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-5">
@@ -894,7 +1042,9 @@ function AssetCard({
             src={
               imageUrl
             }
-            alt={title}
+            alt={
+              title
+            }
             className="h-48 w-full object-contain"
           />
         </a>
