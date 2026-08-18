@@ -119,7 +119,7 @@ export default function CompaniesExplorer({
     setAlphabetFilter,
   ] =
     useState<AlphabetFilter>(
-      "all"
+      "A"
     );
 
   const activeCount = useMemo(
