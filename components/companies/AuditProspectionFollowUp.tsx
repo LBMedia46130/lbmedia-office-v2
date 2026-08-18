@@ -474,62 +474,6 @@ export default function AuditProspectionFollowUp({
       return;
     }
 
-    const firstConfirmation =
-      window.confirm(
-        [
-          "ENVOI RÉEL DE LA RELANCE",
-          "",
-          `Destinataire : ${recipientEmail}`,
-          "",
-          `Objet : ${subject}`,
-          "",
-          "La signature LBMedia sera ajoutée automatiquement.",
-          "",
-          "Aucun PDF ne sera joint.",
-          "",
-          "Voulez-vous continuer ?",
-        ].join("\n")
-      );
-
-    if (
-      !firstConfirmation
-    ) {
-      return;
-    }
-
-    const typedEmail =
-      window.prompt(
-        [
-          "CONFIRMATION DE SÉCURITÉ",
-          "",
-          "Recopiez exactement l’adresse du destinataire :",
-          "",
-          recipientEmail,
-        ].join("\n")
-      );
-
-    if (
-      typedEmail === null
-    ) {
-      return;
-    }
-
-    if (
-      typedEmail
-        .trim()
-        .toLowerCase() !==
-      recipientEmail
-        .toLowerCase()
-    ) {
-      setError(
-        "Envoi annulé : l’adresse saisie ne correspond pas au destinataire."
-      );
-
-      setMessage(null);
-
-      return;
-    }
-
     setIsSending(true);
     setMessage(null);
     setError(null);

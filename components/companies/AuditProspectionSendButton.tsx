@@ -506,56 +506,6 @@ export default function AuditProspectionSendButton({
       return;
     }
 
-    const firstConfirmation =
-      window.confirm(
-        [
-          "ENVOI RÉEL D’UN EMAIL",
-          "",
-          `Destinataire réellement enregistré :`,
-          `${recipientEmail}`,
-          "",
-          "Le PDF actuellement enregistré sera joint.",
-          "",
-          "Voulez-vous continuer ?",
-        ].join("\n")
-      );
-
-    if (
-      !firstConfirmation
-    ) {
-      return;
-    }
-
-    const typedEmail =
-      window.prompt(
-        [
-          "CONFIRMATION DE SÉCURITÉ",
-          "",
-          "Recopiez exactement l’adresse email du destinataire pour autoriser l’envoi :",
-          "",
-          `${recipientEmail}`,
-        ].join("\n")
-      );
-
-    if (
-      typedEmail === null
-    ) {
-      return;
-    }
-
-    if (
-      typedEmail
-        .trim()
-        .toLowerCase() !==
-      normalizedRecipient
-    ) {
-      setError(
-        "Envoi annulé : l’adresse saisie lors de la confirmation ne correspond pas au destinataire enregistré."
-      );
-
-      return;
-    }
-
     setIsSending(true);
     setMessage(null);
     setError(null);
