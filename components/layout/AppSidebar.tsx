@@ -1,7 +1,15 @@
 "use client";
 
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+
+import {
+  usePathname,
+} from "next/navigation";
 
 type NavigationItem = {
   label: string;
@@ -19,10 +27,37 @@ function DashboardIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
+      <rect
+        x="3"
+        y="3"
+        width="7"
+        height="7"
+        rx="1"
+      />
+
+      <rect
+        x="14"
+        y="3"
+        width="7"
+        height="7"
+        rx="1"
+      />
+
+      <rect
+        x="3"
+        y="14"
+        width="7"
+        height="7"
+        rx="1"
+      />
+
+      <rect
+        x="14"
+        y="14"
+        width="7"
+        height="7"
+        rx="1"
+      />
     </svg>
   );
 }
@@ -37,7 +72,14 @@ function NewsIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <rect
+        x="4"
+        y="3"
+        width="16"
+        height="18"
+        rx="2"
+      />
+
       <path d="M8 7h8" />
       <path d="M8 11h8" />
       <path d="M8 15h5" />
@@ -55,7 +97,14 @@ function PlanningIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="16"
+        rx="2"
+      />
+
       <path d="M16 3v4" />
       <path d="M8 3v4" />
       <path d="M3 10h18" />
@@ -73,7 +122,14 @@ function CalendarIcon() {
       className="h-5 w-5"
       aria-hidden="true"
     >
-      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="16"
+        rx="2"
+      />
+
       <path d="M16 3v4" />
       <path d="M8 3v4" />
       <path d="M3 10h18" />
@@ -123,50 +179,176 @@ function AuditIcon() {
   );
 }
 
-const navigation: NavigationItem[] = [
+function ChevronIcon({
+  open,
+}: {
+  open: boolean;
+}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className={[
+        "h-4 w-4 transition-transform duration-200",
+        open
+          ? "rotate-90"
+          : "",
+      ].join(" ")}
+      aria-hidden="true"
+    >
+      <path d="M7 5l5 5-5 5" />
+    </svg>
+  );
+}
+
+const navigationBeforeCompanies: NavigationItem[] = [
   {
-    label: "Tableau de bord",
-    href: "/",
-    icon: <DashboardIcon />,
+    label:
+      "Tableau de bord",
+    href:
+      "/",
+    icon:
+      <DashboardIcon />,
   },
   {
-    label: "Actualités",
-    href: "/news",
-    icon: <NewsIcon />,
+    label:
+      "Actualités",
+    href:
+      "/news",
+    icon:
+      <NewsIcon />,
   },
   {
-    label: "Planning",
-    href: "/planning",
-    icon: <PlanningIcon />,
+    label:
+      "Planning",
+    href:
+      "/planning",
+    icon:
+      <PlanningIcon />,
   },
   {
-    label: "Calendrier",
-    href: "/calendar",
-    icon: <CalendarIcon />,
+    label:
+      "Calendrier",
+    href:
+      "/calendar",
+    icon:
+      <CalendarIcon />,
   },
+];
+
+const navigationAfterCompanies: NavigationItem[] = [
   {
-    label: "Entreprises",
-    href: "/companies",
-    icon: <CompaniesIcon />,
-  },
-  {
-    label: "Audit de sites",
-    href: "/audit",
-    icon: <AuditIcon />,
+    label:
+      "Audit de sites",
+    href:
+      "/audit",
+    icon:
+      <AuditIcon />,
   },
 ];
 
 export default function AppSidebar() {
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
 
-  function isActive(href: string) {
-    if (href === "/") {
-      return pathname === "/";
+  const companiesSectionActive =
+    pathname ===
+      "/companies" ||
+    pathname.startsWith(
+      "/companies/"
+    );
+
+  const [
+    companiesOpen,
+    setCompaniesOpen,
+  ] =
+    useState(
+      companiesSectionActive
+    );
+
+  useEffect(() => {
+    if (
+      companiesSectionActive
+    ) {
+      setCompaniesOpen(
+        true
+      );
+    }
+  }, [
+    companiesSectionActive,
+  ]);
+
+  function isActive(
+    href: string
+  ) {
+    if (
+      href === "/"
+    ) {
+      return (
+        pathname === "/"
+      );
     }
 
     return (
       pathname === href ||
-      pathname.startsWith(`${href}/`)
+      pathname.startsWith(
+        `${href}/`
+      )
+    );
+  }
+
+  function isExactActive(
+    href: string
+  ) {
+    return (
+      pathname === href
+    );
+  }
+
+  function renderNavigationItem(
+    item: NavigationItem
+  ) {
+    const active =
+      isActive(
+        item.href
+      );
+
+    return (
+      <Link
+        key={
+          item.href
+        }
+        href={
+          item.href
+        }
+        className={[
+          "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200",
+          active
+            ? "bg-gradient-to-r from-blue-500/25 to-cyan-400/10 text-white ring-1 ring-inset ring-white/10 shadow-sm"
+            : "text-slate-300 hover:bg-white/7 hover:text-white",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "transition-colors",
+            active
+              ? "text-cyan-300"
+              : "text-slate-400 group-hover:text-blue-300",
+          ].join(" ")}
+        >
+          {item.icon}
+        </span>
+
+        <span>
+          {item.label}
+        </span>
+
+        {active ? (
+          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.8)]" />
+        ) : null}
+      </Link>
     );
   }
 
@@ -195,42 +377,116 @@ export default function AppSidebar() {
         </p>
 
         <nav className="mt-4 space-y-1.5">
-          {navigation.map((item) => {
-            const active =
-              isActive(item.href);
+          {navigationBeforeCompanies.map(
+            renderNavigationItem
+          )}
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
+          <div>
+            <button
+              type="button"
+              onClick={() =>
+                setCompaniesOpen(
+                  (
+                    current
+                  ) =>
+                    !current
+                )
+              }
+              className={[
+                "group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200",
+                companiesSectionActive
+                  ? "bg-gradient-to-r from-blue-500/25 to-cyan-400/10 text-white ring-1 ring-inset ring-white/10 shadow-sm"
+                  : "text-slate-300 hover:bg-white/7 hover:text-white",
+              ].join(" ")}
+              aria-expanded={
+                companiesOpen
+              }
+            >
+              <span
                 className={[
-                  "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200",
-                  active
-                    ? "bg-gradient-to-r from-blue-500/25 to-cyan-400/10 text-white ring-1 ring-inset ring-white/10 shadow-sm"
-                    : "text-slate-300 hover:bg-white/7 hover:text-white",
+                  "transition-colors",
+                  companiesSectionActive
+                    ? "text-cyan-300"
+                    : "text-slate-400 group-hover:text-blue-300",
                 ].join(" ")}
               >
-                <span
+                <CompaniesIcon />
+              </span>
+
+              <span>
+                Entreprises
+              </span>
+
+              <span className="ml-auto text-slate-400">
+                <ChevronIcon
+                  open={
+                    companiesOpen
+                  }
+                />
+              </span>
+            </button>
+
+            {companiesOpen ? (
+              <div className="ml-5 mt-1.5 space-y-1 border-l border-white/10 pl-4">
+                <Link
+                  href="/companies"
                   className={[
-                    "transition-colors",
-                    active
-                      ? "text-cyan-300"
-                      : "text-slate-400 group-hover:text-blue-300",
+                    "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                    isExactActive(
+                      "/companies"
+                    )
+                      ? "bg-white/10 text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white",
                   ].join(" ")}
                 >
-                  {item.icon}
-                </span>
+                  <span
+                    className={[
+                      "h-1.5 w-1.5 rounded-full",
+                      isExactActive(
+                        "/companies"
+                      )
+                        ? "bg-cyan-300"
+                        : "bg-slate-600",
+                    ].join(" ")}
+                  />
 
-                <span>
-                  {item.label}
-                </span>
+                  <span>
+                    Liste des
+                    entreprises
+                  </span>
+                </Link>
 
-                {active ? (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.8)]" />
-                ) : null}
-              </Link>
-            );
-          })}
+                <Link
+                  href="/companies/prospection"
+                  className={[
+                    "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                    pathname ===
+                      "/companies/prospection"
+                      ? "bg-white/10 text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white",
+                  ].join(" ")}
+                >
+                  <span
+                    className={[
+                      "h-1.5 w-1.5 rounded-full",
+                      pathname ===
+                        "/companies/prospection"
+                        ? "bg-cyan-300"
+                        : "bg-slate-600",
+                    ].join(" ")}
+                  />
+
+                  <span>
+                    Prospection
+                  </span>
+                </Link>
+              </div>
+            ) : null}
+          </div>
+
+          {navigationAfterCompanies.map(
+            renderNavigationItem
+          )}
         </nav>
       </div>
 
