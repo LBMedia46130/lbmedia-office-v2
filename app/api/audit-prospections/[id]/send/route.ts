@@ -13,6 +13,10 @@ import {
 import nodemailer from "nodemailer";
 
 import {
+  createInitialAuditProspectionMessage,
+} from "@/lib/audit-prospection-messages";
+
+import {
   supabaseAdmin,
 } from "@/lib/supabase-admin";
 
@@ -1122,6 +1126,59 @@ export async function POST(
         },
         {
           status: 500,
+        }
+      );
+    }
+
+    /*
+     * Historique commercial indépendant.
+     *
+     * L'envoi SMTP et l'archivage principal ont déjà réussi.
+     * On ajoute maintenant le premier message dans
+     * audit_prospection_messages.
+     *
+     * Une erreur à ce stade ne doit jamais faire croire
+     * que l'e-mail n'a pas été envoyé.
+     */
+    try {
+      await createInitialAuditProspectionMessage({
+        auditProspectionId:
+          prospection.id,
+
+        recipientEmail,
+
+        subject,
+
+        emailContent,
+
+        htmlContent,
+
+        attachmentUrl,
+
+        smtpMessageId:
+          sendResult.messageId ??
+          null,
+
+        sentAt,
+      });
+    } catch (
+      historyError
+    ) {
+      console.error(
+        "E-mail envoyé et archivé, mais historique commercial non créé",
+        {
+          prospectionId:
+            prospection.id,
+
+          messageId:
+            sendResult.messageId,
+
+          sentAt,
+
+          error:
+            historyError instanceof Error
+              ? historyError.message
+              : historyError,
         }
       );
     }
