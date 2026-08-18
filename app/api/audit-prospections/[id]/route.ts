@@ -6,6 +6,7 @@ import {
 import {
   deleteAuditProspection,
   updateAuditProspection,
+  type AuditProspectionStatus,
 } from "@/lib/audit-prospections";
 
 export const dynamic =
@@ -21,43 +22,59 @@ type UpdateBody = {
   recipientEmail?: unknown;
   subject?: unknown;
   emailContent?: unknown;
+
+  status?: unknown;
+  followUpAt?: unknown;
+  repliedAt?: unknown;
 };
+
+const allowedStatuses: AuditProspectionStatus[] =
+  [
+    "draft",
+    "ready",
+    "sent",
+    "follow_up",
+    "replied",
+  ];
 
 export async function PATCH(
   request: NextRequest,
   context: RouteContext
 ) {
   try {
-    const { id } =
+    const {
+      id,
+    } =
       await context.params;
 
     const body =
       (await request.json()) as UpdateBody;
 
-    const recipientEmail =
-      typeof body.recipientEmail ===
-      "string"
-        ? body.recipientEmail.trim()
-        : "";
+    const isEmailUpdate =
+      body.recipientEmail !==
+        undefined ||
+      body.subject !==
+        undefined ||
+      body.emailContent !==
+        undefined;
 
-    const subject =
-      typeof body.subject ===
-      "string"
-        ? body.subject.trim()
-        : "";
+    const isFollowUpUpdate =
+      body.status !==
+        undefined ||
+      body.followUpAt !==
+        undefined ||
+      body.repliedAt !==
+        undefined;
 
-    const emailContent =
-      typeof body.emailContent ===
-      "string"
-        ? body.emailContent.trim()
-        : "";
-
-    if (!recipientEmail) {
+    if (
+      !isEmailUpdate &&
+      !isFollowUpUpdate
+    ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Le destinataire est obligatoire.",
+            "Aucune modification à enregistrer.",
         },
         {
           status: 400,
@@ -65,41 +82,264 @@ export async function PATCH(
       );
     }
 
-    if (!subject) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "L’objet du mail est obligatoire.",
-        },
-        {
-          status: 400,
-        }
-      );
+    /*
+     * ÉDITION DU MAIL
+     *
+     * Lorsqu'on modifie le
+     * destinataire, l'objet ou le
+     * contenu, les trois champs
+     * doivent être présents et
+     * valides.
+     */
+    if (isEmailUpdate) {
+      const recipientEmail =
+        typeof body
+          .recipientEmail ===
+        "string"
+          ? body
+              .recipientEmail
+              .trim()
+          : "";
+
+      const subject =
+        typeof body.subject ===
+        "string"
+          ? body.subject.trim()
+          : "";
+
+      const emailContent =
+        typeof body
+          .emailContent ===
+        "string"
+          ? body
+              .emailContent
+              .trim()
+          : "";
+
+      if (
+        !recipientEmail
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Le destinataire est obligatoire.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      if (!subject) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "L’objet du mail est obligatoire.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      if (
+        !emailContent
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Le contenu du mail est obligatoire.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const prospection =
+        await updateAuditProspection(
+          id,
+          {
+            recipientEmail,
+            subject,
+            emailContent,
+            status:
+              "ready",
+          }
+        );
+
+      return NextResponse.json({
+        success: true,
+        prospection,
+      });
     }
 
-    if (!emailContent) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Le contenu du mail est obligatoire.",
-        },
-        {
-          status: 400,
+    /*
+     * SUIVI COMMERCIAL
+     *
+     * Ici, on ne touche pas au
+     * contenu du mail déjà envoyé.
+     */
+    const updateInput: {
+      status?: AuditProspectionStatus;
+      followUpAt?:
+        | string
+        | null;
+      repliedAt?:
+        | string
+        | null;
+    } = {};
+
+    if (
+      body.status !==
+      undefined
+    ) {
+      if (
+        typeof body.status !==
+          "string" ||
+        !allowedStatuses.includes(
+          body.status as AuditProspectionStatus
+        )
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Le statut de prospection est invalide.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      updateInput.status =
+        body.status as AuditProspectionStatus;
+    }
+
+    if (
+      body.followUpAt !==
+      undefined
+    ) {
+      if (
+        body.followUpAt !==
+          null &&
+        typeof body
+          .followUpAt !==
+          "string"
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "La date de relance est invalide.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      if (
+        typeof body
+          .followUpAt ===
+        "string"
+      ) {
+        const date =
+          new Date(
+            body.followUpAt
+          );
+
+        if (
+          Number.isNaN(
+            date.getTime()
+          )
+        ) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "La date de relance est invalide.",
+            },
+            {
+              status: 400,
+            }
+          );
         }
-      );
+
+        updateInput.followUpAt =
+          date.toISOString();
+      } else {
+        updateInput.followUpAt =
+          null;
+      }
+    }
+
+    if (
+      body.repliedAt !==
+      undefined
+    ) {
+      if (
+        body.repliedAt !==
+          null &&
+        typeof body
+          .repliedAt !==
+          "string"
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "La date de réponse est invalide.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      if (
+        typeof body
+          .repliedAt ===
+        "string"
+      ) {
+        const date =
+          new Date(
+            body.repliedAt
+          );
+
+        if (
+          Number.isNaN(
+            date.getTime()
+          )
+        ) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "La date de réponse est invalide.",
+            },
+            {
+              status: 400,
+            }
+          );
+        }
+
+        updateInput.repliedAt =
+          date.toISOString();
+      } else {
+        updateInput.repliedAt =
+          null;
+      }
     }
 
     const prospection =
       await updateAuditProspection(
         id,
-        {
-          recipientEmail,
-          subject,
-          emailContent,
-          status: "ready",
-        }
+        updateInput
       );
 
     return NextResponse.json({
@@ -133,7 +373,9 @@ export async function DELETE(
   context: RouteContext
 ) {
   try {
-    const { id } =
+    const {
+      id,
+    } =
       await context.params;
 
     await deleteAuditProspection(
