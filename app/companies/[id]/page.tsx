@@ -12,6 +12,7 @@ import AuditProspectionGenerator from "@/components/companies/AuditProspectionGe
 import AuditProspectionEditor from "@/components/companies/AuditProspectionEditor";
 import AuditProspectionAssets from "@/components/companies/AuditProspectionAssets";
 import AuditProspectionSendButton from "@/components/companies/AuditProspectionSendButton";
+import AuditProspectionFollowUp from "@/components/companies/AuditProspectionFollowUp";
 import PipelineBadge from "@/components/ui/PipelineBadge";
 
 import {
@@ -637,6 +638,21 @@ export default async function CompanyPage({
                       }
                       sentAt={
                         latestProspection.sent_at
+                      }
+                    />
+
+                    <AuditProspectionFollowUp
+                      prospectionId={
+                        latestProspection.id
+                      }
+                      status={
+                        latestProspection.status
+                      }
+                      sentAt={
+                        latestProspection.sent_at
+                      }
+                      followUpAt={
+                        latestProspection.follow_up_at
                       }
                     />
 
