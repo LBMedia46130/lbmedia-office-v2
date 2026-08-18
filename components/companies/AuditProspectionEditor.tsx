@@ -413,6 +413,111 @@ export default function AuditProspectionEditor({
         />
       </div>
 
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+              Aperçu du mail envoyé
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              La signature LBMedia
+              sera ajoutée
+              automatiquement à
+              l’envoi.
+            </p>
+          </div>
+
+          {isDirty ? (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+              Aperçu non enregistré
+            </span>
+          ) : (
+            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+              Aperçu prêt à envoyer
+            </span>
+          )}
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
+            <div className="grid gap-2 text-sm sm:grid-cols-[90px_1fr]">
+              <span className="font-semibold text-slate-500">
+                À
+              </span>
+
+              <span className="break-all text-slate-800">
+                {recipientEmail.trim() ||
+                  "—"}
+              </span>
+
+              <span className="font-semibold text-slate-500">
+                Objet
+              </span>
+
+              <span className="font-semibold text-slate-900">
+                {subject.trim() ||
+                  "—"}
+              </span>
+            </div>
+          </div>
+
+          <div className="px-6 py-6">
+            <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-800">
+              {emailContent ||
+                "Le contenu du message apparaîtra ici."}
+            </div>
+
+            <div className="mt-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div className="shrink-0 sm:pr-5">
+                  <img
+                    src="/brand/lbmedia-logo.png"
+                    alt="LBMedia"
+                    className="h-auto w-[155px]"
+                  />
+                </div>
+
+                <div className="border-l-2 border-[#1683c5] pl-5">
+                  <p className="text-[17px] font-bold leading-6 text-[#293b50]">
+                    Laurent BARRES
+                  </p>
+
+                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#1683c5]">
+                    Directeur
+                  </p>
+
+                  <div className="mt-2 text-[12px] leading-5 text-[#4b5d70]">
+                    <a
+                      href="tel:+33680061019"
+                      className="block text-[#4b5d70] no-underline"
+                    >
+                      06.80.06.10.19
+                    </a>
+
+                    <a
+                      href="mailto:laurent@lbmedia.fr"
+                      className="block text-[#1683c5] no-underline"
+                    >
+                      laurent@lbmedia.fr
+                    </a>
+
+                    <a
+                      href="https://www.lbmedia.fr"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-[#1683c5] no-underline"
+                    >
+                      www.lbmedia.fr
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
         <div>
           {message ? (
