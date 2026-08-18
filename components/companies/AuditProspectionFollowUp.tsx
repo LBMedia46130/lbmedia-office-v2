@@ -103,6 +103,12 @@ export default function AuditProspectionFollowUp({
     useState(false);
 
   const [
+    isSending,
+    setIsSending,
+  ] =
+    useState(false);
+
+  const [
     generatedFollowUp,
     setGeneratedFollowUp,
   ] =
@@ -298,7 +304,8 @@ export default function AuditProspectionFollowUp({
 
   async function generateFollowUp() {
     if (
-      isGenerating
+      isGenerating ||
+      isSending
     ) {
       return;
     }
@@ -347,6 +354,258 @@ export default function AuditProspectionFollowUp({
       );
     } finally {
       setIsGenerating(false);
+    }
+  }
+
+  function updateGeneratedSubject(
+    value: string
+  ) {
+    setGeneratedFollowUp(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          subject:
+            value,
+        };
+      }
+    );
+
+    setMessage(null);
+    setError(null);
+  }
+
+  function updateGeneratedContent(
+    value: string
+  ) {
+    setGeneratedFollowUp(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          emailContent:
+            value,
+        };
+      }
+    );
+
+    setMessage(null);
+    setError(null);
+  }
+
+  async function sendFollowUp() {
+    if (
+      !generatedFollowUp ||
+      isSending ||
+      isGenerating
+    ) {
+      return;
+    }
+
+    const recipientEmail =
+      generatedFollowUp
+        .recipientEmail
+        ?.trim();
+
+    const subject =
+      generatedFollowUp
+        .subject
+        .trim();
+
+    const emailContent =
+      generatedFollowUp
+        .emailContent
+        .trim();
+
+    if (!recipientEmail) {
+      setError(
+        "Le destinataire de la relance est manquant."
+      );
+
+      setMessage(null);
+
+      return;
+    }
+
+    if (!subject) {
+      setError(
+        "L’objet de la relance est obligatoire."
+      );
+
+      setMessage(null);
+
+      return;
+    }
+
+    if (!emailContent) {
+      setError(
+        "Le message de relance est obligatoire."
+      );
+
+      setMessage(null);
+
+      return;
+    }
+
+    /*
+     * Sécurités temporaires.
+     *
+     * Elles seront supprimées lors de la finition
+     * générale du parcours, comme prévu.
+     */
+    const firstConfirmation =
+      window.confirm(
+        [
+          "ENVOI RÉEL DE LA RELANCE",
+          "",
+          `Destinataire : ${recipientEmail}`,
+          "",
+          `Objet : ${subject}`,
+          "",
+          "La signature LBMedia sera ajoutée automatiquement.",
+          "",
+          "Aucun PDF ne sera joint.",
+          "",
+          "Voulez-vous continuer ?",
+        ].join("\n")
+      );
+
+    if (
+      !firstConfirmation
+    ) {
+      return;
+    }
+
+    const typedEmail =
+      window.prompt(
+        [
+          "CONFIRMATION DE SÉCURITÉ",
+          "",
+          "Recopiez exactement l’adresse du destinataire :",
+          "",
+          recipientEmail,
+        ].join("\n")
+      );
+
+    if (
+      typedEmail === null
+    ) {
+      return;
+    }
+
+    if (
+      typedEmail
+        .trim()
+        .toLowerCase() !==
+      recipientEmail
+        .toLowerCase()
+    ) {
+      setError(
+        "Envoi annulé : l’adresse saisie ne correspond pas au destinataire."
+      );
+
+      setMessage(null);
+
+      return;
+    }
+
+    setIsSending(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const response =
+        await fetch(
+          `/api/audit-prospections/${prospectionId}/follow-up/send`,
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                confirmedRecipientEmail:
+                  recipientEmail,
+
+                subject,
+
+                emailContent,
+              }),
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        if (
+          result.sent ===
+          true
+        ) {
+          /*
+           * Le serveur SMTP a accepté l'email.
+           * On rafraîchit donc la fiche même si un archivage
+           * secondaire a rencontré un problème.
+           */
+          setGeneratedFollowUp(
+            null
+          );
+
+          router.refresh();
+
+          throw new Error(
+            result.message ??
+              "La relance a été envoyée mais la traçabilité n’a pas pu être entièrement enregistrée. Ne renvoyez pas le message."
+          );
+        }
+
+        throw new Error(
+          result.message ??
+            "Impossible d’envoyer la relance."
+        );
+      }
+
+      const sequenceNumber =
+        typeof result
+          .sequenceNumber ===
+        "number"
+          ? result
+              .sequenceNumber
+          : generatedFollowUp
+              .number;
+
+      setGeneratedFollowUp(
+        null
+      );
+
+      setMessage(
+        `Relance ${sequenceNumber} envoyée avec succès. Une nouvelle date de suivi a été proposée à J+7.`
+      );
+
+      router.refresh();
+    } catch (
+      sendError
+    ) {
+      setError(
+        sendError instanceof Error
+          ? sendError.message
+          : "Une erreur est survenue pendant l’envoi de la relance."
+      );
+    } finally {
+      setIsSending(false);
     }
   }
 
@@ -475,6 +734,7 @@ export default function AuditProspectionFollowUp({
               }
               disabled={
                 isSaving ||
+                isSending ||
                 !followUpDate
               }
               className="inline-flex items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -516,13 +776,16 @@ export default function AuditProspectionFollowUp({
                     generateFollowUp
                   }
                   disabled={
-                    isGenerating
+                    isGenerating ||
+                    isSending
                   }
                   className="mt-4 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isGenerating
                     ? "Préparation..."
-                    : "Préparer la relance"}
+                    : generatedFollowUp
+                      ? "Regénérer la relance"
+                      : "Préparer la relance"}
                 </button>
               ) : null}
             </div>
@@ -540,10 +803,10 @@ export default function AuditProspectionFollowUp({
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Brouillon généré
-                    à partir du
-                    dernier message
-                    réellement envoyé.
+                    Vérifie et
+                    modifie le
+                    message avant
+                    l’envoi.
                   </p>
                 </div>
 
@@ -557,45 +820,120 @@ export default function AuditProspectionFollowUp({
                   Destinataire
                 </p>
 
-                <p className="mt-1 text-sm font-semibold text-slate-800">
+                <p className="mt-1 break-all text-sm font-semibold text-slate-800">
                   {generatedFollowUp.recipientEmail ||
                     "Non renseigné"}
                 </p>
               </div>
 
               <div className="mt-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                <label
+                  htmlFor={`follow-up-subject-${prospectionId}`}
+                  className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"
+                >
                   Objet
-                </p>
+                </label>
 
-                <p className="mt-1 text-sm font-bold text-slate-900">
-                  {
+                <input
+                  id={`follow-up-subject-${prospectionId}`}
+                  type="text"
+                  value={
                     generatedFollowUp.subject
                   }
-                </p>
+                  onChange={(
+                    event
+                  ) =>
+                    updateGeneratedSubject(
+                      event.target
+                        .value
+                    )
+                  }
+                  disabled={
+                    isSending
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-slate-50"
+                />
               </div>
 
               <div className="mt-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                <label
+                  htmlFor={`follow-up-content-${prospectionId}`}
+                  className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"
+                >
                   Message
-                </p>
+                </label>
 
-                <div className="mt-2 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
-                  {
+                <textarea
+                  id={`follow-up-content-${prospectionId}`}
+                  value={
                     generatedFollowUp.emailContent
                   }
-                </div>
+                  onChange={(
+                    event
+                  ) =>
+                    updateGeneratedContent(
+                      event.target
+                        .value
+                    )
+                  }
+                  disabled={
+                    isSending
+                  }
+                  rows={8}
+                  className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-slate-50"
+                />
               </div>
 
-              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs leading-5 text-slate-500">
-                  Cette relance
-                  n’est pas encore
-                  enregistrée dans
-                  l’historique et
-                  aucun email n’a
-                  été envoyé.
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Envoi
                 </p>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  La signature
+                  LBMedia sera
+                  ajoutée
+                  automatiquement.
+                  Aucun PDF ne sera
+                  joint à la
+                  relance.
+                </p>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-5">
+                <p className="max-w-xl text-xs leading-5 text-slate-500">
+                  Le message ne
+                  sera archivé
+                  dans l’historique
+                  qu’après
+                  acceptation par
+                  le serveur SMTP.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={
+                    sendFollowUp
+                  }
+                  disabled={
+                    isSending ||
+                    isGenerating ||
+                    !generatedFollowUp
+                      .subject
+                      .trim() ||
+                    !generatedFollowUp
+                      .emailContent
+                      .trim() ||
+                    !generatedFollowUp
+                      .recipientEmail
+                      ?.trim()
+                  }
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSending
+                    ? "Envoi en cours..."
+                    : `Envoyer la relance ${generatedFollowUp.number}`}
+                </button>
               </div>
             </div>
           ) : null}
@@ -607,7 +945,8 @@ export default function AuditProspectionFollowUp({
                 markAsReplied
               }
               disabled={
-                isSaving
+                isSaving ||
+                isSending
               }
               className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
