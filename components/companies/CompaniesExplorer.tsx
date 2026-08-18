@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
 import type {
   Company,
@@ -37,10 +40,47 @@ type SortOption =
   | "name-desc"
   | "city-asc";
 
+type AlphabetFilter =
+  | "all"
+  | "#"
+  | string;
+
+const alphabet = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+];
+
 export default function CompaniesExplorer({
   companies,
 }: Props) {
-  const [search, setSearch] = useState("");
+  const [
+    search,
+    setSearch,
+  ] = useState("");
 
   const [
     activityFilter,
@@ -72,6 +112,14 @@ export default function CompaniesExplorer({
   ] =
     useState<SortOption>(
       "name-asc"
+    );
+
+  const [
+    alphabetFilter,
+    setAlphabetFilter,
+  ] =
+    useState<AlphabetFilter>(
+      "all"
     );
 
   const activeCount = useMemo(
@@ -133,6 +181,47 @@ export default function CompaniesExplorer({
       return counts;
     }, [companies]);
 
+  const alphabetCounts =
+    useMemo(() => {
+      const counts: Record<
+        string,
+        number
+      > = {
+        "#": 0,
+      };
+
+      alphabet.forEach(
+        (letter) => {
+          counts[letter] =
+            0;
+        }
+      );
+
+      companies.forEach(
+        (company) => {
+          const firstLetter =
+            getCompanyInitial(
+              company.name
+            );
+
+          if (
+            alphabet.includes(
+              firstLetter
+            )
+          ) {
+            counts[
+              firstLetter
+            ] += 1;
+          } else {
+            counts["#"] +=
+              1;
+          }
+        }
+      );
+
+      return counts;
+    }, [companies]);
+
   const visibleCompanies =
     useMemo(() => {
       const normalizedSearch =
@@ -163,10 +252,27 @@ export default function CompaniesExplorer({
               company.pipeline_stage ===
                 pipelineFilter;
 
+            const companyInitial =
+              getCompanyInitial(
+                company.name
+              );
+
+            const matchesAlphabet =
+              alphabetFilter ===
+                "all" ||
+              (alphabetFilter ===
+                "#" &&
+                !alphabet.includes(
+                  companyInitial
+                )) ||
+              companyInitial ===
+                alphabetFilter;
+
             if (
               !matchesActivity ||
               !matchesRelationship ||
-              !matchesPipeline
+              !matchesPipeline ||
+              !matchesAlphabet
             ) {
               return false;
             }
@@ -260,21 +366,30 @@ export default function CompaniesExplorer({
       relationshipFilter,
       pipelineFilter,
       sortOption,
+      alphabetFilter,
     ]);
 
   function resetFilters() {
     setSearch("");
+
     setActivityFilter(
       "active"
     );
+
     setRelationshipFilter(
       "all"
     );
+
     setPipelineFilter(
       "all"
     );
+
     setSortOption(
       "name-asc"
+    );
+
+    setAlphabetFilter(
+      "all"
     );
   }
 
@@ -282,9 +397,11 @@ export default function CompaniesExplorer({
     setActivityFilter(
       "all"
     );
+
     setRelationshipFilter(
       "all"
     );
+
     setPipelineFilter(
       "all"
     );
@@ -294,9 +411,11 @@ export default function CompaniesExplorer({
     setActivityFilter(
       "all"
     );
+
     setRelationshipFilter(
       "client"
     );
+
     setPipelineFilter(
       "all"
     );
@@ -306,9 +425,11 @@ export default function CompaniesExplorer({
     setActivityFilter(
       "all"
     );
+
     setRelationshipFilter(
       "prospect"
     );
+
     setPipelineFilter(
       "all"
     );
@@ -318,9 +439,11 @@ export default function CompaniesExplorer({
     setActivityFilter(
       "active"
     );
+
     setRelationshipFilter(
       "all"
     );
+
     setPipelineFilter(
       "all"
     );
@@ -330,9 +453,11 @@ export default function CompaniesExplorer({
     setActivityFilter(
       "inactive"
     );
+
     setRelationshipFilter(
       "all"
     );
+
     setPipelineFilter(
       "all"
     );
@@ -344,9 +469,11 @@ export default function CompaniesExplorer({
     setActivityFilter(
       "all"
     );
+
     setRelationshipFilter(
       "all"
     );
+
     setPipelineFilter(
       stage
     );
@@ -361,7 +488,9 @@ export default function CompaniesExplorer({
     pipelineFilter !==
       "all" ||
     sortOption !==
-      "name-asc";
+      "name-asc" ||
+    alphabetFilter !==
+      "all";
 
   return (
     <div className="space-y-6">
@@ -631,6 +760,113 @@ export default function CompaniesExplorer({
 
         <div className="mt-5 border-t border-slate-100 pt-5">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+            Accès alphabétique
+          </p>
+
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                setAlphabetFilter(
+                  "all"
+                )
+              }
+              className={[
+                "cursor-pointer rounded-lg px-3 py-2 text-sm font-bold transition",
+                alphabetFilter ===
+                "all"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              Toutes
+            </button>
+
+            {alphabet.map(
+              (letter) => {
+                const count =
+                  alphabetCounts[
+                    letter
+                  ] ?? 0;
+
+                const active =
+                  alphabetFilter ===
+                  letter;
+
+                return (
+                  <button
+                    key={
+                      letter
+                    }
+                    type="button"
+                    disabled={
+                      count === 0
+                    }
+                    onClick={() =>
+                      setAlphabetFilter(
+                        letter
+                      )
+                    }
+                    className={[
+                      "min-w-10 rounded-lg px-2.5 py-2 text-sm font-bold transition",
+                      active
+                        ? "cursor-pointer bg-blue-600 text-white shadow-sm"
+                        : count > 0
+                          ? "cursor-pointer border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                          : "cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-300",
+                    ].join(
+                      " "
+                    )}
+                    title={`${count} entreprise${
+                      count > 1
+                        ? "s"
+                        : ""
+                    }`}
+                  >
+                    {letter}
+                  </button>
+                );
+              }
+            )}
+
+            <button
+              type="button"
+              disabled={
+                alphabetCounts[
+                  "#"
+                ] === 0
+              }
+              onClick={() =>
+                setAlphabetFilter(
+                  "#"
+                )
+              }
+              className={[
+                "min-w-10 rounded-lg px-2.5 py-2 text-sm font-bold transition",
+                alphabetFilter ===
+                "#"
+                  ? "cursor-pointer bg-blue-600 text-white shadow-sm"
+                  : alphabetCounts[
+                        "#"
+                      ] > 0
+                    ? "cursor-pointer border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                    : "cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-300",
+              ].join(" ")}
+              title={`${alphabetCounts["#"]} entreprise${
+                alphabetCounts[
+                  "#"
+                ] > 1
+                  ? "s"
+                  : ""
+              }`}
+            >
+              #
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-slate-100 pt-5">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             Pipeline commercial
           </p>
 
@@ -710,7 +946,8 @@ export default function CompaniesExplorer({
           </h3>
 
           <p className="mt-2 text-slate-500">
-            Modifiez votre recherche ou
+            Modifiez votre recherche,
+            changez de lettre ou
             réinitialisez les filtres.
           </p>
 
@@ -804,6 +1041,23 @@ function FilterButton({
     >
       {label}
     </button>
+  );
+}
+
+function getCompanyInitial(
+  value: string
+) {
+  const normalized =
+    normalizeText(
+      value
+    )
+      .toUpperCase()
+      .trim();
+
+  return (
+    normalized.charAt(
+      0
+    ) || "#"
   );
 }
 
