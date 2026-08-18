@@ -1,4 +1,12 @@
 import {
+  readFile,
+} from "node:fs/promises";
+
+import {
+  join,
+} from "node:path";
+
+import {
   NextResponse,
 } from "next/server";
 
@@ -25,6 +33,9 @@ type RouteContext = {
 type SendRequestBody = {
   confirmedRecipientEmail?: unknown;
 };
+
+const SIGNATURE_LOGO_CID =
+  "lbmedia-signature-logo";
 
 function getBooleanEnv(
   value:
@@ -139,6 +150,195 @@ function getPdfFilename(
   return "proposition-lbmedia.pdf";
 }
 
+function getSignatureHtml() {
+  return `
+<table
+  role="presentation"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="
+    margin-top:26px;
+    border-collapse:collapse;
+    font-family:
+      Arial,
+      Helvetica,
+      sans-serif;
+  "
+>
+  <tbody>
+    <tr>
+      <td
+        valign="middle"
+        style="
+          padding:4px 24px 4px 0;
+        "
+      >
+        <img
+          src="cid:${SIGNATURE_LOGO_CID}"
+          alt="LBMedia"
+          width="155"
+          style="
+            display:block;
+            width:155px;
+            max-width:155px;
+            height:auto;
+            border:0;
+            outline:none;
+            text-decoration:none;
+          "
+        />
+      </td>
+
+      <td
+        valign="middle"
+        style="
+          border-left:2px solid #1683c5;
+          padding:4px 0 4px 22px;
+        "
+      >
+        <div
+          style="
+            margin:0;
+            font-size:17px;
+            line-height:22px;
+            font-weight:700;
+            color:#293b50;
+          "
+        >
+          Laurent BARRES
+        </div>
+
+        <div
+          style="
+            margin:2px 0 9px 0;
+            font-size:10px;
+            line-height:15px;
+            font-weight:700;
+            letter-spacing:1px;
+            color:#1683c5;
+          "
+        >
+          DIRECTEUR
+        </div>
+
+        <div
+          style="
+            margin:0;
+            font-size:12px;
+            line-height:19px;
+            color:#4b5d70;
+          "
+        >
+          <a
+            href="tel:+33680061019"
+            style="
+              color:#4b5d70;
+              text-decoration:none;
+            "
+          >
+            06.80.06.10.19
+          </a>
+        </div>
+
+        <div
+          style="
+            margin:0;
+            font-size:12px;
+            line-height:19px;
+          "
+        >
+          <a
+            href="mailto:laurent@lbmedia.fr"
+            style="
+              color:#1683c5;
+              text-decoration:none;
+            "
+          >
+            laurent@lbmedia.fr
+          </a>
+        </div>
+
+        <div
+          style="
+            margin:0;
+            font-size:12px;
+            line-height:19px;
+          "
+        >
+          <a
+            href="https://www.lbmedia.fr"
+            style="
+              color:#1683c5;
+              text-decoration:none;
+            "
+          >
+            www.lbmedia.fr
+          </a>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+`.trim();
+}
+
+function getTextSignature() {
+  return [
+    "Laurent BARRES",
+    "DIRECTEUR",
+    "06.80.06.10.19",
+    "laurent@lbmedia.fr",
+    "www.lbmedia.fr",
+  ].join("\n");
+}
+
+function buildHtmlContent(
+  emailContent: string
+) {
+  return `
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+  </head>
+
+  <body
+    style="
+      margin:0;
+      padding:0;
+      background:#ffffff;
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+      color:#1e293b;
+    "
+  >
+    <div
+      style="
+        max-width:640px;
+        margin:0;
+        padding:24px;
+        font-size:15px;
+        line-height:1.65;
+      "
+    >
+      ${textToHtml(
+        emailContent
+      )}
+
+      ${getSignatureHtml()}
+    </div>
+  </body>
+</html>
+`.trim();
+}
+
 export async function POST(
   request: Request,
   context: RouteContext
@@ -247,8 +447,9 @@ export async function POST(
       );
     }
 
-    const { id } =
-      await context.params;
+    const {
+      id,
+    } = await context.params;
 
     const {
       data:
@@ -342,7 +543,9 @@ export async function POST(
         recipientEmail
       );
 
-    if (!recipientEmail) {
+    if (
+      !recipientEmail
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -381,7 +584,8 @@ export async function POST(
         ?.trim();
 
     const subject =
-      prospection.subject
+      prospection
+        .subject
         ?.trim();
 
     const emailContent =
@@ -394,7 +598,9 @@ export async function POST(
         .attachment_url
         ?.trim();
 
-    if (!subject) {
+    if (
+      !subject
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -407,7 +613,9 @@ export async function POST(
       );
     }
 
-    if (!emailContent) {
+    if (
+      !emailContent
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -420,7 +628,9 @@ export async function POST(
       );
     }
 
-    if (!attachmentUrl) {
+    if (
+      !attachmentUrl
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -437,7 +647,7 @@ export async function POST(
      * Nouvelle lecture de sécurité juste avant l'envoi.
      *
      * Si une modification concurrente a changé le destinataire
-     * entre le chargement de la prospection et l'envoi SMTP,
+     * ou le contenu entre le chargement initial et l'envoi SMTP,
      * l'envoi est interrompu.
      */
     const {
@@ -601,6 +811,41 @@ export async function POST(
       );
     }
 
+    const signatureLogoPath =
+      join(
+        process.cwd(),
+        "public",
+        "brand",
+        "lbmedia-logo.png"
+      );
+
+    let signatureLogoBuffer:
+      | Buffer
+      | null = null;
+
+    try {
+      signatureLogoBuffer =
+        await readFile(
+          signatureLogoPath
+        );
+    } catch (logoError) {
+      console.error(
+        "Impossible de charger le logo de signature LBMedia",
+        logoError
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Impossible de charger le logo de la signature LBMedia. Aucun email n’a été envoyé.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
     const transporter =
       nodemailer.createTransport({
         host:
@@ -631,41 +876,13 @@ export async function POST(
      */
     await transporter.verify();
 
-    const htmlContent = `
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-  </head>
-
-  <body
-    style="
-      margin:0;
-      padding:0;
-      background:#ffffff;
-      font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-      color:#1e293b;
-    "
-  >
-    <div
-      style="
-        max-width:640px;
-        margin:0 auto;
-        padding:24px;
-        font-size:15px;
-        line-height:1.65;
-      "
-    >
-      ${textToHtml(
+    const htmlContent =
+      buildHtmlContent(
         emailContent
-      )}
-    </div>
-  </body>
-</html>
-`.trim();
+      );
+
+    const textContent =
+      `${emailContent}\n\n${getTextSignature()}`;
 
     const sendResult =
       await transporter.sendMail({
@@ -694,7 +911,7 @@ export async function POST(
         subject,
 
         text:
-          emailContent,
+          textContent,
 
         html:
           htmlContent,
@@ -711,6 +928,23 @@ export async function POST(
 
             contentType:
               "application/pdf",
+          },
+
+          {
+            filename:
+              "lbmedia-logo.png",
+
+            content:
+              signatureLogoBuffer,
+
+            contentType:
+              "image/png",
+
+            cid:
+              SIGNATURE_LOGO_CID,
+
+            contentDisposition:
+              "inline",
           },
         ],
 
@@ -743,7 +977,9 @@ export async function POST(
           normalizedStoredRecipient
       );
 
-    if (!wasAccepted) {
+    if (
+      !wasAccepted
+    ) {
       console.error(
         "SMTP n'a pas accepté le destinataire",
         {
@@ -783,9 +1019,18 @@ export async function POST(
       new Date()
         .toISOString();
 
+    /*
+     * Archivage de la version EXACTEMENT envoyée.
+     *
+     * email_content reste le brouillon de travail.
+     * Les champs sent_* constituent la photographie figée
+     * du message accepté par le serveur SMTP.
+     */
     const {
-      data: updated,
-      error: updateError,
+      data:
+        updated,
+      error:
+        updateError,
     } = await supabaseAdmin
       .from(
         "audit_prospections"
@@ -796,6 +1041,22 @@ export async function POST(
 
         sent_at:
           sentAt,
+
+        sent_subject:
+          subject,
+
+        sent_email_content:
+          emailContent,
+
+        sent_html_content:
+          htmlContent,
+
+        sent_attachment_url:
+          attachmentUrl,
+
+        smtp_message_id:
+          sendResult.messageId ??
+          null,
 
         updated_at:
           sentAt,
@@ -841,7 +1102,8 @@ export async function POST(
             sendResult.response,
 
           error:
-            updateError?.message ??
+            updateError
+              ?.message ??
             "Mise à jour refusée par la vérification de sécurité.",
         }
       );

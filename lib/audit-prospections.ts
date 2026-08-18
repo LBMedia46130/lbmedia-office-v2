@@ -32,6 +32,12 @@ export type AuditProspection = {
   follow_up_at: string | null;
   replied_at: string | null;
 
+  sent_subject: string | null;
+  sent_email_content: string | null;
+  sent_html_content: string | null;
+  sent_attachment_url: string | null;
+  smtp_message_id: string | null;
+
   created_at: string;
   updated_at: string;
 };
@@ -62,6 +68,12 @@ type UpdateAuditProspectionInput = {
   sentAt?: string | null;
   followUpAt?: string | null;
   repliedAt?: string | null;
+
+  sentSubject?: string | null;
+  sentEmailContent?: string | null;
+  sentHtmlContent?: string | null;
+  sentAttachmentUrl?: string | null;
+  smtpMessageId?: string | null;
 };
 
 const auditProspectionSelect = `
@@ -80,6 +92,11 @@ const auditProspectionSelect = `
   sent_at,
   follow_up_at,
   replied_at,
+  sent_subject,
+  sent_email_content,
+  sent_html_content,
+  sent_attachment_url,
+  smtp_message_id,
   created_at,
   updated_at
 `;
@@ -107,6 +124,36 @@ export async function getAuditProspectionByAuditId(
   if (error) {
     throw new Error(
       `Impossible de charger la prospection liée à l’audit : ${error.message}`
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return data as AuditProspection;
+}
+
+export async function getAuditProspectionById(
+  prospectionId: string
+): Promise<AuditProspection | null> {
+  const {
+    data,
+    error,
+  } = await supabaseAdmin
+    .from("audit_prospections")
+    .select(
+      auditProspectionSelect
+    )
+    .eq(
+      "id",
+      prospectionId
+    )
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `Impossible de charger la prospection : ${error.message}`
     );
   }
 
@@ -316,6 +363,46 @@ export async function updateAuditProspection(
       input.repliedAt;
   }
 
+  if (
+    input.sentSubject !==
+    undefined
+  ) {
+    payload.sent_subject =
+      input.sentSubject;
+  }
+
+  if (
+    input.sentEmailContent !==
+    undefined
+  ) {
+    payload.sent_email_content =
+      input.sentEmailContent;
+  }
+
+  if (
+    input.sentHtmlContent !==
+    undefined
+  ) {
+    payload.sent_html_content =
+      input.sentHtmlContent;
+  }
+
+  if (
+    input.sentAttachmentUrl !==
+    undefined
+  ) {
+    payload.sent_attachment_url =
+      input.sentAttachmentUrl;
+  }
+
+  if (
+    input.smtpMessageId !==
+    undefined
+  ) {
+    payload.smtp_message_id =
+      input.smtpMessageId;
+  }
+
   const {
     data,
     error,
@@ -338,6 +425,46 @@ export async function updateAuditProspection(
   }
 
   return data as AuditProspection;
+}
+
+export async function markAuditProspectionAsSent(
+  prospectionId: string,
+  input: {
+    subject: string;
+    emailContent: string;
+    htmlContent: string;
+    attachmentUrl?: string | null;
+    smtpMessageId?: string | null;
+  }
+): Promise<AuditProspection> {
+  const sentAt =
+    new Date().toISOString();
+
+  return updateAuditProspection(
+    prospectionId,
+    {
+      status: "sent",
+
+      sentAt,
+
+      sentSubject:
+        input.subject,
+
+      sentEmailContent:
+        input.emailContent,
+
+      sentHtmlContent:
+        input.htmlContent,
+
+      sentAttachmentUrl:
+        input.attachmentUrl ??
+        null,
+
+      smtpMessageId:
+        input.smtpMessageId ??
+        null,
+    }
+  );
 }
 
 export async function deleteAuditProspection(
