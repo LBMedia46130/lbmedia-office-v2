@@ -40,6 +40,15 @@ type GeneratedFollowUp = {
     | null;
 };
 
+type ApiResult = {
+  success?: boolean;
+  message?: string;
+  sent?: boolean;
+  sequenceNumber?: number;
+  followUp?: GeneratedFollowUp;
+  [key: string]: unknown;
+};
+
 export default function AuditProspectionFollowUp({
   prospectionId,
   status,
@@ -199,7 +208,9 @@ export default function AuditProspectionFollowUp({
         );
 
       const result =
-        await response.json();
+        await readJsonResponse(
+          response
+        );
 
       if (
         !response.ok ||
@@ -325,7 +336,9 @@ export default function AuditProspectionFollowUp({
         );
 
       const result =
-        await response.json();
+        await readJsonResponse(
+          response
+        );
 
       if (
         !response.ok ||
@@ -337,8 +350,16 @@ export default function AuditProspectionFollowUp({
         );
       }
 
+      if (
+        !result.followUp
+      ) {
+        throw new Error(
+          "La relance générée est introuvable dans la réponse du serveur."
+        );
+      }
+
       setGeneratedFollowUp(
-        result.followUp as GeneratedFollowUp
+        result.followUp
       );
 
       setMessage(
@@ -453,12 +474,6 @@ export default function AuditProspectionFollowUp({
       return;
     }
 
-    /*
-     * Sécurités temporaires.
-     *
-     * Elles seront supprimées lors de la finition
-     * générale du parcours, comme prévu.
-     */
     const firstConfirmation =
       window.confirm(
         [
@@ -545,7 +560,9 @@ export default function AuditProspectionFollowUp({
         );
 
       const result =
-        await response.json();
+        await readJsonResponse(
+          response
+        );
 
       if (
         !response.ok ||
@@ -555,11 +572,6 @@ export default function AuditProspectionFollowUp({
           result.sent ===
           true
         ) {
-          /*
-           * Le serveur SMTP a accepté l'email.
-           * On rafraîchit donc la fiche même si un archivage
-           * secondaire a rencontré un problème.
-           */
           setGeneratedFollowUp(
             null
           );
@@ -970,6 +982,89 @@ export default function AuditProspectionFollowUp({
       ) : null}
     </div>
   );
+}
+
+async function readJsonResponse(
+  response: Response
+): Promise<ApiResult> {
+  const contentType =
+    response.headers.get(
+      "content-type"
+    ) ?? "";
+
+  const rawText =
+    await response.text();
+
+  if (
+    !rawText.trim()
+  ) {
+    return {
+      success:
+        response.ok,
+
+      message:
+        response.ok
+          ? undefined
+          : `Le serveur a retourné une réponse vide (${response.status}).`,
+    };
+  }
+
+  if (
+    contentType.includes(
+      "application/json"
+    )
+  ) {
+    try {
+      return JSON.parse(
+        rawText
+      ) as ApiResult;
+    } catch {
+      return {
+        success: false,
+
+        message:
+          `Le serveur a retourné un JSON invalide (${response.status}).`,
+      };
+    }
+  }
+
+  try {
+    return JSON.parse(
+      rawText
+    ) as ApiResult;
+  } catch {
+    const cleanedText =
+      rawText
+        .replace(
+          /<script[\s\S]*?<\/script>/gi,
+          " "
+        )
+        .replace(
+          /<style[\s\S]*?<\/style>/gi,
+          " "
+        )
+        .replace(
+          /<[^>]+>/g,
+          " "
+        )
+        .replace(
+          /\s+/g,
+          " "
+        )
+        .trim();
+
+    return {
+      success: false,
+
+      message:
+        cleanedText
+          ? `Erreur serveur ${response.status} : ${cleanedText.slice(
+              0,
+              500
+            )}`
+          : `Le serveur a retourné une réponse non JSON (${response.status}).`,
+    };
+  }
 }
 
 function toDateInputValue(
