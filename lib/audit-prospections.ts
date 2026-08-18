@@ -104,6 +104,35 @@ const auditProspectionSelect = `
 const AUDIT_PROSPECTION_BUCKET =
   "audit-prospection-assets";
 
+export async function getAuditProspections(): Promise<
+  AuditProspection[]
+> {
+  const {
+    data,
+    error,
+  } = await supabaseAdmin
+    .from("audit_prospections")
+    .select(
+      auditProspectionSelect
+    )
+    .order(
+      "created_at",
+      {
+        ascending: false,
+      }
+    );
+
+  if (error) {
+    throw new Error(
+      `Impossible de charger les prospections : ${error.message}`
+    );
+  }
+
+  return (
+    data ?? []
+  ) as AuditProspection[];
+}
+
 export async function getAuditProspectionByAuditId(
   websiteAuditId: string
 ): Promise<AuditProspection | null> {
