@@ -28,6 +28,18 @@ type AuditProspectionFollowUpProps = {
     | null;
 };
 
+type GeneratedFollowUp = {
+  number: number;
+  subject: string;
+  emailContent: string;
+  recipientEmail:
+    | string
+    | null;
+  previousMessageId:
+    | string
+    | null;
+};
+
 export default function AuditProspectionFollowUp({
   prospectionId,
   status,
@@ -83,6 +95,20 @@ export default function AuditProspectionFollowUp({
     setIsSaving,
   ] =
     useState(false);
+
+  const [
+    isGenerating,
+    setIsGenerating,
+  ] =
+    useState(false);
+
+  const [
+    generatedFollowUp,
+    setGeneratedFollowUp,
+  ] =
+    useState<
+      GeneratedFollowUp | null
+    >(null);
 
   const [
     message,
@@ -270,6 +296,60 @@ export default function AuditProspectionFollowUp({
     );
   }
 
+  async function generateFollowUp() {
+    if (
+      isGenerating
+    ) {
+      return;
+    }
+
+    setIsGenerating(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const response =
+        await fetch(
+          `/api/audit-prospections/${prospectionId}/follow-up/generate`,
+          {
+            method:
+              "POST",
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        throw new Error(
+          result.message ??
+            "Impossible de générer la relance."
+        );
+      }
+
+      setGeneratedFollowUp(
+        result.followUp as GeneratedFollowUp
+      );
+
+      setMessage(
+        "Relance préparée."
+      );
+    } catch (
+      generateError
+    ) {
+      setError(
+        generateError instanceof Error
+          ? generateError.message
+          : "Une erreur est survenue pendant la génération."
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
   return (
     <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -428,6 +508,95 @@ export default function AuditProspectionFollowUp({
                       followUpAt
                     )}.`}
               </p>
+
+              {followUpIsDue ? (
+                <button
+                  type="button"
+                  onClick={
+                    generateFollowUp
+                  }
+                  disabled={
+                    isGenerating
+                  }
+                  className="mt-4 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isGenerating
+                    ? "Préparation..."
+                    : "Préparer la relance"}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {generatedFollowUp ? (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-white p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-600">
+                    Relance{" "}
+                    {
+                      generatedFollowUp.number
+                    }
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Brouillon généré
+                    à partir du
+                    dernier message
+                    réellement envoyé.
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+                  Brouillon
+                </span>
+              </div>
+
+              <div className="mt-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Destinataire
+                </p>
+
+                <p className="mt-1 text-sm font-semibold text-slate-800">
+                  {generatedFollowUp.recipientEmail ||
+                    "Non renseigné"}
+                </p>
+              </div>
+
+              <div className="mt-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Objet
+                </p>
+
+                <p className="mt-1 text-sm font-bold text-slate-900">
+                  {
+                    generatedFollowUp.subject
+                  }
+                </p>
+              </div>
+
+              <div className="mt-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Message
+                </p>
+
+                <div className="mt-2 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
+                  {
+                    generatedFollowUp.emailContent
+                  }
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs leading-5 text-slate-500">
+                  Cette relance
+                  n’est pas encore
+                  enregistrée dans
+                  l’historique et
+                  aucun email n’a
+                  été envoyé.
+                </p>
+              </div>
             </div>
           ) : null}
 
