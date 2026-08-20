@@ -29,6 +29,16 @@ export type ZohoOrganization = {
   time_zone?: string;
 };
 
+export type ZohoTax = {
+  tax_id: string;
+  tax_name: string;
+  tax_percentage: number;
+  tax_type?: string;
+  tax_specific_type?: string;
+  is_value_added?: boolean;
+  is_default_tax?: boolean;
+};
+
 export type ZohoContact = {
   contact_id: string;
   contact_name: string;
@@ -139,7 +149,8 @@ async function getZohoAccessToken(): Promise<string> {
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type":
+          "application/x-www-form-urlencoded",
       },
       body,
       cache: "no-store",
@@ -183,6 +194,7 @@ async function zohoBooksRequest<T>(
   >
 ): Promise<ZohoApiResponse<T>> {
   const { organizationId } = getZohoConfig();
+
   const accessToken =
     await getZohoAccessToken();
 
@@ -278,6 +290,19 @@ export async function getZohoOrganizations() {
   return data.organizations ?? [];
 }
 
+export async function getZohoTaxes() {
+  const data = await zohoBooksRequest<{
+    taxes?: ZohoTax[];
+  }>(
+    "/settings/taxes",
+    {
+      method: "GET",
+    }
+  );
+
+  return data.taxes ?? [];
+}
+
 export async function getZohoContacts(
   page = 1,
   perPage = 200
@@ -287,7 +312,9 @@ export async function getZohoContacts(
     page_context?: ZohoPageContext;
   }>(
     "/contacts",
-    { method: "GET" },
+    {
+      method: "GET",
+    },
     {
       page,
       per_page: perPage,
@@ -314,7 +341,9 @@ export async function getZohoContact(
     contact?: ZohoContact;
   }>(
     `/contacts/${encodeURIComponent(contactId)}`,
-    { method: "GET" }
+    {
+      method: "GET",
+    }
   );
 
   if (!data.contact) {
@@ -335,7 +364,9 @@ export async function getZohoEstimates(
     page_context?: ZohoPageContext;
   }>(
     "/estimates",
-    { method: "GET" },
+    {
+      method: "GET",
+    },
     {
       page,
       per_page: perPage,
@@ -360,9 +391,14 @@ export async function getAllZohoEstimates() {
 
   while (hasMorePage) {
     const result =
-      await getZohoEstimates(page, perPage);
+      await getZohoEstimates(
+        page,
+        perPage
+      );
 
-    estimates.push(...result.estimates);
+    estimates.push(
+      ...result.estimates
+    );
 
     hasMorePage =
       result.pageContext?.has_more_page ??
@@ -392,8 +428,12 @@ export async function getZohoEstimate(
   const data = await zohoBooksRequest<{
     estimate?: ZohoEstimate;
   }>(
-    `/estimates/${encodeURIComponent(estimateId)}`,
-    { method: "GET" }
+    `/estimates/${encodeURIComponent(
+      estimateId
+    )}`,
+    {
+      method: "GET",
+    }
   );
 
   if (!data.estimate) {
@@ -414,7 +454,9 @@ export async function getZohoInvoices(
     page_context?: ZohoPageContext;
   }>(
     "/invoices",
-    { method: "GET" },
+    {
+      method: "GET",
+    },
     {
       page,
       per_page: perPage,
@@ -439,9 +481,14 @@ export async function getAllZohoInvoices() {
 
   while (hasMorePage) {
     const result =
-      await getZohoInvoices(page, perPage);
+      await getZohoInvoices(
+        page,
+        perPage
+      );
 
-    invoices.push(...result.invoices);
+    invoices.push(
+      ...result.invoices
+    );
 
     hasMorePage =
       result.pageContext?.has_more_page ??
@@ -471,8 +518,12 @@ export async function getZohoInvoice(
   const data = await zohoBooksRequest<{
     invoice?: ZohoInvoice;
   }>(
-    `/invoices/${encodeURIComponent(invoiceId)}`,
-    { method: "GET" }
+    `/invoices/${encodeURIComponent(
+      invoiceId
+    )}`,
+    {
+      method: "GET",
+    }
   );
 
   if (!data.invoice) {
