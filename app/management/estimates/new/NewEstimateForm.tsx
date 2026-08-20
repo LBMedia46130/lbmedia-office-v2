@@ -40,9 +40,9 @@ type Props = {
   tax: TaxOption | null;
 };
 
-function today() {
-  const date = new Date();
-
+function formatDateForInput(
+  date: Date
+) {
   return [
     date.getFullYear(),
     String(
@@ -52,6 +52,51 @@ function today() {
       date.getDate()
     ).padStart(2, "0"),
   ].join("-");
+}
+
+function today() {
+  return formatDateForInput(
+    new Date()
+  );
+}
+
+function addDays(
+  dateValue: string,
+  days: number
+) {
+  if (!dateValue) {
+    return "";
+  }
+
+  const [
+    year,
+    month,
+    day,
+  ] = dateValue
+    .split("-")
+    .map(Number);
+
+  const date = new Date(
+    year,
+    month - 1,
+    day
+  );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "";
+  }
+
+  date.setDate(
+    date.getDate() + days
+  );
+
+  return formatDateForInput(
+    date
+  );
 }
 
 function createLine(): EstimateLine {
@@ -101,6 +146,9 @@ export default function NewEstimateForm({
   const router =
     useRouter();
 
+  const initialDate =
+    today();
+
   const [
     companyId,
     setCompanyId,
@@ -109,12 +157,19 @@ export default function NewEstimateForm({
   const [
     date,
     setDate,
-  ] = useState(today());
+  ] = useState(
+    initialDate
+  );
 
   const [
     expiryDate,
     setExpiryDate,
-  ] = useState("");
+  ] = useState(
+    addDays(
+      initialDate,
+      60
+    )
+  );
 
   const [
     referenceNumber,
@@ -180,6 +235,19 @@ export default function NewEstimateForm({
 
   const total =
     subtotal + taxAmount;
+
+  function handleDateChange(
+    value: string
+  ) {
+    setDate(value);
+
+    setExpiryDate(
+      addDays(
+        value,
+        60
+      )
+    );
+  }
 
   function updateLine(
     id: string,
@@ -480,7 +548,7 @@ export default function NewEstimateForm({
               type="date"
               value={date}
               onChange={(event) =>
-                setDate(
+                handleDateChange(
                   event.target.value
                 )
               }
