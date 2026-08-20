@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   getAllZohoEstimates,
   type ZohoEstimate,
@@ -154,14 +156,12 @@ export default async function EstimatesPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white opacity-50"
-            title="La création de devis sera activée à l'étape suivante."
+          <Link
+            href="/management/estimates/new"
+            className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             Nouveau devis
-          </button>
+          </Link>
         </div>
 
         {errorMessage ? (
