@@ -44,6 +44,22 @@ export type ZohoContact = {
   currency_code?: string;
 };
 
+export type ZohoEstimate = {
+  estimate_id: string;
+  estimate_number: string;
+  customer_id: string;
+  customer_name: string;
+  status: string;
+  date: string;
+  expiry_date?: string;
+  total: number;
+  currency_code?: string;
+  reference_number?: string;
+  is_emailed?: boolean;
+  created_time?: string;
+  last_modified_time?: string;
+};
+
 export type ZohoInvoice = {
   invoice_id: string;
   invoice_number: string;
@@ -308,6 +324,85 @@ export async function getZohoContact(
   }
 
   return data.contact;
+}
+
+export async function getZohoEstimates(
+  page = 1,
+  perPage = 200
+) {
+  const data = await zohoBooksRequest<{
+    estimates?: ZohoEstimate[];
+    page_context?: ZohoPageContext;
+  }>(
+    "/estimates",
+    { method: "GET" },
+    {
+      page,
+      per_page: perPage,
+      filter_by: "Status.All",
+      sort_column: "date",
+      sort_order: "D",
+    }
+  );
+
+  return {
+    estimates: data.estimates ?? [],
+    pageContext: data.page_context ?? null,
+  };
+}
+
+export async function getAllZohoEstimates() {
+  const estimates: ZohoEstimate[] = [];
+
+  let page = 1;
+  const perPage = 200;
+  let hasMorePage = true;
+
+  while (hasMorePage) {
+    const result =
+      await getZohoEstimates(page, perPage);
+
+    estimates.push(...result.estimates);
+
+    hasMorePage =
+      result.pageContext?.has_more_page ??
+      false;
+
+    page += 1;
+
+    if (page > 100) {
+      throw new Error(
+        "Arrêt de sécurité pendant la récupération des devis Zoho."
+      );
+    }
+  }
+
+  return estimates;
+}
+
+export async function getZohoEstimate(
+  estimateId: string
+) {
+  if (!estimateId) {
+    throw new Error(
+      "Identifiant de devis Zoho manquant."
+    );
+  }
+
+  const data = await zohoBooksRequest<{
+    estimate?: ZohoEstimate;
+  }>(
+    `/estimates/${encodeURIComponent(estimateId)}`,
+    { method: "GET" }
+  );
+
+  if (!data.estimate) {
+    throw new Error(
+      "Devis Zoho Books introuvable."
+    );
+  }
+
+  return data.estimate;
 }
 
 export async function getZohoInvoices(
