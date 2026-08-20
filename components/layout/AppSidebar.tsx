@@ -444,6 +444,31 @@ export default function AppSidebar() {
             {managementOpen ? (
               <div className="ml-5 mt-1.5 space-y-1 border-l border-white/10 pl-4">
                 <Link
+                  href="/management/estimates"
+                  className={[
+                    "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                    isExactActive(
+                      "/management/estimates"
+                    )
+                      ? "bg-white/10 text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white",
+                  ].join(" ")}
+                >
+                  <span
+                    className={[
+                      "h-1.5 w-1.5 rounded-full",
+                      isExactActive(
+                        "/management/estimates"
+                      )
+                        ? "bg-cyan-300"
+                        : "bg-slate-600",
+                    ].join(" ")}
+                  />
+
+                  <span>Devis</span>
+                </Link>
+
+                <Link
                   href="/management/invoices"
                   className={[
                     "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition",
