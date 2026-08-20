@@ -91,6 +91,40 @@ export type ZohoInvoice = {
   last_modified_time?: string;
 };
 
+export type CreateZohoContactInput = {
+  contact_name: string;
+  company_name?: string;
+  email?: string;
+  phone?: string;
+
+  billing_address?: {
+    address?: string;
+    street2?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
+  };
+};
+
+export type CreateZohoEstimateLineItemInput = {
+  name: string;
+  description?: string;
+  quantity: number;
+  rate: number;
+  tax_id?: string;
+};
+
+export type CreateZohoEstimateInput = {
+  customer_id: string;
+  date?: string;
+  expiry_date?: string;
+  reference_number?: string;
+  notes?: string;
+  terms?: string;
+  line_items: CreateZohoEstimateLineItemInput[];
+};
+
 let cachedAccessToken: {
   token: string;
   expiresAt: number;
@@ -355,6 +389,70 @@ export async function getZohoContact(
   return data.contact;
 }
 
+export async function createZohoContact(
+  input: CreateZohoContactInput
+) {
+  if (!input.contact_name.trim()) {
+    throw new Error(
+      "Le nom du contact Zoho est obligatoire."
+    );
+  }
+
+  const payload = {
+    contact_name: input.contact_name.trim(),
+    company_name:
+      input.company_name?.trim() ||
+      input.contact_name.trim(),
+    contact_type: "customer",
+    customer_sub_type: "business",
+    email:
+      input.email?.trim() || undefined,
+    phone:
+      input.phone?.trim() || undefined,
+    billing_address:
+      input.billing_address
+        ? {
+            address:
+              input.billing_address.address?.trim() ||
+              undefined,
+            street2:
+              input.billing_address.street2?.trim() ||
+              undefined,
+            city:
+              input.billing_address.city?.trim() ||
+              undefined,
+            state:
+              input.billing_address.state?.trim() ||
+              undefined,
+            zip:
+              input.billing_address.zip?.trim() ||
+              undefined,
+            country:
+              input.billing_address.country?.trim() ||
+              undefined,
+          }
+        : undefined,
+  };
+
+  const data = await zohoBooksRequest<{
+    contact?: ZohoContact;
+  }>(
+    "/contacts",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!data.contact?.contact_id) {
+    throw new Error(
+      "Zoho Books a créé le contact sans retourner son identifiant."
+    );
+  }
+
+  return data.contact;
+}
+
 export async function getZohoEstimates(
   page = 1,
   perPage = 200
@@ -439,6 +537,104 @@ export async function getZohoEstimate(
   if (!data.estimate) {
     throw new Error(
       "Devis Zoho Books introuvable."
+    );
+  }
+
+  return data.estimate;
+}
+
+export async function createZohoEstimate(
+  input: CreateZohoEstimateInput
+) {
+  if (!input.customer_id.trim()) {
+    throw new Error(
+      "Le client Zoho est obligatoire pour créer un devis."
+    );
+  }
+
+  if (
+    !input.line_items ||
+    input.line_items.length === 0
+  ) {
+    throw new Error(
+      "Le devis doit contenir au moins une ligne."
+    );
+  }
+
+  const lineItems =
+    input.line_items.map(
+      (line, index) => {
+        if (!line.name.trim()) {
+          throw new Error(
+            `Le nom de la ligne ${index + 1} est obligatoire.`
+          );
+        }
+
+        if (
+          !Number.isFinite(line.quantity) ||
+          line.quantity <= 0
+        ) {
+          throw new Error(
+            `La quantité de la ligne ${index + 1} doit être supérieure à zéro.`
+          );
+        }
+
+        if (
+          !Number.isFinite(line.rate) ||
+          line.rate < 0
+        ) {
+          throw new Error(
+            `Le prix de la ligne ${index + 1} est invalide.`
+          );
+        }
+
+        return {
+          name: line.name.trim(),
+          description:
+            line.description?.trim() ||
+            undefined,
+          quantity: line.quantity,
+          rate: line.rate,
+          tax_id:
+            line.tax_id?.trim() ||
+            undefined,
+        };
+      }
+    );
+
+  const payload = {
+    customer_id: input.customer_id.trim(),
+    date:
+      input.date?.trim() ||
+      undefined,
+    expiry_date:
+      input.expiry_date?.trim() ||
+      undefined,
+    reference_number:
+      input.reference_number?.trim() ||
+      undefined,
+    notes:
+      input.notes?.trim() ||
+      undefined,
+    terms:
+      input.terms?.trim() ||
+      undefined,
+    line_items: lineItems,
+  };
+
+  const data = await zohoBooksRequest<{
+    estimate?: ZohoEstimate;
+  }>(
+    "/estimates",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!data.estimate?.estimate_id) {
+    throw new Error(
+      "Zoho Books a créé le devis sans retourner son identifiant."
     );
   }
 
