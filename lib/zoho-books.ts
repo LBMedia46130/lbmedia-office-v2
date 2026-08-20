@@ -34,6 +34,36 @@ export type ZohoContact = {
   currency_code?: string;
 };
 
+export type ZohoInvoice = {
+  invoice_id: string;
+  invoice_number: string;
+  customer_id: string;
+  customer_name: string;
+  status:
+    | "draft"
+    | "sent"
+    | "overdue"
+    | "paid"
+    | "void"
+    | "unpaid"
+    | "partially_paid"
+    | "viewed"
+    | string;
+  date: string;
+  due_date: string;
+  total: number;
+  balance: number;
+  currency_code?: string;
+  reference_number?: string;
+  is_emailed?: boolean;
+  reminders_sent?: number;
+  last_reminder_sent_date?: string;
+  payment_expected_date?: string;
+  last_payment_date?: string;
+  created_time?: string;
+  last_modified_time?: string;
+};
+
 let cachedAccessToken: {
   token: string;
   expiresAt: number;
@@ -290,4 +320,66 @@ export async function getZohoContact(
   }
 
   return data.contact;
+}
+
+export async function getZohoInvoices(
+  page = 1,
+  perPage = 200
+) {
+  const data = await zohoBooksRequest<{
+    invoices?: ZohoInvoice[];
+    page_context?: {
+      page: number;
+      per_page: number;
+      has_more_page: boolean;
+      report_name?: string;
+      applied_filter?: string;
+      sort_column?: string;
+      sort_order?: string;
+    };
+  }>(
+    "/invoices",
+    {
+      method: "GET",
+    },
+    {
+      page,
+      per_page: perPage,
+      filter_by: "Status.All",
+      sort_column: "date",
+      sort_order: "D",
+    }
+  );
+
+  return {
+    invoices: data.invoices ?? [],
+    pageContext: data.page_context ?? null,
+  };
+}
+
+export async function getZohoInvoice(
+  invoiceId: string
+) {
+  if (!invoiceId) {
+    throw new Error(
+      "Identifiant de facture Zoho manquant."
+    );
+  }
+
+  const data = await zohoBooksRequest<{
+    invoice?: ZohoInvoice;
+  }>(
+    `/invoices/${encodeURIComponent(invoiceId)}`,
+    {
+      method: "GET",
+    }
+  );
+
+  if (!data.invoice) {
+    throw new Error(
+      "Facture Zoho Books introuvable."
+    );
+  }
+
+  return data.invoice;
 }
