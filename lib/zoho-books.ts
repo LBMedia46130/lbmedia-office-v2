@@ -11,6 +11,16 @@ type ZohoApiResponse<T> = {
   message: string;
 } & T;
 
+type ZohoPageContext = {
+  page: number;
+  per_page: number;
+  has_more_page: boolean;
+  report_name?: string;
+  applied_filter?: string;
+  sort_column?: string;
+  sort_order?: string;
+};
+
 export type ZohoOrganization = {
   organization_id: string;
   name: string;
@@ -39,16 +49,7 @@ export type ZohoInvoice = {
   invoice_number: string;
   customer_id: string;
   customer_name: string;
-  status:
-    | "draft"
-    | "sent"
-    | "overdue"
-    | "paid"
-    | "void"
-    | "unpaid"
-    | "partially_paid"
-    | "viewed"
-    | string;
+  status: string;
   date: string;
   due_date: string;
   total: number;
@@ -122,8 +123,7 @@ async function getZohoAccessToken(): Promise<string> {
     {
       method: "POST",
       headers: {
-        "Content-Type":
-          "application/x-www-form-urlencoded",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body,
       cache: "no-store",
@@ -268,20 +268,10 @@ export async function getZohoContacts(
 ) {
   const data = await zohoBooksRequest<{
     contacts?: ZohoContact[];
-    page_context?: {
-      page: number;
-      per_page: number;
-      has_more_page: boolean;
-      report_name?: string;
-      applied_filter?: string;
-      sort_column?: string;
-      sort_order?: string;
-    };
+    page_context?: ZohoPageContext;
   }>(
     "/contacts",
-    {
-      method: "GET",
-    },
+    { method: "GET" },
     {
       page,
       per_page: perPage,
@@ -308,9 +298,7 @@ export async function getZohoContact(
     contact?: ZohoContact;
   }>(
     `/contacts/${encodeURIComponent(contactId)}`,
-    {
-      method: "GET",
-    }
+    { method: "GET" }
   );
 
   if (!data.contact) {
@@ -328,20 +316,10 @@ export async function getZohoInvoices(
 ) {
   const data = await zohoBooksRequest<{
     invoices?: ZohoInvoice[];
-    page_context?: {
-      page: number;
-      per_page: number;
-      has_more_page: boolean;
-      report_name?: string;
-      applied_filter?: string;
-      sort_column?: string;
-      sort_order?: string;
-    };
+    page_context?: ZohoPageContext;
   }>(
     "/invoices",
-    {
-      method: "GET",
-    },
+    { method: "GET" },
     {
       page,
       per_page: perPage,
@@ -357,6 +335,35 @@ export async function getZohoInvoices(
   };
 }
 
+export async function getAllZohoInvoices() {
+  const invoices: ZohoInvoice[] = [];
+
+  let page = 1;
+  const perPage = 200;
+  let hasMorePage = true;
+
+  while (hasMorePage) {
+    const result =
+      await getZohoInvoices(page, perPage);
+
+    invoices.push(...result.invoices);
+
+    hasMorePage =
+      result.pageContext?.has_more_page ??
+      false;
+
+    page += 1;
+
+    if (page > 100) {
+      throw new Error(
+        "Arrêt de sécurité pendant la récupération des factures Zoho."
+      );
+    }
+  }
+
+  return invoices;
+}
+
 export async function getZohoInvoice(
   invoiceId: string
 ) {
@@ -370,9 +377,7 @@ export async function getZohoInvoice(
     invoice?: ZohoInvoice;
   }>(
     `/invoices/${encodeURIComponent(invoiceId)}`,
-    {
-      method: "GET",
-    }
+    { method: "GET" }
   );
 
   if (!data.invoice) {

@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 
 import {
-  getZohoInvoices,
+  getAllZohoInvoices,
 } from "@/lib/zoho-books";
+
+function roundCurrency(value: number) {
+  return Math.round(
+    (value + Number.EPSILON) * 100
+  ) / 100;
+}
 
 export async function GET() {
   try {
-    const result =
-      await getZohoInvoices(1, 200);
+    const zohoInvoices =
+      await getAllZohoInvoices();
 
     const invoices =
-      result.invoices.map((invoice) => ({
+      zohoInvoices.map((invoice) => ({
         invoice_id: invoice.invoice_id,
         invoice_number:
           invoice.invoice_number,
@@ -60,7 +66,16 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       count: invoices.length,
-      totals,
+      totals: {
+        outstanding: roundCurrency(
+          totals.outstanding
+        ),
+        overdue: roundCurrency(
+          totals.overdue
+        ),
+        overdueCount:
+          totals.overdueCount,
+      },
       invoices,
     });
   } catch (error) {
