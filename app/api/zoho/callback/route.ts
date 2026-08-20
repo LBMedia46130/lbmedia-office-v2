@@ -75,7 +75,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     success: true,
     message: "Connexion Zoho Books autorisée avec succès.",
-    refresh_token: tokenData.refresh_token ?? null,
     api_domain: tokenData.api_domain ?? null,
     expires_in: tokenData.expires_in ?? null,
   });
