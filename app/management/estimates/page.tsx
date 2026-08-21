@@ -7,6 +7,21 @@ import {
 
 export const dynamic = "force-dynamic";
 
+type EstimatesPageProps = {
+  searchParams: Promise<{
+    fiscalYear?: string;
+  }>;
+};
+
+type FiscalYear = {
+  startYear: number;
+  endYear: number;
+  label: string;
+  value: string;
+  startDate: string;
+  endDate: string;
+};
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -47,7 +62,6 @@ function getStatusLabel(status: string) {
     case "expired":
       return "Expiré";
     case "void":
-      return "Annulé";
     case "cancelled":
       return "Annulé";
     default:
@@ -81,6 +95,137 @@ function getStatusClass(status: string) {
     default:
       return "bg-slate-100 text-slate-700";
   }
+}
+
+function getCurrentFiscalStartYear() {
+  const now = new Date();
+
+  const year =
+    now.getFullYear();
+
+  const month =
+    now.getMonth() + 1;
+
+  return month >= 9
+    ? year
+    : year - 1;
+}
+
+function createFiscalYear(
+  startYear: number
+): FiscalYear {
+  const endYear =
+    startYear + 1;
+
+  return {
+    startYear,
+    endYear,
+    label: `${startYear}–${endYear}`,
+    value: String(startYear),
+    startDate: `${startYear}-09-01`,
+    endDate: `${endYear}-08-31`,
+  };
+}
+
+function getEstimateFiscalStartYear(
+  value?: string
+) {
+  if (!value) {
+    return null;
+  }
+
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(
+      value
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  const year =
+    Number(match[1]);
+
+  const month =
+    Number(match[2]);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month)
+  ) {
+    return null;
+  }
+
+  return month >= 9
+    ? year
+    : year - 1;
+}
+
+function getAvailableFiscalYears(
+  estimates: ZohoEstimate[]
+) {
+  const currentStartYear =
+    getCurrentFiscalStartYear();
+
+  const years =
+    new Set<number>([
+      currentStartYear,
+    ]);
+
+  for (const estimate of estimates) {
+    const startYear =
+      getEstimateFiscalStartYear(
+        estimate.date
+      );
+
+    if (startYear !== null) {
+      years.add(startYear);
+    }
+  }
+
+  return Array.from(years)
+    .sort((a, b) => b - a)
+    .map(createFiscalYear);
+}
+
+function filterEstimatesByFiscalYear(
+  estimates: ZohoEstimate[],
+  startYear: number
+) {
+  return estimates.filter(
+    (estimate) =>
+      getEstimateFiscalStartYear(
+        estimate.date
+      ) === startYear
+  );
+}
+
+function sortEstimates(
+  estimates: ZohoEstimate[]
+) {
+  return [...estimates].sort(
+    (a, b) => {
+      const dateComparison =
+        (b.date ?? "").localeCompare(
+          a.date ?? ""
+        );
+
+      if (dateComparison !== 0) {
+        return dateComparison;
+      }
+
+      return (
+        b.estimate_number ??
+        ""
+      ).localeCompare(
+        a.estimate_number ?? "",
+        "fr",
+        {
+          numeric: true,
+        }
+      );
+    }
+  );
 }
 
 function calculateTotals(
@@ -120,12 +265,17 @@ function calculateTotals(
   };
 }
 
-export default async function EstimatesPage() {
-  let estimates: ZohoEstimate[] = [];
+export default async function EstimatesPage({
+  searchParams,
+}: EstimatesPageProps) {
+  const resolvedSearchParams =
+    await searchParams;
+
+  let allEstimates: ZohoEstimate[] = [];
   let errorMessage: string | null = null;
 
   try {
-    estimates =
+    allEstimates =
       await getAllZohoEstimates();
   } catch (error) {
     errorMessage =
@@ -134,13 +284,56 @@ export default async function EstimatesPage() {
         : "Impossible de récupérer les devis Zoho Books.";
   }
 
+  const fiscalYears =
+    getAvailableFiscalYears(
+      allEstimates
+    );
+
+  const currentFiscalStartYear =
+    getCurrentFiscalStartYear();
+
+  const requestedFiscalStartYear =
+    Number(
+      resolvedSearchParams.fiscalYear
+    );
+
+  const selectedFiscalStartYear =
+    Number.isInteger(
+      requestedFiscalStartYear
+    ) &&
+    fiscalYears.some(
+      (fiscalYear) =>
+        fiscalYear.startYear ===
+        requestedFiscalStartYear
+    )
+      ? requestedFiscalStartYear
+      : currentFiscalStartYear;
+
+  const selectedFiscalYear =
+    fiscalYears.find(
+      (fiscalYear) =>
+        fiscalYear.startYear ===
+        selectedFiscalStartYear
+    ) ??
+    createFiscalYear(
+      currentFiscalStartYear
+    );
+
+  const estimates =
+    sortEstimates(
+      filterEstimatesByFiscalYear(
+        allEstimates,
+        selectedFiscalStartYear
+      )
+    );
+
   const totals =
     calculateTotals(estimates);
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-[1600px] px-6 py-8">
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-blue-600">
               Gestion
@@ -156,12 +349,48 @@ export default async function EstimatesPage() {
             </p>
           </div>
 
-          <Link
-            href="/management/estimates/new"
-            className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            Nouveau devis
-          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Exercice
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {fiscalYears.map(
+                  (fiscalYear) => {
+                    const isSelected =
+                      fiscalYear.startYear ===
+                      selectedFiscalStartYear;
+
+                    return (
+                      <Link
+                        key={
+                          fiscalYear.value
+                        }
+                        href={`/management/estimates?fiscalYear=${fiscalYear.value}`}
+                        className={
+                          isSelected
+                            ? "rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
+                            : "rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                        }
+                      >
+                        {
+                          fiscalYear.label
+                        }
+                      </Link>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+
+            <Link
+              href="/management/estimates/new"
+              className="rounded-xl bg-blue-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Nouveau devis
+            </Link>
+          </div>
         </div>
 
         {errorMessage ? (
@@ -170,6 +399,35 @@ export default async function EstimatesPage() {
           </div>
         ) : (
           <>
+            <div className="mb-5 flex flex-col gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-blue-900">
+                  Exercice{" "}
+                  {
+                    selectedFiscalYear.label
+                  }
+                </p>
+
+                <p className="mt-1 text-xs text-blue-700">
+                  Du 1er septembre{" "}
+                  {
+                    selectedFiscalYear.startYear
+                  }{" "}
+                  au 31 août{" "}
+                  {
+                    selectedFiscalYear.endYear
+                  }
+                </p>
+              </div>
+
+              <p className="text-sm font-medium text-blue-800">
+                {estimates.length}{" "}
+                {estimates.length > 1
+                  ? "devis"
+                  : "devis"}
+              </p>
+            </div>
+
             <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-medium text-slate-500">
@@ -232,12 +490,22 @@ export default async function EstimatesPage() {
               <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="font-semibold text-slate-900">
-                    Tous les devis
+                    Devis de l’exercice{" "}
+                    {
+                      selectedFiscalYear.label
+                    }
                   </h2>
 
                   <p className="text-sm text-slate-500">
                     {estimates.length} devis
-                    dans Zoho Books
+                    du 01/09/
+                    {
+                      selectedFiscalYear.startYear
+                    }{" "}
+                    au 31/08/
+                    {
+                      selectedFiscalYear.endYear
+                    }
                   </p>
                 </div>
 
@@ -343,8 +611,11 @@ export default async function EstimatesPage() {
                           colSpan={6}
                           className="px-5 py-12 text-center text-sm text-slate-500"
                         >
-                          Aucun devis trouvé
-                          dans Zoho Books.
+                          Aucun devis pour
+                          l’exercice{" "}
+                          {
+                            selectedFiscalYear.label
+                          }.
                         </td>
                       </tr>
                     ) : null}
