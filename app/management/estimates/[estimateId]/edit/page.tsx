@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
+  getAllZohoItems,
   getZohoEstimate,
   getZohoTaxes,
 } from "@/lib/zoho-books";
@@ -94,8 +95,13 @@ export default async function EditEstimatePage({
     notFound();
   }
 
-  const taxes =
-    await getZohoTaxes();
+  const [
+    taxes,
+    items,
+  ] = await Promise.all([
+    getZohoTaxes(),
+    getAllZohoItems(),
+  ]);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -162,6 +168,9 @@ export default async function EditEstimatePage({
               line_item_id:
                 line.line_item_id,
 
+              item_id:
+                line.item_id || "",
+
               name:
                 line.name,
 
@@ -208,6 +217,35 @@ export default async function EditEstimatePage({
                 Number(
                   tax.tax_percentage
                 ),
+            })
+          )}
+          items={items.map(
+            (item) => ({
+              item_id:
+                item.item_id,
+
+              name:
+                item.name,
+
+              description:
+                item.description ?? "",
+
+              rate:
+                Number(
+                  item.rate
+                ) || 0,
+
+              tax_id:
+                item.tax_id ?? null,
+
+              tax_name:
+                item.tax_name ?? null,
+
+              tax_percentage:
+                typeof item.tax_percentage ===
+                "number"
+                  ? item.tax_percentage
+                  : null,
             })
           )}
         />

@@ -16,8 +16,19 @@ type TaxOption = {
   tax_percentage: number;
 };
 
+type ItemOption = {
+  item_id: string;
+  name: string;
+  description: string;
+  rate: number;
+  tax_id: string | null;
+  tax_name: string | null;
+  tax_percentage: number | null;
+};
+
 type InitialLine = {
   line_item_id: string;
+  item_id: string;
   name: string;
   description: string;
   quantity: number;
@@ -41,6 +52,7 @@ type InitialEstimate = {
 
 type EstimateLine = {
   id: string;
+  item_id: string;
   name: string;
   description: string;
   quantity: string;
@@ -52,6 +64,7 @@ type EstimateLine = {
 type Props = {
   estimate: InitialEstimate;
   taxes: TaxOption[];
+  items: ItemOption[];
 };
 
 function numberValue(
@@ -89,6 +102,7 @@ function createLine(
       "randomUUID" in crypto
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random()}`,
+    item_id: "",
     name: "",
     description: "",
     quantity: "1",
@@ -131,9 +145,23 @@ function calculateLineTotal(
   );
 }
 
+function normalizeSearch(
+  value: string
+) {
+  return value
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase()
+    .trim();
+}
+
 export default function EditEstimateForm({
   estimate,
   taxes,
+  items,
 }: Props) {
   const router =
     useRouter();
@@ -191,6 +219,8 @@ export default function EditEstimateForm({
             id:
               line.line_item_id ||
               `${Date.now()}-${Math.random()}`,
+            item_id:
+              line.item_id || "",
             name:
               line.name,
             description:
@@ -218,6 +248,13 @@ export default function EditEstimateForm({
             defaultTax?.tax_id
           ),
         ]
+  );
+
+  const [
+    activeSearchLineId,
+    setActiveSearchLineId,
+  ] = useState<string | null>(
+    null
   );
 
   const [
@@ -307,15 +344,132 @@ export default function EditEstimateForm({
   ) {
     setLines(
       (current) =>
+        current.map((line) => {
+          if (line.id !== id) {
+            return line;
+          }
+
+          if (field === "name") {
+            return {
+              ...line,
+              item_id: "",
+              name: value,
+            };
+          }
+
+          return {
+            ...line,
+            [field]: value,
+          };
+        })
+    );
+  }
+
+  function selectItem(
+    lineId: string,
+    item: ItemOption
+  ) {
+    setLines(
+      (current) =>
         current.map((line) =>
-          line.id === id
+          line.id === lineId
             ? {
                 ...line,
-                [field]: value,
+                item_id:
+                  item.item_id,
+                name:
+                  item.name,
+                description:
+                  item.description,
+                rate:
+                  String(
+                    item.rate
+                  ),
+                tax_id:
+                  item.tax_id ||
+                  defaultTax?.tax_id ||
+                  "",
               }
             : line
         )
     );
+
+    setActiveSearchLineId(
+      null
+    );
+  }
+
+  function getSuggestions(
+    line: EstimateLine
+  ) {
+    const search =
+      normalizeSearch(
+        line.name
+      );
+
+    if (!search) {
+      return items
+        .slice()
+        .sort((a, b) =>
+          a.name.localeCompare(
+            b.name,
+            "fr"
+          )
+        )
+        .slice(0, 8);
+    }
+
+    const startsWith =
+      items.filter((item) =>
+        normalizeSearch(
+          item.name
+        ).startsWith(search)
+      );
+
+    const containsInName =
+      items.filter((item) => {
+        const name =
+          normalizeSearch(
+            item.name
+          );
+
+        return (
+          !name.startsWith(
+            search
+          ) &&
+          name.includes(
+            search
+          )
+        );
+      });
+
+    const containsInDescription =
+      items.filter((item) => {
+        const name =
+          normalizeSearch(
+            item.name
+          );
+
+        const description =
+          normalizeSearch(
+            item.description
+          );
+
+        return (
+          !name.includes(
+            search
+          ) &&
+          description.includes(
+            search
+          )
+        );
+      });
+
+    return [
+      ...startsWith,
+      ...containsInName,
+      ...containsInDescription,
+    ].slice(0, 8);
   }
 
   function addLine() {
@@ -346,6 +500,14 @@ export default function EditEstimateForm({
         );
       }
     );
+
+    if (
+      activeSearchLineId === id
+    ) {
+      setActiveSearchLineId(
+        null
+      );
+    }
   }
 
   async function handleSubmit(
@@ -357,6 +519,10 @@ export default function EditEstimateForm({
 
     const normalizedLines =
       lines.map((line) => ({
+        item_id:
+          line.item_id ||
+          undefined,
+
         name:
           line.name.trim(),
 
@@ -583,8 +749,8 @@ export default function EditEstimateForm({
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Quantités, tarifs,
-              remises et TVA.
+              Recherche dans le catalogue
+              Zoho Books ou saisie libre.
             </p>
           </div>
 
@@ -599,211 +765,315 @@ export default function EditEstimateForm({
 
         <div className="space-y-4 p-6">
           {lines.map(
-            (line, index) => (
-              <div
-                key={line.id}
-                className="rounded-xl border border-slate-200 p-4"
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-700">
-                    Ligne {index + 1}
-                  </p>
+            (line, index) => {
+              const suggestions =
+                getSuggestions(
+                  line
+                );
 
-                  {lines.length > 1 ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeLine(
-                          line.id
-                        )
-                      }
-                      className="text-sm font-semibold text-red-600 hover:text-red-700"
-                    >
-                      Supprimer
-                    </button>
-                  ) : null}
-                </div>
+              return (
+                <div
+                  key={line.id}
+                  className="rounded-xl border border-slate-200 p-4"
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-slate-700">
+                      Ligne {index + 1}
+                    </p>
 
-                <div className="grid gap-4 xl:grid-cols-[1.8fr_2.5fr_0.7fr_1fr_0.8fr_1fr]">
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Prestation
-                    </label>
-
-                    <input
-                      value={
-                        line.name
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        updateLine(
-                          line.id,
-                          "name",
-                          event.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
+                    {lines.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeLine(
+                            line.id
+                          )
+                        }
+                        className="text-sm font-semibold text-red-600 hover:text-red-700"
+                      >
+                        Supprimer
+                      </button>
+                    ) : null}
                   </div>
 
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Description
-                    </label>
+                  <div className="grid gap-4 xl:grid-cols-[1.8fr_2.5fr_0.7fr_1fr_0.8fr_1fr]">
+                    <div className="relative">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Prestation
+                      </label>
 
-                    <input
-                      value={
-                        line.description
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        updateLine(
-                          line.id,
-                          "description",
-                          event.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
+                      <input
+                        value={
+                          line.name
+                        }
+                        onFocus={() =>
+                          setActiveSearchLineId(
+                            line.id
+                          )
+                        }
+                        onChange={(
+                          event
+                        ) => {
+                          updateLine(
+                            line.id,
+                            "name",
+                            event.target.value
+                          );
 
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Qté
-                    </label>
+                          setActiveSearchLineId(
+                            line.id
+                          );
+                        }}
+                        onBlur={() => {
+                          window.setTimeout(
+                            () =>
+                              setActiveSearchLineId(
+                                null
+                              ),
+                            150
+                          );
+                        }}
+                        placeholder="Tapez les premières lettres..."
+                        autoComplete="off"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
 
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={
-                        line.quantity
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        updateLine(
-                          line.id,
-                          "quantity",
-                          event.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Prix HT
-                    </label>
-
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={
-                        line.rate
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        updateLine(
-                          line.id,
-                          "rate",
-                          event.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Remise %
-                    </label>
-
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={
-                        line.discount
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        updateLine(
-                          line.id,
-                          "discount",
-                          event.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      TVA
-                    </label>
-
-                    <select
-                      value={
-                        line.tax_id
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        updateLine(
-                          line.id,
-                          "tax_id",
-                          event.target.value
-                        )
-                      }
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    >
-                      <option value="">
-                        Sans TVA
-                      </option>
-
-                      {taxes.map(
-                        (tax) => (
-                          <option
-                            key={
-                              tax.tax_id
-                            }
-                            value={
-                              tax.tax_id
-                            }
-                          >
-                            {
-                              tax.tax_percentage
-                            }{" "}
-                            %
-                          </option>
-                        )
+                      {line.item_id ? (
+                        <p className="mt-1 text-xs font-medium text-emerald-600">
+                          Article Zoho sélectionné
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-slate-400">
+                          Recherche catalogue ou
+                          saisie libre
+                        </p>
                       )}
-                    </select>
+
+                      {activeSearchLineId ===
+                        line.id &&
+                      suggestions.length >
+                        0 ? (
+                        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                          {suggestions.map(
+                            (item) => (
+                              <button
+                                key={
+                                  item.item_id
+                                }
+                                type="button"
+                                onMouseDown={(
+                                  event
+                                ) => {
+                                  event.preventDefault();
+
+                                  selectItem(
+                                    line.id,
+                                    item
+                                  );
+                                }}
+                                className="block w-full border-b border-slate-100 px-3 py-3 text-left transition last:border-b-0 hover:bg-blue-50"
+                              >
+                                <span className="block text-sm font-semibold text-slate-900">
+                                  {
+                                    item.name
+                                  }
+                                </span>
+
+                                <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                                  <span>
+                                    {formatCurrency(
+                                      item.rate
+                                    )}{" "}
+                                    HT
+                                  </span>
+
+                                  {item.tax_percentage !==
+                                  null ? (
+                                    <span>
+                                      TVA{" "}
+                                      {
+                                        item.tax_percentage
+                                      }{" "}
+                                      %
+                                    </span>
+                                  ) : null}
+                                </span>
+
+                                {item.description ? (
+                                  <span className="mt-1 block line-clamp-2 text-xs text-slate-400">
+                                    {
+                                      item.description
+                                    }
+                                  </span>
+                                ) : null}
+                              </button>
+                            )
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Description
+                      </label>
+
+                      <input
+                        value={
+                          line.description
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          updateLine(
+                            line.id,
+                            "description",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Qté
+                      </label>
+
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={
+                          line.quantity
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          updateLine(
+                            line.id,
+                            "quantity",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Prix HT
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={
+                          line.rate
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          updateLine(
+                            line.id,
+                            "rate",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Remise %
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={
+                          line.discount
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          updateLine(
+                            line.id,
+                            "discount",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        TVA
+                      </label>
+
+                      <select
+                        value={
+                          line.tax_id
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          updateLine(
+                            line.id,
+                            "tax_id",
+                            event.target.value
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      >
+                        <option value="">
+                          Sans TVA
+                        </option>
+
+                        {taxes.map(
+                          (tax) => (
+                            <option
+                              key={
+                                tax.tax_id
+                              }
+                              value={
+                                tax.tax_id
+                              }
+                            >
+                              {
+                                tax.tax_percentage
+                              }{" "}
+                              % —{" "}
+                              {
+                                tax.tax_name
+                              }
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex justify-end">
+                    <p className="text-sm text-slate-500">
+                      Total ligne HT :{" "}
+                      <span className="font-semibold text-slate-900">
+                        {formatCurrency(
+                          calculateLineTotal(
+                            line
+                          )
+                        )}
+                      </span>
+                    </p>
                   </div>
                 </div>
-
-                <div className="mt-4 flex justify-end">
-                  <p className="text-sm text-slate-500">
-                    Total ligne HT :{" "}
-                    <span className="font-semibold text-slate-900">
-                      {formatCurrency(
-                        calculateLineTotal(
-                          line
-                        )
-                      )}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            )
+              );
+            }
           )}
         </div>
       </section>
