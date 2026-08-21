@@ -285,10 +285,15 @@ export default async function EstimatesPage() {
                           }
                           className="transition hover:bg-slate-50"
                         >
-                          <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900">
-                            {
-                              estimate.estimate_number
-                            }
+                          <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold">
+                            <Link
+                              href={`/management/estimates/${estimate.estimate_id}`}
+                              className="text-blue-600 transition hover:text-blue-800 hover:underline"
+                            >
+                              {
+                                estimate.estimate_number
+                              }
+                            </Link>
                           </td>
 
                           <td className="px-5 py-4 text-sm text-slate-700">
