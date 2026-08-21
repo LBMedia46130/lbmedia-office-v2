@@ -448,6 +448,11 @@ export async function getZohoContact(
     );
   }
 
+  console.log(
+    "ZOHO CONTACT DETAIL",
+    JSON.stringify(data.contact, null, 2)
+  );
+
   return data.contact;
 }
 
