@@ -147,6 +147,26 @@ export type ZohoEstimate = {
   client_viewed_time?: string;
 };
 
+export type ZohoEstimateEmailContent = {
+  body: string;
+  subject: string;
+  to_mail_ids: string[];
+  cc_mail_ids: string[];
+  bcc_mail_ids: string[];
+  from_mail_id?: string;
+  from_name?: string;
+  emailtemplate_id?: string;
+  file_name?: string;
+};
+
+export type SendZohoEstimateEmailInput = {
+  to_mail_ids: string[];
+  subject: string;
+  body: string;
+  cc_mail_ids?: string[];
+  bcc_mail_ids?: string[];
+};
+
 export type ZohoInvoiceLineItem = {
   item_id?: string;
   line_item_id: string;
@@ -714,39 +734,27 @@ export async function createZohoContact(
       input.billing_address
         ? {
             address:
-              input
-                .billing_address
-                .address?.trim() ||
+              input.billing_address.address?.trim() ||
               undefined,
 
             street2:
-              input
-                .billing_address
-                .street2?.trim() ||
+              input.billing_address.street2?.trim() ||
               undefined,
 
             city:
-              input
-                .billing_address
-                .city?.trim() ||
+              input.billing_address.city?.trim() ||
               undefined,
 
             state:
-              input
-                .billing_address
-                .state?.trim() ||
+              input.billing_address.state?.trim() ||
               undefined,
 
             zip:
-              input
-                .billing_address
-                .zip?.trim() ||
+              input.billing_address.zip?.trim() ||
               undefined,
 
             country:
-              input
-                .billing_address
-                .country?.trim() ||
+              input.billing_address.country?.trim() ||
               undefined,
           }
         : undefined,
@@ -758,19 +766,15 @@ export async function createZohoContact(
     }>(
       "/contacts",
       {
-        method:
-          "POST",
-
-        body:
-          JSON.stringify(
-            payload
-          ),
+        method: "POST",
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
   if (
-    !data.contact
-      ?.contact_id
+    !data.contact?.contact_id
   ) {
     throw new Error(
       "Zoho Books a créé le contact sans retourner son identifiant."
@@ -880,6 +884,136 @@ export async function getZohoEstimate(
   }
 
   return data.estimate;
+}
+
+export async function getZohoEstimateEmailContent(
+  estimateId: string
+) {
+  const normalizedEstimateId =
+    estimateId.trim();
+
+  if (!normalizedEstimateId) {
+    throw new Error(
+      "Identifiant de devis Zoho manquant."
+    );
+  }
+
+  const data =
+    await zohoBooksRequest<{
+      body?: string;
+      subject?: string;
+      to_mail_ids?: string[];
+      cc_mail_ids?: string[];
+      bcc_mail_ids?: string[];
+      from_mail_id?: string;
+      from_name?: string;
+      emailtemplate_id?: string;
+      file_name?: string;
+    }>(
+      `/estimates/${encodeURIComponent(
+        normalizedEstimateId
+      )}/email`,
+      {
+        method: "GET",
+      }
+    );
+
+  return {
+    body:
+      data.body ?? "",
+    subject:
+      data.subject ?? "",
+    to_mail_ids:
+      data.to_mail_ids ?? [],
+    cc_mail_ids:
+      data.cc_mail_ids ?? [],
+    bcc_mail_ids:
+      data.bcc_mail_ids ?? [],
+    from_mail_id:
+      data.from_mail_id,
+    from_name:
+      data.from_name,
+    emailtemplate_id:
+      data.emailtemplate_id,
+    file_name:
+      data.file_name,
+  } satisfies ZohoEstimateEmailContent;
+}
+
+export async function sendZohoEstimateEmail(
+  estimateId: string,
+  input: SendZohoEstimateEmailInput
+) {
+  const normalizedEstimateId =
+    estimateId.trim();
+
+  if (!normalizedEstimateId) {
+    throw new Error(
+      "Identifiant de devis Zoho manquant."
+    );
+  }
+
+  const toMailIds =
+    input.to_mail_ids
+      .map((email) =>
+        email.trim()
+      )
+      .filter(Boolean);
+
+  if (toMailIds.length === 0) {
+    throw new Error(
+      "Au moins une adresse email destinataire est obligatoire."
+    );
+  }
+
+  if (!input.subject.trim()) {
+    throw new Error(
+      "Le sujet de l'email est obligatoire."
+    );
+  }
+
+  if (!input.body.trim()) {
+    throw new Error(
+      "Le contenu de l'email est obligatoire."
+    );
+  }
+
+  const payload = {
+    to_mail_ids:
+      toMailIds,
+
+    cc_mail_ids:
+      (input.cc_mail_ids ?? [])
+        .map((email) =>
+          email.trim()
+        )
+        .filter(Boolean),
+
+    bcc_mail_ids:
+      (input.bcc_mail_ids ?? [])
+        .map((email) =>
+          email.trim()
+        )
+        .filter(Boolean),
+
+    subject:
+      input.subject.trim(),
+
+    body:
+      input.body,
+  };
+
+  await zohoBooksRequest<Record<string, never>>(
+    `/estimates/${encodeURIComponent(
+      normalizedEstimateId
+    )}/email`,
+    {
+      method: "POST",
+      body: JSON.stringify(
+        payload
+      ),
+    }
+  );
 }
 
 function normalizeDiscountValue(
@@ -1102,9 +1236,7 @@ export async function createZohoEstimate(
     }>(
       "/estimates",
       {
-        method:
-          "POST",
-
+        method: "POST",
         body:
           JSON.stringify(
             payload
@@ -1190,9 +1322,7 @@ export async function updateZohoEstimate(
         estimateId
       )}`,
       {
-        method:
-          "PUT",
-
+        method: "PUT",
         body:
           JSON.stringify(
             payload
@@ -1456,7 +1586,6 @@ export async function updateZohoInvoice(
       )}`,
       {
         method: "PUT",
-
         body:
           JSON.stringify(
             payload
@@ -1690,9 +1819,7 @@ export async function createZohoInvoiceFromEstimate(
     }>(
       "/invoices",
       {
-        method:
-          "POST",
-
+        method: "POST",
         body:
           JSON.stringify(
             payload
