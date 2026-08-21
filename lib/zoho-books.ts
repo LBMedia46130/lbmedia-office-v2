@@ -220,10 +220,17 @@ let cachedAccessToken: {
 } | null = null;
 
 function getZohoConfig() {
-  const clientId = process.env.ZOHO_CLIENT_ID;
-  const clientSecret = process.env.ZOHO_CLIENT_SECRET;
-  const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
-  const organizationId = process.env.ZOHO_ORGANIZATION_ID;
+  const clientId =
+    process.env.ZOHO_CLIENT_ID;
+
+  const clientSecret =
+    process.env.ZOHO_CLIENT_SECRET;
+
+  const refreshToken =
+    process.env.ZOHO_REFRESH_TOKEN;
+
+  const organizationId =
+    process.env.ZOHO_ORGANIZATION_ID;
 
   if (
     !clientId ||
@@ -249,7 +256,8 @@ async function getZohoAccessToken(): Promise<string> {
 
   if (
     cachedAccessToken &&
-    cachedAccessToken.expiresAt > now + 60_000
+    cachedAccessToken.expiresAt >
+      now + 60_000
   ) {
     return cachedAccessToken.token;
   }
@@ -290,7 +298,8 @@ async function getZohoAccessToken(): Promise<string> {
   ) {
     throw new Error(
       `Impossible d'obtenir un access token Zoho : ${
-        data.error ?? response.statusText
+        data.error ??
+        response.statusText
       }`
     );
   }
@@ -302,7 +311,8 @@ async function getZohoAccessToken(): Promise<string> {
 
   cachedAccessToken = {
     token: data.access_token,
-    expiresAt: now + expiresIn * 1000,
+    expiresAt:
+      now + expiresIn * 1000,
   };
 
   return data.access_token;
@@ -313,10 +323,14 @@ async function zohoBooksRequest<T>(
   options: RequestInit = {},
   query?: Record<
     string,
-    string | number | boolean | undefined
+    | string
+    | number
+    | boolean
+    | undefined
   >
 ): Promise<ZohoApiResponse<T>> {
-  const { organizationId } = getZohoConfig();
+  const { organizationId } =
+    getZohoConfig();
 
   const accessToken =
     await getZohoAccessToken();
@@ -331,7 +345,9 @@ async function zohoBooksRequest<T>(
   );
 
   if (query) {
-    for (const [key, value] of Object.entries(query)) {
+    for (const [key, value] of Object.entries(
+      query
+    )) {
       if (value !== undefined) {
         url.searchParams.set(
           key,
@@ -341,7 +357,8 @@ async function zohoBooksRequest<T>(
     }
   }
 
-  const headers = new Headers(options.headers);
+  const headers =
+    new Headers(options.headers);
 
   headers.set(
     "Authorization",
@@ -367,10 +384,17 @@ async function zohoBooksRequest<T>(
   const data =
     (await response.json()) as ZohoApiResponse<T>;
 
-  if (!response.ok || data.code !== 0) {
+  if (
+    !response.ok ||
+    data.code !== 0
+  ) {
     throw new Error(
-      `Erreur Zoho Books (${data.code ?? response.status}) : ${
-        data.message ?? response.statusText
+      `Erreur Zoho Books (${
+        data.code ??
+        response.status
+      }) : ${
+        data.message ??
+        response.statusText
       }`
     );
   }
@@ -379,7 +403,8 @@ async function zohoBooksRequest<T>(
 }
 
 export function getZohoOrganizationId() {
-  return getZohoConfig().organizationId;
+  return getZohoConfig()
+    .organizationId;
 }
 
 export async function getZohoOrganizations() {
@@ -402,10 +427,14 @@ export async function getZohoOrganizations() {
       organizations?: ZohoOrganization[];
     }>;
 
-  if (!response.ok || data.code !== 0) {
+  if (
+    !response.ok ||
+    data.code !== 0
+  ) {
     throw new Error(
       `Impossible de récupérer les organisations Zoho Books : ${
-        data.message ?? response.statusText
+        data.message ??
+        response.statusText
       }`
     );
   }
@@ -414,14 +443,15 @@ export async function getZohoOrganizations() {
 }
 
 export async function getZohoTaxes() {
-  const data = await zohoBooksRequest<{
-    taxes?: ZohoTax[];
-  }>(
-    "/settings/taxes",
-    {
-      method: "GET",
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      taxes?: ZohoTax[];
+    }>(
+      "/settings/taxes",
+      {
+        method: "GET",
+      }
+    );
 
   return data.taxes ?? [];
 }
@@ -430,19 +460,20 @@ export async function getZohoItems(
   page = 1,
   perPage = 200
 ) {
-  const data = await zohoBooksRequest<{
-    items?: ZohoItem[];
-    page_context?: ZohoPageContext;
-  }>(
-    "/items",
-    {
-      method: "GET",
-    },
-    {
-      page,
-      per_page: perPage,
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      items?: ZohoItem[];
+      page_context?: ZohoPageContext;
+    }>(
+      "/items",
+      {
+        method: "GET",
+      },
+      {
+        page,
+        per_page: perPage,
+      }
+    );
 
   return {
     items: data.items ?? [],
@@ -470,7 +501,8 @@ export async function getAllZohoItems() {
     );
 
     hasMorePage =
-      result.pageContext?.has_more_page ??
+      result.pageContext
+        ?.has_more_page ??
       false;
 
     page += 1;
@@ -493,24 +525,27 @@ export async function getZohoContacts(
   page = 1,
   perPage = 200
 ) {
-  const data = await zohoBooksRequest<{
-    contacts?: ZohoContact[];
-    page_context?: ZohoPageContext;
-  }>(
-    "/contacts",
-    {
-      method: "GET",
-    },
-    {
-      page,
-      per_page: perPage,
-      contact_type: "customer",
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      contacts?: ZohoContact[];
+      page_context?: ZohoPageContext;
+    }>(
+      "/contacts",
+      {
+        method: "GET",
+      },
+      {
+        page,
+        per_page: perPage,
+        contact_type: "customer",
+      }
+    );
 
   return {
-    contacts: data.contacts ?? [],
-    pageContext: data.page_context ?? null,
+    contacts:
+      data.contacts ?? [],
+    pageContext:
+      data.page_context ?? null,
   };
 }
 
@@ -523,14 +558,17 @@ export async function getZohoContact(
     );
   }
 
-  const data = await zohoBooksRequest<{
-    contact?: ZohoContact;
-  }>(
-    `/contacts/${encodeURIComponent(contactId)}`,
-    {
-      method: "GET",
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      contact?: ZohoContact;
+    }>(
+      `/contacts/${encodeURIComponent(
+        contactId
+      )}`,
+      {
+        method: "GET",
+      }
+    );
 
   if (!data.contact) {
     throw new Error(
@@ -544,59 +582,87 @@ export async function getZohoContact(
 export async function createZohoContact(
   input: CreateZohoContactInput
 ) {
-  if (!input.contact_name.trim()) {
+  if (
+    !input.contact_name.trim()
+  ) {
     throw new Error(
       "Le nom du contact Zoho est obligatoire."
     );
   }
 
   const payload = {
-    contact_name: input.contact_name.trim(),
+    contact_name:
+      input.contact_name.trim(),
+
     company_name:
       input.company_name?.trim() ||
       input.contact_name.trim(),
+
     contact_type: "customer",
-    customer_sub_type: "business",
+
+    customer_sub_type:
+      "business",
+
     email:
-      input.email?.trim() || undefined,
+      input.email?.trim() ||
+      undefined,
+
     phone:
-      input.phone?.trim() || undefined,
+      input.phone?.trim() ||
+      undefined,
+
     billing_address:
       input.billing_address
         ? {
             address:
-              input.billing_address.address?.trim() ||
+              input.billing_address
+                .address?.trim() ||
               undefined,
+
             street2:
-              input.billing_address.street2?.trim() ||
+              input.billing_address
+                .street2?.trim() ||
               undefined,
+
             city:
-              input.billing_address.city?.trim() ||
+              input.billing_address
+                .city?.trim() ||
               undefined,
+
             state:
-              input.billing_address.state?.trim() ||
+              input.billing_address
+                .state?.trim() ||
               undefined,
+
             zip:
-              input.billing_address.zip?.trim() ||
+              input.billing_address
+                .zip?.trim() ||
               undefined,
+
             country:
-              input.billing_address.country?.trim() ||
+              input.billing_address
+                .country?.trim() ||
               undefined,
           }
         : undefined,
   };
 
-  const data = await zohoBooksRequest<{
-    contact?: ZohoContact;
-  }>(
-    "/contacts",
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      contact?: ZohoContact;
+    }>(
+      "/contacts",
+      {
+        method: "POST",
+        body: JSON.stringify(
+          payload
+        ),
+      }
+    );
 
-  if (!data.contact?.contact_id) {
+  if (
+    !data.contact?.contact_id
+  ) {
     throw new Error(
       "Zoho Books a créé le contact sans retourner son identifiant."
     );
@@ -609,31 +675,35 @@ export async function getZohoEstimates(
   page = 1,
   perPage = 200
 ) {
-  const data = await zohoBooksRequest<{
-    estimates?: ZohoEstimate[];
-    page_context?: ZohoPageContext;
-  }>(
-    "/estimates",
-    {
-      method: "GET",
-    },
-    {
-      page,
-      per_page: perPage,
-      filter_by: "Status.All",
-      sort_column: "date",
-      sort_order: "D",
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      estimates?: ZohoEstimate[];
+      page_context?: ZohoPageContext;
+    }>(
+      "/estimates",
+      {
+        method: "GET",
+      },
+      {
+        page,
+        per_page: perPage,
+        filter_by: "Status.All",
+        sort_column: "date",
+        sort_order: "D",
+      }
+    );
 
   return {
-    estimates: data.estimates ?? [],
-    pageContext: data.page_context ?? null,
+    estimates:
+      data.estimates ?? [],
+    pageContext:
+      data.page_context ?? null,
   };
 }
 
 export async function getAllZohoEstimates() {
-  const estimates: ZohoEstimate[] = [];
+  const estimates:
+    ZohoEstimate[] = [];
 
   let page = 1;
   const perPage = 200;
@@ -651,7 +721,8 @@ export async function getAllZohoEstimates() {
     );
 
     hasMorePage =
-      result.pageContext?.has_more_page ??
+      result.pageContext
+        ?.has_more_page ??
       false;
 
     page += 1;
@@ -675,16 +746,17 @@ export async function getZohoEstimate(
     );
   }
 
-  const data = await zohoBooksRequest<{
-    estimate?: ZohoEstimate;
-  }>(
-    `/estimates/${encodeURIComponent(
-      estimateId
-    )}`,
-    {
-      method: "GET",
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      estimate?: ZohoEstimate;
+    }>(
+      `/estimates/${encodeURIComponent(
+        estimateId
+      )}`,
+      {
+        method: "GET",
+      }
+    );
 
   if (!data.estimate) {
     throw new Error(
@@ -696,44 +768,60 @@ export async function getZohoEstimate(
 }
 
 function normalizeEstimateLineItems(
-  lineItems: CreateZohoEstimateLineItemInput[]
+  lineItems:
+    CreateZohoEstimateLineItemInput[]
 ) {
   return lineItems.map(
     (line, index) => {
       if (!line.name.trim()) {
         throw new Error(
-          `Le nom de la ligne ${index + 1} est obligatoire.`
+          `Le nom de la ligne ${
+            index + 1
+          } est obligatoire.`
         );
       }
 
       if (
-        !Number.isFinite(line.quantity) ||
+        !Number.isFinite(
+          line.quantity
+        ) ||
         line.quantity <= 0
       ) {
         throw new Error(
-          `La quantité de la ligne ${index + 1} doit être supérieure à zéro.`
+          `La quantité de la ligne ${
+            index + 1
+          } doit être supérieure à zéro.`
         );
       }
 
       if (
-        !Number.isFinite(line.rate) ||
+        !Number.isFinite(
+          line.rate
+        ) ||
         line.rate < 0
       ) {
         throw new Error(
-          `Le prix de la ligne ${index + 1} est invalide.`
+          `Le prix de la ligne ${
+            index + 1
+          } est invalide.`
         );
       }
 
       if (
-        line.discount !== undefined &&
+        line.discount !==
+          undefined &&
         (
-          !Number.isFinite(line.discount) ||
+          !Number.isFinite(
+            line.discount
+          ) ||
           line.discount < 0 ||
           line.discount > 100
         )
       ) {
         throw new Error(
-          `La remise de la ligne ${index + 1} doit être comprise entre 0 et 100 %.`
+          `La remise de la ligne ${
+            index + 1
+          } doit être comprise entre 0 et 100 %.`
         );
       }
 
@@ -742,15 +830,18 @@ function normalizeEstimateLineItems(
           line.item_id?.trim() ||
           undefined,
 
-        name: line.name.trim(),
+        name:
+          line.name.trim(),
 
         description:
           line.description?.trim() ||
           undefined,
 
-        quantity: line.quantity,
+        quantity:
+          line.quantity,
 
-        rate: line.rate,
+        rate:
+          line.rate,
 
         discount:
           line.discount &&
@@ -769,7 +860,9 @@ function normalizeEstimateLineItems(
 export async function createZohoEstimate(
   input: CreateZohoEstimateInput
 ) {
-  if (!input.customer_id.trim()) {
+  if (
+    !input.customer_id.trim()
+  ) {
     throw new Error(
       "Le client Zoho est obligatoire pour créer un devis."
     );
@@ -785,39 +878,51 @@ export async function createZohoEstimate(
   }
 
   const payload = {
-    customer_id: input.customer_id.trim(),
+    customer_id:
+      input.customer_id.trim(),
+
     date:
       input.date?.trim() ||
       undefined,
+
     expiry_date:
       input.expiry_date?.trim() ||
       undefined,
+
     reference_number:
       input.reference_number?.trim() ||
       undefined,
+
     notes:
       input.notes?.trim() ||
       undefined,
+
     terms:
       input.terms?.trim() ||
       undefined,
+
     line_items:
       normalizeEstimateLineItems(
         input.line_items
       ),
   };
 
-  const data = await zohoBooksRequest<{
-    estimate?: ZohoEstimate;
-  }>(
-    "/estimates",
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      estimate?: ZohoEstimate;
+    }>(
+      "/estimates",
+      {
+        method: "POST",
+        body: JSON.stringify(
+          payload
+        ),
+      }
+    );
 
-  if (!data.estimate?.estimate_id) {
+  if (
+    !data.estimate?.estimate_id
+  ) {
     throw new Error(
       "Zoho Books a créé le devis sans retourner son identifiant."
     );
@@ -836,7 +941,9 @@ export async function updateZohoEstimate(
     );
   }
 
-  if (!input.customer_id.trim()) {
+  if (
+    !input.customer_id.trim()
+  ) {
     throw new Error(
       "Le client Zoho est obligatoire pour modifier un devis."
     );
@@ -881,19 +988,24 @@ export async function updateZohoEstimate(
       ),
   };
 
-  const data = await zohoBooksRequest<{
-    estimate?: ZohoEstimate;
-  }>(
-    `/estimates/${encodeURIComponent(
-      estimateId
-    )}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      estimate?: ZohoEstimate;
+    }>(
+      `/estimates/${encodeURIComponent(
+        estimateId
+      )}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(
+          payload
+        ),
+      }
+    );
 
-  if (!data.estimate?.estimate_id) {
+  if (
+    !data.estimate?.estimate_id
+  ) {
     throw new Error(
       "Zoho Books a modifié le devis sans retourner son identifiant."
     );
@@ -906,31 +1018,35 @@ export async function getZohoInvoices(
   page = 1,
   perPage = 200
 ) {
-  const data = await zohoBooksRequest<{
-    invoices?: ZohoInvoice[];
-    page_context?: ZohoPageContext;
-  }>(
-    "/invoices",
-    {
-      method: "GET",
-    },
-    {
-      page,
-      per_page: perPage,
-      filter_by: "Status.All",
-      sort_column: "date",
-      sort_order: "D",
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      invoices?: ZohoInvoice[];
+      page_context?: ZohoPageContext;
+    }>(
+      "/invoices",
+      {
+        method: "GET",
+      },
+      {
+        page,
+        per_page: perPage,
+        filter_by: "Status.All",
+        sort_column: "date",
+        sort_order: "D",
+      }
+    );
 
   return {
-    invoices: data.invoices ?? [],
-    pageContext: data.page_context ?? null,
+    invoices:
+      data.invoices ?? [],
+    pageContext:
+      data.page_context ?? null,
   };
 }
 
 export async function getAllZohoInvoices() {
-  const invoices: ZohoInvoice[] = [];
+  const invoices:
+    ZohoInvoice[] = [];
 
   let page = 1;
   const perPage = 200;
@@ -948,7 +1064,8 @@ export async function getAllZohoInvoices() {
     );
 
     hasMorePage =
-      result.pageContext?.has_more_page ??
+      result.pageContext
+        ?.has_more_page ??
       false;
 
     page += 1;
@@ -972,16 +1089,17 @@ export async function getZohoInvoice(
     );
   }
 
-  const data = await zohoBooksRequest<{
-    invoice?: ZohoInvoice;
-  }>(
-    `/invoices/${encodeURIComponent(
-      invoiceId
-    )}`,
-    {
-      method: "GET",
-    }
-  );
+  const data =
+    await zohoBooksRequest<{
+      invoice?: ZohoInvoice;
+    }>(
+      `/invoices/${encodeURIComponent(
+        invoiceId
+      )}`,
+      {
+        method: "GET",
+      }
+    );
 
   if (!data.invoice) {
     throw new Error(
@@ -990,4 +1108,50 @@ export async function getZohoInvoice(
   }
 
   return data.invoice;
+}
+
+export async function createZohoInvoiceFromEstimate(
+  estimateId: string
+) {
+  const normalizedEstimateId =
+    estimateId.trim();
+
+  if (!normalizedEstimateId) {
+    throw new Error(
+      "Identifiant de devis Zoho manquant."
+    );
+  }
+
+  const data =
+    await zohoBooksRequest<{
+      invoices?: ZohoInvoice[];
+      invoice?: ZohoInvoice;
+    }>(
+      "/invoices/fromestimates",
+      {
+        method: "POST",
+      },
+      {
+        estimate_ids:
+          normalizedEstimateId,
+      }
+    );
+
+  /*
+   * Zoho permet de convertir plusieurs devis
+   * en une seule requête. Selon la réponse
+   * retournée par l'API, on accepte donc
+   * aussi bien "invoices" que "invoice".
+   */
+  const invoice =
+    data.invoices?.[0] ??
+    data.invoice;
+
+  if (!invoice?.invoice_id) {
+    throw new Error(
+      "Zoho Books a converti le devis mais n'a pas retourné l'identifiant de la facture."
+    );
+  }
+
+  return invoice;
 }

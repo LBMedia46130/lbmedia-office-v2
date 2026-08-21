@@ -8,6 +8,8 @@ import {
   type ZohoEstimate,
 } from "@/lib/zoho-books";
 
+import ConvertEstimateToInvoiceButton from "./ConvertEstimateToInvoiceButton";
+
 export const dynamic = "force-dynamic";
 
 type EstimateDetailPageProps = {
@@ -31,7 +33,9 @@ function formatDate(value?: string) {
     return "—";
   }
 
-  const date = new Date(`${value}T00:00:00`);
+  const date = new Date(
+    `${value}T00:00:00`
+  );
 
   if (Number.isNaN(date.getTime())) {
     return value;
@@ -42,12 +46,15 @@ function formatDate(value?: string) {
   ).format(date);
 }
 
-function formatDateTime(value?: string) {
+function formatDateTime(
+  value?: string
+) {
   if (!value) {
     return "—";
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
   if (Number.isNaN(date.getTime())) {
     return value;
@@ -62,7 +69,9 @@ function formatDateTime(value?: string) {
   ).format(date);
 }
 
-function getStatusLabel(status: string) {
+function getStatusLabel(
+  status: string
+) {
   switch (status) {
     case "draft":
       return "Brouillon";
@@ -71,7 +80,7 @@ function getStatusLabel(status: string) {
     case "viewed":
       return "Consulté";
     case "accepted":
-      return "Accepté";
+      return "À facturer";
     case "declined":
       return "Refusé";
     case "invoiced":
@@ -86,7 +95,9 @@ function getStatusLabel(status: string) {
   }
 }
 
-function getStatusClass(status: string) {
+function getStatusClass(
+  status: string
+) {
   switch (status) {
     case "accepted":
       return "bg-emerald-100 text-emerald-700";
@@ -117,18 +128,23 @@ function getStatusClass(status: string) {
 export default async function EstimateDetailPage({
   params,
 }: EstimateDetailPageProps) {
-  const { estimateId } = await params;
+  const { estimateId } =
+    await params;
 
   let estimate: ZohoEstimate;
 
   try {
     estimate =
-      await getZohoEstimate(estimateId);
+      await getZohoEstimate(
+        estimateId
+      );
   } catch {
     notFound();
   }
 
-  let contact: ZohoContact | null = null;
+  let contact:
+    | ZohoContact
+    | null = null;
 
   try {
     contact =
@@ -140,7 +156,8 @@ export default async function EstimateDetailPage({
   }
 
   const currency =
-    estimate.currency_code || "EUR";
+    estimate.currency_code ||
+    "EUR";
 
   const lineItems =
     estimate.line_items ?? [];
@@ -169,7 +186,9 @@ export default async function EstimateDetailPage({
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold text-slate-900">
                 Devis{" "}
-                {estimate.estimate_number}
+                {
+                  estimate.estimate_number
+                }
               </h1>
 
               <span
@@ -184,11 +203,24 @@ export default async function EstimateDetailPage({
             </div>
 
             <p className="mt-2 text-sm text-slate-500">
-              Données synchronisées avec Zoho Books
+              Données synchronisées avec
+              Zoho Books
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-start gap-3">
+            {estimate.status ===
+            "accepted" ? (
+              <ConvertEstimateToInvoiceButton
+                estimateId={
+                  estimate.estimate_id
+                }
+                estimateNumber={
+                  estimate.estimate_number
+                }
+              />
+            ) : null}
+
             <Link
               href={`/management/estimates/${estimate.estimate_id}/edit`}
               className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -206,7 +238,9 @@ export default async function EstimateDetailPage({
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Références principales enregistrées dans Zoho Books.
+                Références principales
+                enregistrées dans Zoho
+                Books.
               </p>
 
               <dl className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -216,7 +250,9 @@ export default async function EstimateDetailPage({
                   </dt>
 
                   <dd className="mt-1 text-sm font-semibold text-slate-900">
-                    {estimate.estimate_number}
+                    {
+                      estimate.estimate_number
+                    }
                   </dd>
                 </div>
 
@@ -262,7 +298,9 @@ export default async function EstimateDetailPage({
                     </dt>
 
                     <dd className="mt-1 text-sm text-slate-700">
-                      {estimate.salesperson_name}
+                      {
+                        estimate.salesperson_name
+                      }
                     </dd>
                   </div>
                 ) : null}
@@ -276,7 +314,9 @@ export default async function EstimateDetailPage({
 
               <div className="mt-5">
                 <p className="text-lg font-semibold text-slate-900">
-                  {estimate.customer_name}
+                  {
+                    estimate.customer_name
+                  }
                 </p>
 
                 <p className="mt-1 text-sm text-slate-500">
@@ -294,11 +334,14 @@ export default async function EstimateDetailPage({
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Prestations et montants enregistrés dans Zoho Books.
+                  Prestations et montants
+                  enregistrés dans Zoho
+                  Books.
                 </p>
               </div>
 
-              {lineItems.length > 0 ? (
+              {lineItems.length >
+              0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
@@ -331,7 +374,10 @@ export default async function EstimateDetailPage({
 
                     <tbody className="divide-y divide-slate-100">
                       {lineItems.map(
-                        (line, index) => (
+                        (
+                          line,
+                          index
+                        ) => (
                           <tr
                             key={
                               line.line_item_id ||
@@ -340,7 +386,9 @@ export default async function EstimateDetailPage({
                           >
                             <td className="px-6 py-4">
                               <p className="text-sm font-semibold text-slate-900">
-                                {line.name}
+                                {
+                                  line.name
+                                }
                               </p>
 
                               {line.description ? (
@@ -353,7 +401,9 @@ export default async function EstimateDetailPage({
                             </td>
 
                             <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
-                              {line.quantity}
+                              {
+                                line.quantity
+                              }
 
                               {line.unit
                                 ? ` ${line.unit}`
@@ -374,7 +424,8 @@ export default async function EstimateDetailPage({
                                 <div>
                                   {typeof line.discount ===
                                     "number" &&
-                                  line.discount > 0 ? (
+                                  line.discount >
+                                    0 ? (
                                     <div className="font-medium text-amber-700">
                                       {
                                         line.discount
@@ -417,7 +468,9 @@ export default async function EstimateDetailPage({
                 </div>
               ) : (
                 <div className="px-6 py-10 text-center text-sm text-slate-500">
-                  Aucune ligne de prestation retournée par Zoho Books.
+                  Aucune ligne de
+                  prestation retournée
+                  par Zoho Books.
                 </div>
               )}
 
@@ -438,13 +491,18 @@ export default async function EstimateDetailPage({
 
                   {taxes.length > 0
                     ? taxes.map(
-                        (tax, index) => (
+                        (
+                          tax,
+                          index
+                        ) => (
                           <div
                             key={`${tax.tax_name}-${index}`}
                             className="flex items-center justify-between gap-6 text-sm"
                           >
                             <span className="text-slate-500">
-                              {tax.tax_name}
+                              {
+                                tax.tax_name
+                              }
                             </span>
 
                             <span className="font-medium text-slate-900">
