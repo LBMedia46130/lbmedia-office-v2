@@ -898,34 +898,26 @@ export async function getZohoEstimateEmailContent(
     );
   }
 
-  type ZohoEstimateEmailTemplate = {
-    selected?: boolean;
-    name?: string;
-    email_template_id?: string | number;
+  type ZohoEstimateEmailApiData = {
+    from_email?: string;
+    subject?: string;
+    body?: string;
+    to_mail_ids_str?: string;
+    cc_mails?: string[];
+    bcc_mails?: string[];
+    attach_pdf?: boolean;
+    file_name_without_extension?: string;
+
+    from_emails?: Array<{
+      user_name?: string;
+      email?: string;
+      selected?: boolean;
+    }>;
   };
 
-  type ZohoEstimateEmailContact = {
-    selected?: boolean;
-    email?: string;
-    first_name?: string;
-    last_name?: string;
-    contact_person_id?: string | number;
-  };
-
-  type ZohoEstimateFromEmail = {
-    selected?: boolean;
-    email?: string;
-    user_name?: string;
-  };
-
-  const data =
+  const response =
     await zohoBooksRequest<{
-      body?: string;
-      subject?: string;
-      to_contacts?: ZohoEstimateEmailContact[];
-      from_emails?: ZohoEstimateFromEmail[];
-      emailtemplates?: ZohoEstimateEmailTemplate[];
-      file_name?: string;
+      data?: ZohoEstimateEmailApiData;
     }>(
       `/estimates/${encodeURIComponent(
         normalizedEstimateId
@@ -935,38 +927,50 @@ export async function getZohoEstimateEmailContent(
       }
     );
 
-  const selectedContacts =
-    (data.to_contacts ?? []).filter(
-      (contact) =>
-        contact.selected &&
-        contact.email?.trim()
+  const data =
+    response.data;
+
+  if (!data) {
+    throw new Error(
+      "Zoho Books n'a retourné aucune donnée d'email pour ce devis."
+    );
+  }
+
+  const selectedFrom =
+    (data.from_emails ?? []).find(
+      (item) =>
+        item.selected &&
+        item.email?.trim()
     );
 
-  const contactsToUse =
-    selectedContacts.length > 0
-      ? selectedContacts
-      : (data.to_contacts ?? []).filter(
-          (contact) =>
-            contact.email?.trim()
-        );
-
-  const selectedFromEmail =
+  const firstFrom =
     (data.from_emails ?? []).find(
-      (fromEmail) =>
-        fromEmail.selected &&
-        fromEmail.email?.trim()
-    ) ??
-    (data.from_emails ?? []).find(
-      (fromEmail) =>
-        fromEmail.email?.trim()
+      (item) =>
+        item.email?.trim()
     );
 
-  const selectedTemplate =
-    (data.emailtemplates ?? []).find(
-      (template) =>
-        template.selected
-    ) ??
-    (data.emailtemplates ?? [])[0];
+  const fromEmail =
+    data.from_email?.trim() ||
+    selectedFrom?.email?.trim() ||
+    firstFrom?.email?.trim() ||
+    undefined;
+
+  const fromName =
+    selectedFrom?.user_name?.trim() ||
+    firstFrom?.user_name?.trim() ||
+    undefined;
+
+  const toMailIds =
+    (data.to_mail_ids_str ?? "")
+      .split(/[;,]/)
+      .map((email) =>
+        email.trim()
+      )
+      .filter(Boolean);
+
+  const fileName =
+    data.file_name_without_extension
+      ?.trim();
 
   return {
     body:
@@ -974,29 +978,19 @@ export async function getZohoEstimateEmailContent(
     subject:
       data.subject ?? "",
     to_mail_ids:
-      contactsToUse
-        .map(
-          (contact) =>
-            contact.email?.trim() ?? ""
-        )
-        .filter(Boolean),
-    cc_mail_ids: [],
-    bcc_mail_ids: [],
+      toMailIds,
+    cc_mail_ids:
+      data.cc_mails ?? [],
+    bcc_mail_ids:
+      data.bcc_mails ?? [],
     from_mail_id:
-      selectedFromEmail?.email?.trim() ||
-      undefined,
+      fromEmail,
     from_name:
-      selectedFromEmail?.user_name?.trim() ||
-      undefined,
-    emailtemplate_id:
-      selectedTemplate?.email_template_id !==
-      undefined
-        ? String(
-            selectedTemplate.email_template_id
-          )
-        : undefined,
+      fromName,
     file_name:
-      data.file_name,
+      fileName
+        ? `${fileName}.pdf`
+        : undefined,
   } satisfies ZohoEstimateEmailContent;
 }
 
