@@ -189,14 +189,23 @@ export default async function EstimateDetailPage({
             </p>
           </div>
 
-          <a
-            href={`https://books.zoho.eu/app#/estimates/${estimate.estimate_id}`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            Ouvrir dans Zoho Books
-          </a>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/management/estimates/${estimate.estimate_id}/edit`}
+              className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Modifier le devis
+            </Link>
+
+            <a
+              href={`https://books.zoho.eu/app#/estimates/${estimate.estimate_id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Ouvrir dans Zoho Books
+            </a>
+          </div>
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">

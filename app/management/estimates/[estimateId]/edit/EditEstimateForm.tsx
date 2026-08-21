@@ -10,21 +10,33 @@ import {
   useRouter,
 } from "next/navigation";
 
-type CompanyOption = {
-  id: string;
-  name: string;
-  legal_name: string | null;
-  relationship_status:
-    | "prospect"
-    | "client";
-  city: string | null;
-  zoho_contact_id: string | null;
-};
-
 type TaxOption = {
   tax_id: string;
   tax_name: string;
   tax_percentage: number;
+};
+
+type InitialLine = {
+  line_item_id: string;
+  name: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  discount: number;
+  tax_id: string;
+};
+
+type InitialEstimate = {
+  estimate_id: string;
+  estimate_number: string;
+  customer_id: string;
+  customer_name: string;
+  date: string;
+  expiry_date: string;
+  reference_number: string;
+  notes: string;
+  terms: string;
+  line_items: InitialLine[];
 };
 
 type EstimateLine = {
@@ -34,86 +46,13 @@ type EstimateLine = {
   quantity: string;
   rate: string;
   discount: string;
+  tax_id: string;
 };
 
 type Props = {
-  companies: CompanyOption[];
-  tax: TaxOption | null;
+  estimate: InitialEstimate;
+  taxes: TaxOption[];
 };
-
-function formatDateForInput(
-  date: Date
-) {
-  return [
-    date.getFullYear(),
-    String(
-      date.getMonth() + 1
-    ).padStart(2, "0"),
-    String(
-      date.getDate()
-    ).padStart(2, "0"),
-  ].join("-");
-}
-
-function today() {
-  return formatDateForInput(
-    new Date()
-  );
-}
-
-function addDays(
-  dateValue: string,
-  days: number
-) {
-  if (!dateValue) {
-    return "";
-  }
-
-  const [
-    year,
-    month,
-    day,
-  ] = dateValue
-    .split("-")
-    .map(Number);
-
-  const date = new Date(
-    year,
-    month - 1,
-    day
-  );
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "";
-  }
-
-  date.setDate(
-    date.getDate() + days
-  );
-
-  return formatDateForInput(
-    date
-  );
-}
-
-function createLine(): EstimateLine {
-  return {
-    id:
-      typeof crypto !== "undefined" &&
-      "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random()}`,
-    name: "",
-    description: "",
-    quantity: "1",
-    rate: "",
-    discount: "0",
-  };
-}
 
 function numberValue(
   value: string
@@ -139,6 +78,24 @@ function formatCurrency(
       currency: "EUR",
     }
   ).format(value);
+}
+
+function createLine(
+  defaultTaxId = ""
+): EstimateLine {
+  return {
+    id:
+      typeof crypto !== "undefined" &&
+      "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`,
+    name: "",
+    description: "",
+    quantity: "1",
+    rate: "",
+    discount: "0",
+    tax_id: defaultTaxId,
+  };
 }
 
 function calculateLineTotal(
@@ -174,59 +131,94 @@ function calculateLineTotal(
   );
 }
 
-export default function NewEstimateForm({
-  companies,
-  tax,
+export default function EditEstimateForm({
+  estimate,
+  taxes,
 }: Props) {
   const router =
     useRouter();
 
-  const initialDate =
-    today();
-
-  const [
-    companyId,
-    setCompanyId,
-  ] = useState("");
+  const defaultTax =
+    taxes.find(
+      (tax) =>
+        Number(
+          tax.tax_percentage
+        ) === 20
+    ) ?? taxes[0] ?? null;
 
   const [
     date,
     setDate,
   ] = useState(
-    initialDate
+    estimate.date
   );
 
   const [
     expiryDate,
     setExpiryDate,
   ] = useState(
-    addDays(
-      initialDate,
-      60
-    )
+    estimate.expiry_date
   );
 
   const [
     referenceNumber,
     setReferenceNumber,
-  ] = useState("");
+  ] = useState(
+    estimate.reference_number
+  );
 
   const [
     notes,
     setNotes,
-  ] = useState("");
+  ] = useState(
+    estimate.notes
+  );
 
   const [
     terms,
     setTerms,
-  ] = useState("");
+  ] = useState(
+    estimate.terms
+  );
 
   const [
     lines,
     setLines,
-  ] = useState<EstimateLine[]>([
-    createLine(),
-  ]);
+  ] = useState<EstimateLine[]>(
+    estimate.line_items.length
+      ? estimate.line_items.map(
+          (line) => ({
+            id:
+              line.line_item_id ||
+              `${Date.now()}-${Math.random()}`,
+            name:
+              line.name,
+            description:
+              line.description,
+            quantity:
+              String(
+                line.quantity
+              ),
+            rate:
+              String(
+                line.rate
+              ),
+            discount:
+              String(
+                line.discount
+              ),
+            tax_id:
+              line.tax_id ||
+              defaultTax?.tax_id ||
+              "",
+          })
+        )
+      : [
+          createLine(
+            defaultTax?.tax_id
+          ),
+        ]
+  );
 
   const [
     submitting,
@@ -239,12 +231,6 @@ export default function NewEstimateForm({
   ] = useState<string | null>(
     null
   );
-
-  const selectedCompany =
-    companies.find(
-      (company) =>
-        company.id === companyId
-    ) ?? null;
 
   const subtotalBeforeDiscount =
     useMemo(() => {
@@ -277,28 +263,36 @@ export default function NewEstimateForm({
     subtotalBeforeDiscount -
     subtotal;
 
-  const taxPercentage =
-    tax?.tax_percentage ?? 0;
-
   const taxAmount =
-    subtotal *
-    (taxPercentage / 100);
+    useMemo(() => {
+      return lines.reduce(
+        (total, line) => {
+          const tax =
+            taxes.find(
+              (item) =>
+                item.tax_id ===
+                line.tax_id
+            );
+
+          const percentage =
+            tax?.tax_percentage ??
+            0;
+
+          return (
+            total +
+            calculateLineTotal(
+              line
+            ) *
+              (percentage /
+                100)
+          );
+        },
+        0
+      );
+    }, [lines, taxes]);
 
   const total =
     subtotal + taxAmount;
-
-  function handleDateChange(
-    value: string
-  ) {
-    setDate(value);
-
-    setExpiryDate(
-      addDays(
-        value,
-        60
-      )
-    );
-  }
 
   function updateLine(
     id: string,
@@ -307,7 +301,8 @@ export default function NewEstimateForm({
       | "description"
       | "quantity"
       | "rate"
-      | "discount",
+      | "discount"
+      | "tax_id",
     value: string
   ) {
     setLines(
@@ -327,7 +322,9 @@ export default function NewEstimateForm({
     setLines(
       (current) => [
         ...current,
-        createLine(),
+        createLine(
+          defaultTax?.tax_id
+        ),
       ]
     );
   }
@@ -358,14 +355,6 @@ export default function NewEstimateForm({
 
     setErrorMessage(null);
 
-    if (!companyId) {
-      setErrorMessage(
-        "Sélectionne un client ou un prospect."
-      );
-
-      return;
-    }
-
     const normalizedLines =
       lines.map((line) => ({
         name:
@@ -390,7 +379,8 @@ export default function NewEstimateForm({
           ),
 
         tax_id:
-          tax?.tax_id,
+          line.tax_id ||
+          undefined,
       }));
 
     if (
@@ -415,9 +405,9 @@ export default function NewEstimateForm({
     try {
       const response =
         await fetch(
-          "/api/zoho/estimates/create",
+          `/api/zoho/estimates/${estimate.estimate_id}/update`,
           {
-            method: "POST",
+            method: "PUT",
 
             headers: {
               "Content-Type":
@@ -426,8 +416,8 @@ export default function NewEstimateForm({
 
             body:
               JSON.stringify({
-                company_id:
-                  companyId,
+                customer_id:
+                  estimate.customer_id,
 
                 date:
                   date || undefined,
@@ -456,10 +446,6 @@ export default function NewEstimateForm({
         (await response.json()) as {
           success?: boolean;
           error?: string;
-          estimate?: {
-            estimate_id: string;
-            estimate_number: string;
-          };
         };
 
       if (
@@ -468,12 +454,12 @@ export default function NewEstimateForm({
       ) {
         throw new Error(
           result.error ??
-            "Impossible de créer le devis."
+            "Impossible de modifier le devis."
         );
       }
 
       router.push(
-        "/management/estimates"
+        `/management/estimates/${estimate.estimate_id}`
       );
 
       router.refresh();
@@ -481,7 +467,7 @@ export default function NewEstimateForm({
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Impossible de créer le devis."
+          : "Impossible de modifier le devis."
       );
     } finally {
       setSubmitting(false);
@@ -504,87 +490,17 @@ export default function NewEstimateForm({
           Client / prospect
         </h2>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          <div>
-            <label
-              htmlFor="company"
-              className="mb-2 block text-sm font-semibold text-slate-700"
-            >
-              Entreprise
-            </label>
+        <div className="mt-5 rounded-xl bg-slate-50 p-4">
+          <p className="font-semibold text-slate-900">
+            {
+              estimate.customer_name
+            }
+          </p>
 
-            <select
-              id="company"
-              value={companyId}
-              onChange={(event) =>
-                setCompanyId(
-                  event.target.value
-                )
-              }
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="">
-                Sélectionner...
-              </option>
-
-              {companies.map(
-                (company) => (
-                  <option
-                    key={
-                      company.id
-                    }
-                    value={
-                      company.id
-                    }
-                  >
-                    {company.name}
-                    {" — "}
-                    {company.relationship_status ===
-                    "client"
-                      ? "Client"
-                      : "Prospect"}
-                    {company.city
-                      ? ` — ${company.city}`
-                      : ""}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-
-          <div className="rounded-xl bg-slate-50 p-4">
-            {selectedCompany ? (
-              <>
-                <p className="font-semibold text-slate-900">
-                  {
-                    selectedCompany.name
-                  }
-                </p>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  {selectedCompany.relationship_status ===
-                  "client"
-                    ? "Client"
-                    : "Prospect"}
-                  {selectedCompany.city
-                    ? ` · ${selectedCompany.city}`
-                    : ""}
-                </p>
-
-                <p className="mt-3 text-xs font-medium text-slate-400">
-                  {selectedCompany.zoho_contact_id
-                    ? "Déjà lié à Zoho Books"
-                    : "Le contact Zoho sera créé automatiquement"}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Les informations de
-                l’entreprise apparaîtront
-                ici.
-              </p>
-            )}
-          </div>
+          <p className="mt-1 text-sm text-slate-500">
+            Le client du devis n’est pas
+            modifié.
+          </p>
         </div>
       </section>
 
@@ -607,7 +523,7 @@ export default function NewEstimateForm({
               type="date"
               value={date}
               onChange={(event) =>
-                handleDateChange(
+                setDate(
                   event.target.value
                 )
               }
@@ -667,8 +583,8 @@ export default function NewEstimateForm({
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Montants exprimés hors
-              taxes.
+              Quantités, tarifs,
+              remises et TVA.
             </p>
           </div>
 
@@ -708,7 +624,7 @@ export default function NewEstimateForm({
                   ) : null}
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-[2fr_3fr_0.7fr_1fr_0.8fr_0.8fr]">
+                <div className="grid gap-4 xl:grid-cols-[1.8fr_2.5fr_0.7fr_1fr_0.8fr_1fr]">
                   <div>
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Prestation
@@ -727,7 +643,6 @@ export default function NewEstimateForm({
                           event.target.value
                         )
                       }
-                      placeholder="Ex. Création site internet"
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
@@ -750,7 +665,6 @@ export default function NewEstimateForm({
                           event.target.value
                         )
                       }
-                      placeholder="Détail de la prestation"
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
@@ -801,7 +715,6 @@ export default function NewEstimateForm({
                           event.target.value
                         )
                       }
-                      placeholder="0,00"
                       className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
@@ -837,11 +750,43 @@ export default function NewEstimateForm({
                       TVA
                     </label>
 
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700">
-                      {tax
-                        ? `${tax.tax_percentage} %`
-                        : "—"}
-                    </div>
+                    <select
+                      value={
+                        line.tax_id
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updateLine(
+                          line.id,
+                          "tax_id",
+                          event.target.value
+                        )
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    >
+                      <option value="">
+                        Sans TVA
+                      </option>
+
+                      {taxes.map(
+                        (tax) => (
+                          <option
+                            key={
+                              tax.tax_id
+                            }
+                            value={
+                              tax.tax_id
+                            }
+                          >
+                            {
+                              tax.tax_percentage
+                            }{" "}
+                            %
+                          </option>
+                        )
+                      )}
+                    </select>
                   </div>
                 </div>
 
@@ -901,7 +846,7 @@ export default function NewEstimateForm({
 
               <textarea
                 id="terms"
-                rows={4}
+                rows={5}
                 value={terms}
                 onChange={(event) =>
                   setTerms(
@@ -961,10 +906,7 @@ export default function NewEstimateForm({
 
             <div className="flex justify-between text-sm">
               <span className="text-slate-500">
-                TVA{" "}
-                {taxPercentage
-                  ? `${taxPercentage} %`
-                  : ""}
+                TVA
               </span>
 
               <span className="font-semibold text-slate-900">
@@ -989,35 +931,32 @@ export default function NewEstimateForm({
             </div>
           </div>
 
-          {tax ? (
-            <p className="mt-5 text-xs text-slate-400">
-              Taxe Zoho Books :{" "}
-              {tax.tax_name} (
-              {tax.tax_percentage} %)
-            </p>
-          ) : (
-            <p className="mt-5 text-xs font-medium text-red-600">
-              Aucune taxe Zoho Books
-              disponible.
-            </p>
-          )}
-
           <button
             type="submit"
-            disabled={
-              submitting ||
-              !tax
-            }
+            disabled={submitting}
             className="mt-6 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting
-              ? "Création..."
-              : "Créer le devis"}
+              ? "Enregistrement..."
+              : "Enregistrer les modifications"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                `/management/estimates/${estimate.estimate_id}`
+              )
+            }
+            disabled={submitting}
+            className="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            Annuler
           </button>
 
           <p className="mt-3 text-center text-xs text-slate-400">
-            Création directe dans Zoho
-            Books
+            Modification directe dans
+            Zoho Books
           </p>
         </div>
       </section>

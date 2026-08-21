@@ -175,10 +175,21 @@ export type CreateZohoEstimateLineItemInput = {
   description?: string;
   quantity: number;
   rate: number;
+  discount?: number;
   tax_id?: string;
 };
 
 export type CreateZohoEstimateInput = {
+  customer_id: string;
+  date?: string;
+  expiry_date?: string;
+  reference_number?: string;
+  notes?: string;
+  terms?: string;
+  line_items: CreateZohoEstimateLineItemInput[];
+};
+
+export type UpdateZohoEstimateInput = {
   customer_id: string;
   date?: string;
   expiry_date?: string;
@@ -606,6 +617,68 @@ export async function getZohoEstimate(
   return data.estimate;
 }
 
+function normalizeEstimateLineItems(
+  lineItems: CreateZohoEstimateLineItemInput[]
+) {
+  return lineItems.map(
+    (line, index) => {
+      if (!line.name.trim()) {
+        throw new Error(
+          `Le nom de la ligne ${index + 1} est obligatoire.`
+        );
+      }
+
+      if (
+        !Number.isFinite(line.quantity) ||
+        line.quantity <= 0
+      ) {
+        throw new Error(
+          `La quantité de la ligne ${index + 1} doit être supérieure à zéro.`
+        );
+      }
+
+      if (
+        !Number.isFinite(line.rate) ||
+        line.rate < 0
+      ) {
+        throw new Error(
+          `Le prix de la ligne ${index + 1} est invalide.`
+        );
+      }
+
+      if (
+        line.discount !== undefined &&
+        (
+          !Number.isFinite(line.discount) ||
+          line.discount < 0 ||
+          line.discount > 100
+        )
+      ) {
+        throw new Error(
+          `La remise de la ligne ${index + 1} doit être comprise entre 0 et 100 %.`
+        );
+      }
+
+      return {
+        name: line.name.trim(),
+        description:
+          line.description?.trim() ||
+          undefined,
+        quantity: line.quantity,
+        rate: line.rate,
+        discount:
+          line.discount &&
+          line.discount > 0
+            ? line.discount
+            : undefined,
+        tax_id:
+          line.tax_id?.trim() ||
+          undefined,
+      };
+    }
+  );
+}
+
 export async function createZohoEstimate(
   input: CreateZohoEstimateInput
 ) {
@@ -624,47 +697,6 @@ export async function createZohoEstimate(
     );
   }
 
-  const lineItems =
-    input.line_items.map(
-      (line, index) => {
-        if (!line.name.trim()) {
-          throw new Error(
-            `Le nom de la ligne ${index + 1} est obligatoire.`
-          );
-        }
-
-        if (
-          !Number.isFinite(line.quantity) ||
-          line.quantity <= 0
-        ) {
-          throw new Error(
-            `La quantité de la ligne ${index + 1} doit être supérieure à zéro.`
-          );
-        }
-
-        if (
-          !Number.isFinite(line.rate) ||
-          line.rate < 0
-        ) {
-          throw new Error(
-            `Le prix de la ligne ${index + 1} est invalide.`
-          );
-        }
-
-        return {
-          name: line.name.trim(),
-          description:
-            line.description?.trim() ||
-            undefined,
-          quantity: line.quantity,
-          rate: line.rate,
-          tax_id:
-            line.tax_id?.trim() ||
-            undefined,
-        };
-      }
-    );
-
   const payload = {
     customer_id: input.customer_id.trim(),
     date:
@@ -682,7 +714,10 @@ export async function createZohoEstimate(
     terms:
       input.terms?.trim() ||
       undefined,
-    line_items: lineItems,
+    line_items:
+      normalizeEstimateLineItems(
+        input.line_items
+      ),
   };
 
   const data = await zohoBooksRequest<{
@@ -698,6 +733,76 @@ export async function createZohoEstimate(
   if (!data.estimate?.estimate_id) {
     throw new Error(
       "Zoho Books a créé le devis sans retourner son identifiant."
+    );
+  }
+
+  return data.estimate;
+}
+
+export async function updateZohoEstimate(
+  estimateId: string,
+  input: UpdateZohoEstimateInput
+) {
+  if (!estimateId) {
+    throw new Error(
+      "Identifiant de devis Zoho manquant."
+    );
+  }
+
+  if (!input.customer_id.trim()) {
+    throw new Error(
+      "Le client Zoho est obligatoire pour modifier un devis."
+    );
+  }
+
+  if (
+    !input.line_items ||
+    input.line_items.length === 0
+  ) {
+    throw new Error(
+      "Le devis doit contenir au moins une ligne."
+    );
+  }
+
+  const payload = {
+    customer_id:
+      input.customer_id.trim(),
+    date:
+      input.date?.trim() ||
+      undefined,
+    expiry_date:
+      input.expiry_date?.trim() ||
+      undefined,
+    reference_number:
+      input.reference_number?.trim() ||
+      undefined,
+    notes:
+      input.notes?.trim() ||
+      undefined,
+    terms:
+      input.terms?.trim() ||
+      undefined,
+    line_items:
+      normalizeEstimateLineItems(
+        input.line_items
+      ),
+  };
+
+  const data = await zohoBooksRequest<{
+    estimate?: ZohoEstimate;
+  }>(
+    `/estimates/${encodeURIComponent(
+      estimateId
+    )}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!data.estimate?.estimate_id) {
+    throw new Error(
+      "Zoho Books a modifié le devis sans retourner son identifiant."
     );
   }
 
