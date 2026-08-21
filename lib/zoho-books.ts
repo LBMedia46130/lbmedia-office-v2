@@ -902,7 +902,7 @@ export async function getZohoEstimateEmailContent(
     from_email?: string;
     subject?: string;
     body?: string;
-    to_mail_ids_str?: string;
+    to_mails_str?: string;
     cc_mails?: string[];
     bcc_mails?: string[];
     attach_pdf?: boolean;
@@ -961,7 +961,7 @@ export async function getZohoEstimateEmailContent(
     undefined;
 
   const toMailIds =
-    (data.to_mail_ids_str ?? "")
+    (data.to_mails_str ?? "")
       .split(/[;,]/)
       .map((email) =>
         email.trim()
