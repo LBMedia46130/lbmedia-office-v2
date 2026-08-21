@@ -9,6 +9,7 @@ import {
 } from "@/lib/zoho-books";
 
 import ConvertEstimateToInvoiceButton from "./ConvertEstimateToInvoiceButton";
+import SendEstimateEmailButton from "./SendEstimateEmailButton";
 
 export const dynamic = "force-dynamic";
 
@@ -220,6 +221,15 @@ export default async function EstimateDetailPage({
                 }
               />
             ) : null}
+
+            <SendEstimateEmailButton
+              estimateId={
+                estimate.estimate_id
+              }
+              estimateNumber={
+                estimate.estimate_number
+              }
+            />
 
             <Link
               href={`/management/estimates/${estimate.estimate_id}/edit`}
