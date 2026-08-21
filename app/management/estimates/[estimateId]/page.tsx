@@ -184,8 +184,7 @@ export default async function EstimateDetailPage({
             </div>
 
             <p className="mt-2 text-sm text-slate-500">
-              Données synchronisées avec
-              Zoho Books
+              Données synchronisées avec Zoho Books
             </p>
           </div>
 
@@ -196,15 +195,6 @@ export default async function EstimateDetailPage({
             >
               Modifier le devis
             </Link>
-
-            <a
-              href={`https://books.zoho.eu/app#/estimates/${estimate.estimate_id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Ouvrir dans Zoho Books
-            </a>
           </div>
         </div>
 
@@ -216,8 +206,7 @@ export default async function EstimateDetailPage({
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Références principales
-                enregistrées dans Zoho Books.
+                Références principales enregistrées dans Zoho Books.
               </p>
 
               <dl className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -273,9 +262,7 @@ export default async function EstimateDetailPage({
                     </dt>
 
                     <dd className="mt-1 text-sm text-slate-700">
-                      {
-                        estimate.salesperson_name
-                      }
+                      {estimate.salesperson_name}
                     </dd>
                   </div>
                 ) : null}
@@ -307,8 +294,7 @@ export default async function EstimateDetailPage({
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Prestations et montants
-                  enregistrés dans Zoho Books.
+                  Prestations et montants enregistrés dans Zoho Books.
                 </p>
               </div>
 
@@ -431,8 +417,7 @@ export default async function EstimateDetailPage({
                 </div>
               ) : (
                 <div className="px-6 py-10 text-center text-sm text-slate-500">
-                  Aucune ligne de prestation
-                  retournée par Zoho Books.
+                  Aucune ligne de prestation retournée par Zoho Books.
                 </div>
               )}
 
