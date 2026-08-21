@@ -17,65 +17,94 @@ type EditEstimatePageProps = {
   }>;
 };
 
-function getDiscountPercentage(
-  quantity: number,
-  rate: number,
-  discount?: number,
-  discountAmount?: number,
-  itemTotal?: number
-) {
+type DiscountMode =
+  | "percent"
+  | "amount";
+
+function readDiscount(
+  discount: string | number | undefined,
+  discountAmount: number | undefined
+): {
+  mode: DiscountMode;
+  value: number;
+} {
+  if (
+    typeof discount === "string"
+  ) {
+    const trimmed =
+      discount.trim();
+
+    if (
+      trimmed.endsWith("%")
+    ) {
+      const value =
+        Number(
+          trimmed
+            .slice(0, -1)
+            .replace(",", ".")
+        );
+
+      return {
+        mode: "percent",
+        value:
+          Number.isFinite(value)
+            ? Math.round(value)
+            : 0,
+      };
+    }
+
+    const value =
+      Number(
+        trimmed.replace(",", ".")
+      );
+
+    if (
+      Number.isFinite(value) &&
+      value > 0
+    ) {
+      return {
+        mode: "amount",
+        value,
+      };
+    }
+  }
+
+  /*
+   * Dans l'API Zoho, une valeur numérique
+   * sans symbole % représente une remise
+   * monétaire fixe.
+   */
   if (
     typeof discount === "number" &&
     Number.isFinite(discount) &&
     discount > 0
   ) {
-    return discount;
+    return {
+      mode: "amount",
+      value: discount,
+    };
   }
 
-  const gross =
-    Number(quantity) *
-    Number(rate);
-
-  if (gross <= 0) {
-    return 0;
-  }
-
+  /*
+   * Si Zoho ne renvoie que discount_amount,
+   * on ne tente plus de fabriquer un
+   * pourcentage. On conserve le montant €.
+   */
   if (
-    typeof discountAmount ===
-      "number" &&
-    Number.isFinite(
-      discountAmount
-    ) &&
+    typeof discountAmount === "number" &&
+    Number.isFinite(discountAmount) &&
     discountAmount > 0
   ) {
-    return Number(
-      (
-        (discountAmount /
-          gross) *
-        100
-      ).toFixed(4)
-    );
+    return {
+      mode: "amount",
+      value: discountAmount,
+    };
   }
 
-  if (
-    typeof itemTotal ===
-      "number" &&
-    Number.isFinite(
-      itemTotal
-    ) &&
-    itemTotal < gross
-  ) {
-    return Number(
-      (
-        ((gross -
-          itemTotal) /
-          gross) *
-        100
-      ).toFixed(4)
-    );
-  }
-
-  return 0;
+  return {
+    mode: "percent",
+    value: 0,
+  };
 }
 
 export default async function EditEstimatePage({
@@ -164,46 +193,47 @@ export default async function EditEstimatePage({
             line_items: (
               estimate.line_items ??
               []
-            ).map((line) => ({
-              line_item_id:
-                line.line_item_id,
+            ).map((line) => {
+              const discount =
+                readDiscount(
+                  line.discount,
+                  line.discount_amount
+                );
 
-              item_id:
-                line.item_id || "",
+              return {
+                line_item_id:
+                  line.line_item_id,
 
-              name:
-                line.name,
+                item_id:
+                  line.item_id || "",
 
-              description:
-                line.description ||
-                "",
+                name:
+                  line.name,
 
-              quantity:
-                Number(
-                  line.quantity
-                ) || 1,
+                description:
+                  line.description ||
+                  "",
 
-              rate:
-                Number(
-                  line.rate
-                ) || 0,
-
-              discount:
-                getDiscountPercentage(
+                quantity:
                   Number(
                     line.quantity
-                  ) || 0,
+                  ) || 1,
+
+                rate:
                   Number(
                     line.rate
                   ) || 0,
-                  line.discount,
-                  line.discount_amount,
-                  line.item_total
-                ),
 
-              tax_id:
-                line.tax_id || "",
-            })),
+                discount_mode:
+                  discount.mode,
+
+                discount_value:
+                  discount.value,
+
+                tax_id:
+                  line.tax_id || "",
+              };
+            }),
           }}
           taxes={taxes.map(
             (tax) => ({
@@ -228,7 +258,8 @@ export default async function EditEstimatePage({
                 item.name,
 
               description:
-                item.description ?? "",
+                item.description ??
+                "",
 
               rate:
                 Number(
@@ -236,10 +267,12 @@ export default async function EditEstimatePage({
                 ) || 0,
 
               tax_id:
-                item.tax_id ?? null,
+                item.tax_id ??
+                null,
 
               tax_name:
-                item.tax_name ?? null,
+                item.tax_name ??
+                null,
 
               tax_percentage:
                 typeof item.tax_percentage ===

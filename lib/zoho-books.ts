@@ -79,8 +79,21 @@ export type ZohoEstimateLineItem = {
   rate: number;
   quantity: number;
   unit?: string;
+
+  /*
+   * Zoho peut représenter une remise
+   * de ligne sous forme de pourcentage
+   * ou de montant fixe.
+   *
+   * Exemples possibles :
+   * "35%"
+   * "50"
+   * 35
+   */
+  discount?: string | number;
+
   discount_amount?: number;
-  discount?: number;
+
   tax_id?: string;
   tax_name?: string;
   tax_type?: string;
@@ -192,7 +205,20 @@ export type CreateZohoEstimateLineItemInput = {
   description?: string;
   quantity: number;
   rate: number;
-  discount?: number;
+
+  /*
+   * Pourcentage :
+   * "35%"
+   *
+   * Montant fixe :
+   * "50"
+   *
+   * On continue aussi d'accepter un number
+   * pour compatibilité avec les formulaires
+   * actuels pendant la transition.
+   */
+  discount?: string | number;
+
   tax_id?: string;
 };
 
@@ -347,9 +373,10 @@ async function zohoBooksRequest<T>(
   );
 
   if (query) {
-    for (const [key, value] of Object.entries(
-      query
-    )) {
+    for (
+      const [key, value]
+      of Object.entries(query)
+    ) {
       if (value !== undefined) {
         url.searchParams.set(
           key,
@@ -360,7 +387,9 @@ async function zohoBooksRequest<T>(
   }
 
   const headers =
-    new Headers(options.headers);
+    new Headers(
+      options.headers
+    );
 
   headers.set(
     "Authorization",
@@ -369,7 +398,9 @@ async function zohoBooksRequest<T>(
 
   if (
     options.body &&
-    !headers.has("Content-Type")
+    !headers.has(
+      "Content-Type"
+    )
   ) {
     headers.set(
       "Content-Type",
@@ -377,11 +408,12 @@ async function zohoBooksRequest<T>(
     );
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    cache: "no-store",
-  });
+  const response =
+    await fetch(url, {
+      ...options,
+      headers,
+      cache: "no-store",
+    });
 
   const data =
     (await response.json()) as ZohoApiResponse<T>;
@@ -413,16 +445,17 @@ export async function getZohoOrganizations() {
   const accessToken =
     await getZohoAccessToken();
 
-  const response = await fetch(
-    "https://www.zohoapis.eu/books/v3/organizations",
-    {
-      headers: {
-        Authorization:
-          `Zoho-oauthtoken ${accessToken}`,
-      },
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      "https://www.zohoapis.eu/books/v3/organizations",
+      {
+        headers: {
+          Authorization:
+            `Zoho-oauthtoken ${accessToken}`,
+        },
+        cache: "no-store",
+      }
+    );
 
   const data =
     (await response.json()) as ZohoApiResponse<{
@@ -441,7 +474,9 @@ export async function getZohoOrganizations() {
     );
   }
 
-  return data.organizations ?? [];
+  return (
+    data.organizations ?? []
+  );
 }
 
 export async function getZohoTaxes() {
@@ -478,14 +513,18 @@ export async function getZohoItems(
     );
 
   return {
-    items: data.items ?? [],
+    items:
+      data.items ?? [],
+
     pageContext:
-      data.page_context ?? null,
+      data.page_context ??
+      null,
   };
 }
 
 export async function getAllZohoItems() {
-  const items: ZohoItem[] = [];
+  const items: ZohoItem[] =
+    [];
 
   let page = 1;
   const perPage = 200;
@@ -519,7 +558,8 @@ export async function getAllZohoItems() {
   return items.filter(
     (item) =>
       !item.status ||
-      item.status === "active"
+      item.status ===
+        "active"
   );
 }
 
@@ -539,15 +579,18 @@ export async function getZohoContacts(
       {
         page,
         per_page: perPage,
-        contact_type: "customer",
+        contact_type:
+          "customer",
       }
     );
 
   return {
     contacts:
       data.contacts ?? [],
+
     pageContext:
-      data.page_context ?? null,
+      data.page_context ??
+      null,
   };
 }
 
@@ -600,7 +643,8 @@ export async function createZohoContact(
       input.company_name?.trim() ||
       input.contact_name.trim(),
 
-    contact_type: "customer",
+    contact_type:
+      "customer",
 
     customer_sub_type:
       "business",
@@ -617,32 +661,38 @@ export async function createZohoContact(
       input.billing_address
         ? {
             address:
-              input.billing_address
+              input
+                .billing_address
                 .address?.trim() ||
               undefined,
 
             street2:
-              input.billing_address
+              input
+                .billing_address
                 .street2?.trim() ||
               undefined,
 
             city:
-              input.billing_address
+              input
+                .billing_address
                 .city?.trim() ||
               undefined,
 
             state:
-              input.billing_address
+              input
+                .billing_address
                 .state?.trim() ||
               undefined,
 
             zip:
-              input.billing_address
+              input
+                .billing_address
                 .zip?.trim() ||
               undefined,
 
             country:
-              input.billing_address
+              input
+                .billing_address
                 .country?.trim() ||
               undefined,
           }
@@ -655,15 +705,19 @@ export async function createZohoContact(
     }>(
       "/contacts",
       {
-        method: "POST",
-        body: JSON.stringify(
-          payload
-        ),
+        method:
+          "POST",
+
+        body:
+          JSON.stringify(
+            payload
+          ),
       }
     );
 
   if (
-    !data.contact?.contact_id
+    !data.contact
+      ?.contact_id
   ) {
     throw new Error(
       "Zoho Books a créé le contact sans retourner son identifiant."
@@ -689,17 +743,23 @@ export async function getZohoEstimates(
       {
         page,
         per_page: perPage,
-        filter_by: "Status.All",
-        sort_column: "date",
-        sort_order: "D",
+        filter_by:
+          "Status.All",
+        sort_column:
+          "date",
+        sort_order:
+          "D",
       }
     );
 
   return {
     estimates:
-      data.estimates ?? [],
+      data.estimates ??
+      [],
+
     pageContext:
-      data.page_context ?? null,
+      data.page_context ??
+      null,
   };
 }
 
@@ -769,13 +829,108 @@ export async function getZohoEstimate(
   return data.estimate;
 }
 
+function normalizeDiscountValue(
+  discount:
+    | string
+    | number
+    | undefined
+) {
+  if (
+    discount === undefined
+  ) {
+    return undefined;
+  }
+
+  if (
+    typeof discount ===
+    "number"
+  ) {
+    if (
+      !Number.isFinite(
+        discount
+      ) ||
+      discount <= 0
+    ) {
+      return undefined;
+    }
+
+    /*
+     * Compatibilité temporaire avec
+     * l'ancien formulaire :
+     * un number correspondait jusqu'ici
+     * à un pourcentage.
+     */
+    return `${discount}%`;
+  }
+
+  const trimmed =
+    discount.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (
+    trimmed.endsWith("%")
+  ) {
+    const numericValue =
+      Number(
+        trimmed
+          .slice(0, -1)
+          .replace(
+            ",",
+            "."
+          )
+      );
+
+    if (
+      !Number.isFinite(
+        numericValue
+      ) ||
+      numericValue <= 0 ||
+      numericValue > 100
+    ) {
+      throw new Error(
+        "La remise en pourcentage doit être comprise entre 0 et 100 %."
+      );
+    }
+
+    return `${numericValue}%`;
+  }
+
+  const numericValue =
+    Number(
+      trimmed.replace(
+        ",",
+        "."
+      )
+    );
+
+  if (
+    !Number.isFinite(
+      numericValue
+    ) ||
+    numericValue <= 0
+  ) {
+    throw new Error(
+      "Le montant de remise est invalide."
+    );
+  }
+
+  return String(
+    numericValue
+  );
+}
+
 function normalizeEstimateLineItems(
   lineItems:
     CreateZohoEstimateLineItemInput[]
 ) {
   return lineItems.map(
     (line, index) => {
-      if (!line.name.trim()) {
+      if (
+        !line.name.trim()
+      ) {
         throw new Error(
           `Le nom de la ligne ${
             index + 1
@@ -809,34 +964,18 @@ function normalizeEstimateLineItems(
         );
       }
 
-      if (
-        line.discount !==
-          undefined &&
-        (
-          !Number.isFinite(
-            line.discount
-          ) ||
-          line.discount < 0 ||
-          line.discount > 100
-        )
-      ) {
-        throw new Error(
-          `La remise de la ligne ${
-            index + 1
-          } doit être comprise entre 0 et 100 %.`
-        );
-      }
-
       return {
         item_id:
-          line.item_id?.trim() ||
+          line.item_id
+            ?.trim() ||
           undefined,
 
         name:
           line.name.trim(),
 
         description:
-          line.description?.trim() ||
+          line.description
+            ?.trim() ||
           undefined,
 
         quantity:
@@ -846,13 +985,13 @@ function normalizeEstimateLineItems(
           line.rate,
 
         discount:
-          line.discount &&
-          line.discount > 0
-            ? line.discount
-            : undefined,
+          normalizeDiscountValue(
+            line.discount
+          ),
 
         tax_id:
-          line.tax_id?.trim() ||
+          line.tax_id
+            ?.trim() ||
           undefined,
       };
     }
@@ -872,7 +1011,8 @@ export async function createZohoEstimate(
 
   if (
     !input.line_items ||
-    input.line_items.length === 0
+    input.line_items
+      .length === 0
   ) {
     throw new Error(
       "Le devis doit contenir au moins une ligne."
@@ -915,15 +1055,19 @@ export async function createZohoEstimate(
     }>(
       "/estimates",
       {
-        method: "POST",
-        body: JSON.stringify(
-          payload
-        ),
+        method:
+          "POST",
+
+        body:
+          JSON.stringify(
+            payload
+          ),
       }
     );
 
   if (
-    !data.estimate?.estimate_id
+    !data.estimate
+      ?.estimate_id
   ) {
     throw new Error(
       "Zoho Books a créé le devis sans retourner son identifiant."
@@ -953,7 +1097,8 @@ export async function updateZohoEstimate(
 
   if (
     !input.line_items ||
-    input.line_items.length === 0
+    input.line_items
+      .length === 0
   ) {
     throw new Error(
       "Le devis doit contenir au moins une ligne."
@@ -998,15 +1143,19 @@ export async function updateZohoEstimate(
         estimateId
       )}`,
       {
-        method: "PUT",
-        body: JSON.stringify(
-          payload
-        ),
+        method:
+          "PUT",
+
+        body:
+          JSON.stringify(
+            payload
+          ),
       }
     );
 
   if (
-    !data.estimate?.estimate_id
+    !data.estimate
+      ?.estimate_id
   ) {
     throw new Error(
       "Zoho Books a modifié le devis sans retourner son identifiant."
@@ -1031,18 +1180,24 @@ export async function getZohoInvoices(
       },
       {
         page,
-        per_page: perPage,
-        filter_by: "Status.All",
-        sort_column: "date",
-        sort_order: "D",
+        per_page:
+          perPage,
+        filter_by:
+          "Status.All",
+        sort_column:
+          "date",
+        sort_order:
+          "D",
       }
     );
 
   return {
     invoices:
       data.invoices ?? [],
+
     pageContext:
-      data.page_context ?? null,
+      data.page_context ??
+      null,
   };
 }
 
@@ -1112,61 +1267,77 @@ export async function getZohoInvoice(
   return data.invoice;
 }
 
-function getEstimateLineDiscountPercentage(
+function getInvoiceDiscountFromEstimateLine(
   line: ZohoEstimateLineItem
 ) {
+  /*
+   * Si Zoho renvoie directement
+   * la remise d'origine, on la
+   * transmet telle quelle.
+   */
   if (
-    typeof line.discount === "number" &&
+    typeof line.discount ===
+    "string"
+  ) {
+    const trimmed =
+      line.discount.trim();
+
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  if (
+    typeof line.discount ===
+      "number" &&
     Number.isFinite(
       line.discount
     ) &&
     line.discount > 0
   ) {
-    return line.discount;
+    /*
+     * Pour les anciennes réponses
+     * où Zoho renvoie un nombre,
+     * on conserve le comportement
+     * historique en l'interprétant
+     * comme un pourcentage.
+     */
+    return `${line.discount}%`;
   }
 
-  const gross =
-    Number(line.quantity) *
-    Number(line.rate);
-
+  /*
+   * Si Zoho ne retourne que le
+   * montant effectivement déduit,
+   * on NE reconstruit plus un %.
+   *
+   * On conserve le montant exact.
+   */
   const discountAmount =
     Number(
       line.discount_amount
     ) || 0;
 
   if (
-    gross <= 0 ||
-    discountAmount <= 0
+    discountAmount > 0
   ) {
-    return undefined;
+    return String(
+      discountAmount
+    );
   }
 
-  const percentage =
-    (discountAmount /
-      gross) *
-    100;
-
-  if (
-    !Number.isFinite(
-      percentage
-    ) ||
-    percentage <= 0
-  ) {
-    return undefined;
-  }
-
-  return Number(
-    percentage.toFixed(6)
-  );
+  return undefined;
 }
 
 function normalizeInvoiceLinesFromEstimate(
   estimate: ZohoEstimate
 ) {
   const lineItems =
-    estimate.line_items ?? [];
+    estimate.line_items ??
+    [];
 
-  if (lineItems.length === 0) {
+  if (
+    lineItems.length === 0
+  ) {
     throw new Error(
       "Le devis ne contient aucune ligne facturable."
     );
@@ -1175,10 +1346,14 @@ function normalizeInvoiceLinesFromEstimate(
   return lineItems.map(
     (line, index) => {
       const quantity =
-        Number(line.quantity);
+        Number(
+          line.quantity
+        );
 
       const rate =
-        Number(line.rate);
+        Number(
+          line.rate
+        );
 
       if (
         !Number.isFinite(
@@ -1194,7 +1369,9 @@ function normalizeInvoiceLinesFromEstimate(
       }
 
       if (
-        !Number.isFinite(rate) ||
+        !Number.isFinite(
+          rate
+        ) ||
         rate < 0
       ) {
         throw new Error(
@@ -1221,7 +1398,7 @@ function normalizeInvoiceLinesFromEstimate(
         rate,
 
         discount:
-          getEstimateLineDiscountPercentage(
+          getInvoiceDiscountFromEstimateLine(
             line
           ),
 
@@ -1239,7 +1416,9 @@ export async function createZohoInvoiceFromEstimate(
   const normalizedEstimateId =
     estimateId.trim();
 
-  if (!normalizedEstimateId) {
+  if (
+    !normalizedEstimateId
+  ) {
     throw new Error(
       "Identifiant de devis Zoho manquant."
     );
@@ -1273,19 +1452,6 @@ export async function createZohoInvoiceFromEstimate(
       estimate
     );
 
-  /*
-   * On crée désormais la facture via
-   * l'endpoint standard Zoho.
-   *
-   * invoiced_estimate_id est le champ
-   * prévu par Zoho pour conserver la
-   * relation native avec le devis source.
-   *
-   * On ne fournit volontairement pas
-   * de date ni d'échéance :
-   * Zoho applique alors les règles de
-   * facturation du compte/client.
-   */
   const payload = {
     customer_id:
       estimate.customer_id,
@@ -1320,7 +1486,8 @@ export async function createZohoInvoiceFromEstimate(
       ) || undefined,
 
     adjustment_description:
-      estimate.adjustment_description ||
+      estimate
+        .adjustment_description ||
       undefined,
 
     line_items:
@@ -1333,15 +1500,19 @@ export async function createZohoInvoiceFromEstimate(
     }>(
       "/invoices",
       {
-        method: "POST",
-        body: JSON.stringify(
-          payload
-        ),
+        method:
+          "POST",
+
+        body:
+          JSON.stringify(
+            payload
+          ),
       }
     );
 
   if (
-    !data.invoice?.invoice_id
+    !data.invoice
+      ?.invoice_id
   ) {
     throw new Error(
       `Zoho Books n'a pas retourné la facture créée. Réponse : ${
@@ -1351,12 +1522,6 @@ export async function createZohoInvoiceFromEstimate(
     );
   }
 
-  /*
-   * On relit ensuite la facture directement
-   * depuis Zoho afin de récupérer son état
-   * définitif : numéro, date, échéance,
-   * solde, lien au devis, etc.
-   */
   return getZohoInvoice(
     data.invoice.invoice_id
   );

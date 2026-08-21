@@ -10,6 +10,10 @@ import {
   useRouter,
 } from "next/navigation";
 
+type DiscountMode =
+  | "percent"
+  | "amount";
+
 type TaxOption = {
   tax_id: string;
   tax_name: string;
@@ -33,7 +37,8 @@ type InitialLine = {
   description: string;
   quantity: number;
   rate: number;
-  discount: number;
+  discount_mode: DiscountMode;
+  discount_value: number;
   tax_id: string;
 };
 
@@ -57,7 +62,8 @@ type EstimateLine = {
   description: string;
   quantity: string;
   rate: string;
-  discount: string;
+  discount_mode: DiscountMode;
+  discount_value: string;
   tax_id: string;
 };
 
@@ -107,41 +113,64 @@ function createLine(
     description: "",
     quantity: "1",
     rate: "",
-    discount: "0",
+    discount_mode: "percent",
+    discount_value: "0",
     tax_id: defaultTaxId,
   };
+}
+
+function calculateLineGross(
+  line: EstimateLine
+) {
+  return (
+    numberValue(line.quantity) *
+    numberValue(line.rate)
+  );
+}
+
+function calculateLineDiscount(
+  line: EstimateLine
+) {
+  const gross =
+    calculateLineGross(line);
+
+  const value =
+    Math.max(
+      0,
+      numberValue(
+        line.discount_value
+      )
+    );
+
+  if (
+    line.discount_mode ===
+    "percent"
+  ) {
+    const percentage =
+      Math.min(
+        100,
+        value
+      );
+
+    return (
+      gross *
+      (percentage / 100)
+    );
+  }
+
+  return Math.min(
+    gross,
+    value
+  );
 }
 
 function calculateLineTotal(
   line: EstimateLine
 ) {
-  const quantity =
-    numberValue(
-      line.quantity
-    );
-
-  const rate =
-    numberValue(
-      line.rate
-    );
-
-  const discount =
-    Math.min(
-      100,
-      Math.max(
-        0,
-        numberValue(
-          line.discount
-        )
-      )
-    );
-
-  const gross =
-    quantity * rate;
-
-  return (
-    gross *
-    (1 - discount / 100)
+  return Math.max(
+    0,
+    calculateLineGross(line) -
+      calculateLineDiscount(line)
   );
 }
 
@@ -172,7 +201,9 @@ export default function EditEstimateForm({
         Number(
           tax.tax_percentage
         ) === 20
-    ) ?? taxes[0] ?? null;
+    ) ??
+    taxes[0] ??
+    null;
 
   const [
     date,
@@ -219,24 +250,34 @@ export default function EditEstimateForm({
             id:
               line.line_item_id ||
               `${Date.now()}-${Math.random()}`,
+
             item_id:
               line.item_id || "",
+
             name:
               line.name,
+
             description:
               line.description,
+
             quantity:
               String(
                 line.quantity
               ),
+
             rate:
               String(
                 line.rate
               ),
-            discount:
+
+            discount_mode:
+              line.discount_mode,
+
+            discount_value:
               String(
-                line.discount
+                line.discount_value
               ),
+
             tax_id:
               line.tax_id ||
               defaultTax?.tax_id ||
@@ -253,9 +294,9 @@ export default function EditEstimateForm({
   const [
     activeSearchLineId,
     setActiveSearchLineId,
-  ] = useState<string | null>(
-    null
-  );
+  ] = useState<
+    string | null
+  >(null);
 
   const [
     submitting,
@@ -265,21 +306,30 @@ export default function EditEstimateForm({
   const [
     errorMessage,
     setErrorMessage,
-  ] = useState<string | null>(
-    null
-  );
+  ] = useState<
+    string | null
+  >(null);
 
   const subtotalBeforeDiscount =
     useMemo(() => {
       return lines.reduce(
         (total, line) =>
           total +
-          numberValue(
-            line.quantity
-          ) *
-            numberValue(
-              line.rate
-            ),
+          calculateLineGross(
+            line
+          ),
+        0
+      );
+    }, [lines]);
+
+  const discountTotal =
+    useMemo(() => {
+      return lines.reduce(
+        (total, line) =>
+          total +
+          calculateLineDiscount(
+            line
+          ),
         0
       );
     }, [lines]);
@@ -295,10 +345,6 @@ export default function EditEstimateForm({
         0
       );
     }, [lines]);
-
-  const discountTotal =
-    subtotalBeforeDiscount -
-    subtotal;
 
   const taxAmount =
     useMemo(() => {
@@ -338,30 +384,58 @@ export default function EditEstimateForm({
       | "description"
       | "quantity"
       | "rate"
-      | "discount"
+      | "discount_value"
       | "tax_id",
     value: string
   ) {
     setLines(
       (current) =>
-        current.map((line) => {
-          if (line.id !== id) {
-            return line;
-          }
+        current.map(
+          (line) => {
+            if (
+              line.id !== id
+            ) {
+              return line;
+            }
 
-          if (field === "name") {
+            if (
+              field ===
+              "name"
+            ) {
+              return {
+                ...line,
+                item_id: "",
+                name: value,
+              };
+            }
+
             return {
               ...line,
-              item_id: "",
-              name: value,
+              [field]: value,
             };
           }
+        )
+    );
+  }
 
-          return {
-            ...line,
-            [field]: value,
-          };
-        })
+  function updateDiscountMode(
+    id: string,
+    mode: DiscountMode
+  ) {
+    setLines(
+      (current) =>
+        current.map(
+          (line) =>
+            line.id === id
+              ? {
+                  ...line,
+                  discount_mode:
+                    mode,
+                  discount_value:
+                    "0",
+                }
+              : line
+        )
     );
   }
 
@@ -371,26 +445,28 @@ export default function EditEstimateForm({
   ) {
     setLines(
       (current) =>
-        current.map((line) =>
-          line.id === lineId
-            ? {
-                ...line,
-                item_id:
-                  item.item_id,
-                name:
-                  item.name,
-                description:
-                  item.description,
-                rate:
-                  String(
-                    item.rate
-                  ),
-                tax_id:
-                  item.tax_id ||
-                  defaultTax?.tax_id ||
-                  "",
-              }
-            : line
+        current.map(
+          (line) =>
+            line.id ===
+            lineId
+              ? {
+                  ...line,
+                  item_id:
+                    item.item_id,
+                  name:
+                    item.name,
+                  description:
+                    item.description,
+                  rate:
+                    String(
+                      item.rate
+                    ),
+                  tax_id:
+                    item.tax_id ||
+                    defaultTax?.tax_id ||
+                    "",
+                }
+              : line
         )
     );
 
@@ -420,50 +496,57 @@ export default function EditEstimateForm({
     }
 
     const startsWith =
-      items.filter((item) =>
-        normalizeSearch(
-          item.name
-        ).startsWith(search)
+      items.filter(
+        (item) =>
+          normalizeSearch(
+            item.name
+          ).startsWith(
+            search
+          )
       );
 
     const containsInName =
-      items.filter((item) => {
-        const name =
-          normalizeSearch(
-            item.name
-          );
+      items.filter(
+        (item) => {
+          const name =
+            normalizeSearch(
+              item.name
+            );
 
-        return (
-          !name.startsWith(
-            search
-          ) &&
-          name.includes(
-            search
-          )
-        );
-      });
+          return (
+            !name.startsWith(
+              search
+            ) &&
+            name.includes(
+              search
+            )
+          );
+        }
+      );
 
     const containsInDescription =
-      items.filter((item) => {
-        const name =
-          normalizeSearch(
-            item.name
-          );
+      items.filter(
+        (item) => {
+          const name =
+            normalizeSearch(
+              item.name
+            );
 
-        const description =
-          normalizeSearch(
-            item.description
-          );
+          const description =
+            normalizeSearch(
+              item.description
+            );
 
-        return (
-          !name.includes(
-            search
-          ) &&
-          description.includes(
-            search
-          )
-        );
-      });
+          return (
+            !name.includes(
+              search
+            ) &&
+            description.includes(
+              search
+            )
+          );
+        }
+      );
 
     return [
       ...startsWith,
@@ -502,7 +585,8 @@ export default function EditEstimateForm({
     );
 
     if (
-      activeSearchLineId === id
+      activeSearchLineId ===
+      id
     ) {
       setActiveSearchLineId(
         null
@@ -518,49 +602,108 @@ export default function EditEstimateForm({
     setErrorMessage(null);
 
     const normalizedLines =
-      lines.map((line) => ({
-        item_id:
-          line.item_id ||
-          undefined,
+      lines.map(
+        (line) => {
+          const discountValue =
+            numberValue(
+              line.discount_value
+            );
 
-        name:
-          line.name.trim(),
+          let discount:
+            | string
+            | undefined;
 
-        description:
-          line.description.trim(),
+          if (
+            discountValue > 0
+          ) {
+            discount =
+              line.discount_mode ===
+              "percent"
+                ? `${Math.round(
+                    discountValue
+                  )}%`
+                : String(
+                    discountValue
+                  );
+          }
 
-        quantity:
-          numberValue(
-            line.quantity
-          ),
+          return {
+            item_id:
+              line.item_id ||
+              undefined,
 
-        rate:
-          numberValue(
-            line.rate
-          ),
+            name:
+              line.name.trim(),
 
-        discount:
-          numberValue(
-            line.discount
-          ),
+            description:
+              line.description.trim(),
 
-        tax_id:
-          line.tax_id ||
-          undefined,
-      }));
+            quantity:
+              numberValue(
+                line.quantity
+              ),
 
-    if (
+            rate:
+              numberValue(
+                line.rate
+              ),
+
+            discount,
+
+            tax_id:
+              line.tax_id ||
+              undefined,
+          };
+        }
+      );
+
+    const invalidLine =
       normalizedLines.some(
-        (line) =>
-          !line.name ||
-          line.quantity <= 0 ||
-          line.rate < 0 ||
-          line.discount < 0 ||
-          line.discount > 100
-      )
-    ) {
+        (line, index) => {
+          const sourceLine =
+            lines[index];
+
+          const discountValue =
+            numberValue(
+              sourceLine
+                .discount_value
+            );
+
+          if (
+            !line.name ||
+            line.quantity <= 0 ||
+            line.rate < 0 ||
+            discountValue < 0
+          ) {
+            return true;
+          }
+
+          if (
+            sourceLine.discount_mode ===
+              "percent" &&
+            discountValue > 100
+          ) {
+            return true;
+          }
+
+          if (
+            sourceLine.discount_mode ===
+              "amount" &&
+            discountValue >
+              calculateLineGross(
+                sourceLine
+              )
+          ) {
+            return true;
+          }
+
+          return false;
+        }
+      );
+
+    if (invalidLine) {
       setErrorMessage(
-        "Vérifie les lignes du devis : prestation, quantité, prix HT et remise de 0 à 100 %."
+        "Vérifie les lignes du devis : quantité, prix HT et remise."
       );
 
       return;
@@ -573,7 +716,8 @@ export default function EditEstimateForm({
         await fetch(
           `/api/zoho/estimates/${estimate.estimate_id}/update`,
           {
-            method: "PUT",
+            method:
+              "PUT",
 
             headers: {
               "Content-Type":
@@ -586,7 +730,8 @@ export default function EditEstimateForm({
                   estimate.customer_id,
 
                 date:
-                  date || undefined,
+                  date ||
+                  undefined,
 
                 expiry_date:
                   expiryDate ||
@@ -597,10 +742,12 @@ export default function EditEstimateForm({
                   undefined,
 
                 notes:
-                  notes || undefined,
+                  notes ||
+                  undefined,
 
                 terms:
-                  terms || undefined,
+                  terms ||
+                  undefined,
 
                 line_items:
                   normalizedLines,
@@ -642,7 +789,9 @@ export default function EditEstimateForm({
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={
+        handleSubmit
+      }
       className="space-y-6"
     >
       {errorMessage ? (
@@ -664,8 +813,8 @@ export default function EditEstimateForm({
           </p>
 
           <p className="mt-1 text-sm text-slate-500">
-            Le client du devis n’est pas
-            modifié.
+            Le client du devis
+            n’est pas modifié.
           </p>
         </div>
       </section>
@@ -688,7 +837,9 @@ export default function EditEstimateForm({
               id="date"
               type="date"
               value={date}
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 setDate(
                   event.target.value
                 )
@@ -708,8 +859,12 @@ export default function EditEstimateForm({
             <input
               id="expiry"
               type="date"
-              value={expiryDate}
-              onChange={(event) =>
+              value={
+                expiryDate
+              }
+              onChange={(
+                event
+              ) =>
                 setExpiryDate(
                   event.target.value
                 )
@@ -728,8 +883,12 @@ export default function EditEstimateForm({
 
             <input
               id="reference"
-              value={referenceNumber}
-              onChange={(event) =>
+              value={
+                referenceNumber
+              }
+              onChange={(
+                event
+              ) =>
                 setReferenceNumber(
                   event.target.value
                 )
@@ -749,8 +908,9 @@ export default function EditEstimateForm({
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Recherche dans le catalogue
-              Zoho Books ou saisie libre.
+              Recherche dans le
+              catalogue Zoho Books
+              ou saisie libre.
             </p>
           </div>
 
@@ -765,7 +925,10 @@ export default function EditEstimateForm({
 
         <div className="space-y-4 p-6">
           {lines.map(
-            (line, index) => {
+            (
+              line,
+              index
+            ) => {
               const suggestions =
                 getSuggestions(
                   line
@@ -773,15 +936,20 @@ export default function EditEstimateForm({
 
               return (
                 <div
-                  key={line.id}
+                  key={
+                    line.id
+                  }
                   className="rounded-xl border border-slate-200 p-4"
                 >
                   <div className="mb-4 flex items-center justify-between">
                     <p className="text-sm font-semibold text-slate-700">
-                      Ligne {index + 1}
+                      Ligne{" "}
+                      {index +
+                        1}
                     </p>
 
-                    {lines.length > 1 ? (
+                    {lines.length >
+                    1 ? (
                       <button
                         type="button"
                         onClick={() =>
@@ -796,7 +964,7 @@ export default function EditEstimateForm({
                     ) : null}
                   </div>
 
-                  <div className="grid gap-4 xl:grid-cols-[1.8fr_2.5fr_0.7fr_1fr_0.8fr_1fr]">
+                  <div className="grid gap-4 xl:grid-cols-[1.8fr_2.5fr_0.7fr_1fr_1.25fr_1fr]">
                     <div className="relative">
                       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Prestation
@@ -817,7 +985,9 @@ export default function EditEstimateForm({
                           updateLine(
                             line.id,
                             "name",
-                            event.target.value
+                            event
+                              .target
+                              .value
                           );
 
                           setActiveSearchLineId(
@@ -840,11 +1010,13 @@ export default function EditEstimateForm({
 
                       {line.item_id ? (
                         <p className="mt-1 text-xs font-medium text-emerald-600">
-                          Article Zoho sélectionné
+                          Article Zoho
+                          sélectionné
                         </p>
                       ) : (
                         <p className="mt-1 text-xs text-slate-400">
-                          Recherche catalogue ou
+                          Recherche
+                          catalogue ou
                           saisie libre
                         </p>
                       )}
@@ -855,7 +1027,9 @@ export default function EditEstimateForm({
                         0 ? (
                         <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
                           {suggestions.map(
-                            (item) => (
+                            (
+                              item
+                            ) => (
                               <button
                                 key={
                                   item.item_id
@@ -928,7 +1102,9 @@ export default function EditEstimateForm({
                           updateLine(
                             line.id,
                             "description",
-                            event.target.value
+                            event
+                              .target
+                              .value
                           )
                         }
                         className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -953,7 +1129,9 @@ export default function EditEstimateForm({
                           updateLine(
                             line.id,
                             "quantity",
-                            event.target.value
+                            event
+                              .target
+                              .value
                           )
                         }
                         className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -968,7 +1146,7 @@ export default function EditEstimateForm({
                       <input
                         type="number"
                         min="0"
-                        step="1"
+                        step="0.01"
                         value={
                           line.rate
                         }
@@ -978,7 +1156,9 @@ export default function EditEstimateForm({
                           updateLine(
                             line.id,
                             "rate",
-                            event.target.value
+                            event
+                              .target
+                              .value
                           )
                         }
                         className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -987,28 +1167,67 @@ export default function EditEstimateForm({
 
                     <div>
                       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Remise %
+                        Remise
                       </label>
 
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={
-                          line.discount
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          updateLine(
-                            line.id,
-                            "discount",
-                            event.target.value
-                          )
-                        }
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                      />
+                      <div className="grid grid-cols-[72px_1fr] gap-2">
+                        <select
+                          value={
+                            line.discount_mode
+                          }
+                          onChange={(
+                            event
+                          ) =>
+                            updateDiscountMode(
+                              line.id,
+                              event
+                                .target
+                                .value as DiscountMode
+                            )
+                          }
+                          className="rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        >
+                          <option value="percent">
+                            %
+                          </option>
+
+                          <option value="amount">
+                            €
+                          </option>
+                        </select>
+
+                        <input
+                          type="number"
+                          min="0"
+                          max={
+                            line.discount_mode ===
+                            "percent"
+                              ? "100"
+                              : undefined
+                          }
+                          step={
+                            line.discount_mode ===
+                            "percent"
+                              ? "1"
+                              : "0.01"
+                          }
+                          value={
+                            line.discount_value
+                          }
+                          onChange={(
+                            event
+                          ) =>
+                            updateLine(
+                              line.id,
+                              "discount_value",
+                              event
+                                .target
+                                .value
+                            )
+                          }
+                          className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -1026,7 +1245,9 @@ export default function EditEstimateForm({
                           updateLine(
                             line.id,
                             "tax_id",
-                            event.target.value
+                            event
+                              .target
+                              .value
                           )
                         }
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -1036,7 +1257,9 @@ export default function EditEstimateForm({
                         </option>
 
                         {taxes.map(
-                          (tax) => (
+                          (
+                            tax
+                          ) => (
                             <option
                               key={
                                 tax.tax_id
@@ -1097,7 +1320,9 @@ export default function EditEstimateForm({
                 id="notes"
                 rows={4}
                 value={notes}
-                onChange={(event) =>
+                onChange={(
+                  event
+                ) =>
                   setNotes(
                     event.target.value
                   )
@@ -1118,7 +1343,9 @@ export default function EditEstimateForm({
                 id="terms"
                 rows={5}
                 value={terms}
-                onChange={(event) =>
+                onChange={(
+                  event
+                ) =>
                   setTerms(
                     event.target.value
                   )
@@ -1147,7 +1374,8 @@ export default function EditEstimateForm({
               </span>
             </div>
 
-            {discountTotal > 0 ? (
+            {discountTotal >
+            0 ? (
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">
                   Remises
@@ -1203,7 +1431,9 @@ export default function EditEstimateForm({
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={
+              submitting
+            }
             className="mt-6 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting
@@ -1218,15 +1448,17 @@ export default function EditEstimateForm({
                 `/management/estimates/${estimate.estimate_id}`
               )
             }
-            disabled={submitting}
+            disabled={
+              submitting
+            }
             className="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
           >
             Annuler
           </button>
 
           <p className="mt-3 text-center text-xs text-slate-400">
-            Modification directe dans
-            Zoho Books
+            Modification directe
+            dans Zoho Books
           </p>
         </div>
       </section>
