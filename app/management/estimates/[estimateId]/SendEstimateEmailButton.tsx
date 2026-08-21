@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -58,8 +59,13 @@ export default function SendEstimateEmailButton({
   const [subject, setSubject] =
     useState("");
 
-  const [body, setBody] =
-    useState("");
+  const editorRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  const bodyHtmlRef =
+    useRef("");
 
   useEffect(() => {
     if (!isOpen || email) {
@@ -101,7 +107,9 @@ export default function SendEstimateEmailButton({
           );
         }
 
-        setEmail(data.email);
+        setEmail(
+          data.email
+        );
 
         setTo(
           data.email.to_mail_ids.join(
@@ -125,9 +133,8 @@ export default function SendEstimateEmailButton({
           data.email.subject
         );
 
-        setBody(
-          data.email.body
-        );
+        bodyHtmlRef.current =
+          data.email.body;
       } catch (err) {
         setError(
           err instanceof Error
@@ -146,6 +153,21 @@ export default function SendEstimateEmailButton({
     estimateId,
   ]);
 
+  useEffect(() => {
+    if (
+      !email ||
+      !editorRef.current
+    ) {
+      return;
+    }
+
+    editorRef.current.innerHTML =
+      email.body;
+
+    bodyHtmlRef.current =
+      email.body;
+  }, [email]);
+
   function parseEmails(
     value: string
   ) {
@@ -155,6 +177,46 @@ export default function SendEstimateEmailButton({
         emailAddress.trim()
       )
       .filter(Boolean);
+  }
+
+  function handleEditorInput() {
+    if (!editorRef.current) {
+      return;
+    }
+
+    bodyHtmlRef.current =
+      editorRef.current.innerHTML;
+  }
+
+  function handleEditorClick(
+    event: React.MouseEvent<HTMLDivElement>
+  ) {
+    const target =
+      event.target as HTMLElement;
+
+    const link =
+      target.closest("a");
+
+    if (link) {
+      event.preventDefault();
+    }
+  }
+
+  function handleResetMessage() {
+    if (
+      !email ||
+      !editorRef.current
+    ) {
+      return;
+    }
+
+    editorRef.current.innerHTML =
+      email.body;
+
+    bodyHtmlRef.current =
+      email.body;
+
+    setError("");
   }
 
   async function handleSend() {
@@ -170,6 +232,7 @@ export default function SendEstimateEmailButton({
       setError(
         "Ajoute au moins un destinataire."
       );
+
       return;
     }
 
@@ -177,13 +240,18 @@ export default function SendEstimateEmailButton({
       setError(
         "Le sujet de l'email est obligatoire."
       );
+
       return;
     }
 
-    if (!body.trim()) {
+    const currentBody =
+      bodyHtmlRef.current.trim();
+
+    if (!currentBody) {
       setError(
         "Le contenu de l'email est obligatoire."
       );
+
       return;
     }
 
@@ -204,13 +272,18 @@ export default function SendEstimateEmailButton({
             body: JSON.stringify({
               to_mail_ids:
                 toMailIds,
+
               cc_mail_ids:
                 parseEmails(cc),
+
               bcc_mail_ids:
                 parseEmails(bcc),
+
               subject:
                 subject.trim(),
-              body,
+
+              body:
+                currentBody,
             }),
           }
         );
@@ -252,6 +325,7 @@ export default function SendEstimateEmailButton({
 
     setIsOpen(false);
     setSuccess("");
+    setError("");
   }
 
   return (
@@ -335,6 +409,7 @@ export default function SendEstimateEmailButton({
                       {email.from_name
                         ? `${email.from_name} `
                         : ""}
+
                       {email.from_mail_id
                         ? `<${email.from_mail_id}>`
                         : "Défini par Zoho Books"}
@@ -426,24 +501,53 @@ export default function SendEstimateEmailButton({
                   </div>
 
                   <div>
-                    <label className="text-sm font-semibold text-slate-700">
-                      Message
-                    </label>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700">
+                          Message
+                        </label>
 
-                    <textarea
-                      value={body}
-                      onChange={(
-                        event
-                      ) =>
-                        setBody(
-                          event
-                            .target
-                            .value
-                        )
-                      }
-                      rows={14}
-                      className="mt-2 w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
+                        <p className="mt-1 text-xs text-slate-400">
+                          Clique dans le
+                          message pour
+                          modifier directement
+                          son texte.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={
+                          handleResetMessage
+                        }
+                        disabled={
+                          isSending
+                        }
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        Restaurer le
+                        message Zoho
+                      </button>
+                    </div>
+
+                    <div className="mt-2 overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+                      <div
+                        ref={
+                          editorRef
+                        }
+                        contentEditable={
+                          !isSending
+                        }
+                        suppressContentEditableWarning
+                        onInput={
+                          handleEditorInput
+                        }
+                        onClick={
+                          handleEditorClick
+                        }
+                        className="min-h-[420px] max-h-[620px] overflow-y-auto bg-white p-5 text-sm leading-6 text-slate-900 outline-none"
+                      />
+                    </div>
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
