@@ -898,16 +898,33 @@ export async function getZohoEstimateEmailContent(
     );
   }
 
+  type ZohoEstimateEmailTemplate = {
+    selected?: boolean;
+    name?: string;
+    email_template_id?: string | number;
+  };
+
+  type ZohoEstimateEmailContact = {
+    selected?: boolean;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+    contact_person_id?: string | number;
+  };
+
+  type ZohoEstimateFromEmail = {
+    selected?: boolean;
+    email?: string;
+    user_name?: string;
+  };
+
   const data =
     await zohoBooksRequest<{
       body?: string;
       subject?: string;
-      to_mail_ids?: string[];
-      cc_mail_ids?: string[];
-      bcc_mail_ids?: string[];
-      from_mail_id?: string;
-      from_name?: string;
-      emailtemplate_id?: string;
+      to_contacts?: ZohoEstimateEmailContact[];
+      from_emails?: ZohoEstimateFromEmail[];
+      emailtemplates?: ZohoEstimateEmailTemplate[];
       file_name?: string;
     }>(
       `/estimates/${encodeURIComponent(
@@ -918,23 +935,66 @@ export async function getZohoEstimateEmailContent(
       }
     );
 
+  const selectedContacts =
+    (data.to_contacts ?? []).filter(
+      (contact) =>
+        contact.selected &&
+        contact.email?.trim()
+    );
+
+  const contactsToUse =
+    selectedContacts.length > 0
+      ? selectedContacts
+      : (data.to_contacts ?? []).filter(
+          (contact) =>
+            contact.email?.trim()
+        );
+
+  const selectedFromEmail =
+    (data.from_emails ?? []).find(
+      (fromEmail) =>
+        fromEmail.selected &&
+        fromEmail.email?.trim()
+    ) ??
+    (data.from_emails ?? []).find(
+      (fromEmail) =>
+        fromEmail.email?.trim()
+    );
+
+  const selectedTemplate =
+    (data.emailtemplates ?? []).find(
+      (template) =>
+        template.selected
+    ) ??
+    (data.emailtemplates ?? [])[0];
+
   return {
     body:
       data.body ?? "",
     subject:
       data.subject ?? "",
     to_mail_ids:
-      data.to_mail_ids ?? [],
-    cc_mail_ids:
-      data.cc_mail_ids ?? [],
-    bcc_mail_ids:
-      data.bcc_mail_ids ?? [],
+      contactsToUse
+        .map(
+          (contact) =>
+            contact.email?.trim() ?? ""
+        )
+        .filter(Boolean),
+    cc_mail_ids: [],
+    bcc_mail_ids: [],
     from_mail_id:
-      data.from_mail_id,
+      selectedFromEmail?.email?.trim() ||
+      undefined,
     from_name:
-      data.from_name,
+      selectedFromEmail?.user_name?.trim() ||
+      undefined,
     emailtemplate_id:
-      data.emailtemplate_id,
+      selectedTemplate?.email_template_id !==
+      undefined
+        ? String(
+            selectedTemplate.email_template_id
+          )
+        : undefined,
     file_name:
       data.file_name,
   } satisfies ZohoEstimateEmailContent;
