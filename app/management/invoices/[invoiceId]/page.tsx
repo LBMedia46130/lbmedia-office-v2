@@ -6,7 +6,8 @@ import {
   type ZohoInvoice,
 } from "@/lib/zoho-books";
 
-export const dynamic = "force-dynamic";
+export const dynamic =
+  "force-dynamic";
 
 type InvoiceDetailPageProps = {
   params: Promise<{
@@ -131,41 +132,53 @@ export default async function InvoiceDetailPage({
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-[1200px] px-6 py-8">
-        <Link
-          href="/management/invoices"
-          className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-        >
-          ← Retour aux factures
-        </Link>
-
-        <div className="mt-6">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-blue-600">
-            Gestion / Factures
-          </p>
-
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-bold text-slate-900">
-              Facture{" "}
-              {
-                invoice.invoice_number
-              }
-            </h1>
-
-            <span
-              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
-                invoice.status
-              )}`}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <Link
+              href="/management/invoices"
+              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
             >
-              {getStatusLabel(
-                invoice.status
-              )}
-            </span>
+              ← Retour aux factures
+            </Link>
+
+            <div className="mt-6">
+              <p className="text-sm font-medium uppercase tracking-[0.18em] text-blue-600">
+                Gestion / Factures
+              </p>
+
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-bold text-slate-900">
+                  Facture{" "}
+                  {invoice.invoice_number ||
+                    "Brouillon"}
+                </h1>
+
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
+                    invoice.status
+                  )}`}
+                >
+                  {getStatusLabel(
+                    invoice.status
+                  )}
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Document créé et géré
+                dans Zoho Books
+              </p>
+            </div>
           </div>
 
-          <p className="mt-2 text-sm text-slate-500">
-            Document créé et géré dans
-            Zoho Books
-          </p>
+          <div className="pt-0 lg:pt-12">
+            <Link
+              href={`/management/invoices/${invoice.invoice_id}/edit`}
+              className="inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Modifier la facture
+            </Link>
+          </div>
         </div>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
@@ -181,9 +194,8 @@ export default async function InvoiceDetailPage({
                 </dt>
 
                 <dd className="mt-1 font-semibold text-slate-900">
-                  {
-                    invoice.invoice_number
-                  }
+                  {invoice.invoice_number ||
+                    "Brouillon"}
                 </dd>
               </div>
 

@@ -79,21 +79,8 @@ export type ZohoEstimateLineItem = {
   rate: number;
   quantity: number;
   unit?: string;
-
-  /*
-   * Zoho peut représenter une remise
-   * de ligne sous forme de pourcentage
-   * ou de montant fixe.
-   *
-   * Exemples possibles :
-   * "35%"
-   * "50"
-   * 35
-   */
   discount?: string | number;
-
   discount_amount?: number;
-
   tax_id?: string;
   tax_name?: string;
   tax_type?: string;
@@ -160,6 +147,40 @@ export type ZohoEstimate = {
   client_viewed_time?: string;
 };
 
+export type ZohoInvoiceLineItem = {
+  item_id?: string;
+  line_item_id: string;
+  name: string;
+  description?: string;
+  item_order?: number;
+  product_type?: string;
+  rate: number;
+  quantity: number;
+  unit?: string;
+  discount?: string | number;
+  discount_amount?: number;
+  tax_id?: string;
+  tax_name?: string;
+  tax_type?: string;
+  tax_percentage?: number;
+  item_total: number;
+  line_item_category?: string;
+};
+
+export type ZohoInvoiceTax = {
+  tax_name: string;
+  tax_amount: number;
+};
+
+export type ZohoInvoiceAddress = {
+  address?: string;
+  street2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+};
+
 export type ZohoInvoice = {
   invoice_id: string;
   invoice_number: string;
@@ -181,6 +202,31 @@ export type ZohoInvoice = {
   last_modified_time?: string;
 
   invoiced_estimate_id?: string;
+
+  line_items?: ZohoInvoiceLineItem[];
+
+  sub_total?: number;
+  tax_total?: number;
+
+  discount?: number;
+  discount_type?: string;
+  is_discount_before_tax?: boolean;
+  is_inclusive_tax?: boolean;
+
+  shipping_charge?: number;
+  adjustment?: number;
+  adjustment_description?: string;
+
+  taxes?: ZohoInvoiceTax[];
+
+  notes?: string;
+  terms?: string;
+
+  billing_address?: ZohoInvoiceAddress;
+  shipping_address?: ZohoInvoiceAddress;
+
+  salesperson_name?: string;
+  template_name?: string;
 };
 
 export type CreateZohoContactInput = {
@@ -205,20 +251,7 @@ export type CreateZohoEstimateLineItemInput = {
   description?: string;
   quantity: number;
   rate: number;
-
-  /*
-   * Pourcentage :
-   * "35%"
-   *
-   * Montant fixe :
-   * "50"
-   *
-   * On continue aussi d'accepter un number
-   * pour compatibilité avec les formulaires
-   * actuels pendant la transition.
-   */
   discount?: string | number;
-
   tax_id?: string;
 };
 
@@ -240,6 +273,26 @@ export type UpdateZohoEstimateInput = {
   notes?: string;
   terms?: string;
   line_items: CreateZohoEstimateLineItemInput[];
+};
+
+export type UpdateZohoInvoiceLineItemInput = {
+  item_id?: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  rate: number;
+  discount?: string | number;
+  tax_id?: string;
+};
+
+export type UpdateZohoInvoiceInput = {
+  customer_id: string;
+  date?: string;
+  due_date?: string;
+  reference_number?: string;
+  notes?: string;
+  terms?: string;
+  line_items: UpdateZohoInvoiceLineItemInput[];
 };
 
 let cachedAccessToken: {
@@ -854,12 +907,6 @@ function normalizeDiscountValue(
       return undefined;
     }
 
-    /*
-     * Compatibilité temporaire avec
-     * l'ancien formulaire :
-     * un number correspondait jusqu'ici
-     * à un pourcentage.
-     */
     return `${discount}%`;
   }
 
@@ -1267,14 +1314,171 @@ export async function getZohoInvoice(
   return data.invoice;
 }
 
+function normalizeInvoiceLineItems(
+  lineItems:
+    UpdateZohoInvoiceLineItemInput[]
+) {
+  return lineItems.map(
+    (line, index) => {
+      if (
+        !line.name.trim()
+      ) {
+        throw new Error(
+          `Le nom de la ligne ${
+            index + 1
+          } est obligatoire.`
+        );
+      }
+
+      if (
+        !Number.isFinite(
+          line.quantity
+        ) ||
+        line.quantity <= 0
+      ) {
+        throw new Error(
+          `La quantité de la ligne ${
+            index + 1
+          } doit être supérieure à zéro.`
+        );
+      }
+
+      if (
+        !Number.isFinite(
+          line.rate
+        ) ||
+        line.rate < 0
+      ) {
+        throw new Error(
+          `Le prix de la ligne ${
+            index + 1
+          } est invalide.`
+        );
+      }
+
+      return {
+        item_id:
+          line.item_id
+            ?.trim() ||
+          undefined,
+
+        name:
+          line.name.trim(),
+
+        description:
+          line.description
+            ?.trim() ||
+          undefined,
+
+        quantity:
+          line.quantity,
+
+        rate:
+          line.rate,
+
+        discount:
+          normalizeDiscountValue(
+            line.discount
+          ),
+
+        tax_id:
+          line.tax_id
+            ?.trim() ||
+          undefined,
+      };
+    }
+  );
+}
+
+export async function updateZohoInvoice(
+  invoiceId: string,
+  input: UpdateZohoInvoiceInput
+) {
+  if (!invoiceId) {
+    throw new Error(
+      "Identifiant de facture Zoho manquant."
+    );
+  }
+
+  if (
+    !input.customer_id.trim()
+  ) {
+    throw new Error(
+      "Le client Zoho est obligatoire pour modifier une facture."
+    );
+  }
+
+  if (
+    !input.line_items ||
+    input.line_items.length === 0
+  ) {
+    throw new Error(
+      "La facture doit contenir au moins une ligne."
+    );
+  }
+
+  const payload = {
+    customer_id:
+      input.customer_id.trim(),
+
+    date:
+      input.date?.trim() ||
+      undefined,
+
+    due_date:
+      input.due_date?.trim() ||
+      undefined,
+
+    reference_number:
+      input.reference_number?.trim() ||
+      undefined,
+
+    notes:
+      input.notes?.trim() ||
+      undefined,
+
+    terms:
+      input.terms?.trim() ||
+      undefined,
+
+    line_items:
+      normalizeInvoiceLineItems(
+        input.line_items
+      ),
+  };
+
+  const data =
+    await zohoBooksRequest<{
+      invoice?: ZohoInvoice;
+    }>(
+      `/invoices/${encodeURIComponent(
+        invoiceId
+      )}`,
+      {
+        method: "PUT",
+
+        body:
+          JSON.stringify(
+            payload
+          ),
+      }
+    );
+
+  if (
+    !data.invoice
+      ?.invoice_id
+  ) {
+    throw new Error(
+      "Zoho Books a modifié la facture sans retourner son identifiant."
+    );
+  }
+
+  return data.invoice;
+}
+
 function getInvoiceDiscountFromEstimateLine(
   line: ZohoEstimateLineItem
 ) {
-  /*
-   * Si Zoho renvoie directement
-   * la remise d'origine, on la
-   * transmet telle quelle.
-   */
   if (
     typeof line.discount ===
     "string"
@@ -1295,23 +1499,9 @@ function getInvoiceDiscountFromEstimateLine(
     ) &&
     line.discount > 0
   ) {
-    /*
-     * Pour les anciennes réponses
-     * où Zoho renvoie un nombre,
-     * on conserve le comportement
-     * historique en l'interprétant
-     * comme un pourcentage.
-     */
     return `${line.discount}%`;
   }
 
-  /*
-   * Si Zoho ne retourne que le
-   * montant effectivement déduit,
-   * on NE reconstruit plus un %.
-   *
-   * On conserve le montant exact.
-   */
   const discountAmount =
     Number(
       line.discount_amount
