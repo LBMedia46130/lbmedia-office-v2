@@ -166,6 +166,8 @@ export type ZohoInvoice = {
   last_payment_date?: string;
   created_time?: string;
   last_modified_time?: string;
+
+  invoiced_estimate_id?: string;
 };
 
 export type CreateZohoContactInput = {
@@ -1110,6 +1112,65 @@ export async function getZohoInvoice(
   return data.invoice;
 }
 
+async function findInvoiceFromEstimate(
+  estimateId: string
+) {
+  const invoices =
+    await getAllZohoInvoices();
+
+  for (const invoice of invoices) {
+    if (
+      invoice.invoiced_estimate_id ===
+      estimateId
+    ) {
+      return invoice;
+    }
+  }
+
+  /*
+   * Certains retours de liste Zoho peuvent
+   * être plus légers que le détail complet.
+   * On inspecte donc également les factures
+   * récentes individuellement.
+   */
+  const recentInvoices =
+    invoices.slice(0, 30);
+
+  for (const invoice of recentInvoices) {
+    try {
+      const detailedInvoice =
+        await getZohoInvoice(
+          invoice.invoice_id
+        );
+
+      if (
+        detailedInvoice.invoiced_estimate_id ===
+        estimateId
+      ) {
+        return detailedInvoice;
+      }
+    } catch {
+      // Une facture illisible ne doit pas
+      // interrompre toute la recherche.
+    }
+  }
+
+  return null;
+}
+
+function wait(
+  milliseconds: number
+) {
+  return new Promise<void>(
+    (resolve) => {
+      setTimeout(
+        resolve,
+        milliseconds
+      );
+    }
+  );
+}
+
 export async function createZohoInvoiceFromEstimate(
   estimateId: string
 ) {
@@ -1122,11 +1183,33 @@ export async function createZohoInvoiceFromEstimate(
     );
   }
 
-  const data =
-    await zohoBooksRequest<{
-      invoices?: ZohoInvoice[];
-      invoice?: ZohoInvoice;
-    }>(
+  /*
+   * Première protection :
+   * si la facture existe déjà, on ne
+   * déclenche surtout pas une seconde
+   * conversion.
+   */
+  const existingInvoice =
+    await findInvoiceFromEstimate(
+      normalizedEstimateId
+    );
+
+  if (existingInvoice) {
+    return existingInvoice;
+  }
+
+  /*
+   * Zoho documente POST /invoices/fromestimates
+   * avec estimate_ids dans la query string.
+   *
+   * La réponse 200 de cet endpoint ne garantit
+   * pas le retour direct d'un objet invoice.
+   */
+  const conversionResponse =
+    await zohoBooksRequest<Record<
+      string,
+      never
+    >>(
       "/invoices/fromestimates",
       {
         method: "POST",
@@ -1138,20 +1221,58 @@ export async function createZohoInvoiceFromEstimate(
     );
 
   /*
-   * Zoho permet de convertir plusieurs devis
-   * en une seule requête. Selon la réponse
-   * retournée par l'API, on accepte donc
-   * aussi bien "invoices" que "invoice".
+   * On laisse quelques instants à Zoho
+   * pour rendre la nouvelle facture
+   * visible dans les lectures API.
    */
-  const invoice =
-    data.invoices?.[0] ??
-    data.invoice;
+  for (
+    let attempt = 1;
+    attempt <= 4;
+    attempt += 1
+  ) {
+    if (attempt > 1) {
+      await wait(750);
+    }
 
-  if (!invoice?.invoice_id) {
+    const createdInvoice =
+      await findInvoiceFromEstimate(
+        normalizedEstimateId
+      );
+
+    if (createdInvoice) {
+      return createdInvoice;
+    }
+  }
+
+  /*
+   * Dernière vérification côté devis.
+   * Si Zoho n'a même pas passé le devis
+   * en invoiced, la conversion n'a
+   * manifestement pas abouti.
+   */
+  const refreshedEstimate =
+    await getZohoEstimate(
+      normalizedEstimateId
+    );
+
+  if (
+    refreshedEstimate.status !==
+    "invoiced"
+  ) {
     throw new Error(
-      "Zoho Books a converti le devis mais n'a pas retourné l'identifiant de la facture."
+      `Zoho Books n'a pas créé de facture. Réponse Zoho : ${
+        conversionResponse.message ||
+        "aucun détail fourni"
+      }`
     );
   }
 
-  return invoice;
+  /*
+   * Cas rarissime :
+   * le devis est marqué facturé mais la
+   * facture n'est toujours pas retrouvée.
+   */
+  throw new Error(
+    "Zoho Books indique que le devis est facturé, mais Office ne retrouve pas encore la facture créée."
+  );
 }
