@@ -1069,7 +1069,7 @@ export default function NewEstimateForm({
                       <input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={
                           line.rate
                         }
