@@ -417,14 +417,43 @@ export default function NewEstimateForm({
       );
 
     if (!search) {
-      return items.slice(
-        0,
-        8
-      );
+      return items
+        .slice()
+        .sort((a, b) =>
+          a.name.localeCompare(
+            b.name,
+            "fr"
+          )
+        )
+        .slice(0, 8);
     }
 
-    return items
-      .filter((item) => {
+    const startsWith =
+      items.filter((item) =>
+        normalizeSearch(
+          item.name
+        ).startsWith(search)
+      );
+
+    const containsInName =
+      items.filter((item) => {
+        const name =
+          normalizeSearch(
+            item.name
+          );
+
+        return (
+          !name.startsWith(
+            search
+          ) &&
+          name.includes(
+            search
+          )
+        );
+      });
+
+    const containsInDescription =
+      items.filter((item) => {
         const name =
           normalizeSearch(
             item.name
@@ -436,11 +465,20 @@ export default function NewEstimateForm({
           );
 
         return (
-          name.includes(search) ||
-          description.includes(search)
+          !name.includes(
+            search
+          ) &&
+          description.includes(
+            search
+          )
         );
-      })
-      .slice(0, 8);
+      });
+
+    return [
+      ...startsWith,
+      ...containsInName,
+      ...containsInDescription,
+    ].slice(0, 8);
   }
 
   function addLine() {
@@ -1005,8 +1043,8 @@ export default function NewEstimateForm({
 
                       <input
                         type="number"
-                        min="0.01"
-                        step="0.01"
+                        min="1"
+                        step="1"
                         value={
                           line.quantity
                         }
@@ -1058,7 +1096,7 @@ export default function NewEstimateForm({
                         type="number"
                         min="0"
                         max="100"
-                        step="0.01"
+                        step="1"
                         value={
                           line.discount
                         }
