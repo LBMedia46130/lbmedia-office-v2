@@ -54,6 +54,40 @@ export type ZohoContact = {
   currency_code?: string;
 };
 
+export type ZohoEstimateLineItem = {
+  item_id?: string;
+  line_item_id: string;
+  name: string;
+  description?: string;
+  item_order?: number;
+  product_type?: string;
+  rate: number;
+  quantity: number;
+  unit?: string;
+  discount_amount?: number;
+  discount?: number;
+  tax_id?: string;
+  tax_name?: string;
+  tax_type?: string;
+  tax_percentage?: number;
+  item_total: number;
+  line_item_category?: string;
+};
+
+export type ZohoEstimateTax = {
+  tax_name: string;
+  tax_amount: number;
+};
+
+export type ZohoEstimateAddress = {
+  address?: string;
+  street2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+};
+
 export type ZohoEstimate = {
   estimate_id: string;
   estimate_number: string;
@@ -68,6 +102,34 @@ export type ZohoEstimate = {
   is_emailed?: boolean;
   created_time?: string;
   last_modified_time?: string;
+
+  line_items?: ZohoEstimateLineItem[];
+
+  sub_total?: number;
+  tax_total?: number;
+
+  discount?: number;
+  discount_type?: string;
+  is_discount_before_tax?: boolean;
+  is_inclusive_tax?: boolean;
+
+  shipping_charge?: number;
+  adjustment?: number;
+  adjustment_description?: string;
+
+  taxes?: ZohoEstimateTax[];
+
+  notes?: string;
+  terms?: string;
+
+  billing_address?: ZohoEstimateAddress;
+  shipping_address?: ZohoEstimateAddress;
+
+  salesperson_name?: string;
+  template_name?: string;
+
+  is_viewed_by_client?: boolean;
+  client_viewed_time?: string;
 };
 
 export type ZohoInvoice = {

@@ -15,13 +15,13 @@ type EstimateDetailPageProps = {
 };
 
 function formatCurrency(
-  value: number,
+  value?: number,
   currency = "EUR"
 ) {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency,
-  }).format(value);
+  }).format(Number(value) || 0);
 }
 
 function formatDate(value?: string) {
@@ -37,6 +37,26 @@ function formatDate(value?: string) {
 
   return new Intl.DateTimeFormat(
     "fr-FR"
+  ).format(date);
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(
+    "fr-FR",
+    {
+      dateStyle: "short",
+      timeStyle: "short",
+    }
   ).format(date);
 }
 
@@ -109,6 +129,12 @@ export default async function EstimateDetailPage({
   const currency =
     estimate.currency_code || "EUR";
 
+  const lineItems =
+    estimate.line_items ?? [];
+
+  const taxes =
+    estimate.taxes ?? [];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-[1400px] px-6 py-8">
@@ -150,36 +176,29 @@ export default async function EstimateDetailPage({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <a
-              href={`https://books.zoho.eu/app#/estimates/${estimate.estimate_id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Ouvrir dans Zoho Books
-            </a>
-          </div>
+          <a
+            href={`https://books.zoho.eu/app#/estimates/${estimate.estimate_id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Ouvrir dans Zoho Books
+          </a>
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
           <div className="space-y-6">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Informations du devis
-                  </h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Informations du devis
+              </h2>
 
-                  <p className="mt-1 text-sm text-slate-500">
-                    Références principales
-                    enregistrées dans Zoho
-                    Books.
-                  </p>
-                </div>
-              </div>
+              <p className="mt-1 text-sm text-slate-500">
+                Références principales
+                enregistrées dans Zoho Books.
+              </p>
 
-              <dl className="grid gap-5 sm:grid-cols-2">
+              <dl className="mt-6 grid gap-5 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                     Numéro
@@ -224,6 +243,20 @@ export default async function EstimateDetailPage({
                     )}
                   </dd>
                 </div>
+
+                {estimate.salesperson_name ? (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Commercial
+                    </dt>
+
+                    <dd className="mt-1 text-sm text-slate-700">
+                      {
+                        estimate.salesperson_name
+                      }
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
             </div>
 
@@ -244,20 +277,256 @@ export default async function EstimateDetailPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Détail des prestations
-              </h2>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-6 py-5">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Détail des prestations
+                </h2>
 
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Le détail des lignes du devis
-                sera affiché ici après
-                enrichissement du type
-                ZohoEstimate avec les données
-                complètes retournées par
-                l&apos;API Zoho Books.
-              </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Prestations et montants
+                  enregistrés dans Zoho Books.
+                </p>
+              </div>
+
+              {lineItems.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Prestation
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Qté
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Prix HT
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          TVA
+                        </th>
+
+                        <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Total HT
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100">
+                      {lineItems.map(
+                        (line, index) => (
+                          <tr
+                            key={
+                              line.line_item_id ||
+                              `${line.name}-${index}`
+                            }
+                          >
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {line.name}
+                              </p>
+
+                              {line.description ? (
+                                <p className="mt-1 whitespace-pre-line text-sm leading-5 text-slate-500">
+                                  {
+                                    line.description
+                                  }
+                                </p>
+                              ) : null}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {line.quantity}
+
+                              {line.unit
+                                ? ` ${line.unit}`
+                                : ""}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {formatCurrency(
+                                line.rate,
+                                currency
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {typeof line.tax_percentage ===
+                              "number"
+                                ? `${line.tax_percentage} %`
+                                : "—"}
+                            </td>
+
+                            <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-slate-900">
+                              {formatCurrency(
+                                line.item_total,
+                                currency
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="px-6 py-10 text-center text-sm text-slate-500">
+                  Aucune ligne de prestation
+                  retournée par Zoho Books.
+                </div>
+              )}
+
+              <div className="border-t border-slate-200 bg-slate-50 px-6 py-5">
+                <div className="ml-auto max-w-sm space-y-3">
+                  <div className="flex items-center justify-between gap-6 text-sm">
+                    <span className="text-slate-500">
+                      Sous-total HT
+                    </span>
+
+                    <span className="font-medium text-slate-900">
+                      {formatCurrency(
+                        estimate.sub_total,
+                        currency
+                      )}
+                    </span>
+                  </div>
+
+                  {Number(estimate.discount) >
+                  0 ? (
+                    <div className="flex items-center justify-between gap-6 text-sm">
+                      <span className="text-slate-500">
+                        Remise
+                      </span>
+
+                      <span className="font-medium text-slate-900">
+                        {formatCurrency(
+                          estimate.discount,
+                          currency
+                        )}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {taxes.length > 0
+                    ? taxes.map(
+                        (tax, index) => (
+                          <div
+                            key={`${tax.tax_name}-${index}`}
+                            className="flex items-center justify-between gap-6 text-sm"
+                          >
+                            <span className="text-slate-500">
+                              {tax.tax_name}
+                            </span>
+
+                            <span className="font-medium text-slate-900">
+                              {formatCurrency(
+                                tax.tax_amount,
+                                currency
+                              )}
+                            </span>
+                          </div>
+                        )
+                      )
+                    : Number(
+                          estimate.tax_total
+                        ) > 0 && (
+                        <div className="flex items-center justify-between gap-6 text-sm">
+                          <span className="text-slate-500">
+                            TVA
+                          </span>
+
+                          <span className="font-medium text-slate-900">
+                            {formatCurrency(
+                              estimate.tax_total,
+                              currency
+                            )}
+                          </span>
+                        </div>
+                      )}
+
+                  {Number(
+                    estimate.shipping_charge
+                  ) > 0 ? (
+                    <div className="flex items-center justify-between gap-6 text-sm">
+                      <span className="text-slate-500">
+                        Frais
+                      </span>
+
+                      <span className="font-medium text-slate-900">
+                        {formatCurrency(
+                          estimate.shipping_charge,
+                          currency
+                        )}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {Number(
+                    estimate.adjustment
+                  ) !== 0 ? (
+                    <div className="flex items-center justify-between gap-6 text-sm">
+                      <span className="text-slate-500">
+                        {estimate.adjustment_description ||
+                          "Ajustement"}
+                      </span>
+
+                      <span className="font-medium text-slate-900">
+                        {formatCurrency(
+                          estimate.adjustment,
+                          currency
+                        )}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="flex items-center justify-between gap-6 border-t border-slate-200 pt-3">
+                    <span className="font-semibold text-slate-900">
+                      Total TTC
+                    </span>
+
+                    <span className="text-xl font-bold text-slate-900">
+                      {formatCurrency(
+                        estimate.total,
+                        currency
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {estimate.notes ||
+            estimate.terms ? (
+              <div className="grid gap-6 lg:grid-cols-2">
+                {estimate.notes ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 className="font-semibold text-slate-900">
+                      Notes
+                    </h2>
+
+                    <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
+                      {estimate.notes}
+                    </p>
+                  </div>
+                ) : null}
+
+                {estimate.terms ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 className="font-semibold text-slate-900">
+                      Conditions
+                    </h2>
+
+                    <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
+                      {estimate.terms}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <aside className="space-y-6">
@@ -268,7 +537,7 @@ export default async function EstimateDetailPage({
 
               <p className="mt-2 text-3xl font-bold text-slate-900">
                 {formatCurrency(
-                  Number(estimate.total) || 0,
+                  estimate.total,
                   currency
                 )}
               </p>
@@ -312,12 +581,39 @@ export default async function EstimateDetailPage({
 
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Consulté par le client
+                  </dt>
+
+                  <dd className="mt-1 text-sm text-slate-700">
+                    {estimate.is_viewed_by_client
+                      ? "Oui"
+                      : "Non"}
+                  </dd>
+                </div>
+
+                {estimate.client_viewed_time ? (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Consultation
+                    </dt>
+
+                    <dd className="mt-1 text-sm text-slate-700">
+                      {formatDateTime(
+                        estimate.client_viewed_time
+                      )}
+                    </dd>
+                  </div>
+                ) : null}
+
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                     Créé le
                   </dt>
 
                   <dd className="mt-1 text-sm text-slate-700">
-                    {estimate.created_time ||
-                      "—"}
+                    {formatDateTime(
+                      estimate.created_time
+                    )}
                   </dd>
                 </div>
 
@@ -327,8 +623,9 @@ export default async function EstimateDetailPage({
                   </dt>
 
                   <dd className="mt-1 text-sm text-slate-700">
-                    {estimate.last_modified_time ||
-                      "—"}
+                    {formatDateTime(
+                      estimate.last_modified_time
+                    )}
                   </dd>
                 </div>
               </dl>
