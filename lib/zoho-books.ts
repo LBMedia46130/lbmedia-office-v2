@@ -42,6 +42,7 @@ export type ZohoTax = {
 export type ZohoContact = {
   contact_id: string;
   contact_name: string;
+  contact_number?: string;
   company_name?: string;
   contact_type?: string;
   customer_sub_type?: string;
@@ -447,11 +448,6 @@ export async function getZohoContact(
       "Contact Zoho Books introuvable."
     );
   }
-
-  console.log(
-    "ZOHO CONTACT DETAIL",
-    JSON.stringify(data.contact, null, 2)
-  );
 
   return data.contact;
 }

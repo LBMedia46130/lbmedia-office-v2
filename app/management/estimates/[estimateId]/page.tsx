@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
+  getZohoContact,
   getZohoEstimate,
+  type ZohoContact,
   type ZohoEstimate,
 } from "@/lib/zoho-books";
 
@@ -124,6 +126,17 @@ export default async function EstimateDetailPage({
       await getZohoEstimate(estimateId);
   } catch {
     notFound();
+  }
+
+  let contact: ZohoContact | null = null;
+
+  try {
+    contact =
+      await getZohoContact(
+        estimate.customer_id
+      );
+  } catch {
+    contact = null;
   }
 
   const currency =
@@ -271,8 +284,9 @@ export default async function EstimateDetailPage({
                 </p>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Identifiant Zoho :{" "}
-                  {estimate.customer_id}
+                  N° client :{" "}
+                  {contact?.contact_number ||
+                    "—"}
                 </p>
               </div>
             </div>
@@ -304,6 +318,10 @@ export default async function EstimateDetailPage({
 
                         <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                           Prix HT
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Remise
                         </th>
 
                         <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -355,6 +373,35 @@ export default async function EstimateDetailPage({
                             </td>
 
                             <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {Number(
+                                line.discount_amount
+                              ) > 0 ? (
+                                <div>
+                                  {typeof line.discount ===
+                                    "number" &&
+                                  line.discount > 0 ? (
+                                    <div className="font-medium text-amber-700">
+                                      {
+                                        line.discount
+                                      }{" "}
+                                      %
+                                    </div>
+                                  ) : null}
+
+                                  <div className="text-xs text-slate-500">
+                                    -
+                                    {formatCurrency(
+                                      line.discount_amount,
+                                      currency
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
                               {typeof line.tax_percentage ===
                               "number"
                                 ? `${line.tax_percentage} %`
@@ -394,22 +441,6 @@ export default async function EstimateDetailPage({
                       )}
                     </span>
                   </div>
-
-                  {Number(estimate.discount) >
-                  0 ? (
-                    <div className="flex items-center justify-between gap-6 text-sm">
-                      <span className="text-slate-500">
-                        Remise
-                      </span>
-
-                      <span className="font-medium text-slate-900">
-                        {formatCurrency(
-                          estimate.discount,
-                          currency
-                        )}
-                      </span>
-                    </div>
-                  ) : null}
 
                   {taxes.length > 0
                     ? taxes.map(
@@ -499,32 +530,27 @@ export default async function EstimateDetailPage({
               </div>
             </div>
 
-            {estimate.notes ||
-            estimate.terms ? (
-              <div className="grid gap-6 lg:grid-cols-2">
-                {estimate.notes ? (
-                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 className="font-semibold text-slate-900">
-                      Notes
-                    </h2>
+            {estimate.notes ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="font-semibold text-slate-900">
+                  Notes
+                </h2>
 
-                    <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
-                      {estimate.notes}
-                    </p>
-                  </div>
-                ) : null}
+                <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
+                  {estimate.notes}
+                </p>
+              </div>
+            ) : null}
 
-                {estimate.terms ? (
-                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 className="font-semibold text-slate-900">
-                      Conditions
-                    </h2>
+            {estimate.terms ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="font-semibold text-slate-900">
+                  Conditions
+                </h2>
 
-                    <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
-                      {estimate.terms}
-                    </p>
-                  </div>
-                ) : null}
+                <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
+                  {estimate.terms}
+                </p>
               </div>
             ) : null}
           </div>
