@@ -5,6 +5,7 @@ import {
 } from "@/lib/companies";
 
 import {
+  getAllZohoItems,
   getZohoTaxes,
 } from "@/lib/zoho-books";
 
@@ -16,9 +17,11 @@ export default async function NewEstimatePage() {
   const [
     companies,
     taxes,
+    items,
   ] = await Promise.all([
     getCompanies(),
     getZohoTaxes(),
+    getAllZohoItems(),
   ]);
 
   const activeCompanies =
@@ -87,6 +90,27 @@ export default async function NewEstimatePage() {
                 }
               : null
           }
+          items={items.map(
+            (item) => ({
+              item_id:
+                item.item_id,
+              name:
+                item.name,
+              description:
+                item.description ?? "",
+              rate:
+                Number(item.rate) || 0,
+              tax_id:
+                item.tax_id ?? null,
+              tax_name:
+                item.tax_name ?? null,
+              tax_percentage:
+                typeof item.tax_percentage ===
+                "number"
+                  ? item.tax_percentage
+                  : null,
+            })
+          )}
         />
       </div>
     </main>

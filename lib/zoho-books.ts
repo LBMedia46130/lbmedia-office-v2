@@ -39,6 +39,20 @@ export type ZohoTax = {
   is_default_tax?: boolean;
 };
 
+export type ZohoItem = {
+  item_id: string;
+  name: string;
+  description?: string;
+  rate: number;
+  unit?: string;
+  status?: string;
+  product_type?: string;
+  item_type?: string;
+  tax_id?: string;
+  tax_name?: string;
+  tax_percentage?: number;
+};
+
 export type ZohoContact = {
   contact_id: string;
   contact_name: string;
@@ -171,6 +185,7 @@ export type CreateZohoContactInput = {
 };
 
 export type CreateZohoEstimateLineItemInput = {
+  item_id?: string;
   name: string;
   description?: string;
   quantity: number;
@@ -409,6 +424,69 @@ export async function getZohoTaxes() {
   );
 
   return data.taxes ?? [];
+}
+
+export async function getZohoItems(
+  page = 1,
+  perPage = 200
+) {
+  const data = await zohoBooksRequest<{
+    items?: ZohoItem[];
+    page_context?: ZohoPageContext;
+  }>(
+    "/items",
+    {
+      method: "GET",
+    },
+    {
+      page,
+      per_page: perPage,
+    }
+  );
+
+  return {
+    items: data.items ?? [],
+    pageContext:
+      data.page_context ?? null,
+  };
+}
+
+export async function getAllZohoItems() {
+  const items: ZohoItem[] = [];
+
+  let page = 1;
+  const perPage = 200;
+  let hasMorePage = true;
+
+  while (hasMorePage) {
+    const result =
+      await getZohoItems(
+        page,
+        perPage
+      );
+
+    items.push(
+      ...result.items
+    );
+
+    hasMorePage =
+      result.pageContext?.has_more_page ??
+      false;
+
+    page += 1;
+
+    if (page > 100) {
+      throw new Error(
+        "Arrêt de sécurité pendant la récupération des articles Zoho."
+      );
+    }
+  }
+
+  return items.filter(
+    (item) =>
+      !item.status ||
+      item.status === "active"
+  );
 }
 
 export async function getZohoContacts(
@@ -660,17 +738,26 @@ function normalizeEstimateLineItems(
       }
 
       return {
+        item_id:
+          line.item_id?.trim() ||
+          undefined,
+
         name: line.name.trim(),
+
         description:
           line.description?.trim() ||
           undefined,
+
         quantity: line.quantity,
+
         rate: line.rate,
+
         discount:
           line.discount &&
           line.discount > 0
             ? line.discount
             : undefined,
+
         tax_id:
           line.tax_id?.trim() ||
           undefined,
@@ -767,21 +854,27 @@ export async function updateZohoEstimate(
   const payload = {
     customer_id:
       input.customer_id.trim(),
+
     date:
       input.date?.trim() ||
       undefined,
+
     expiry_date:
       input.expiry_date?.trim() ||
       undefined,
+
     reference_number:
       input.reference_number?.trim() ||
       undefined,
+
     notes:
       input.notes?.trim() ||
       undefined,
+
     terms:
       input.terms?.trim() ||
       undefined,
+
     line_items:
       normalizeEstimateLineItems(
         input.line_items
