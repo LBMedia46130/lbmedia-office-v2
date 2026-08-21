@@ -421,10 +421,7 @@ export default async function EstimatesPage({
               </div>
 
               <p className="text-sm font-medium text-blue-800">
-                {estimates.length}{" "}
-                {estimates.length > 1
-                  ? "devis"
-                  : "devis"}
+                {estimates.length} devis
               </p>
             </div>
 
@@ -459,7 +456,7 @@ export default async function EstimatesPage({
 
               <div className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-medium text-emerald-600">
-                  Acceptés
+                  À facturer
                 </p>
 
                 <p className="mt-2 text-2xl font-bold text-emerald-700">
@@ -467,7 +464,7 @@ export default async function EstimatesPage({
                 </p>
 
                 <p className="mt-2 text-xs text-slate-400">
-                  Devis acceptés
+                  Devis acceptés non encore facturés
                 </p>
               </div>
 
