@@ -51,20 +51,28 @@ function getStatusLabel(
   switch (status) {
     case "draft":
       return "Brouillon";
+
     case "sent":
       return "Envoyée";
+
     case "viewed":
       return "Consultée";
+
     case "overdue":
       return "En retard";
+
     case "paid":
       return "Payée";
+
     case "unpaid":
       return "Impayée";
+
     case "partially_paid":
       return "Partiellement payée";
+
     case "void":
       return "Annulée";
+
     default:
       return status;
   }
@@ -127,8 +135,7 @@ function calculateTotals(
     }
 
     if (
-      invoice.status ===
-        "overdue" &&
+      invoice.status === "overdue" &&
       balance > 0
     ) {
       overdue += balance;
@@ -144,6 +151,7 @@ function calculateTotals(
       roundCurrency(overdue),
 
     overdueCount,
+
     unpaidCount,
   };
 }
@@ -342,12 +350,6 @@ export default async function InvoicesPage({
       )
     );
 
-  /*
-   * Important :
-   * les indicateurs sont calculés
-   * uniquement APRÈS filtrage
-   * de l'exercice.
-   */
   const totals =
     calculateTotals(invoices);
 
@@ -365,8 +367,8 @@ export default async function InvoicesPage({
             </h1>
 
             <p className="mt-2 text-sm text-slate-500">
-              Données synchronisées
-              avec Zoho Books
+              Données synchronisées avec
+              Zoho Books
             </p>
           </div>
 
@@ -603,10 +605,15 @@ export default async function InvoicesPage({
                           }
                           className="transition hover:bg-slate-50"
                         >
-                          <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-slate-900">
-                            {
-                              invoice.invoice_number
-                            }
+                          <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold">
+                            <Link
+                              href={`/management/invoices/${invoice.invoice_id}`}
+                              className="text-blue-600 transition hover:text-blue-800 hover:underline"
+                            >
+                              {
+                                invoice.invoice_number
+                              }
+                            </Link>
                           </td>
 
                           <td className="px-5 py-4 text-sm text-slate-700">
