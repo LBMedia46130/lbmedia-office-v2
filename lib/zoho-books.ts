@@ -1112,61 +1112,123 @@ export async function getZohoInvoice(
   return data.invoice;
 }
 
-async function findInvoiceFromEstimate(
-  estimateId: string
+function getEstimateLineDiscountPercentage(
+  line: ZohoEstimateLineItem
 ) {
-  const invoices =
-    await getAllZohoInvoices();
-
-  for (const invoice of invoices) {
-    if (
-      invoice.invoiced_estimate_id ===
-      estimateId
-    ) {
-      return invoice;
-    }
+  if (
+    typeof line.discount === "number" &&
+    Number.isFinite(
+      line.discount
+    ) &&
+    line.discount > 0
+  ) {
+    return line.discount;
   }
 
-  /*
-   * Certains retours de liste Zoho peuvent
-   * être plus légers que le détail complet.
-   * On inspecte donc également les factures
-   * récentes individuellement.
-   */
-  const recentInvoices =
-    invoices.slice(0, 30);
+  const gross =
+    Number(line.quantity) *
+    Number(line.rate);
 
-  for (const invoice of recentInvoices) {
-    try {
-      const detailedInvoice =
-        await getZohoInvoice(
-          invoice.invoice_id
-        );
+  const discountAmount =
+    Number(
+      line.discount_amount
+    ) || 0;
 
-      if (
-        detailedInvoice.invoiced_estimate_id ===
-        estimateId
-      ) {
-        return detailedInvoice;
-      }
-    } catch {
-      // Une facture illisible ne doit pas
-      // interrompre toute la recherche.
-    }
+  if (
+    gross <= 0 ||
+    discountAmount <= 0
+  ) {
+    return undefined;
   }
 
-  return null;
+  const percentage =
+    (discountAmount /
+      gross) *
+    100;
+
+  if (
+    !Number.isFinite(
+      percentage
+    ) ||
+    percentage <= 0
+  ) {
+    return undefined;
+  }
+
+  return Number(
+    percentage.toFixed(6)
+  );
 }
 
-function wait(
-  milliseconds: number
+function normalizeInvoiceLinesFromEstimate(
+  estimate: ZohoEstimate
 ) {
-  return new Promise<void>(
-    (resolve) => {
-      setTimeout(
-        resolve,
-        milliseconds
-      );
+  const lineItems =
+    estimate.line_items ?? [];
+
+  if (lineItems.length === 0) {
+    throw new Error(
+      "Le devis ne contient aucune ligne facturable."
+    );
+  }
+
+  return lineItems.map(
+    (line, index) => {
+      const quantity =
+        Number(line.quantity);
+
+      const rate =
+        Number(line.rate);
+
+      if (
+        !Number.isFinite(
+          quantity
+        ) ||
+        quantity <= 0
+      ) {
+        throw new Error(
+          `La quantité de la ligne ${
+            index + 1
+          } du devis est invalide.`
+        );
+      }
+
+      if (
+        !Number.isFinite(rate) ||
+        rate < 0
+      ) {
+        throw new Error(
+          `Le prix de la ligne ${
+            index + 1
+          } du devis est invalide.`
+        );
+      }
+
+      return {
+        item_id:
+          line.item_id ||
+          undefined,
+
+        name:
+          line.name,
+
+        description:
+          line.description ||
+          undefined,
+
+        quantity,
+
+        rate,
+
+        discount:
+          getEstimateLineDiscountPercentage(
+            line
+          ),
+
+        tax_id:
+          line.tax_id ||
+          undefined,
+      };
     }
   );
 }
@@ -1183,96 +1245,119 @@ export async function createZohoInvoiceFromEstimate(
     );
   }
 
-  /*
-   * Première protection :
-   * si la facture existe déjà, on ne
-   * déclenche surtout pas une seconde
-   * conversion.
-   */
-  const existingInvoice =
-    await findInvoiceFromEstimate(
-      normalizedEstimateId
-    );
-
-  if (existingInvoice) {
-    return existingInvoice;
-  }
-
-  /*
-   * Zoho documente POST /invoices/fromestimates
-   * avec estimate_ids dans la query string.
-   *
-   * La réponse 200 de cet endpoint ne garantit
-   * pas le retour direct d'un objet invoice.
-   */
-  const conversionResponse =
-    await zohoBooksRequest<Record<
-      string,
-      never
-    >>(
-      "/invoices/fromestimates",
-      {
-        method: "POST",
-      },
-      {
-        estimate_ids:
-          normalizedEstimateId,
-      }
-    );
-
-  /*
-   * On laisse quelques instants à Zoho
-   * pour rendre la nouvelle facture
-   * visible dans les lectures API.
-   */
-  for (
-    let attempt = 1;
-    attempt <= 4;
-    attempt += 1
-  ) {
-    if (attempt > 1) {
-      await wait(750);
-    }
-
-    const createdInvoice =
-      await findInvoiceFromEstimate(
-        normalizedEstimateId
-      );
-
-    if (createdInvoice) {
-      return createdInvoice;
-    }
-  }
-
-  /*
-   * Dernière vérification côté devis.
-   * Si Zoho n'a même pas passé le devis
-   * en invoiced, la conversion n'a
-   * manifestement pas abouti.
-   */
-  const refreshedEstimate =
+  const estimate =
     await getZohoEstimate(
       normalizedEstimateId
     );
 
   if (
-    refreshedEstimate.status !==
+    estimate.status ===
     "invoiced"
   ) {
     throw new Error(
-      `Zoho Books n'a pas créé de facture. Réponse Zoho : ${
-        conversionResponse.message ||
+      "Ce devis est déjà facturé dans Zoho Books."
+    );
+  }
+
+  if (
+    estimate.status !==
+    "accepted"
+  ) {
+    throw new Error(
+      "Seul un devis accepté peut être transformé en facture."
+    );
+  }
+
+  const lineItems =
+    normalizeInvoiceLinesFromEstimate(
+      estimate
+    );
+
+  /*
+   * On crée désormais la facture via
+   * l'endpoint standard Zoho.
+   *
+   * invoiced_estimate_id est le champ
+   * prévu par Zoho pour conserver la
+   * relation native avec le devis source.
+   *
+   * On ne fournit volontairement pas
+   * de date ni d'échéance :
+   * Zoho applique alors les règles de
+   * facturation du compte/client.
+   */
+  const payload = {
+    customer_id:
+      estimate.customer_id,
+
+    invoiced_estimate_id:
+      estimate.estimate_id,
+
+    reference_number:
+      estimate.reference_number ||
+      undefined,
+
+    salesperson_name:
+      estimate.salesperson_name ||
+      undefined,
+
+    notes:
+      estimate.notes ||
+      undefined,
+
+    terms:
+      estimate.terms ||
+      undefined,
+
+    shipping_charge:
+      Number(
+        estimate.shipping_charge
+      ) || undefined,
+
+    adjustment:
+      Number(
+        estimate.adjustment
+      ) || undefined,
+
+    adjustment_description:
+      estimate.adjustment_description ||
+      undefined,
+
+    line_items:
+      lineItems,
+  };
+
+  const data =
+    await zohoBooksRequest<{
+      invoice?: ZohoInvoice;
+    }>(
+      "/invoices",
+      {
+        method: "POST",
+        body: JSON.stringify(
+          payload
+        ),
+      }
+    );
+
+  if (
+    !data.invoice?.invoice_id
+  ) {
+    throw new Error(
+      `Zoho Books n'a pas retourné la facture créée. Réponse : ${
+        data.message ||
         "aucun détail fourni"
       }`
     );
   }
 
   /*
-   * Cas rarissime :
-   * le devis est marqué facturé mais la
-   * facture n'est toujours pas retrouvée.
+   * On relit ensuite la facture directement
+   * depuis Zoho afin de récupérer son état
+   * définitif : numéro, date, échéance,
+   * solde, lien au devis, etc.
    */
-  throw new Error(
-    "Zoho Books indique que le devis est facturé, mais Office ne retrouve pas encore la facture créée."
+  return getZohoInvoice(
+    data.invoice.invoice_id
   );
 }
