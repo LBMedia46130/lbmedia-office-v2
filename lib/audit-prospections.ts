@@ -9,12 +9,21 @@ export type AuditProspectionStatus =
   | "follow_up"
   | "replied";
 
+export type AuditProspectionProposalType =
+  | "optimization"
+  | "optimization_redesign"
+  | "redesign"
+  | "new_website";
+
 export type AuditProspection = {
   id: string;
   company_id: string;
   website_audit_id: string;
 
   status: AuditProspectionStatus;
+
+  proposal_type:
+    AuditProspectionProposalType | null;
 
   recipient_email: string | null;
   recipient_name: string | null;
@@ -46,12 +55,18 @@ type CreateAuditProspectionInput = {
   companyId: string;
   websiteAuditId: string;
 
+  proposalType?:
+    AuditProspectionProposalType | null;
+
   recipientEmail?: string | null;
   recipientName?: string | null;
 };
 
 type UpdateAuditProspectionInput = {
   status?: AuditProspectionStatus;
+
+  proposalType?:
+    AuditProspectionProposalType | null;
 
   recipientEmail?: string | null;
   recipientName?: string | null;
@@ -81,6 +96,7 @@ const auditProspectionSelect = `
   company_id,
   website_audit_id,
   status,
+  proposal_type,
   recipient_email,
   recipient_name,
   subject,
@@ -265,6 +281,10 @@ export async function createAuditProspection(
       website_audit_id:
         input.websiteAuditId,
 
+      proposal_type:
+        input.proposalType ??
+        null,
+
       recipient_email:
         input.recipientEmail ??
         null,
@@ -304,6 +324,14 @@ export async function updateAuditProspection(
   ) {
     payload.status =
       input.status;
+  }
+
+  if (
+    input.proposalType !==
+    undefined
+  ) {
+    payload.proposal_type =
+      input.proposalType;
   }
 
   if (
