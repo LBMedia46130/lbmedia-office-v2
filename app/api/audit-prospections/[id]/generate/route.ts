@@ -7,6 +7,7 @@ import OpenAI from "openai";
 
 import {
   getWebsiteAuditById,
+  getWebsiteAuditCommercialDiagnosis,
 } from "@/lib/website-audits";
 
 import {
@@ -41,8 +42,7 @@ function validateGeneratedProspection(
 ): GeneratedProspection {
   if (
     !value ||
-    typeof value !==
-      "object"
+    typeof value !== "object"
   ) {
     throw new Error(
       "Le résultat retourné par l’IA est invalide."
@@ -88,6 +88,23 @@ function validateGeneratedProspection(
     subject,
     emailContent,
   };
+}
+
+function formatList(
+  items: string[]
+): string {
+  if (
+    items.length === 0
+  ) {
+    return "- Aucun élément prioritaire";
+  }
+
+  return items
+    .map(
+      (item) =>
+        `- ${item}`
+    )
+    .join("\n");
 }
 
 export async function POST(
@@ -184,6 +201,11 @@ export async function POST(
       );
     }
 
+    const commercialDiagnosis =
+      getWebsiteAuditCommercialDiagnosis(
+        audit
+      );
+
     const {
       data: company,
       error:
@@ -241,20 +263,26 @@ export async function POST(
           ?.trim()
       );
 
+    const recommendation =
+      commercialDiagnosis
+        .recommendation;
+
     const prompt = `
 Tu écris un premier email de prise de contact pour LBMedia.
 
-Ce message est destiné à une entreprise dont LBMedia a réellement consulté le site internet et réalisé une analyse interne.
+LBMedia a réellement parcouru le site internet de l'entreprise et réalisé une analyse interne.
 
-L'analyse sert uniquement à guider la réflexion de LBMedia.
+Cette analyse a ensuite été transformée en diagnostic commercial afin de déterminer la prestation la plus pertinente.
 
-Le destinataire ne doit JAMAIS avoir l'impression de recevoir :
-- un rapport automatisé ;
-- un audit technique ;
-- une campagne de prospection générique ;
-- un argumentaire commercial standard.
+La recommandation n'est donc PAS choisie à l'avance.
 
-L'email doit donner l'impression qu'une personne de LBMedia a réellement regardé le site, remarqué une possibilité intéressante et pris le temps de préparer une petite projection visuelle personnalisée.
+Elle peut être :
+
+- optimisation du site existant ;
+- refonte du site existant ;
+- création d'un nouveau site.
+
+Tu dois respecter la recommandation fournie ci-dessous.
 
 ==================================================
 ENTREPRISE
@@ -285,180 +313,252 @@ Zone géographique :
 ${company.geographic_area ?? "Non renseignée"}
 
 ==================================================
-OBSERVATIONS INTERNES
+DIAGNOSTIC COMMERCIAL LBMEDIA
 ==================================================
 
-Site :
-${audit.website_url}
+RECOMMANDATION PRINCIPALE :
 
-Pages analysées :
-${audit.pages_analyzed}
+${recommendation.label}
 
-Score global :
-${audit.global_score}/100
+TYPE INTERNE :
 
-Positionnement :
-${audit.positioning_score}/100
+${recommendation.type}
 
-Conversion :
-${audit.conversion_score}/100
+JUSTIFICATION :
 
-SEO :
-${audit.seo_score}/100
+${commercialDiagnosis.commercial_summary}
 
-SEO local :
-${audit.local_seo_score}/100
+DESCRIPTION DE LA RECOMMANDATION :
 
-GEO / IA :
-${audit.geo_score}/100
+${recommendation.description}
 
-SYNTHÈSE :
+VISIBILITÉ :
 
-${audit.summary}
+${commercialDiagnosis.visibility_score}/100
 
-POINTS FORTS :
+EFFICACITÉ DU SITE :
 
-${
-  audit.strengths.length
-    ? audit.strengths
-        .map(
-          (item) =>
-            `- ${item}`
-        )
-        .join("\n")
-    : "- Aucun élément renseigné"
-}
-
-POINTS PERFECTIBLES :
-
-${
-  audit.weaknesses.length
-    ? audit.weaknesses
-        .map(
-          (item) =>
-            `- ${item}`
-        )
-        .join("\n")
-    : "- Aucun élément renseigné"
-}
-
-PRIORITÉS :
-
-${
-  audit.priorities.length
-    ? audit.priorities
-        .map(
-          (item) =>
-            `- ${item}`
-        )
-        .join("\n")
-    : "- Aucune priorité renseignée"
-}
-
-LIMITES DE L'ANALYSE :
-
-${
-  audit.limitations.length
-    ? audit.limitations
-        .map(
-          (item) =>
-            `- ${item}`
-        )
-        .join("\n")
-    : "- Aucune limitation renseignée"
-}
+${commercialDiagnosis.website_effectiveness_score}/100
 
 ==================================================
-PIÈCE JOINTE
+FAIBLESSES — VISIBILITÉ & ACQUISITION
 ==================================================
 
-Une projection visuelle est ${
-      hasAttachment
-        ? "DÉJÀ PRÉSENTE et sera jointe à cet email."
-        : "prévue mais n'est pas encore disponible au moment de cette génération."
-    }
-
-${
-  hasAttachment
-    ? `
-Le mail DOIT clairement annoncer que cette projection est jointe.
-
-Le destinataire doit comprendre qu'il peut la consulter immédiatement.
-
-Utilise naturellement une formulation comme :
-
-"J'ai préparé une petite projection visuelle pour illustrer concrètement cette idée. Vous la trouverez en pièce jointe."
-
-ou une formulation équivalente.
-
-INTERDICTION ABSOLUE :
-
-Ne jamais écrire :
-- "je peux vous la montrer" ;
-- "je peux vous envoyer une proposition" ;
-- "si vous êtes curieux de voir ce que j'ai en tête" ;
-- "je pourrais vous montrer" ;
-- toute formulation laissant entendre que le document n'est pas encore joint.
-
-Le document EST joint.
-`
-    : `
-Ne prétends pas qu'une pièce jointe est présente.
-
-Tu peux simplement indiquer qu'une piste concrète a été imaginée, sans promettre qu'elle est jointe.
-`
-}
+${formatList(
+  commercialDiagnosis
+    .weaknesses
+    .visibility
+)}
 
 ==================================================
-CE QUE TU DOIS PRODUIRE
+FAIBLESSES — SITE & CONVERSION
 ==================================================
 
-1. Un angle commercial INTERNE à LBMedia.
-2. Un objet d'email.
-3. Un email de premier contact.
+${formatList(
+  commercialDiagnosis
+    .weaknesses
+    .website
+)}
 
 ==================================================
-ANGLE COMMERCIAL
+ENJEUX PRINCIPAUX
 ==================================================
 
-L'angle commercial ne sera pas envoyé au prospect.
-
-Il doit expliquer simplement à LBMedia :
-
-- pourquoi ce prospect mérite d'être contacté ;
-- quelle amélioration principale semble pertinente ;
-- quel bénéfice potentiel peut être évoqué.
-
-Choisis UN SEUL angle principal.
-
-Ne transforme pas automatiquement chaque analyse en projet de refonte.
-
-Une optimisation ciblée ou une meilleure présentation de l'existant peut être beaucoup plus pertinente.
+${formatList(
+  commercialDiagnosis
+    .main_issues
+)}
 
 ==================================================
-PHILOSOPHIE DE L'EMAIL
+PRIORITÉS D'ACTION INTERNES
 ==================================================
 
-Le mail doit être SIMPLE.
-
-Il doit suivre cette logique :
-
-1. Bonjour.
-2. Expliquer naturellement que le site a été parcouru.
-3. Commencer par un constat positif réel.
-4. Évoquer UNE possibilité d'amélioration de manière simple.
-5. Expliquer qu'une projection visuelle a été préparée.
-6. Préciser qu'il s'agit seulement d'une piste de réflexion, pas d'une maquette définitive.
-7. Terminer par une invitation très légère à échanger si cette approche retient l'attention.
-
-Le mail ne doit PAS expliquer tout l'audit.
-
-Le PDF montre une piste.
-
-L'email donne simplement envie de regarder le PDF et éventuellement de répondre.
+${formatList(
+  audit.priorities
+)}
 
 ==================================================
-TON DE RÉFÉRENCE
+POINTS FORTS DU SITE
+==================================================
+
+${formatList(
+  audit.strengths
+)}
+
+==================================================
+RÈGLE ESSENTIELLE
+==================================================
+
+Le mail doit partir des CONSTATS réellement observés.
+
+Il ne doit jamais partir d'une prestation que LBMedia souhaite vendre.
+
+Le raisonnement est :
+
+CONSTATS
+→ CONSÉQUENCES POSSIBLES
+→ RECOMMANDATION ADAPTÉE
+
+La prestation proposée doit donc être cohérente avec :
+
+"${recommendation.label}"
+
+Ne propose JAMAIS une refonte si la recommandation est une optimisation.
+
+Ne propose JAMAIS un nouveau site si la recommandation est une refonte ou une optimisation.
+
+Ne minimise pas non plus les problèmes si la recommandation indique qu'un nouveau site serait plus pertinent.
+
+==================================================
+OBJECTIF DU PREMIER EMAIL
+==================================================
+
+Le destinataire doit comprendre trois choses :
+
+1. LBMedia a réellement regardé son site.
+2. Deux ou trois points précis semblent pouvoir être améliorés.
+3. Une piste adaptée à son cas peut être envisagée.
+
+Le message ne doit PAS ressembler à un rapport technique.
+
+Le mail doit être humain, simple et compréhensible par un dirigeant non spécialiste.
+
+==================================================
+UTILISATION DES FAIBLESSES
+==================================================
+
+Choisis seulement 2 ou 3 faiblesses pertinentes.
+
+Privilégie celles qui ont une conséquence commerciale facile à comprendre.
+
+Exemples :
+
+FAIBLESSE INTERNE :
+"Signal local incomplet et vocabulaire géographique limité."
+
+FORMULATION EMAIL :
+"Votre activité est bien présentée, mais certaines informations pourraient être davantage structurées pour aider votre site à ressortir sur les recherches réalisées dans votre secteur géographique."
+
+---
+
+FAIBLESSE INTERNE :
+"Absence de pages services dédiées."
+
+FORMULATION EMAIL :
+"Certaines prestations gagneraient à disposer de contenus plus clairement identifiés afin d'être mieux comprises aussi bien par les visiteurs que par les moteurs de recherche."
+
+---
+
+FAIBLESSE INTERNE :
+"Coordonnées de contact non détectées comme exploitables."
+
+FORMULATION EMAIL :
+"Quelques ajustements pourraient également rendre la prise de contact plus immédiate pour un visiteur intéressé."
+
+==================================================
+SEO / SEO LOCAL / GEO-IA
+==================================================
+
+Contrairement à l'ancien modèle de prospection, il est désormais possible de parler de visibilité.
+
+Mais reste SIMPLE.
+
+Tu peux employer naturellement :
+
+- référencement ;
+- visibilité sur Google ;
+- recherches locales ;
+- visibilité locale ;
+- moteurs de recherche ;
+- assistants basés sur l'intelligence artificielle ;
+- outils d'IA ;
+- contenus.
+
+Évite le jargon technique.
+
+Ne parle pas de :
+
+- canonical ;
+- schema.org ;
+- SERP ;
+- balises JSON-LD ;
+- données structurées ;
+- CTA ;
+- Core Web Vitals ;
+- Open Graph.
+
+Transforme toujours ces notions en bénéfices compréhensibles.
+
+==================================================
+CAS : OPTIMISATION
+==================================================
+
+Si la recommandation est :
+
+"Optimisation du site existant"
+
+Le message doit valoriser le site existant.
+
+Il doit clairement faire comprendre que LBMedia ne considère PAS qu'il faut repartir de zéro.
+
+Exemples d'idées :
+
+"Votre site constitue déjà une bonne base."
+
+"Une refonte complète ne me semble pas nécessairement être la priorité."
+
+"Quelques optimisations ciblées pourraient déjà permettre..."
+
+"Il y aurait notamment quelque chose à faire sur la visibilité locale et la manière dont certaines prestations sont structurées."
+
+==================================================
+CAS : REFONTE
+==================================================
+
+Si la recommandation est :
+
+"Refonte du site existant"
+
+Le mail doit expliquer avec tact que le site possède des éléments intéressants mais que sa structure ou sa présentation limite aujourd'hui son efficacité.
+
+Ne critique jamais brutalement le design.
+
+Évite :
+
+"Votre site est dépassé."
+
+"Votre site est vieux."
+
+"Votre site est mal conçu."
+
+Privilégie :
+
+"Le site présente bien votre activité, mais son organisation actuelle ne permet pas toujours de mettre immédiatement en avant les prestations les plus importantes."
+
+"Une évolution plus globale de la présentation pourrait permettre..."
+
+==================================================
+CAS : NOUVEAU SITE
+==================================================
+
+Si la recommandation est :
+
+"Création d’un nouveau site"
+
+Le mail doit présenter cette idée comme une conclusion logique.
+
+Ne dis jamais :
+
+"Votre site est mauvais."
+
+"Il faut tout refaire."
+
+Privilégie :
+
+"Les différents points relevés touchent à la fois la visibilité, la présentation de l'offre et le parcours de prise de contact. Dans ce contexte, repartir sur une base plus actuelle pourrait être plus pertinent qu'une succession de corrections ponctuelles."
+
+==================================================
+TON
 ==================================================
 
 Le ton doit être :
@@ -470,288 +570,139 @@ Le ton doit être :
 - sobre ;
 - personnalisé ;
 - calme ;
-- respectueux du travail déjà réalisé.
+- respectueux.
 
-Écris comme une vraie personne.
+Écris comme une vraie personne de LBMedia qui a pris le temps de regarder le site.
 
 Pas comme un consultant.
 
-Pas comme un commercial agressif.
-
 Pas comme une IA.
 
-Utilise des phrases simples et fluides.
+Pas comme un commercial agressif.
 
 ==================================================
-STRUCTURE DE RÉFÉRENCE
-==================================================
-
-La structure idéale ressemble à ceci :
-
-"Bonjour,
-
-J'ai récemment parcouru le site de [Entreprise] et pris le temps de regarder la manière dont [activité / offre] y est présentée.
-
-[Constat positif réel et court.]
-
-Je pense néanmoins qu'une présentation différente pourrait permettre de mieux mettre en valeur [UNE idée principale] et de rendre l'offre plus immédiatement lisible pour quelqu'un qui découvre l'entreprise.
-
-Plutôt que de vous adresser un long discours, j'ai préparé une petite projection visuelle pour illustrer concrètement cette idée. Vous la trouverez en pièce jointe.
-
-Il ne s'agit bien sûr pas d'une maquette définitive, simplement d'une piste de réflexion réalisée à partir de votre site actuel.
-
-Si cette approche retient votre attention, je serais ravi d'en échanger avec vous."
-
-IMPORTANT :
-
-Ce texte est une RÉFÉRENCE DE TON ET DE STRUCTURE.
-
-Ne le copie pas mot pour mot pour toutes les entreprises.
-
-Adapte naturellement :
-- le premier paragraphe ;
-- le point positif ;
-- la piste d'amélioration ;
-- quelques formulations.
-
-En revanche, conserve la sobriété et la logique générale.
-
-==================================================
-UTILISATION DES OBSERVATIONS
-==================================================
-
-Choisis seulement UNE idée principale issue de l'analyse.
-
-Éventuellement, mentionne UN point positif.
-
-Ne récite jamais plusieurs faiblesses ou plusieurs recommandations.
-
-Ne fais jamais une liste technique.
-
-Transforme les constats techniques en bénéfices compréhensibles.
-
-Exemple :
-
-INTERNE :
-"Les services sont présents mais insuffisamment hiérarchisés."
-
-EMAIL :
-"Je pense qu'une présentation différente pourrait permettre de rendre les différentes prestations plus immédiatement lisibles pour quelqu'un qui découvre l'entreprise."
-
-Exemple :
-
-INTERNE :
-"Les éléments de confiance sont peu visibles."
-
-EMAIL :
-"Il y aurait probablement quelque chose d'intéressant à faire pour mieux mettre en valeur l'expérience et les éléments qui rassurent un nouveau visiteur."
-
-==================================================
-CE QU'IL FAUT ÉVITER
+DÉBUT DU MAIL
 ==================================================
 
 Ne commence jamais par :
 
 "Je me permets de vous contacter"
 
+"Suite à un audit de votre site"
+
 "Dans le cadre de notre activité"
 
 "Nous accompagnons..."
 
-"Suite à un audit de votre site"
+"Votre site présente plusieurs problèmes"
 
-"Votre site présente plusieurs axes d'amélioration"
+Privilégie une entrée naturelle du type :
 
-Ne parle jamais de :
+"Bonjour,
 
-- score ;
-- note ;
-- pré-audit ;
-- diagnostic ;
-- faiblesses ;
-- problèmes ;
-- leviers.
+J'ai récemment pris le temps de parcourir le site de [Entreprise]."
 
-Évite dans le mail :
-
-- conversion ;
-- SEO ;
-- GEO ;
-- réassurance ;
-- données structurées ;
-- FAQ structurée ;
-- optimisation sémantique ;
-- parcours utilisateur ;
-- CTA ;
-- SERP ;
-- canonical ;
-- Open Graph.
-
-Ces notions peuvent guider ton raisonnement interne mais ne doivent pas apparaître dans un premier mail commercial sauf nécessité exceptionnelle.
+Puis un constat positif réel.
 
 ==================================================
-NE PAS SURCHARGER LA PERSONNALISATION
+OBJET
 ==================================================
 
-Ne cherche pas à prouver que tu connais tout de l'entreprise.
+L'objet doit rester simple, humain et peu commercial.
 
-Évite les longues énumérations du type :
+Privilégie :
 
-"votre hôtel 4 étoiles, votre restaurant gastronomique, votre spa, vos mariages, vos séminaires..."
+"Quelques pistes pour le site de [Entreprise]"
 
-Cela donne rapidement l'impression d'un texte construit automatiquement à partir du site.
+"Une idée pour le site de [Entreprise]"
 
-Une ou deux références naturelles suffisent.
+"À propos du site de [Entreprise]"
 
-Le destinataire doit sentir que le site a été regardé, pas qu'il a été aspiré par un robot.
+"Une piste pour votre site"
 
-==================================================
-OBJET DE L'EMAIL
-==================================================
-
-L'objet doit être :
-
-- simple ;
-- humain ;
-- personnalisé ;
-- court ;
-- légèrement curieux ;
-- non commercial.
-
-PRIVILÉGIE fortement la structure :
-
-"Une idée pour le site de [Nom de l'entreprise]"
-
-Exemples acceptables :
-
-"Une idée pour le site du Domaine de Beaulieu"
-
-"Une idée pour votre site"
-
-"Une piste pour le site de [Entreprise]"
-
-L'objet ne doit pas essayer de vendre.
-
-INTERDIT :
+Évite :
 
 "Audit de votre site"
 
 "Proposition commerciale"
 
-"3 actions pour..."
-
-"Améliorez..."
-
-"Boostez..."
-
-"Optimisez..."
-
-"Votre visibilité"
-
-"Votre SEO"
+"Optimisation SEO"
 
 "Refonte de votre site"
 
-"Votre site peut faire mieux"
+"Boostez votre visibilité"
 
 ==================================================
-PARAGRAPHE SUR LA PROJECTION
+PIÈCE JOINTE
 ==================================================
+
+Une pièce jointe est ${
+      hasAttachment
+        ? "PRÉSENTE."
+        : "ABSENTE."
+    }
 
 ${
   hasAttachment
     ? `
-Le mail doit comporter un paragraphe très proche dans l'esprit de :
+Une pièce jointe existe.
 
-"Plutôt que de vous adresser un long discours, j'ai préparé une petite projection visuelle pour illustrer concrètement cette idée. Vous la trouverez en pièce jointe."
+Tu peux l'annoncer dans le mail UNIQUEMENT si cela est cohérent avec la recommandation et le document joint.
 
-Tu peux légèrement adapter cette formulation.
+Ne suppose pas automatiquement qu'il s'agit d'une projection graphique de refonte.
 
-Mais les deux informations doivent être présentes :
+Utilise une formulation générique telle que :
 
-1. une projection visuelle a été préparée ;
-2. elle est en pièce jointe.
+"Je vous joins une courte synthèse pour illustrer plus concrètement ces quelques constats."
+
+ou :
+
+"J'ai résumé ces quelques pistes dans le document joint."
+
+Ne dis pas :
+
+"Je peux vous la montrer."
+
+"Je peux vous l'envoyer."
+
+Le document est déjà joint.
 `
     : `
-Une projection n'est pas encore jointe.
+Aucune pièce jointe n'est disponible.
 
-Ne mentionne donc pas explicitement de pièce jointe.
+Ne prétends pas qu'un document est joint.
+
+Le mail doit fonctionner parfaitement sans pièce jointe.
 `
 }
-
-==================================================
-CADRAGE DE LA PROJECTION
-==================================================
-
-Le mail doit préciser brièvement que le document n'est PAS une proposition définitive.
-
-Formulation recommandée :
-
-"Il ne s'agit bien sûr pas d'une maquette définitive, simplement d'une piste de réflexion réalisée à partir de votre site actuel."
-
-Tu peux adapter légèrement.
-
-Ne parle jamais de BAT.
-
-Ne prétends pas que le futur site ressemblera nécessairement à cette projection.
 
 ==================================================
 FIN DU MAIL
 ==================================================
 
-La fin doit être cohérente avec le fait que le destinataire vient de recevoir la projection.
+Le but est uniquement d'ouvrir une discussion.
 
-PRIVILÉGIE :
+Privilégie une fin légère :
 
-"Si cette approche retient votre attention, je serais ravi d'en échanger avec vous."
+"Si ces quelques pistes retiennent votre attention, je serais ravi d'en échanger avec vous."
 
-ou :
+"Si cette approche vous semble pertinente, je serais ravi d'en discuter avec vous."
 
-"Si cette piste vous semble intéressante, je serais ravi d'en discuter avec vous."
-
-ou une formulation équivalente, naturelle et légère.
-
-INTERDIT EN FIN DE MAIL :
-
-"Je peux vous la montrer."
-
-"Je peux vous envoyer la proposition."
-
-"Souhaitez-vous voir la proposition ?"
-
-"Si vous êtes curieux de voir ce que j'ai en tête..."
-
-Le prospect a déjà le document.
-
-==================================================
-APPEL À L'ACTION
-==================================================
-
-Le but est uniquement d'ouvrir la discussion.
+"Si vous souhaitez que je vous explique plus précisément ce que j'ai relevé, nous pouvons bien sûr en échanger."
 
 Ne force jamais un rendez-vous.
 
-INTERDIT :
-
-"Réservez un créneau"
-
-"Êtes-vous disponible 15 minutes ?"
-
-"Souhaitez-vous planifier un rendez-vous ?"
-
-"Quand seriez-vous disponible ?"
-
-Laisse simplement au destinataire la possibilité de répondre.
+Ne demande pas une disponibilité de 15 minutes.
 
 ==================================================
 LONGUEUR
 ==================================================
 
-Environ 110 à 160 mots.
+Environ 130 à 190 mots.
 
-Le mail doit rester rapide à lire.
+Le message peut être plus court si le contenu est naturellement complet.
 
-Il peut être légèrement plus court si le message est naturellement complet.
+Il ne doit jamais devenir un mini-audit.
 
 ==================================================
 SIGNATURE
@@ -769,7 +720,23 @@ Ne termine pas par :
 
 "À bientôt"
 
-La signature d'envoi gérera cette partie.
+==================================================
+ANGLE COMMERCIAL INTERNE
+==================================================
+
+L'angle commercial ne sera PAS envoyé au prospect.
+
+Il doit résumer :
+
+- le problème principal identifié ;
+- la recommandation ;
+- le bénéfice commercial potentiel.
+
+Il doit être très concret.
+
+Exemple :
+
+"Le site est globalement sain mais sa visibilité locale est insuffisamment travaillée. Proposer une optimisation SEO local / GEO et quelques ajustements de conversion plutôt qu'une refonte."
 
 ==================================================
 FORMAT DE SORTIE
@@ -795,7 +762,7 @@ Retourne UNIQUEMENT cet objet JSON valide :
               "system",
 
             content:
-              "Tu écris pour LBMedia des prises de contact commerciales très personnalisées et sobres. Le message doit sembler réellement écrit après consultation du site. Lorsqu'une projection est jointe, le mail doit clairement annoncer la pièce jointe et ne jamais proposer de montrer ultérieurement ce que le destinataire possède déjà.",
+              "Tu écris pour LBMedia des prises de contact commerciales sobres et personnalisées à partir d'un véritable diagnostic de site. Tu respectes impérativement la recommandation commerciale fournie : optimisation, refonte ou nouveau site. Tu transformes les observations techniques en conséquences simples et compréhensibles pour un dirigeant.",
           },
           {
             role:
