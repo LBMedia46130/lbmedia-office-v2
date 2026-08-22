@@ -31,18 +31,191 @@ type RouteContext = {
   }>;
 };
 
+type ProposalType =
+  | "optimization"
+  | "optimization_redesign"
+  | "redesign"
+  | "new_website";
+
 type GeneratedProspection = {
   salesAngle: string;
   subject: string;
   emailContent: string;
 };
 
+function isProposalType(
+  value: unknown
+): value is ProposalType {
+  return (
+    value ===
+      "optimization" ||
+    value ===
+      "optimization_redesign" ||
+    value ===
+      "redesign" ||
+    value ===
+      "new_website"
+  );
+}
+
+function getProposalLabel(
+  proposalType: ProposalType
+): string {
+  switch (
+    proposalType
+  ) {
+    case "optimization":
+      return "Optimisation du site existant";
+
+    case "optimization_redesign":
+      return "Optimisation + refonte";
+
+    case "redesign":
+      return "Refonte du site existant";
+
+    case "new_website":
+      return "Création d’un nouveau site";
+  }
+}
+
+function getProposalInstructions(
+  proposalType: ProposalType
+): string {
+  switch (
+    proposalType
+  ) {
+    case "optimization":
+      return `
+La proposition commerciale choisie est une OPTIMISATION DU SITE EXISTANT.
+
+Tu dois valoriser la base actuelle.
+
+Le message doit faire comprendre que LBMedia ne considère pas qu'il soit nécessaire de repartir de zéro.
+
+Les pistes peuvent porter sur :
+
+- SEO ;
+- SEO local ;
+- GEO / visibilité IA ;
+- contenus ;
+- structuration des prestations ;
+- conversion ;
+- prise de contact.
+
+Tu peux employer des formulations comme :
+
+"Votre site constitue déjà une bonne base."
+
+"Une refonte complète ne me semble pas nécessairement être la priorité."
+
+"Quelques optimisations ciblées pourraient déjà permettre d'améliorer sa visibilité et son efficacité."
+
+Ne propose aucune refonte dans ce scénario.
+`.trim();
+
+    case "optimization_redesign":
+      return `
+La proposition commerciale choisie est OPTIMISATION + REFONTE.
+
+C'est un scénario en deux niveaux.
+
+1. Commence par les optimisations réellement justifiées par l'audit :
+   - SEO ;
+   - SEO local ;
+   - GEO / visibilité IA ;
+   - contenus ;
+   - structuration ;
+   - conversion.
+
+2. Présente ensuite une évolution plus globale du site comme une POSSIBILITÉ POUR ALLER PLUS LOIN.
+
+IMPORTANT :
+
+Si le diagnostic automatique recommande seulement une optimisation, tu ne dois JAMAIS inventer des défauts de design ou prétendre qu'une refonte est nécessaire.
+
+La refonte doit alors être présentée comme une option permettant :
+
+- de moderniser ou faire évoluer la présentation ;
+- de mieux hiérarchiser les prestations ;
+- d'améliorer encore l'impact commercial ;
+- d'intégrer les optimisations dans une évolution plus globale.
+
+Formulations possibles :
+
+"Une optimisation ciblée pourrait déjà apporter des résultats intéressants."
+
+"Et si vous souhaitez aller plus loin, une évolution plus globale de la présentation permettrait également de mieux mettre en valeur vos prestations."
+
+"Il ne s'agit pas nécessairement de repartir de zéro, mais plutôt de profiter de ces optimisations pour faire évoluer plus largement le site."
+
+L'idée centrale est :
+
+OPTIMISER L'EXISTANT D'ABORD
++
+OUVRIR UNE POSSIBILITÉ DE REFONTE SANS LA PRÉSENTER COMME OBLIGATOIRE.
+`.trim();
+
+    case "redesign":
+      return `
+La proposition commerciale choisie est une REFONTE DU SITE EXISTANT.
+
+Le mail doit expliquer avec tact que la base actuelle contient des éléments intéressants mais que l'organisation, la présentation ou le parcours peuvent limiter son efficacité.
+
+Ne critique jamais brutalement le design.
+
+Évite :
+
+"Votre site est dépassé."
+
+"Votre site est vieux."
+
+"Votre site est mal conçu."
+
+Privilégie :
+
+"Le site présente bien votre activité, mais son organisation actuelle ne permet pas toujours de mettre immédiatement en avant les prestations les plus importantes."
+
+"Une évolution plus globale de la présentation pourrait permettre de mieux valoriser l'offre tout en améliorant sa visibilité."
+
+La refonte doit être reliée aux constats réels de l'audit.
+`.trim();
+
+    case "new_website":
+      return `
+La proposition commerciale choisie est la CRÉATION D'UN NOUVEAU SITE.
+
+Présente cette piste avec mesure.
+
+Ne dis jamais :
+
+"Votre site est mauvais."
+
+"Il faut tout refaire."
+
+Explique plutôt que plusieurs limites peuvent toucher simultanément :
+
+- la visibilité ;
+- la présentation de l'offre ;
+- l'organisation ;
+- la conversion ;
+- la prise de contact.
+
+Formulation possible :
+
+"Dans ce contexte, repartir sur une base plus actuelle pourrait être plus pertinent qu'une succession de corrections ponctuelles."
+
+Cette recommandation doit rester cohérente avec les constats réellement relevés.
+`.trim();
+  }
+}
+
 function validateGeneratedProspection(
   value: unknown
 ): GeneratedProspection {
   if (
     !value ||
-    typeof value !== "object"
+    typeof value !==
+      "object"
   ) {
     throw new Error(
       "Le résultat retourné par l’IA est invalide."
@@ -108,7 +281,7 @@ function formatList(
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   context: RouteContext
 ) {
   if (
@@ -132,6 +305,21 @@ export async function POST(
     const { id } =
       await context.params;
 
+    let requestBody:
+      | Record<
+          string,
+          unknown
+        >
+      | null = null;
+
+    try {
+      requestBody =
+        await request.json();
+    } catch {
+      requestBody =
+        null;
+    }
+
     const {
       data:
         prospection,
@@ -146,6 +334,7 @@ export async function POST(
           id,
           company_id,
           website_audit_id,
+          proposal_type,
           recipient_email,
           recipient_name,
           attachment_url,
@@ -204,6 +393,61 @@ export async function POST(
     const commercialDiagnosis =
       getWebsiteAuditCommercialDiagnosis(
         audit
+      );
+
+    const requestedProposalType =
+      requestBody
+        ?.proposalType;
+
+    let proposalType:
+      ProposalType;
+
+    if (
+      requestedProposalType !==
+      undefined
+    ) {
+      if (
+        !isProposalType(
+          requestedProposalType
+        )
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+
+            message:
+              "Le type de proposition commerciale est invalide.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      proposalType =
+        requestedProposalType;
+    } else if (
+      isProposalType(
+        prospection.proposal_type
+      )
+    ) {
+      proposalType =
+        prospection.proposal_type;
+    } else {
+      proposalType =
+        commercialDiagnosis
+          .recommendation
+          .type;
+    }
+
+    const proposalLabel =
+      getProposalLabel(
+        proposalType
+      );
+
+    const proposalInstructions =
+      getProposalInstructions(
+        proposalType
       );
 
     const {
@@ -267,22 +511,32 @@ export async function POST(
       commercialDiagnosis
         .recommendation;
 
+    const differsFromRecommendation =
+      proposalType !==
+      recommendation.type;
+
     const prompt = `
 Tu écris un premier email de prise de contact pour LBMedia.
 
 LBMedia a réellement parcouru le site internet de l'entreprise et réalisé une analyse interne.
 
-Cette analyse a ensuite été transformée en diagnostic commercial afin de déterminer la prestation la plus pertinente.
+Cette analyse a produit un DIAGNOSTIC AUTOMATIQUE.
 
-La recommandation n'est donc PAS choisie à l'avance.
+Ensuite, LBMedia a choisi une PROPOSITION COMMERCIALE à adresser au prospect.
 
-Elle peut être :
+Ces deux notions sont différentes.
 
-- optimisation du site existant ;
-- refonte du site existant ;
-- création d'un nouveau site.
+==================================================
+RÈGLE ABSOLUE
+==================================================
 
-Tu dois respecter la recommandation fournie ci-dessous.
+Le diagnostic automatique constitue la vérité sur les constats.
+
+La proposition commerciale constitue l'angle choisi pour présenter une solution.
+
+Tu ne dois JAMAIS modifier, amplifier ou inventer des faiblesses afin de justifier la proposition commerciale choisie.
+
+Si la proposition choisie est plus ambitieuse que le diagnostic, tu dois la présenter comme une possibilité ou une manière d'aller plus loin.
 
 ==================================================
 ENTREPRISE
@@ -313,32 +567,71 @@ Zone géographique :
 ${company.geographic_area ?? "Non renseignée"}
 
 ==================================================
-DIAGNOSTIC COMMERCIAL LBMEDIA
+DIAGNOSTIC AUTOMATIQUE
 ==================================================
 
-RECOMMANDATION PRINCIPALE :
+Recommandation issue de l'audit :
 
 ${recommendation.label}
 
-TYPE INTERNE :
+Type :
 
 ${recommendation.type}
 
-JUSTIFICATION :
+Justification :
 
 ${commercialDiagnosis.commercial_summary}
 
-DESCRIPTION DE LA RECOMMANDATION :
+Description :
 
 ${recommendation.description}
 
-VISIBILITÉ :
+Visibilité :
 
 ${commercialDiagnosis.visibility_score}/100
 
-EFFICACITÉ DU SITE :
+Efficacité du site :
 
 ${commercialDiagnosis.website_effectiveness_score}/100
+
+==================================================
+PROPOSITION COMMERCIALE CHOISIE PAR LBMEDIA
+==================================================
+
+${proposalLabel}
+
+Type :
+
+${proposalType}
+
+La proposition choisie ${
+      differsFromRecommendation
+        ? "EST DIFFÉRENTE de la recommandation automatique."
+        : "CORRESPOND à la recommandation automatique."
+    }
+
+${
+  differsFromRecommendation
+    ? `
+IMPORTANT :
+
+La différence est volontaire.
+
+Tu dois respecter le choix commercial de LBMedia SANS falsifier le diagnostic.
+
+La formulation doit clairement distinguer :
+
+- ce qui semble nécessaire ;
+- ce qui pourrait être envisagé pour aller plus loin.
+`
+    : ""
+}
+
+==================================================
+INSTRUCTIONS SPÉCIFIQUES À LA PROPOSITION
+==================================================
+
+${proposalInstructions}
 
 ==================================================
 FAIBLESSES — VISIBILITÉ & ACQUISITION
@@ -386,84 +679,59 @@ ${formatList(
 )}
 
 ==================================================
-RÈGLE ESSENTIELLE
-==================================================
-
-Le mail doit partir des CONSTATS réellement observés.
-
-Il ne doit jamais partir d'une prestation que LBMedia souhaite vendre.
-
-Le raisonnement est :
-
-CONSTATS
-→ CONSÉQUENCES POSSIBLES
-→ RECOMMANDATION ADAPTÉE
-
-La prestation proposée doit donc être cohérente avec :
-
-"${recommendation.label}"
-
-Ne propose JAMAIS une refonte si la recommandation est une optimisation.
-
-Ne propose JAMAIS un nouveau site si la recommandation est une refonte ou une optimisation.
-
-Ne minimise pas non plus les problèmes si la recommandation indique qu'un nouveau site serait plus pertinent.
-
-==================================================
 OBJECTIF DU PREMIER EMAIL
 ==================================================
 
-Le destinataire doit comprendre trois choses :
+Le destinataire doit comprendre :
 
 1. LBMedia a réellement regardé son site.
-2. Deux ou trois points précis semblent pouvoir être améliorés.
-3. Une piste adaptée à son cas peut être envisagée.
+2. Le site possède des qualités qu'il faut reconnaître.
+3. Deux ou trois améliorations concrètes ont été identifiées.
+4. LBMedia propose une approche adaptée à ces constats.
 
-Le message ne doit PAS ressembler à un rapport technique.
-
-Le mail doit être humain, simple et compréhensible par un dirigeant non spécialiste.
+Le message ne doit pas ressembler à un audit ou à un rapport technique.
 
 ==================================================
 UTILISATION DES FAIBLESSES
 ==================================================
 
-Choisis seulement 2 ou 3 faiblesses pertinentes.
+Choisis seulement 2 ou 3 éléments réellement pertinents.
 
-Privilégie celles qui ont une conséquence commerciale facile à comprendre.
+Privilégie les conséquences compréhensibles pour un dirigeant.
 
-Exemples :
+Ne fais jamais une liste technique.
 
-FAIBLESSE INTERNE :
+Exemple :
+
+INTERNE :
 "Signal local incomplet et vocabulaire géographique limité."
 
-FORMULATION EMAIL :
-"Votre activité est bien présentée, mais certaines informations pourraient être davantage structurées pour aider votre site à ressortir sur les recherches réalisées dans votre secteur géographique."
+EMAIL :
+"Certaines informations pourraient être davantage structurées pour aider le site à ressortir sur les recherches réalisées dans votre secteur géographique."
 
----
+Exemple :
 
-FAIBLESSE INTERNE :
+INTERNE :
 "Absence de pages services dédiées."
 
-FORMULATION EMAIL :
-"Certaines prestations gagneraient à disposer de contenus plus clairement identifiés afin d'être mieux comprises aussi bien par les visiteurs que par les moteurs de recherche."
+EMAIL :
+"Certaines prestations gagneraient à être présentées plus distinctement afin d'être mieux comprises par les visiteurs comme par les moteurs de recherche."
 
----
+Exemple :
 
-FAIBLESSE INTERNE :
+INTERNE :
 "Coordonnées de contact non détectées comme exploitables."
 
-FORMULATION EMAIL :
+EMAIL :
 "Quelques ajustements pourraient également rendre la prise de contact plus immédiate pour un visiteur intéressé."
 
 ==================================================
 SEO / SEO LOCAL / GEO-IA
 ==================================================
 
-Contrairement à l'ancien modèle de prospection, il est désormais possible de parler de visibilité.
+Il est possible de parler naturellement de visibilité.
 
-Mais reste SIMPLE.
-
-Tu peux employer naturellement :
+Tu peux utiliser :
 
 - référencement ;
 - visibilité sur Google ;
@@ -474,88 +742,17 @@ Tu peux employer naturellement :
 - outils d'IA ;
 - contenus.
 
-Évite le jargon technique.
+Évite le jargon.
 
 Ne parle pas de :
 
 - canonical ;
 - schema.org ;
 - SERP ;
-- balises JSON-LD ;
-- données structurées ;
+- JSON-LD ;
 - CTA ;
 - Core Web Vitals ;
 - Open Graph.
-
-Transforme toujours ces notions en bénéfices compréhensibles.
-
-==================================================
-CAS : OPTIMISATION
-==================================================
-
-Si la recommandation est :
-
-"Optimisation du site existant"
-
-Le message doit valoriser le site existant.
-
-Il doit clairement faire comprendre que LBMedia ne considère PAS qu'il faut repartir de zéro.
-
-Exemples d'idées :
-
-"Votre site constitue déjà une bonne base."
-
-"Une refonte complète ne me semble pas nécessairement être la priorité."
-
-"Quelques optimisations ciblées pourraient déjà permettre..."
-
-"Il y aurait notamment quelque chose à faire sur la visibilité locale et la manière dont certaines prestations sont structurées."
-
-==================================================
-CAS : REFONTE
-==================================================
-
-Si la recommandation est :
-
-"Refonte du site existant"
-
-Le mail doit expliquer avec tact que le site possède des éléments intéressants mais que sa structure ou sa présentation limite aujourd'hui son efficacité.
-
-Ne critique jamais brutalement le design.
-
-Évite :
-
-"Votre site est dépassé."
-
-"Votre site est vieux."
-
-"Votre site est mal conçu."
-
-Privilégie :
-
-"Le site présente bien votre activité, mais son organisation actuelle ne permet pas toujours de mettre immédiatement en avant les prestations les plus importantes."
-
-"Une évolution plus globale de la présentation pourrait permettre..."
-
-==================================================
-CAS : NOUVEAU SITE
-==================================================
-
-Si la recommandation est :
-
-"Création d’un nouveau site"
-
-Le mail doit présenter cette idée comme une conclusion logique.
-
-Ne dis jamais :
-
-"Votre site est mauvais."
-
-"Il faut tout refaire."
-
-Privilégie :
-
-"Les différents points relevés touchent à la fois la visibilité, la présentation de l'offre et le parcours de prise de contact. Dans ce contexte, repartir sur une base plus actuelle pourrait être plus pertinent qu'une succession de corrections ponctuelles."
 
 ==================================================
 TON
@@ -570,15 +767,13 @@ Le ton doit être :
 - sobre ;
 - personnalisé ;
 - calme ;
-- respectueux.
+- respectueux du site existant.
 
-Écris comme une vraie personne de LBMedia qui a pris le temps de regarder le site.
+Pas de ton consultant.
 
-Pas comme un consultant.
+Pas de ton commercial agressif.
 
-Pas comme une IA.
-
-Pas comme un commercial agressif.
+Pas de formulation ressemblant à une IA.
 
 ==================================================
 DÉBUT DU MAIL
@@ -596,21 +791,21 @@ Ne commence jamais par :
 
 "Votre site présente plusieurs problèmes"
 
-Privilégie une entrée naturelle du type :
+Privilégie :
 
 "Bonjour,
 
 J'ai récemment pris le temps de parcourir le site de [Entreprise]."
 
-Puis un constat positif réel.
+Puis un constat positif réel et bref.
 
 ==================================================
 OBJET
 ==================================================
 
-L'objet doit rester simple, humain et peu commercial.
+L'objet doit être simple et peu commercial.
 
-Privilégie :
+Exemples :
 
 "Quelques pistes pour le site de [Entreprise]"
 
@@ -645,34 +840,30 @@ Une pièce jointe est ${
 ${
   hasAttachment
     ? `
-Une pièce jointe existe.
+Le document est déjà joint.
 
-Tu peux l'annoncer dans le mail UNIQUEMENT si cela est cohérent avec la recommandation et le document joint.
+Tu peux l'annoncer si cela est cohérent avec son rôle.
 
-Ne suppose pas automatiquement qu'il s'agit d'une projection graphique de refonte.
-
-Utilise une formulation générique telle que :
+Pour une optimisation :
 
 "Je vous joins une courte synthèse pour illustrer plus concrètement ces quelques constats."
 
-ou :
+Pour optimisation + refonte ou refonte :
 
-"J'ai résumé ces quelques pistes dans le document joint."
+Tu peux également évoquer une piste visuelle si le document correspond effectivement à une projection.
 
-Ne dis pas :
+Ne dis jamais :
 
 "Je peux vous la montrer."
 
 "Je peux vous l'envoyer."
-
-Le document est déjà joint.
 `
     : `
 Aucune pièce jointe n'est disponible.
 
-Ne prétends pas qu'un document est joint.
+Ne prétends jamais qu'un document est joint.
 
-Le mail doit fonctionner parfaitement sans pièce jointe.
+Le mail doit fonctionner parfaitement seul.
 `
 }
 
@@ -680,19 +871,15 @@ Le mail doit fonctionner parfaitement sans pièce jointe.
 FIN DU MAIL
 ==================================================
 
-Le but est uniquement d'ouvrir une discussion.
+Le but est d'ouvrir une discussion.
 
-Privilégie une fin légère :
+Exemples :
 
 "Si ces quelques pistes retiennent votre attention, je serais ravi d'en échanger avec vous."
 
 "Si cette approche vous semble pertinente, je serais ravi d'en discuter avec vous."
 
-"Si vous souhaitez que je vous explique plus précisément ce que j'ai relevé, nous pouvons bien sûr en échanger."
-
 Ne force jamais un rendez-vous.
-
-Ne demande pas une disponibilité de 15 minutes.
 
 ==================================================
 LONGUEUR
@@ -700,9 +887,7 @@ LONGUEUR
 
 Environ 130 à 190 mots.
 
-Le message peut être plus court si le contenu est naturellement complet.
-
-Il ne doit jamais devenir un mini-audit.
+Le message doit rester rapide à lire.
 
 ==================================================
 SIGNATURE
@@ -724,19 +909,14 @@ Ne termine pas par :
 ANGLE COMMERCIAL INTERNE
 ==================================================
 
-L'angle commercial ne sera PAS envoyé au prospect.
+L'angle commercial doit résumer :
 
-Il doit résumer :
+- le principal constat ;
+- la recommandation automatique ;
+- le choix commercial retenu ;
+- le bénéfice potentiel.
 
-- le problème principal identifié ;
-- la recommandation ;
-- le bénéfice commercial potentiel.
-
-Il doit être très concret.
-
-Exemple :
-
-"Le site est globalement sain mais sa visibilité locale est insuffisamment travaillée. Proposer une optimisation SEO local / GEO et quelques ajustements de conversion plutôt qu'une refonte."
+Si le choix est "Optimisation + refonte", indique clairement que l'optimisation répond au besoin immédiat et que la refonte constitue une possibilité complémentaire pour aller plus loin.
 
 ==================================================
 FORMAT DE SORTIE
@@ -762,7 +942,7 @@ Retourne UNIQUEMENT cet objet JSON valide :
               "system",
 
             content:
-              "Tu écris pour LBMedia des prises de contact commerciales sobres et personnalisées à partir d'un véritable diagnostic de site. Tu respectes impérativement la recommandation commerciale fournie : optimisation, refonte ou nouveau site. Tu transformes les observations techniques en conséquences simples et compréhensibles pour un dirigeant.",
+              "Tu écris pour LBMedia des prises de contact commerciales sobres et personnalisées. Le diagnostic fourni reste factuel. La proposition commerciale choisie pilote l'angle du message mais ne doit jamais conduire à inventer ou exagérer des défauts du site.",
           },
           {
             role:
@@ -818,6 +998,9 @@ Retourne UNIQUEMENT cet objet JSON valide :
         "audit_prospections"
       )
       .update({
+        proposal_type:
+          proposalType,
+
         sales_angle:
           generated.salesAngle,
 
@@ -844,6 +1027,7 @@ Retourne UNIQUEMENT cet objet JSON valide :
           company_id,
           website_audit_id,
           status,
+          proposal_type,
           recipient_email,
           recipient_name,
           subject,
