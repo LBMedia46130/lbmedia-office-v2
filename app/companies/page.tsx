@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import CompaniesExplorer from "@/components/companies/CompaniesExplorer";
 import ImportCompaniesButton from "@/components/companies/ImportCompaniesButton";
 import NewCompanyButton from "@/components/companies/NewCompanyButton";
@@ -82,11 +84,22 @@ export default async function CompaniesPage() {
               </p>
 
               <p className="mt-1 text-sm text-slate-600">
-                Ajoute une entreprise ou importe directement tes clients existants.
+                Ajoute une entreprise,
+                importe un fichier ou
+                récupère directement un
+                client existant dans
+                Zoho Books.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <Link
+                href="/companies/import-zoho"
+                className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+              >
+                Importer depuis Zoho
+              </Link>
+
               <ImportCompaniesButton />
 
               <NewCompanyButton />
@@ -117,10 +130,19 @@ export default async function CompaniesPage() {
               </h2>
 
               <p className="mt-3 text-slate-500">
-                Ajoute une entreprise ou importe directement tes clients Zoho.
+                Ajoute une entreprise
+                ou récupère directement
+                tes clients Zoho.
               </p>
 
               <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/companies/import-zoho"
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+                >
+                  Importer depuis Zoho
+                </Link>
+
                 <ImportCompaniesButton />
 
                 <NewCompanyButton />

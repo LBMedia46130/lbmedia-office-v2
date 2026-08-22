@@ -9,6 +9,12 @@ import {
   useRouter,
 } from "next/navigation";
 
+type ProposalType =
+  | "optimization"
+  | "optimization_redesign"
+  | "redesign"
+  | "new_website";
+
 type AuditProspectionSendButtonProps = {
   prospectionId: string;
 
@@ -18,6 +24,10 @@ type AuditProspectionSendButtonProps = {
     | "sent"
     | "follow_up"
     | "replied";
+
+  proposalType?:
+    | ProposalType
+    | null;
 
   recipientEmail:
     | string
@@ -71,6 +81,7 @@ type SendTrace = {
 export default function AuditProspectionSendButton({
   prospectionId,
   status,
+  proposalType = null,
   recipientEmail,
   attachmentUrl,
   sentAt,
@@ -489,14 +500,41 @@ export default function AuditProspectionSendButton({
       .toLowerCase() ??
     "";
 
+  /*
+   * Compatibilité :
+   * tant que proposalType n’est
+   * pas encore transmis par la page,
+   * on conserve le comportement
+   * historique si un PDF existe.
+   */
+  const effectiveProposalType =
+    proposalType ??
+    (
+      attachmentUrl
+        ? "redesign"
+        : "optimization"
+    );
+
+  const requiresPdf =
+    effectiveProposalType !==
+    "optimization";
+
+  const hasAttachment =
+    Boolean(
+      attachmentUrl?.trim()
+    );
+
+  const attachmentRequirementMet =
+    requiresPdf
+      ? hasAttachment
+      : true;
+
   const canSend =
     status === "ready" &&
     Boolean(
       normalizedRecipient
     ) &&
-    Boolean(
-      attachmentUrl?.trim()
-    ) &&
+    attachmentRequirementMet &&
     !hasUnsavedChanges &&
     !editorIsSaving &&
     !isSending;
@@ -610,6 +648,28 @@ export default function AuditProspectionSendButton({
             </div>
           ) : null}
 
+          {requiresPdf ? (
+            <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-500">
+                Pièce jointe requise
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-indigo-800">
+                Cette proposition doit être accompagnée de la projection PDF correspondant à l’angle commercial choisi.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">
+                Envoi sans PDF
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-emerald-800">
+                La prospection porte uniquement sur l’optimisation du site existant. Aucune projection PDF n’est nécessaire.
+              </p>
+            </div>
+          )}
+
           {hasUnsavedChanges ? (
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-bold text-amber-800">
@@ -643,11 +703,26 @@ export default function AuditProspectionSendButton({
             </p>
           ) : null}
 
-          {!attachmentUrl ? (
+          {requiresPdf &&
+          !hasAttachment ? (
             <p className="mt-3 text-xs font-semibold text-amber-700">
               Génère d’abord le
-              PDF à joindre.
+              PDF correspondant à
+              cette proposition.
             </p>
+          ) : null}
+
+          {!requiresPdf &&
+          hasAttachment ? (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-bold text-amber-800">
+                Ancien PDF détecté
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-amber-700">
+                Un PDF est encore associé à cette prospection, mais il ne doit pas être envoyé avec une proposition d’optimisation seule. Le serveur sera sécurisé pour l’ignorer.
+              </p>
+            </div>
           ) : null}
 
           {status !==
@@ -673,7 +748,9 @@ export default function AuditProspectionSendButton({
         >
           {isSending
             ? "Envoi en cours..."
-            : "Envoyer l’email + PDF"}
+            : requiresPdf
+              ? "Envoyer l’email + PDF"
+              : "Envoyer l’email"}
         </button>
       </div>
 
