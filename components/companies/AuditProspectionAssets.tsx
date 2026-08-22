@@ -8,8 +8,18 @@ import {
   useRouter,
 } from "next/navigation";
 
+type ProposalType =
+  | "optimization"
+  | "optimization_redesign"
+  | "redesign"
+  | "new_website";
+
 type AuditProspectionAssetsProps = {
   prospectionId: string;
+
+  proposalType:
+    | ProposalType
+    | null;
 
   initialBeforeImageUrl:
     | string
@@ -64,14 +74,129 @@ const JPEG_QUALITIES = [
   0.56,
 ];
 
+function getPresentationContent(
+  proposalType: ProposalType
+) {
+  switch (
+    proposalType
+  ) {
+    case "optimization":
+      return {
+        eyebrow:
+          "Pièce jointe",
+
+        title:
+          "Aucun PDF nécessaire",
+
+        description:
+          "La proposition porte sur l’optimisation du site existant. Le message de prospection suffit pour présenter les améliorations identifiées en SEO, visibilité locale, GEO / IA, contenus et conversion.",
+
+        currentLabel:
+          "Site actuel",
+
+        proposalLabel:
+          "Optimisation",
+
+        generateLabel:
+          "Générer une proposition",
+
+        regenerateLabel:
+          "Régénérer la proposition",
+      };
+
+    case "optimization_redesign":
+      return {
+        eyebrow:
+          "Projection d’évolution",
+
+        title:
+          "Illustrer une évolution possible",
+
+        description:
+          "La proposition associe des optimisations ciblées à une possibilité de faire évoluer plus largement le site. La projection permet de montrer concrètement jusqu’où cette évolution pourrait aller.",
+
+        currentLabel:
+          "Site actuel",
+
+        proposalLabel:
+          "Piste d’évolution",
+
+        generateLabel:
+          "Générer une piste d’évolution",
+
+        regenerateLabel:
+          "Régénérer la piste",
+      };
+
+    case "redesign":
+      return {
+        eyebrow:
+          "Projection de refonte",
+
+        title:
+          "Illustrer une refonte du site",
+
+        description:
+          "La projection permet de comparer le site actuel avec une proposition faisant évoluer sa présentation, son organisation et la mise en valeur des prestations.",
+
+        currentLabel:
+          "Site actuel",
+
+        proposalLabel:
+          "Projection de refonte",
+
+        generateLabel:
+          "Générer une projection de refonte",
+
+        regenerateLabel:
+          "Régénérer la projection",
+      };
+
+    case "new_website":
+      return {
+        eyebrow:
+          "Nouvelle orientation",
+
+        title:
+          "Illustrer une nouvelle direction",
+
+        description:
+          "La proposition ne constitue pas une maquette définitive. Elle illustre une orientation possible pour un nouveau site pensé autour des prestations, de la visibilité et de la prise de contact.",
+
+        currentLabel:
+          "Site actuel",
+
+        proposalLabel:
+          "Nouvelle orientation",
+
+        generateLabel:
+          "Générer une nouvelle orientation",
+
+        regenerateLabel:
+          "Régénérer l’orientation",
+      };
+  }
+}
+
 export default function AuditProspectionAssets({
   prospectionId,
+  proposalType,
   initialBeforeImageUrl,
   initialAfterImageUrl,
   initialAttachmentUrl,
 }: AuditProspectionAssetsProps) {
   const router =
     useRouter();
+
+  const effectiveProposalType:
+    ProposalType =
+    proposalType ??
+    "optimization";
+
+  const presentation =
+    getPresentationContent(
+      effectiveProposalType
+    );
 
   const [
     beforeImageUrl,
@@ -574,6 +699,17 @@ export default function AuditProspectionAssets({
           {
             method:
               "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                proposalType:
+                  effectiveProposalType,
+              }),
           }
         );
 
@@ -634,6 +770,17 @@ export default function AuditProspectionAssets({
 
   async function generatePdf() {
     if (
+      effectiveProposalType ===
+      "optimization"
+    ) {
+      setError(
+        "Aucun PDF n’est nécessaire pour une prospection basée uniquement sur l’optimisation."
+      );
+
+      return;
+    }
+
+    if (
       !beforeImageUrl ||
       !afterImageUrl
     ) {
@@ -659,6 +806,17 @@ export default function AuditProspectionAssets({
           {
             method:
               "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                proposalType:
+                  effectiveProposalType,
+              }),
           }
         );
 
@@ -719,24 +877,72 @@ export default function AuditProspectionAssets({
     loadingKind !==
     null;
 
+  if (
+    effectiveProposalType ===
+    "optimization"
+  ) {
+    return (
+      <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">
+          {
+            presentation.eyebrow
+          }
+        </p>
+
+        <h3 className="mt-2 text-lg font-bold text-slate-900">
+          {
+            presentation.title
+          }
+        </h3>
+
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+          {
+            presentation.description
+          }
+        </p>
+
+        {initialAttachmentUrl ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-900">
+              Un ancien PDF est encore associé à cette prospection.
+            </p>
+
+            <p className="mt-1 text-sm leading-6 text-amber-800">
+              Il ne devra pas être envoyé avec une prospection basée uniquement sur l’optimisation.
+            </p>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-5">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-500">
-          Présentation avant / après
+          {
+            presentation.eyebrow
+          }
         </p>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Ajoutez une capture du
-          site actuel, puis laissez
-          Pénélope imaginer une
-          piste d’amélioration.
+        <h3 className="mt-2 text-lg font-bold text-slate-900">
+          {
+            presentation.title
+          }
+        </h3>
+
+        <p className="mt-1 text-sm leading-6 text-slate-500">
+          {
+            presentation.description
+          }
         </p>
       </div>
 
       <div className="mt-5 grid gap-5 md:grid-cols-2">
         <AssetCard
-          title="Aujourd’hui"
+          title={
+            presentation.currentLabel
+          }
           imageUrl={
             beforeImageUrl
           }
@@ -757,7 +963,9 @@ export default function AuditProspectionAssets({
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-            Piste proposée
+            {
+              presentation.proposalLabel
+            }
           </p>
 
           {afterImageUrl ? (
@@ -773,7 +981,9 @@ export default function AuditProspectionAssets({
                 src={
                   afterImageUrl
                 }
-                alt="Piste proposée"
+                alt={
+                  presentation.proposalLabel
+                }
                 className="h-56 w-full object-cover object-top"
               />
             </a>
@@ -781,14 +991,11 @@ export default function AuditProspectionAssets({
             <div className="mt-3 flex h-56 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-5 text-center">
               <div>
                 <p className="text-sm font-semibold text-slate-500">
-                  Aucune proposition
-                  générée
+                  Aucune projection générée
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  Importez d’abord
-                  la capture du site
-                  actuel.
+                  Importez d’abord la capture du site actuel.
                 </p>
               </div>
             </div>
@@ -810,8 +1017,8 @@ export default function AuditProspectionAssets({
               "proposal"
                 ? "Génération en cours..."
                 : afterImageUrl
-                  ? "Régénérer la proposition"
-                  : "Générer une proposition LBMedia"}
+                  ? presentation.regenerateLabel
+                  : presentation.generateLabel}
             </button>
 
             <label
@@ -859,6 +1066,19 @@ export default function AuditProspectionAssets({
         </div>
       </div>
 
+      {effectiveProposalType ===
+      "new_website" ? (
+        <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+          <p className="text-sm font-semibold text-blue-900">
+            Projection illustrative
+          </p>
+
+          <p className="mt-1 text-sm leading-6 text-blue-800">
+            Cette proposition sert à illustrer une direction possible pour un nouveau site. Elle ne constitue ni une maquette définitive ni un BAT.
+          </p>
+        </div>
+      ) : null}
+
       {error ? (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
           <p className="text-sm font-semibold text-red-700">
@@ -888,10 +1108,7 @@ export default function AuditProspectionAssets({
             </>
           ) : (
             <p className="text-sm text-slate-500">
-              Une fois les deux
-              visuels validés, vous
-              pourrez générer la
-              présentation PDF.
+              Une fois les deux visuels validés, vous pourrez générer la présentation PDF adaptée à cette proposition.
             </p>
           )}
         </div>

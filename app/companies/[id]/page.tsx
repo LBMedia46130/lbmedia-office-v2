@@ -635,6 +635,10 @@ export default async function CompanyPage({
                       prospectionId={
                         latestProspection.id
                       }
+                      proposalType={
+                        latestProspection.proposal_type ??
+                        recommendedProposalType
+                      }
                       initialBeforeImageUrl={
                         latestProspection.before_image_url
                       }
