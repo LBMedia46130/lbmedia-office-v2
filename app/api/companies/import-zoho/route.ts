@@ -20,6 +20,41 @@ type ImportZohoRequestBody = {
   contactId?: unknown;
 };
 
+type ZohoBillingAddress = {
+  address?: string;
+  street2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+};
+
+type ZohoContactWithAddress = Awaited<
+  ReturnType<
+    typeof getZohoContact
+  >
+> & {
+  billing_address?:
+    ZohoBillingAddress;
+};
+
+function optionalString(
+  value: unknown
+): string | null {
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return null;
+  }
+
+  const trimmed =
+    value.trim();
+
+  return trimmed ||
+    null;
+}
+
 export async function POST(
   request: Request
 ) {
@@ -58,6 +93,12 @@ export async function POST(
       );
     }
 
+    /*
+     * Première sécurité anti-doublon :
+     * un même contact Zoho ne doit
+     * correspondre qu'à une seule
+     * entreprise Office.
+     */
     const {
       data:
         existingCompany,
@@ -107,10 +148,13 @@ export async function POST(
       );
     }
 
-    const contact =
+    const rawContact =
       await getZohoContact(
         contactId
       );
+
+    const contact =
+      rawContact as ZohoContactWithAddress;
 
     const companyName =
       contact.company_name
@@ -134,22 +178,68 @@ export async function POST(
     }
 
     const email =
-      contact.email
-        ?.trim() ||
-      null;
+      optionalString(
+        contact.email
+      );
 
     const phone =
-      contact.phone
-        ?.trim() ||
-      contact.mobile
-        ?.trim() ||
-      null;
+      optionalString(
+        contact.phone
+      ) ||
+      optionalString(
+        contact.mobile
+      );
 
     const customerNumber =
-      contact.contact_number
-        ?.trim() ||
-      null;
+      optionalString(
+        contact.contact_number
+      );
 
+    const billingAddress =
+      contact.billing_address;
+
+    const address =
+      optionalString(
+        billingAddress
+          ?.address
+      );
+
+    const addressLine2 =
+      optionalString(
+        billingAddress
+          ?.street2
+      );
+
+    const postalCode =
+      optionalString(
+        billingAddress
+          ?.zip
+      );
+
+    const city =
+      optionalString(
+        billingAddress
+          ?.city
+      );
+
+    const state =
+      optionalString(
+        billingAddress
+          ?.state
+      );
+
+    const country =
+      optionalString(
+        billingAddress
+          ?.country
+      );
+
+    /*
+     * Seconde sécurité :
+     * une adresse email déjà utilisée
+     * dans Office bloque l'import afin
+     * d'éviter un doublon silencieux.
+     */
     if (
       email
     ) {
@@ -218,13 +308,27 @@ export async function POST(
           companyName,
 
         legal_name:
-          contact.company_name
-            ?.trim() ||
-          null,
+          optionalString(
+            contact.company_name
+          ),
 
         email,
 
         phone,
+
+        address,
+
+        address_line_2:
+          addressLine2,
+
+        postal_code:
+          postalCode,
+
+        city,
+
+        state,
+
+        country,
 
         customer_number:
           customerNumber,
@@ -272,6 +376,13 @@ export async function POST(
 
         zohoContactId:
           createdCompany.zoho_contact_id,
+
+        addressImported:
+          Boolean(
+            address ||
+            postalCode ||
+            city
+          ),
       }
     );
 
