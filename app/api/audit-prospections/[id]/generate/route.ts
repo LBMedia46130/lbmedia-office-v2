@@ -117,42 +117,71 @@ Ne propose aucune refonte dans ce scénario.
       return `
 La proposition commerciale choisie est OPTIMISATION + REFONTE.
 
-C'est un scénario en deux niveaux.
+C'est impérativement un scénario commercial en DEUX NIVEAUX.
 
-1. Commence par les optimisations réellement justifiées par l'audit :
-   - SEO ;
-   - SEO local ;
-   - GEO / visibilité IA ;
-   - contenus ;
-   - structuration ;
-   - conversion.
+NIVEAU 1 — OPTIMISATION
 
-2. Présente ensuite une évolution plus globale du site comme une POSSIBILITÉ POUR ALLER PLUS LOIN.
+Présente d'abord les améliorations réellement justifiées par l'audit :
+
+- SEO ;
+- SEO local ;
+- GEO / visibilité IA ;
+- contenus ;
+- structuration des prestations ;
+- conversion ;
+- prise de contact.
+
+Explique qu'une optimisation ciblée de l'existant peut déjà produire des améliorations concrètes.
+
+NIVEAU 2 — ÉVOLUTION / REFONTE
+
+Le corps du mail DOIT ensuite contenir explicitement une ouverture vers une évolution plus globale du site.
+
+Cette deuxième partie est OBLIGATOIRE.
+
+Il ne suffit pas de mentionner la refonte dans l'angle commercial interne.
+
+Elle doit apparaître naturellement dans le texte réellement envoyé au prospect.
+
+Si le diagnostic automatique recommande seulement une optimisation, tu ne dois JAMAIS inventer de défaut de design ni affirmer qu'une refonte est nécessaire.
+
+Dans ce cas, présente la refonte comme une possibilité complémentaire permettant par exemple :
+
+- de faire évoluer la présentation ;
+- de mieux hiérarchiser les prestations ;
+- de mieux mettre en valeur les différentes activités ;
+- de renforcer l'impact commercial du site ;
+- d'intégrer les optimisations dans une évolution plus globale.
+
+La logique du mail doit donc être clairement :
+
+"Une optimisation ciblée peut déjà améliorer l'efficacité du site."
+
+PUIS :
+
+"Si vous souhaitez aller plus loin, cela peut aussi être l'occasion de faire évoluer plus largement sa présentation et son organisation."
+
+Tu peux utiliser des formulations naturelles telles que :
+
+"Une optimisation ciblée du site pourrait déjà renforcer sa visibilité et son efficacité sans nécessairement repartir de zéro."
+
+"Cela peut aussi être l'occasion d'aller un peu plus loin, en faisant évoluer la présentation et l'organisation du site afin de mieux mettre en valeur vos différentes prestations."
+
+"Il ne s'agit pas nécessairement de tout refaire, mais plutôt de profiter de ces améliorations pour donner davantage d'impact à l'ensemble."
 
 IMPORTANT :
 
-Si le diagnostic automatique recommande seulement une optimisation, tu ne dois JAMAIS inventer des défauts de design ou prétendre qu'une refonte est nécessaire.
+Le mail final est INCOMPLET s'il ne contient que l'optimisation.
 
-La refonte doit alors être présentée comme une option permettant :
+Le mail final est également incorrect s'il présente la refonte comme indispensable alors que l'audit ne le justifie pas.
 
-- de moderniser ou faire évoluer la présentation ;
-- de mieux hiérarchiser les prestations ;
-- d'améliorer encore l'impact commercial ;
-- d'intégrer les optimisations dans une évolution plus globale.
+L'équilibre recherché est :
 
-Formulations possibles :
+OPTIMISATION = RÉPONSE IMMÉDIATE AUX CONSTATS
 
-"Une optimisation ciblée pourrait déjà apporter des résultats intéressants."
-
-"Et si vous souhaitez aller plus loin, une évolution plus globale de la présentation permettrait également de mieux mettre en valeur vos prestations."
-
-"Il ne s'agit pas nécessairement de repartir de zéro, mais plutôt de profiter de ces optimisations pour faire évoluer plus largement le site."
-
-L'idée centrale est :
-
-OPTIMISER L'EXISTANT D'ABORD
 +
-OUVRIR UNE POSSIBILITÉ DE REFONTE SANS LA PRÉSENTER COMME OBLIGATOIRE.
+
+REFONTE = OPPORTUNITÉ COMMERCIALE POUR ALLER PLUS LOIN.
 `.trim();
 
     case "redesign":
@@ -291,7 +320,6 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-
         message:
           "La clé OpenAI n’est pas configurée.",
       },
@@ -361,7 +389,6 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-
           message:
             "Prospection introuvable.",
         },
@@ -380,7 +407,6 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-
           message:
             "L’audit associé est introuvable.",
         },
@@ -414,7 +440,6 @@ export async function POST(
         return NextResponse.json(
           {
             success: false,
-
             message:
               "Le type de proposition commerciale est invalide.",
           },
@@ -490,7 +515,6 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-
           message:
             "Entreprise introuvable.",
         },
@@ -697,33 +721,53 @@ UTILISATION DES FAIBLESSES
 
 Choisis seulement 2 ou 3 éléments réellement pertinents.
 
-Privilégie les conséquences compréhensibles pour un dirigeant.
+IMPORTANT :
 
-Ne fais jamais une liste technique.
+Les faiblesses sont fournies sous forme de listes uniquement pour ton travail interne.
 
-Exemple :
+Dans l'email final, transforme-les en un texte naturel et fluide.
 
-INTERNE :
+N'utilise PAS une succession de tirets pour énumérer les problèmes.
+
+N'écris PAS :
+
+"conséquence :"
+
+"problème :"
+
+"faiblesse :"
+
+"point faible :"
+
+Ne reproduis pas les formulations techniques de l'audit.
+
+Le prospect doit avoir l'impression de lire le message d'une personne qui a parcouru son site, pas un extrait d'un logiciel d'analyse.
+
+Par exemple, au lieu de :
+
 "Signal local incomplet et vocabulaire géographique limité."
 
-EMAIL :
+Écris naturellement :
+
 "Certaines informations pourraient être davantage structurées pour aider le site à ressortir sur les recherches réalisées dans votre secteur géographique."
 
-Exemple :
+Au lieu de :
 
-INTERNE :
 "Absence de pages services dédiées."
 
-EMAIL :
-"Certaines prestations gagneraient à être présentées plus distinctement afin d'être mieux comprises par les visiteurs comme par les moteurs de recherche."
+Écris :
 
-Exemple :
+"Vos différentes prestations gagneraient également à être présentées plus distinctement, afin d'être immédiatement compréhensibles pour les visiteurs comme pour les moteurs de recherche."
 
-INTERNE :
+Au lieu de :
+
 "Coordonnées de contact non détectées comme exploitables."
 
-EMAIL :
-"Quelques ajustements pourraient également rendre la prise de contact plus immédiate pour un visiteur intéressé."
+Écris :
+
+"Quelques ajustements pourraient enfin rendre la prise de contact plus immédiate pour un visiteur intéressé."
+
+Relie les constats entre eux dans un ou deux paragraphes courts.
 
 ==================================================
 SEO / SEO LOCAL / GEO-IA
@@ -868,6 +912,44 @@ Le mail doit fonctionner parfaitement seul.
 }
 
 ==================================================
+STRUCTURE DU MAIL
+==================================================
+
+Le mail doit suivre une progression naturelle :
+
+1. Bonjour.
+2. Une phrase montrant que le site a réellement été parcouru.
+3. Un constat positif et sincère sur l'existant.
+4. Un ou deux paragraphes courts présentant naturellement les améliorations identifiées.
+5. La proposition commerciale choisie.
+6. Une conclusion légère ouvrant la discussion.
+
+Ne transforme jamais les points 4 et 5 en listes à puces.
+
+${
+  proposalType ===
+  "optimization_redesign"
+    ? `
+RÈGLE SUPPLÉMENTAIRE OBLIGATOIRE POUR CE MAIL :
+
+Le point 5 doit comporter DEUX TEMPS distincts dans le corps du mail :
+
+A. expliquer qu'une optimisation ciblée peut déjà améliorer la visibilité et/ou l'efficacité du site ;
+
+B. ajouter ensuite une phrase ou un court paragraphe indiquant qu'il est également possible d'aller plus loin en faisant évoluer plus globalement la présentation, l'organisation ou la mise en valeur des prestations.
+
+La partie B ne doit jamais disparaître lors de la rédaction.
+
+La partie B ne doit jamais présenter la refonte comme obligatoire.
+
+Avant de retourner ton JSON, vérifie explicitement que emailContent contient bien ces DEUX dimensions.
+
+Si ce n'est pas le cas, réécris emailContent avant de répondre.
+`
+    : ""
+}
+
+==================================================
 FIN DU MAIL
 ==================================================
 
@@ -942,7 +1024,7 @@ Retourne UNIQUEMENT cet objet JSON valide :
               "system",
 
             content:
-              "Tu écris pour LBMedia des prises de contact commerciales sobres et personnalisées. Le diagnostic fourni reste factuel. La proposition commerciale choisie pilote l'angle du message mais ne doit jamais conduire à inventer ou exagérer des défauts du site.",
+              "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées. Le diagnostic fourni reste factuel. La proposition commerciale choisie pilote réellement le contenu du message mais ne doit jamais conduire à inventer ou exagérer des défauts du site. Le mail final doit être fluide et ne jamais ressembler à une restitution technique d'audit.",
           },
           {
             role:
