@@ -11,12 +11,23 @@ import {
   createOpportunity,
 } from "@/app/companies/[id]/opportunityActions";
 
+type RecommendationType =
+  | "optimization"
+  | "redesign"
+  | "new_website";
+
 type AuditOpportunityButtonProps = {
   companyId: string;
   companyName: string;
   websiteUrl: string;
   globalScore: number;
   priorities: string[];
+
+  recommendationType?: RecommendationType;
+  recommendationLabel?: string;
+  commercialSummary?: string;
+  visibilityWeaknesses?: string[];
+  websiteWeaknesses?: string[];
 };
 
 export default function AuditOpportunityButton({
@@ -25,6 +36,11 @@ export default function AuditOpportunityButton({
   websiteUrl,
   globalScore,
   priorities,
+  recommendationType = "optimization",
+  recommendationLabel = "Optimisation du site existant",
+  commercialSummary = "",
+  visibilityWeaknesses = [],
+  websiteWeaknesses = [],
 }: AuditOpportunityButtonProps) {
   const router = useRouter();
 
@@ -43,11 +59,20 @@ export default function AuditOpportunityButton({
     startTransition,
   ] = useTransition();
 
+  const defaultTitle =
+    buildTitle(
+      recommendationType
+    );
+
   const defaultDescription =
     buildDescription({
       companyName,
       websiteUrl,
       globalScore,
+      recommendationLabel,
+      commercialSummary,
+      visibilityWeaknesses,
+      websiteWeaknesses,
       priorities,
     });
 
@@ -115,7 +140,7 @@ export default function AuditOpportunityButton({
             <div className="flex items-center justify-between border-b border-white/10 px-8 py-6">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
-                  Audit → CRM
+                  Audit → Diagnostic → CRM
                 </p>
 
                 <h2 className="mt-2 text-xl font-semibold text-white">
@@ -144,10 +169,32 @@ export default function AuditOpportunityButton({
             >
               <div className="flex-1 overflow-y-auto px-8 py-6">
                 <div className="space-y-5">
+                  <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.15em] text-blue-300">
+                      Recommandation issue de l’audit
+                    </p>
+
+                    <p className="mt-2 text-lg font-semibold text-white">
+                      {
+                        recommendationLabel
+                      }
+                    </p>
+
+                    {commercialSummary ? (
+                      <p className="mt-2 text-sm leading-6 text-slate-300">
+                        {
+                          commercialSummary
+                        }
+                      </p>
+                    ) : null}
+                  </div>
+
                   <Field
                     name="title"
                     label="Titre *"
-                    defaultValue="Optimisation / refonte du site internet"
+                    defaultValue={
+                      defaultTitle
+                    }
                     required
                   />
 
@@ -162,7 +209,7 @@ export default function AuditOpportunityButton({
                     <textarea
                       id="audit-opportunity-description"
                       name="description"
-                      rows={10}
+                      rows={18}
                       defaultValue={
                         defaultDescription
                       }
@@ -214,7 +261,8 @@ export default function AuditOpportunityButton({
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-slate-400">
-                      L’opportunité sera automatiquement rattachée à {companyName}.
+                      L’opportunité sera automatiquement rattachée à{" "}
+                      {companyName}.
                     </p>
                   </div>
 
@@ -258,15 +306,43 @@ export default function AuditOpportunityButton({
   );
 }
 
+function buildTitle(
+  recommendationType: RecommendationType
+): string {
+  if (
+    recommendationType ===
+    "new_website"
+  ) {
+    return "Création d’un nouveau site internet";
+  }
+
+  if (
+    recommendationType ===
+    "redesign"
+  ) {
+    return "Refonte du site internet";
+  }
+
+  return "Optimisation du site internet";
+}
+
 function buildDescription({
   companyName,
   websiteUrl,
   globalScore,
+  recommendationLabel,
+  commercialSummary,
+  visibilityWeaknesses,
+  websiteWeaknesses,
   priorities,
 }: {
   companyName: string;
   websiteUrl: string;
   globalScore: number;
+  recommendationLabel: string;
+  commercialSummary: string;
+  visibilityWeaknesses: string[];
+  websiteWeaknesses: string[];
   priorities: string[];
 }) {
   const lines = [
@@ -274,12 +350,68 @@ function buildDescription({
     "",
     `Site : ${websiteUrl}`,
     `Score global de l’audit : ${globalScore}/100`,
+    "",
+    `Recommandation : ${recommendationLabel}`,
   ];
+
+  if (commercialSummary) {
+    lines.push(
+      "",
+      "Diagnostic commercial :",
+      commercialSummary
+    );
+  }
+
+  if (
+    visibilityWeaknesses.length >
+    0
+  ) {
+    lines.push(
+      "",
+      "Faiblesses — Visibilité & acquisition :"
+    );
+
+    visibilityWeaknesses
+      .slice(0, 5)
+      .forEach(
+        (
+          weakness,
+          index
+        ) => {
+          lines.push(
+            `${index + 1}. ${weakness}`
+          );
+        }
+      );
+  }
+
+  if (
+    websiteWeaknesses.length >
+    0
+  ) {
+    lines.push(
+      "",
+      "Faiblesses — Site & conversion :"
+    );
+
+    websiteWeaknesses
+      .slice(0, 5)
+      .forEach(
+        (
+          weakness,
+          index
+        ) => {
+          lines.push(
+            `${index + 1}. ${weakness}`
+          );
+        }
+      );
+  }
 
   if (priorities.length > 0) {
     lines.push(
       "",
-      "Priorités identifiées :"
+      "Actions recommandées :"
     );
 
     priorities

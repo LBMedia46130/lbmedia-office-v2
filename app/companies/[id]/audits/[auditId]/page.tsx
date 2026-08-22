@@ -103,6 +103,30 @@ export default async function AuditDetailPage({
               priorities={
                 audit.priorities
               }
+              recommendationType={
+                commercialDiagnosis
+                  .recommendation
+                  .type
+              }
+              recommendationLabel={
+                commercialDiagnosis
+                  .recommendation
+                  .label
+              }
+              commercialSummary={
+                commercialDiagnosis
+                  .commercial_summary
+              }
+              visibilityWeaknesses={
+                commercialDiagnosis
+                  .weaknesses
+                  .visibility
+              }
+              websiteWeaknesses={
+                commercialDiagnosis
+                  .weaknesses
+                  .website
+              }
             />
 
             <a
@@ -391,17 +415,11 @@ export default async function AuditDetailPage({
             </p>
 
             <h2 className="mt-2 text-2xl font-bold text-slate-900">
-              Vérifications
-              complémentaires
+              Vérifications complémentaires
             </h2>
 
             <p className="mt-2 text-sm text-slate-600">
-              Ces éléments
-              nécessitent des
-              données ou outils
-              complémentaires avant
-              de pouvoir être
-              confirmés.
+              Ces éléments nécessitent des données ou outils complémentaires avant de pouvoir être confirmés.
             </p>
 
             <ul className="mt-5 space-y-3">
@@ -496,8 +514,7 @@ export default async function AuditDetailPage({
             href={`/companies/${company.id}`}
             className="inline-flex rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
-            ← Retour à la fiche
-            entreprise
+            ← Retour à la fiche entreprise
           </Link>
         </div>
       </div>
@@ -656,9 +673,7 @@ function CommercialWeaknessList({
         </ul>
       ) : (
         <p className="mt-4 text-sm italic text-slate-400">
-          Aucun point
-          prioritaire identifié
-          dans cette catégorie.
+          Aucun point prioritaire identifié dans cette catégorie.
         </p>
       )}
     </div>
