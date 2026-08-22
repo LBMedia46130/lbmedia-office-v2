@@ -38,6 +38,12 @@ export const maxDuration = 60;
 const BUCKET =
   "audit-prospection-assets";
 
+type ProposalType =
+  | "optimization"
+  | "optimization_redesign"
+  | "redesign"
+  | "new_website";
+
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -68,6 +74,16 @@ type ImprovementPoint = {
   description: string;
 };
 
+type PdfMessaging = {
+  title: string;
+  introLine1: string;
+  introLine2: string;
+  currentLabel: string;
+  proposalLabel: string;
+  improvementTitle: string;
+  improvementIntro: string;
+};
+
 export async function POST(
   _request: NextRequest,
   context: RouteContext
@@ -88,6 +104,7 @@ export async function POST(
           id,
           company_id,
           website_audit_id,
+          proposal_type,
           before_image_url,
           after_image_url
         `
@@ -113,6 +130,32 @@ export async function POST(
         },
         {
           status: 404,
+        }
+      );
+    }
+
+    const proposalType =
+      normalizeProposalType(
+        prospection.proposal_type
+      );
+
+    /*
+     * Une prospection basée uniquement
+     * sur l'optimisation ne nécessite
+     * volontairement aucun PDF.
+     */
+    if (
+      proposalType ===
+      "optimization"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Aucun PDF n’est nécessaire pour une prospection d’optimisation seule.",
+        },
+        {
+          status: 400,
         }
       );
     }
@@ -217,6 +260,11 @@ export async function POST(
     const improvementPoints =
       buildImprovementPoints(
         audit
+      );
+
+    const messaging =
+      getPdfMessaging(
+        proposalType
       );
 
     const [
@@ -333,7 +381,7 @@ export async function POST(
     );
 
     page.drawText(
-      "Une piste d'amélioration pour votre site",
+      messaging.title,
       {
         x: 155,
 
@@ -405,10 +453,11 @@ export async function POST(
     }
 
     /*
-     * Mention explicative
+     * Mention explicative adaptée
+     * au type de proposition.
      */
     page.drawText(
-      "L'idée présentée ci-dessous est volontairement illustrative : elle montre une direction possible,",
+      messaging.introLine1,
       {
         x: 42,
 
@@ -429,7 +478,7 @@ export async function POST(
     );
 
     page.drawText(
-      "et non une maquette définitive. Elle illustre concrètement certaines pistes identifiées lors de l'analyse du site.",
+      messaging.introLine2,
       {
         x: 42,
 
@@ -468,7 +517,7 @@ export async function POST(
       220;
 
     page.drawText(
-      "AUJOURD'HUI",
+      messaging.currentLabel,
       {
         x:
           leftX,
@@ -491,7 +540,7 @@ export async function POST(
     );
 
     page.drawText(
-      "UNE PISTE POSSIBLE",
+      messaging.proposalLabel,
       {
         x:
           rightX,
@@ -565,8 +614,7 @@ export async function POST(
     );
 
     /*
-     * Bloc :
-     * Ce que cette piste pourrait améliorer
+     * Bloc des améliorations
      */
     const reasonsTop =
       imageTop -
@@ -615,7 +663,7 @@ export async function POST(
     });
 
     page.drawText(
-      "CE QUE CETTE PISTE POURRAIT AMÉLIORER",
+      messaging.improvementTitle,
       {
         x:
           reasonsX + 14,
@@ -638,7 +686,7 @@ export async function POST(
     );
 
     page.drawText(
-      "Cette piste illustre comment certains constats de l'audit pourraient se traduire concrètement dans la présentation du site.",
+      messaging.improvementIntro,
       {
         x:
           reasonsX + 14,
@@ -667,7 +715,7 @@ export async function POST(
       improvementPoints
     ) {
       const fullText =
-        `${point.title} — ${point.description}`;
+        `${point.title} - ${point.description}`;
 
       const lines =
         wrapText(
@@ -749,10 +797,14 @@ export async function POST(
     }
 
     /*
-     * Mention de bas de page
+     * Mention de bas de page.
+     *
+     * Important :
+     * le document reste explicitement
+     * une projection non contractuelle.
      */
     page.drawText(
-      "Ce document constitue un exemple de réflexion réalisé par LBMedia à partir des éléments visibles du site et des constats de l'audit.",
+      "Exemple non contractuel - réflexion réalisée par LBMedia à partir des éléments visibles du site et des constats de l'audit.",
       {
         x: 42,
 
@@ -774,8 +826,16 @@ export async function POST(
     const pdfBytes =
       await pdf.save();
 
+    /*
+     * Le type de proposition fait partie
+     * du nom du fichier.
+     *
+     * Cela évite notamment qu'un PDF
+     * correspondant à un ancien angle
+     * commercial soit réutilisé par erreur.
+     */
     const storagePath =
-      `${company.id}/${id}/proposition-lbmedia.pdf`;
+      `${company.id}/${id}/proposition-${proposalType}-lbmedia.pdf`;
 
     const {
       error: uploadError,
@@ -826,6 +886,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
 
+      proposalType,
+
       attachmentUrl,
 
       prospection:
@@ -850,6 +912,108 @@ export async function POST(
         status: 500,
       }
     );
+  }
+}
+
+function normalizeProposalType(
+  value: unknown
+): ProposalType {
+  if (
+    value ===
+      "optimization" ||
+    value ===
+      "optimization_redesign" ||
+    value ===
+      "redesign" ||
+    value ===
+      "new_website"
+  ) {
+    return value;
+  }
+
+  return "optimization";
+}
+
+function getPdfMessaging(
+  proposalType: Exclude<
+    ProposalType,
+    "optimization"
+  >
+): PdfMessaging {
+  switch (
+    proposalType
+  ) {
+    case "optimization_redesign":
+      return {
+        title:
+          "Une évolution possible pour votre site",
+
+        introLine1:
+          "Cette proposition illustre une évolution possible du site, en complément des optimisations identifiées lors de l'audit.",
+
+        introLine2:
+          "Il ne s'agit pas d'une maquette définitive, mais d'une piste permettant de visualiser une évolution plus globale de sa présentation.",
+
+        currentLabel:
+          "SITE ACTUEL",
+
+        proposalLabel:
+          "UNE ÉVOLUTION POSSIBLE",
+
+        improvementTitle:
+          "CE QUE CETTE ÉVOLUTION POURRAIT APPORTER",
+
+        improvementIntro:
+          "Cette piste montre comment les optimisations identifiées pourraient s'intégrer dans une évolution plus globale du site.",
+      };
+
+    case "redesign":
+      return {
+        title:
+          "Une piste de refonte pour votre site",
+
+        introLine1:
+          "Cette proposition illustre une piste de refonte du site actuel à partir des constats réalisés lors de l'audit.",
+
+        introLine2:
+          "Il ne s'agit pas d'une maquette définitive, mais d'un exemple permettant de visualiser une nouvelle organisation et présentation.",
+
+        currentLabel:
+          "SITE ACTUEL",
+
+        proposalLabel:
+          "PISTE DE REFONTE",
+
+        improvementTitle:
+          "CE QU'UNE REFONTE POURRAIT AMÉLIORER",
+
+        improvementIntro:
+          "Cette piste illustre comment une refonte pourrait mieux structurer les contenus existants et renforcer l'efficacité du site.",
+      };
+
+    case "new_website":
+      return {
+        title:
+          "Une nouvelle approche pour votre site",
+
+        introLine1:
+          "Cette proposition illustre une direction possible pour un nouveau site construit autour de vos prestations et de vos objectifs.",
+
+        introLine2:
+          "Il ne s'agit pas d'une maquette définitive, mais d'un exemple permettant de visualiser une nouvelle base de travail.",
+
+        currentLabel:
+          "SITE ACTUEL",
+
+        proposalLabel:
+          "NOUVELLE ORIENTATION",
+
+        improvementTitle:
+          "CE QU'UN NOUVEAU SITE POURRAIT APPORTER",
+
+        improvementIntro:
+          "Cette piste illustre comment une nouvelle base pourrait intégrer dès sa conception les principaux enjeux identifiés lors de l'audit.",
+      };
   }
 }
 
