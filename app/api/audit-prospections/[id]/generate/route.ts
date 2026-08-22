@@ -620,6 +620,7 @@ export async function POST(
           proposal_type,
           recipient_email,
           recipient_name,
+          after_image_url,
           attachment_url,
           status
         `
@@ -723,6 +724,37 @@ export async function POST(
           .type;
     }
 
+    const previousProposalType =
+      isProposalType(
+        prospection.proposal_type
+      )
+        ? prospection.proposal_type
+        : null;
+
+    const proposalTypeChanged =
+      previousProposalType !==
+      null &&
+      previousProposalType !==
+        proposalType;
+
+    /*
+     * Les assets visuels sont liés
+     * au choix commercial.
+     *
+     * Si l'angle change :
+     * - l'ancienne projection visuelle
+     *   devient obsolète ;
+     * - l'ancien PDF devient obsolète.
+     *
+     * En optimisation seule :
+     * - aucune projection n'est nécessaire ;
+     * - aucun PDF ne doit rester associé.
+     */
+    const shouldInvalidateVisualAssets =
+      proposalTypeChanged ||
+      proposalType ===
+        "optimization";
+
     const proposalLabel =
       getProposalLabel(
         proposalType
@@ -783,7 +815,15 @@ export async function POST(
       );
     }
 
+    /*
+     * Un ancien PDF ne doit jamais
+     * influencer la rédaction si
+     * l'angle commercial vient de
+     * changer ou si l'on passe en
+     * optimisation seule.
+     */
     const hasAttachment =
+      !shouldInvalidateVisualAssets &&
       Boolean(
         prospection
           .attachment_url
@@ -1094,16 +1134,25 @@ Exemples :
 PIÈCE JOINTE
 ==================================================
 
-Une pièce jointe est ${
+Une pièce jointe compatible avec cette proposition est ${
       hasAttachment
         ? "PRÉSENTE."
         : "ABSENTE."
     }
 
 ${
-  hasAttachment
+  proposalType ===
+  "optimization"
     ? `
-Le document est déjà joint.
+Cette prospection porte uniquement sur l'optimisation du site existant.
+
+Aucun PDF n'est nécessaire.
+
+Ne mentionne aucune pièce jointe dans le mail.
+`
+    : hasAttachment
+      ? `
+Le document est déjà joint et correspond à l'angle commercial actuel.
 
 Tu peux le mentionner si cela est pertinent.
 
@@ -1113,10 +1162,14 @@ Ne dis jamais :
 
 "Je peux vous la montrer."
 `
-    : `
-Aucune pièce jointe n'est disponible.
+      : `
+Aucune pièce jointe compatible avec l'angle commercial actuel n'est disponible au moment de la rédaction.
 
 Ne prétends jamais qu'un document est joint.
+
+Le mail doit fonctionner parfaitement seul.
+
+Une projection pourra être générée ensuite dans LBMedia Office avant l'envoi.
 `
 }
 
@@ -1190,6 +1243,62 @@ Retourne UNIQUEMENT cet objet JSON valide :
       );
     }
 
+    const updatePayload: {
+      proposal_type: ProposalType;
+      sales_angle: string;
+      subject: string;
+      email_content: string;
+      status: "ready";
+      updated_at: string;
+      after_image_url?: null;
+      attachment_url?: null;
+    } = {
+      proposal_type:
+        proposalType,
+
+      sales_angle:
+        generated.salesAngle,
+
+      subject:
+        generated.subject,
+
+      email_content:
+        generated.emailContent,
+
+      status:
+        "ready",
+
+      updated_at:
+        new Date()
+          .toISOString(),
+    };
+
+    /*
+     * Invalidation automatique :
+     *
+     * - changement d'angle :
+     *   projection + PDF supprimés
+     *   de la prospection ;
+     *
+     * - optimisation seule :
+     *   projection + PDF toujours
+     *   supprimés, car inutiles.
+     *
+     * La capture du site actuel
+     * (before_image_url) est conservée :
+     * elle pourra resservir si l'on
+     * choisit ensuite un autre angle.
+     */
+    if (
+      shouldInvalidateVisualAssets
+    ) {
+      updatePayload.after_image_url =
+        null;
+
+      updatePayload.attachment_url =
+        null;
+    }
+
     const {
       data: updated,
       error:
@@ -1198,26 +1307,9 @@ Retourne UNIQUEMENT cet objet JSON valide :
       .from(
         "audit_prospections"
       )
-      .update({
-        proposal_type:
-          proposalType,
-
-        sales_angle:
-          generated.salesAngle,
-
-        subject:
-          generated.subject,
-
-        email_content:
-          generated.emailContent,
-
-        status:
-          "ready",
-
-        updated_at:
-          new Date()
-            .toISOString(),
-      })
+      .update(
+        updatePayload
+      )
       .eq(
         "id",
         prospection.id
@@ -1234,6 +1326,8 @@ Retourne UNIQUEMENT cet objet JSON valide :
           subject,
           email_content,
           sales_angle,
+          before_image_url,
+          after_image_url,
           attachment_url,
           sent_at,
           follow_up_at,
@@ -1254,6 +1348,11 @@ Retourne UNIQUEMENT cet objet JSON valide :
 
     return NextResponse.json({
       success: true,
+
+      proposalTypeChanged,
+
+      assetsInvalidated:
+        shouldInvalidateVisualAssets,
 
       prospection:
         updated,
