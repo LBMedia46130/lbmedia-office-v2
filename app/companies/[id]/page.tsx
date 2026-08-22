@@ -29,6 +29,8 @@ import {
 
 import {
   getCompanyWebsiteAudits,
+  getWebsiteAuditById,
+  getWebsiteAuditCommercialDiagnosis,
 } from "@/lib/website-audits";
 
 import {
@@ -79,12 +81,35 @@ export default async function CompanyPage({
     websiteAudits[0] ??
     null;
 
-  const latestProspection =
-    latestAudit
-      ? await getAuditProspectionByAuditId(
+  const [
+    latestProspection,
+    latestFullAudit,
+  ] = latestAudit
+    ? await Promise.all([
+        getAuditProspectionByAuditId(
           latestAudit.id
+        ),
+        getWebsiteAuditById(
+          latestAudit.id
+        ),
+      ])
+    : [
+        null,
+        null,
+      ];
+
+  const commercialDiagnosis =
+    latestFullAudit
+      ? getWebsiteAuditCommercialDiagnosis(
+          latestFullAudit
         )
       : null;
+
+  const recommendedProposalType =
+    commercialDiagnosis
+      ?.recommendation
+      .type ??
+    "optimization";
 
   const fullAddress = [
     company.address,
@@ -656,7 +681,7 @@ export default async function CompanyPage({
                       }
                     />
 
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-white px-4 py-4">
+                    <div className="mt-5 rounded-xl border border-indigo-100 bg-white p-5">
                       <div>
                         <p className="text-sm font-semibold text-slate-800">
                           {latestProspection.email_content
@@ -665,19 +690,30 @@ export default async function CompanyPage({
                         </p>
 
                         <p className="mt-1 text-xs leading-5 text-slate-500">
-                          Une nouvelle génération
-                          remplacera l’objet,
-                          l’angle commercial et
-                          le message actuellement
+                          Choisis l’approche
+                          commerciale avant de
+                          générer. Une nouvelle
+                          génération remplacera
+                          l’objet, l’angle
+                          commercial et le
+                          message actuellement
                           enregistrés.
                         </p>
                       </div>
 
-                      <AuditProspectionGenerator
-                        prospectionId={
-                          latestProspection.id
-                        }
-                      />
+                      <div className="mt-5">
+                        <AuditProspectionGenerator
+                          prospectionId={
+                            latestProspection.id
+                          }
+                          recommendedProposalType={
+                            recommendedProposalType
+                          }
+                          currentProposalType={
+                            latestProspection.proposal_type
+                          }
+                        />
+                      </div>
                     </div>
                   </>
                 ) : null}
