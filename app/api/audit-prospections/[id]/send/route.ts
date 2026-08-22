@@ -38,6 +38,12 @@ type SendRequestBody = {
   confirmedRecipientEmail?: unknown;
 };
 
+type ProposalType =
+  | "optimization"
+  | "optimization_redesign"
+  | "redesign"
+  | "new_website";
+
 const SIGNATURE_LOGO_CID =
   "lbmedia-signature-logo";
 
@@ -65,6 +71,34 @@ function normalizeEmail(
       ?.trim()
       .toLowerCase() ??
     ""
+  );
+}
+
+function normalizeProposalType(
+  value: unknown
+): ProposalType {
+  if (
+    value ===
+      "optimization" ||
+    value ===
+      "optimization_redesign" ||
+    value ===
+      "redesign" ||
+    value ===
+      "new_website"
+  ) {
+    return value;
+  }
+
+  return "optimization";
+}
+
+function proposalRequiresPdf(
+  proposalType: ProposalType
+) {
+  return (
+    proposalType !==
+    "optimization"
   );
 }
 
@@ -470,6 +504,7 @@ export async function POST(
           company_id,
           website_audit_id,
           status,
+          proposal_type,
           recipient_email,
           recipient_name,
           subject,
@@ -537,6 +572,16 @@ export async function POST(
       );
     }
 
+    const proposalType =
+      normalizeProposalType(
+        prospection.proposal_type
+      );
+
+    const requiresPdf =
+      proposalRequiresPdf(
+        proposalType
+      );
+
     const recipientEmail =
       prospection
         .recipient_email
@@ -597,10 +642,27 @@ export async function POST(
         .email_content
         ?.trim();
 
-    const attachmentUrl =
+    /*
+     * Règle métier définitive :
+     *
+     * - optimisation seule :
+     *   aucune pièce jointe,
+     *   même si une ancienne URL
+     *   existe encore en base ;
+     *
+     * - tous les autres angles :
+     *   le PDF est obligatoire.
+     */
+    const storedAttachmentUrl =
       prospection
         .attachment_url
-        ?.trim();
+        ?.trim() ||
+      null;
+
+    const attachmentUrl =
+      requiresPdf
+        ? storedAttachmentUrl
+        : null;
 
     if (
       !subject
@@ -633,13 +695,14 @@ export async function POST(
     }
 
     if (
+      requiresPdf &&
       !attachmentUrl
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Aucun PDF n'est associé à cette prospection.",
+            "Cette proposition nécessite un PDF. Générez la projection avant l’envoi.",
         },
         {
           status: 400,
@@ -649,10 +712,6 @@ export async function POST(
 
     /*
      * Nouvelle lecture de sécurité juste avant l'envoi.
-     *
-     * Si une modification concurrente a changé le destinataire
-     * ou le contenu entre le chargement initial et l'envoi SMTP,
-     * l'envoi est interrompu.
      */
     const {
       data:
@@ -667,6 +726,7 @@ export async function POST(
         `
           id,
           status,
+          proposal_type,
           recipient_email,
           subject,
           email_content,
@@ -747,16 +807,40 @@ export async function POST(
       );
     }
 
+    const securityProposalType =
+      normalizeProposalType(
+        securityCheck.proposal_type
+      );
+
+    if (
+      securityProposalType !==
+      proposalType
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Sécurité : le type de proposition a changé avant l’envoi. Rechargez la fiche avant de poursuivre.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    const securityAttachmentUrl =
+      securityCheck
+        .attachment_url
+        ?.trim() ||
+      null;
+
     if (
       securityCheck.subject
         ?.trim() !==
         subject ||
       securityCheck.email_content
         ?.trim() !==
-        emailContent ||
-      securityCheck.attachment_url
-        ?.trim() !==
-        attachmentUrl
+        emailContent
     ) {
       return NextResponse.json(
         {
@@ -770,49 +854,84 @@ export async function POST(
       );
     }
 
-    const attachmentResponse =
-      await fetch(
-        attachmentUrl,
-        {
-          cache:
-            "no-store",
-        }
-      );
-
+    /*
+     * On ne compare la pièce jointe
+     * que lorsqu'elle est réellement
+     * nécessaire.
+     *
+     * En optimisation seule, une
+     * ancienne attachment_url n'a
+     * aucune incidence sur l'envoi.
+     */
     if (
-      !attachmentResponse.ok
+      requiresPdf &&
+      securityAttachmentUrl !==
+        attachmentUrl
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Impossible de récupérer le PDF à joindre.",
+            "Sécurité : le PDF de la proposition a changé avant l’envoi. Rechargez la fiche et vérifiez la pièce jointe.",
         },
         {
-          status: 502,
+          status: 409,
         }
       );
     }
 
-    const attachmentBuffer =
-      Buffer.from(
-        await attachmentResponse.arrayBuffer()
-      );
+    let attachmentBuffer:
+      | Buffer
+      | null = null;
 
     if (
-      attachmentBuffer.length ===
-      0
+      requiresPdf &&
+      attachmentUrl
     ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Le PDF à joindre est vide.",
-        },
-        {
-          status: 400,
-        }
-      );
+      const attachmentResponse =
+        await fetch(
+          attachmentUrl,
+          {
+            cache:
+              "no-store",
+          }
+        );
+
+      if (
+        !attachmentResponse.ok
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Impossible de récupérer le PDF à joindre.",
+          },
+          {
+            status: 502,
+          }
+        );
+      }
+
+      attachmentBuffer =
+        Buffer.from(
+          await attachmentResponse.arrayBuffer()
+        );
+
+      if (
+        attachmentBuffer.length ===
+        0
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Le PDF à joindre est vide.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
     }
 
     const signatureLogoPath =
@@ -875,9 +994,6 @@ export async function POST(
         },
       });
 
-    /*
-     * Vérification de la connexion SMTP AVANT l'envoi.
-     */
     await transporter.verify();
 
     const htmlContent =
@@ -887,6 +1003,55 @@ export async function POST(
 
     const textContent =
       `${emailContent}\n\n${getTextSignature()}`;
+
+    /*
+     * Le logo de signature est toujours
+     * présent.
+     *
+     * Le PDF n'est ajouté que lorsque
+     * l'angle commercial l'exige.
+     */
+    const attachments:
+      Parameters<
+        typeof transporter.sendMail
+      >[0]["attachments"] =
+      [];
+
+    if (
+      requiresPdf &&
+      attachmentUrl &&
+      attachmentBuffer
+    ) {
+      attachments.push({
+        filename:
+          getPdfFilename(
+            attachmentUrl
+          ),
+
+        content:
+          attachmentBuffer,
+
+        contentType:
+          "application/pdf",
+      });
+    }
+
+    attachments.push({
+      filename:
+        "lbmedia-logo.png",
+
+      content:
+        signatureLogoBuffer,
+
+      contentType:
+        "image/png",
+
+      cid:
+        SIGNATURE_LOGO_CID,
+
+      contentDisposition:
+        "inline",
+    });
 
     const sendResult =
       await transporter.sendMail({
@@ -920,37 +1085,7 @@ export async function POST(
         html:
           htmlContent,
 
-        attachments: [
-          {
-            filename:
-              getPdfFilename(
-                attachmentUrl
-              ),
-
-            content:
-              attachmentBuffer,
-
-            contentType:
-              "application/pdf",
-          },
-
-          {
-            filename:
-              "lbmedia-logo.png",
-
-            content:
-              signatureLogoBuffer,
-
-            contentType:
-              "image/png",
-
-            cid:
-              SIGNATURE_LOGO_CID,
-
-            contentDisposition:
-              "inline",
-          },
-        ],
+        attachments,
 
         headers: {
           "X-LBMedia-Office":
@@ -964,6 +1099,9 @@ export async function POST(
 
           "X-LBMedia-Audit-ID":
             prospection.website_audit_id,
+
+          "X-LBMedia-Proposal-Type":
+            proposalType,
         },
       });
 
@@ -989,6 +1127,8 @@ export async function POST(
         {
           prospectionId:
             prospection.id,
+
+          proposalType,
 
           recipientEmail,
 
@@ -1024,11 +1164,11 @@ export async function POST(
         .toISOString();
 
     /*
-     * Archivage de la version EXACTEMENT envoyée.
+     * Photographie exacte de l'envoi.
      *
-     * email_content reste le brouillon de travail.
-     * Les champs sent_* constituent la photographie figée
-     * du message accepté par le serveur SMTP.
+     * En optimisation seule,
+     * sent_attachment_url est
+     * explicitement null.
      */
     const {
       data:
@@ -1090,6 +1230,8 @@ export async function POST(
           prospectionId:
             prospection.id,
 
+          proposalType,
+
           messageId:
             sendResult.messageId,
 
@@ -1130,16 +1272,6 @@ export async function POST(
       );
     }
 
-    /*
-     * Historique commercial indépendant.
-     *
-     * L'envoi SMTP et l'archivage principal ont déjà réussi.
-     * On ajoute maintenant le premier message dans
-     * audit_prospection_messages.
-     *
-     * Une erreur à ce stade ne doit jamais faire croire
-     * que l'e-mail n'a pas été envoyé.
-     */
     try {
       await createInitialAuditProspectionMessage({
         auditProspectionId:
@@ -1170,6 +1302,8 @@ export async function POST(
           prospectionId:
             prospection.id,
 
+          proposalType,
+
           messageId:
             sendResult.messageId,
 
@@ -1194,6 +1328,11 @@ export async function POST(
 
         auditId:
           prospection.website_audit_id,
+
+        proposalType,
+
+        pdfAttached:
+          requiresPdf,
 
         recipient:
           recipientEmail,
@@ -1226,6 +1365,11 @@ export async function POST(
       sentAt,
 
       recipientEmail,
+
+      proposalType,
+
+      pdfAttached:
+        requiresPdf,
 
       prospection:
         updated,
