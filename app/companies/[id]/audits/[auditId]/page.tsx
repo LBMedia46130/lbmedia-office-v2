@@ -10,6 +10,7 @@ import {
 
 import {
   getWebsiteAuditById,
+  getWebsiteAuditCommercialDiagnosis,
 } from "@/lib/website-audits";
 
 export const dynamic =
@@ -60,6 +61,11 @@ export default async function AuditDetailPage({
   ) {
     notFound();
   }
+
+  const commercialDiagnosis =
+    getWebsiteAuditCommercialDiagnosis(
+      audit
+    );
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -205,13 +211,153 @@ export default async function AuditDetailPage({
           />
         </section>
 
+        <section className="mt-8 overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm">
+          <div className="border-b border-indigo-100 bg-indigo-50 px-7 py-5">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
+              Diagnostic commercial
+            </p>
+
+            <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  Recommandation LBMedia
+                </p>
+
+                <h2 className="mt-1 text-3xl font-bold text-slate-950">
+                  {
+                    commercialDiagnosis
+                      .recommendation
+                      .label
+                  }
+                </h2>
+              </div>
+
+              <RecommendationBadge
+                type={
+                  commercialDiagnosis
+                    .recommendation
+                    .type
+                }
+                label={
+                  commercialDiagnosis
+                    .recommendation
+                    .short_label
+                }
+              />
+            </div>
+          </div>
+
+          <div className="p-7">
+            <p className="text-base leading-7 text-slate-700">
+              {
+                commercialDiagnosis
+                  .commercial_summary
+              }
+            </p>
+
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              {
+                commercialDiagnosis
+                  .recommendation
+                  .description
+              }
+            </p>
+
+            <div className="mt-7 grid gap-4 md:grid-cols-2">
+              <CommercialScoreCard
+                label="Visibilité"
+                description="SEO · SEO local · GEO / IA"
+                score={
+                  commercialDiagnosis
+                    .visibility_score
+                }
+                severity={
+                  commercialDiagnosis
+                    .visibility_severity
+                }
+              />
+
+              <CommercialScoreCard
+                label="Efficacité du site"
+                description="Positionnement · conversion · qualité globale"
+                score={
+                  commercialDiagnosis
+                    .website_effectiveness_score
+                }
+                severity={
+                  commercialDiagnosis
+                    .website_severity
+                }
+              />
+            </div>
+
+            {commercialDiagnosis
+              .main_issues.length >
+            0 ? (
+              <div className="mt-7">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Enjeux principaux
+                </p>
+
+                <ul className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {commercialDiagnosis
+                    .main_issues
+                    .map(
+                      (
+                        issue,
+                        index
+                      ) => (
+                        <li
+                          key={`${issue}-${index}`}
+                          className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700"
+                        >
+                          <span className="font-bold text-indigo-600">
+                            •
+                          </span>
+
+                          <span>
+                            {
+                              issue
+                            }
+                          </span>
+                        </li>
+                      )
+                    )}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className="mt-7 grid gap-5 lg:grid-cols-2">
+              <CommercialWeaknessList
+                title="Visibilité & acquisition"
+                description="SEO, SEO local, contenus et compréhension par les moteurs et IA."
+                items={
+                  commercialDiagnosis
+                    .weaknesses
+                    .visibility
+                }
+              />
+
+              <CommercialWeaknessList
+                title="Site & conversion"
+                description="Présentation, lisibilité, parcours, conversion et efficacité commerciale."
+                items={
+                  commercialDiagnosis
+                    .weaknesses
+                    .website
+                }
+              />
+            </div>
+          </div>
+        </section>
+
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
             Diagnostic
           </p>
 
           <h2 className="mt-2 text-2xl font-bold text-slate-900">
-            Synthèse
+            Synthèse de l’audit
           </h2>
 
           <p className="mt-5 whitespace-pre-line text-sm leading-7 text-slate-700">
@@ -356,6 +502,166 @@ export default async function AuditDetailPage({
         </div>
       </div>
     </main>
+  );
+}
+
+function RecommendationBadge({
+  type,
+  label,
+}: {
+  type:
+    | "optimization"
+    | "redesign"
+    | "new_website";
+  label: string;
+}) {
+  const className =
+    type === "new_website"
+      ? "border-rose-200 bg-rose-50 text-rose-700"
+      : type === "redesign"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-emerald-200 bg-emerald-50 text-emerald-700";
+
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full border px-4 py-2 text-sm font-bold ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function CommercialScoreCard({
+  label,
+  description,
+  score,
+  severity,
+}: {
+  label: string;
+  description: string;
+  score: number;
+  severity:
+    | "low"
+    | "medium"
+    | "high";
+}) {
+  const severityLabel =
+    severity === "high"
+      ? "Prioritaire"
+      : severity === "medium"
+        ? "À renforcer"
+        : "Satisfaisant";
+
+  const severityClassName =
+    severity === "high"
+      ? "text-rose-600"
+      : severity === "medium"
+        ? "text-amber-600"
+        : "text-emerald-600";
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="font-bold text-slate-900">
+            {label}
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            {description}
+          </p>
+        </div>
+
+        <div className="text-right">
+          <p className="text-2xl font-bold text-slate-950">
+            {score}
+            <span className="ml-1 text-xs font-medium text-slate-400">
+              /100
+            </span>
+          </p>
+
+          <p
+            className={`mt-1 text-xs font-bold ${severityClassName}`}
+          >
+            {
+              severityLabel
+            }
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-200">
+        <div
+          className="h-full rounded-full bg-indigo-600"
+          style={{
+            width: `${Math.max(
+              0,
+              Math.min(
+                100,
+                score
+              )
+            )}%`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function CommercialWeaknessList({
+  title,
+  description,
+  items,
+}: {
+  title: string;
+  description: string;
+  items: string[];
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <h3 className="font-bold text-slate-900">
+        {title}
+      </h3>
+
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        {description}
+      </p>
+
+      {items.length > 0 ? (
+        <ul className="mt-4 space-y-3">
+          {items
+            .slice(
+              0,
+              5
+            )
+            .map(
+              (
+                item,
+                index
+              ) => (
+                <li
+                  key={`${item}-${index}`}
+                  className="flex gap-3 text-sm leading-6 text-slate-700"
+                >
+                  <span className="mt-1 font-bold text-indigo-600">
+                    •
+                  </span>
+
+                  <span>
+                    {item}
+                  </span>
+                </li>
+              )
+            )}
+        </ul>
+      ) : (
+        <p className="mt-4 text-sm italic text-slate-400">
+          Aucun point
+          prioritaire identifié
+          dans cette catégorie.
+        </p>
+      )}
+    </div>
   );
 }
 
