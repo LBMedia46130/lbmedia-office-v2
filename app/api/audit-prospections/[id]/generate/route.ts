@@ -117,9 +117,21 @@ Ne propose aucune refonte dans ce scénario.
       return `
 La proposition commerciale choisie est OPTIMISATION + REFONTE.
 
-C'est impérativement un scénario commercial en DEUX NIVEAUX.
+C'est un scénario commercial comportant deux dimensions, mais cette structure doit rester INVISIBLE dans la rédaction du mail.
 
-NIVEAU 1 — OPTIMISATION
+N'écris jamais :
+
+"Notre proposition se déroule en deux temps."
+
+"Notre proposition comporte deux étapes."
+
+"Notre approche se déroule en deux temps."
+
+"Nous vous proposons dans un premier temps..."
+
+Le prospect doit lire un message naturel, pas la présentation d'une méthodologie commerciale.
+
+PREMIÈRE DIMENSION — OPTIMISATION
 
 Présente d'abord les améliorations réellement justifiées par l'audit :
 
@@ -131,21 +143,33 @@ Présente d'abord les améliorations réellement justifiées par l'audit :
 - conversion ;
 - prise de contact.
 
-Explique qu'une optimisation ciblée de l'existant peut déjà produire des améliorations concrètes.
+Explique naturellement qu'une optimisation ciblée de l'existant peut déjà produire des améliorations concrètes.
 
-NIVEAU 2 — ÉVOLUTION / REFONTE
+Tu peux écrire par exemple :
+
+"Quelques optimisations ciblées pourraient déjà renforcer la visibilité et l'efficacité du site."
+
+"Une optimisation de la visibilité locale, des contenus et de la prise de contact permettrait déjà de mieux exploiter la base existante."
+
+DEUXIÈME DIMENSION — ÉVOLUTION / REFONTE
 
 Le corps du mail DOIT ensuite contenir explicitement une ouverture vers une évolution plus globale du site.
 
-Cette deuxième partie est OBLIGATOIRE.
+Cette deuxième dimension est OBLIGATOIRE.
 
-Il ne suffit pas de mentionner la refonte dans l'angle commercial interne.
+Elle doit s'enchaîner naturellement avec l'optimisation, sans annoncer artificiellement une deuxième étape.
 
-Elle doit apparaître naturellement dans le texte réellement envoyé au prospect.
+Utilise une transition conversationnelle telle que :
+
+"Et si vous souhaitez aller plus loin..."
+
+"Cela peut aussi être l'occasion d'aller un peu plus loin..."
+
+"Ces améliorations peuvent également être l'occasion de faire évoluer plus largement..."
 
 Si le diagnostic automatique recommande seulement une optimisation, tu ne dois JAMAIS inventer de défaut de design ni affirmer qu'une refonte est nécessaire.
 
-Dans ce cas, présente la refonte comme une possibilité complémentaire permettant par exemple :
+Dans ce cas, présente cette évolution comme une possibilité complémentaire permettant par exemple :
 
 - de faire évoluer la présentation ;
 - de mieux hiérarchiser les prestations ;
@@ -153,21 +177,13 @@ Dans ce cas, présente la refonte comme une possibilité complémentaire permett
 - de renforcer l'impact commercial du site ;
 - d'intégrer les optimisations dans une évolution plus globale.
 
-La logique du mail doit donc être clairement :
-
-"Une optimisation ciblée peut déjà améliorer l'efficacité du site."
-
-PUIS :
-
-"Si vous souhaitez aller plus loin, cela peut aussi être l'occasion de faire évoluer plus largement sa présentation et son organisation."
-
 Tu peux utiliser des formulations naturelles telles que :
 
 "Une optimisation ciblée du site pourrait déjà renforcer sa visibilité et son efficacité sans nécessairement repartir de zéro."
 
-"Cela peut aussi être l'occasion d'aller un peu plus loin, en faisant évoluer la présentation et l'organisation du site afin de mieux mettre en valeur vos différentes prestations."
+"Et si vous souhaitez aller plus loin, cela peut aussi être l'occasion de faire évoluer la présentation et l'organisation du site afin de mieux mettre en valeur vos différentes prestations."
 
-"Il ne s'agit pas nécessairement de tout refaire, mais plutôt de profiter de ces améliorations pour donner davantage d'impact à l'ensemble."
+"Ces améliorations peuvent également être l'occasion de donner davantage d'impact à l'ensemble, sans pour autant tout reprendre depuis zéro."
 
 IMPORTANT :
 
@@ -181,7 +197,9 @@ OPTIMISATION = RÉPONSE IMMÉDIATE AUX CONSTATS
 
 +
 
-REFONTE = OPPORTUNITÉ COMMERCIALE POUR ALLER PLUS LOIN.
+REFONTE = OPPORTUNITÉ POUR ALLER PLUS LOIN.
+
+Cette logique doit être perceptible dans le fond, mais ne doit jamais être présentée au prospect comme une mécanique commerciale en "deux temps".
 `.trim();
 
     case "redesign":
@@ -563,6 +581,38 @@ Tu ne dois JAMAIS modifier, amplifier ou inventer des faiblesses afin de justifi
 Si la proposition choisie est plus ambitieuse que le diagnostic, tu dois la présenter comme une possibilité ou une manière d'aller plus loin.
 
 ==================================================
+COHÉRENCE DE LA VOIX
+==================================================
+
+Le mail est écrit à la première personne du singulier.
+
+Utilise "je" lorsque l'auteur du mail intervient personnellement.
+
+Ne bascule jamais de "je" vers "nous" au milieu du message.
+
+Évite notamment :
+
+"Nous pouvons..."
+
+"Nous vous proposons..."
+
+"Notre proposition..."
+
+"Notre approche..."
+
+"Notre analyse..."
+
+Préférer selon le contexte :
+
+"Je pense que..."
+
+"Je serais ravi d'en échanger avec vous."
+
+ou une formulation neutre ne nécessitant aucun pronom.
+
+La marque LBMedia peut être mentionnée si nécessaire, mais le message doit conserver la voix naturelle d'une personne qui écrit directement au prospect.
+
+==================================================
 ENTREPRISE
 ==================================================
 
@@ -819,6 +869,20 @@ Pas de ton commercial agressif.
 
 Pas de formulation ressemblant à une IA.
 
+Le mail ne doit pas exposer la mécanique commerciale utilisée pour le construire.
+
+Évite donc les formulations comme :
+
+"Ma proposition est..."
+
+"Mon approche consiste à..."
+
+"Cette proposition se déroule..."
+
+"Dans un premier temps, je vous propose..."
+
+Présente directement les pistes de façon naturelle.
+
 ==================================================
 DÉBUT DU MAIL
 ==================================================
@@ -921,7 +985,7 @@ Le mail doit suivre une progression naturelle :
 2. Une phrase montrant que le site a réellement été parcouru.
 3. Un constat positif et sincère sur l'existant.
 4. Un ou deux paragraphes courts présentant naturellement les améliorations identifiées.
-5. La proposition commerciale choisie.
+5. La proposition commerciale choisie, intégrée au texte sans annoncer une méthodologie ou un plan.
 6. Une conclusion légère ouvrant la discussion.
 
 Ne transforme jamais les points 4 et 5 en listes à puces.
@@ -932,7 +996,7 @@ ${
     ? `
 RÈGLE SUPPLÉMENTAIRE OBLIGATOIRE POUR CE MAIL :
 
-Le point 5 doit comporter DEUX TEMPS distincts dans le corps du mail :
+Le contenu doit comporter DEUX DIMENSIONS commerciales, mais elles doivent s'enchaîner naturellement.
 
 A. expliquer qu'une optimisation ciblée peut déjà améliorer la visibilité et/ou l'efficacité du site ;
 
@@ -942,9 +1006,32 @@ La partie B ne doit jamais disparaître lors de la rédaction.
 
 La partie B ne doit jamais présenter la refonte comme obligatoire.
 
-Avant de retourner ton JSON, vérifie explicitement que emailContent contient bien ces DEUX dimensions.
+N'annonce jamais cette progression par une phrase comme :
 
-Si ce n'est pas le cas, réécris emailContent avant de répondre.
+"Notre proposition se déroule en deux temps."
+
+"Je vous propose deux étapes."
+
+"L'approche comporte deux volets."
+
+"Dans un premier temps, nous..."
+
+Fais simplement suivre l'optimisation par une transition naturelle :
+
+"Et si vous souhaitez aller plus loin..."
+
+"Cela peut aussi être l'occasion..."
+
+"Ces améliorations peuvent également être l'occasion..."
+
+Avant de retourner ton JSON, vérifie explicitement que emailContent contient bien :
+
+- l'optimisation comme réponse concrète aux constats ;
+- l'évolution/refonte comme possibilité complémentaire ;
+- aucune présentation artificielle en "deux temps" ;
+- aucune bascule de "je" vers "nous".
+
+Si l'une de ces conditions n'est pas respectée, réécris emailContent avant de répondre.
 `
     : ""
 }
@@ -1024,7 +1111,7 @@ Retourne UNIQUEMENT cet objet JSON valide :
               "system",
 
             content:
-              "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées. Le diagnostic fourni reste factuel. La proposition commerciale choisie pilote réellement le contenu du message mais ne doit jamais conduire à inventer ou exagérer des défauts du site. Le mail final doit être fluide et ne jamais ressembler à une restitution technique d'audit.",
+              "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le diagnostic fourni reste factuel. La proposition commerciale choisie pilote réellement le contenu du message mais ne doit jamais conduire à inventer ou exagérer des défauts du site. Le mail final doit être fluide, ne jamais ressembler à une restitution technique d'audit et ne jamais exposer sa mécanique commerciale.",
           },
           {
             role:
