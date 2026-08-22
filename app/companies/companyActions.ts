@@ -62,39 +62,49 @@ export async function createCompany(
     .from("companies")
     .insert({
       name: name.trim(),
+
       legal_name:
         optionalValue(
           formData,
           "legal_name"
         ),
+
       email:
         optionalValue(
           formData,
           "email"
         ),
+
       phone:
         optionalValue(
           formData,
           "phone"
         ),
+
       website:
         optionalValue(
           formData,
           "website"
         ),
+
       postal_code:
         optionalValue(
           formData,
           "postal_code"
         ),
+
       city:
         optionalValue(
           formData,
           "city"
         ),
-      is_active: true,
+
+      is_active:
+        true,
+
       relationship_status:
         "prospect",
+
       pipeline_stage:
         "new",
     })
@@ -105,7 +115,9 @@ export async function createCompany(
     error ||
     !data
   ) {
-    console.error(error);
+    console.error(
+      error
+    );
 
     return {
       success: false,
@@ -123,27 +135,81 @@ export async function createCompany(
   );
 }
 
+/*
+ * Une entreprise n'est jamais
+ * supprimée physiquement depuis
+ * LBMedia Office.
+ *
+ * La suppression depuis l'interface
+ * correspond à un archivage :
+ * is_active passe à false.
+ *
+ * Cela permet de conserver :
+ * - la fiche CRM ;
+ * - le zoho_contact_id ;
+ * - les liens avec devis/factures ;
+ * - l'historique commercial ;
+ * - les données liées à l'entreprise.
+ *
+ * Aucun appel Zoho n'est effectué ici.
+ */
 export async function deleteCompany(
   id: string
 ): Promise<CompanyActionResult> {
-  const { error } =
-    await supabaseAdmin
-      .from("companies")
-      .delete()
-      .eq("id", id);
+  const {
+    data,
+    error,
+  } = await supabaseAdmin
+    .from(
+      "companies"
+    )
+    .update({
+      is_active:
+        false,
+    })
+    .eq(
+      "id",
+      id
+    )
+    .select(
+      `
+        id,
+        name,
+        is_active
+      `
+    )
+    .maybeSingle();
 
-  if (error) {
-    console.error(error);
+  if (
+    error
+  ) {
+    console.error(
+      error
+    );
 
     return {
       success: false,
       message:
-        "Impossible de supprimer l’entreprise.",
+        "Impossible d’archiver l’entreprise.",
+    };
+  }
+
+  if (
+    !data
+  ) {
+    return {
+      success: false,
+      message:
+        "Entreprise introuvable.",
     };
   }
 
   revalidatePath(
     "/companies"
+  );
+
+  revalidatePath(
+    `/companies/${id}`
   );
 
   redirect(
