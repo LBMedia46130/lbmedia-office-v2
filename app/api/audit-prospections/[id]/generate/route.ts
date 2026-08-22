@@ -88,11 +88,11 @@ function getProposalInstructions(
       return `
 La proposition commerciale choisie est une OPTIMISATION DU SITE EXISTANT.
 
-Tu dois valoriser la base actuelle.
+Le mail doit valoriser la base actuelle.
 
-Le message doit faire comprendre que LBMedia ne considère pas qu'il soit nécessaire de repartir de zéro.
+Il doit expliquer que des améliorations ciblées peuvent être apportées sans remettre en cause l'ensemble du site.
 
-Les pistes peuvent porter sur :
+Les pistes peuvent concerner :
 
 - SEO ;
 - SEO local ;
@@ -102,136 +102,119 @@ Les pistes peuvent porter sur :
 - conversion ;
 - prise de contact.
 
-Tu peux employer des formulations comme :
+Le corps du mail doit clairement proposer une OPTIMISATION.
 
-"Votre site constitue déjà une bonne base."
-
-"Une refonte complète ne me semble pas nécessairement être la priorité."
-
-"Quelques optimisations ciblées pourraient déjà permettre d'améliorer sa visibilité et son efficacité."
-
-Ne propose aucune refonte dans ce scénario.
+Il ne doit proposer ni refonte ni nouveau site.
 `.trim();
 
     case "optimization_redesign":
       return `
 La proposition commerciale choisie est OPTIMISATION + REFONTE.
 
-C'est un scénario commercial comportant deux dimensions, mais cette structure doit rester INVISIBLE dans la rédaction du mail.
+Le mail doit contenir DEUX DIMENSIONS visibles mais intégrées naturellement au texte.
 
-N'écris jamais :
+1. OPTIMISATION
 
-"Notre proposition se déroule en deux temps."
+Explique que des optimisations ciblées peuvent déjà améliorer :
 
-"Notre proposition comporte deux étapes."
+- la visibilité ;
+- les contenus ;
+- la présentation des prestations ;
+- la prise de contact ;
+- l'efficacité commerciale.
 
-"Notre approche se déroule en deux temps."
+2. ÉVOLUTION / REFONTE
 
-"Nous vous proposons dans un premier temps..."
+Le mail doit ensuite ouvrir explicitement la possibilité d'aller plus loin avec une évolution plus globale de la présentation ou de l'organisation du site.
 
-Le prospect doit lire un message naturel, pas la présentation d'une méthodologie commerciale.
+Cette seconde dimension est OBLIGATOIRE.
 
-PREMIÈRE DIMENSION — OPTIMISATION
+Si l'audit recommande uniquement une optimisation, ne prétends jamais qu'une refonte est nécessaire.
 
-Présente d'abord les améliorations réellement justifiées par l'audit :
+Présente-la comme une possibilité complémentaire.
 
-- SEO ;
-- SEO local ;
-- GEO / visibilité IA ;
-- contenus ;
-- structuration des prestations ;
-- conversion ;
-- prise de contact.
-
-Explique naturellement qu'une optimisation ciblée de l'existant peut déjà produire des améliorations concrètes.
-
-Tu peux écrire par exemple :
+Par exemple :
 
 "Quelques optimisations ciblées pourraient déjà renforcer la visibilité et l'efficacité du site."
 
-"Une optimisation de la visibilité locale, des contenus et de la prise de contact permettrait déjà de mieux exploiter la base existante."
+Puis naturellement :
 
-DEUXIÈME DIMENSION — ÉVOLUTION / REFONTE
+"Et si vous souhaitez aller plus loin, cela peut aussi être l'occasion de faire évoluer plus globalement sa présentation et son organisation afin de mieux mettre en valeur vos différentes prestations."
 
-Le corps du mail DOIT ensuite contenir explicitement une ouverture vers une évolution plus globale du site.
+Ne présente jamais cette logique comme une proposition "en deux temps".
 
-Cette deuxième dimension est OBLIGATOIRE.
-
-Elle doit s'enchaîner naturellement avec l'optimisation, sans annoncer artificiellement une deuxième étape.
-
-Utilise une transition conversationnelle telle que :
-
-"Et si vous souhaitez aller plus loin..."
-
-"Cela peut aussi être l'occasion d'aller un peu plus loin..."
-
-"Ces améliorations peuvent également être l'occasion de faire évoluer plus largement..."
-
-Si le diagnostic automatique recommande seulement une optimisation, tu ne dois JAMAIS inventer de défaut de design ni affirmer qu'une refonte est nécessaire.
-
-Dans ce cas, présente cette évolution comme une possibilité complémentaire permettant par exemple :
-
-- de faire évoluer la présentation ;
-- de mieux hiérarchiser les prestations ;
-- de mieux mettre en valeur les différentes activités ;
-- de renforcer l'impact commercial du site ;
-- d'intégrer les optimisations dans une évolution plus globale.
-
-Tu peux utiliser des formulations naturelles telles que :
-
-"Une optimisation ciblée du site pourrait déjà renforcer sa visibilité et son efficacité sans nécessairement repartir de zéro."
-
-"Et si vous souhaitez aller plus loin, cela peut aussi être l'occasion de faire évoluer la présentation et l'organisation du site afin de mieux mettre en valeur vos différentes prestations."
-
-"Ces améliorations peuvent également être l'occasion de donner davantage d'impact à l'ensemble, sans pour autant tout reprendre depuis zéro."
-
-IMPORTANT :
-
-Le mail final est INCOMPLET s'il ne contient que l'optimisation.
-
-Le mail final est également incorrect s'il présente la refonte comme indispensable alors que l'audit ne le justifie pas.
-
-L'équilibre recherché est :
-
-OPTIMISATION = RÉPONSE IMMÉDIATE AUX CONSTATS
-
-+
-
-REFONTE = OPPORTUNITÉ POUR ALLER PLUS LOIN.
-
-Cette logique doit être perceptible dans le fond, mais ne doit jamais être présentée au prospect comme une mécanique commerciale en "deux temps".
+Le mail doit rester naturel.
 `.trim();
 
     case "redesign":
       return `
 La proposition commerciale choisie est une REFONTE DU SITE EXISTANT.
 
-Le mail doit expliquer avec tact que la base actuelle contient des éléments intéressants mais que l'organisation, la présentation ou le parcours peuvent limiter son efficacité.
+C'est cette orientation qui doit apparaître clairement dans le corps du mail.
 
-Ne critique jamais brutalement le design.
+Même si le diagnostic automatique recommande seulement une optimisation, LBMedia souhaite ici proposer une évolution plus globale du site.
 
-Évite :
+IMPORTANT :
 
-"Votre site est dépassé."
+Tu ne dois pas inventer de défauts.
+
+Tu dois partir des constats réels et expliquer qu'ils pourraient être traités dans le cadre d'une évolution plus globale de la présentation, de l'organisation et de la mise en valeur des prestations.
+
+Le mail doit clairement contenir une idée équivalente à :
+
+"Une évolution plus globale du site pourrait permettre de travailler ces différents points de manière cohérente, tout en faisant évoluer sa présentation et la manière dont vos prestations sont mises en valeur."
+
+ou :
+
+"Plutôt que de traiter ces différents points séparément, il pourrait être intéressant de profiter de ces améliorations pour faire évoluer plus largement la présentation et l'organisation du site."
+
+Le mot "refonte" n'est pas obligatoire.
+
+En revanche, l'idée d'une ÉVOLUTION GLOBALE DU SITE est obligatoire.
+
+Le mail est incorrect s'il se limite à proposer quelques optimisations ponctuelles.
+
+Ne critique jamais brutalement le site.
+
+Ne dis jamais :
 
 "Votre site est vieux."
 
+"Votre site est dépassé."
+
 "Votre site est mal conçu."
 
-Privilégie :
-
-"Le site présente bien votre activité, mais son organisation actuelle ne permet pas toujours de mettre immédiatement en avant les prestations les plus importantes."
-
-"Une évolution plus globale de la présentation pourrait permettre de mieux valoriser l'offre tout en améliorant sa visibilité."
-
-La refonte doit être reliée aux constats réels de l'audit.
+La refonte doit être présentée comme une opportunité d'amélioration globale, pas comme une sanction.
 `.trim();
 
     case "new_website":
       return `
 La proposition commerciale choisie est la CRÉATION D'UN NOUVEAU SITE.
 
-Présente cette piste avec mesure.
+Cette orientation doit apparaître clairement dans le corps du mail.
+
+Même si le diagnostic automatique est moins sévère, LBMedia souhaite ici ouvrir la possibilité de repartir sur une nouvelle base.
+
+IMPORTANT :
+
+Tu ne dois jamais inventer de défauts pour justifier cette proposition.
+
+Tu dois distinguer :
+
+- les constats objectifs issus de l'audit ;
+- la possibilité commerciale de repartir sur une base plus actuelle pour aller plus loin.
+
+Le mail doit obligatoirement contenir une idée équivalente à :
+
+"Si vous souhaitez aller plus loin, il pourrait également être intéressant d'envisager un nouveau site, pensé dès le départ autour de vos prestations, de votre visibilité et de la prise de contact."
+
+ou :
+
+"Une autre possibilité serait de repartir sur une nouvelle base afin d'intégrer dès le départ ces différents enjeux dans un site plus cohérent et plus directement orienté vers vos objectifs actuels."
+
+Le mail est incorrect s'il se limite à parler d'optimisation ou d'évolution ponctuelle.
+
+La création d'un NOUVEAU SITE doit être identifiable sans ambiguïté.
 
 Ne dis jamais :
 
@@ -239,19 +222,9 @@ Ne dis jamais :
 
 "Il faut tout refaire."
 
-Explique plutôt que plusieurs limites peuvent toucher simultanément :
+"Votre site doit être remplacé."
 
-- la visibilité ;
-- la présentation de l'offre ;
-- l'organisation ;
-- la conversion ;
-- la prise de contact.
-
-Formulation possible :
-
-"Dans ce contexte, repartir sur une base plus actuelle pourrait être plus pertinent qu'une succession de corrections ponctuelles."
-
-Cette recommandation doit rester cohérente avec les constats réellement relevés.
+Présente cette piste comme une possibilité commerciale ambitieuse, pas comme une obligation.
 `.trim();
   }
 }
@@ -327,6 +300,269 @@ function formatList(
     .join("\n");
 }
 
+function normalizeText(
+  value: string
+): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    );
+}
+
+function hasAny(
+  value: string,
+  expressions: string[]
+): boolean {
+  const normalized =
+    normalizeText(value);
+
+  return expressions.some(
+    (expression) =>
+      normalized.includes(
+        normalizeText(
+          expression
+        )
+      )
+  );
+}
+
+function matchesProposalType(
+  generated: GeneratedProspection,
+  proposalType: ProposalType
+): boolean {
+  const email =
+    generated.emailContent;
+
+  if (
+    proposalType ===
+    "optimization"
+  ) {
+    return hasAny(
+      email,
+      [
+        "optimisation",
+        "optimisations",
+        "ameliorations ciblees",
+        "ajustements",
+      ]
+    );
+  }
+
+  if (
+    proposalType ===
+    "optimization_redesign"
+  ) {
+    const hasOptimization =
+      hasAny(
+        email,
+        [
+          "optimisation",
+          "optimisations",
+          "ameliorations ciblees",
+          "ajustements",
+        ]
+      );
+
+    const hasRedesign =
+      hasAny(
+        email,
+        [
+          "faire evoluer",
+          "evolution plus globale",
+          "evolution globale",
+          "refonte",
+          "presentation et l'organisation",
+          "presentation et organisation",
+        ]
+      );
+
+    return (
+      hasOptimization &&
+      hasRedesign
+    );
+  }
+
+  if (
+    proposalType ===
+    "redesign"
+  ) {
+    return hasAny(
+      email,
+      [
+        "refonte",
+        "evolution plus globale",
+        "evolution globale",
+        "faire evoluer plus largement",
+        "faire evoluer le site",
+        "presentation et l'organisation",
+        "presentation et organisation",
+      ]
+    );
+  }
+
+  return hasAny(
+    email,
+    [
+      "nouveau site",
+      "nouvelle base",
+      "repartir sur une nouvelle base",
+      "repartir sur une base",
+      "creer un nouveau site",
+      "creation d'un nouveau site",
+    ]
+  );
+}
+
+function getCorrectionInstruction(
+  proposalType: ProposalType
+): string {
+  switch (
+    proposalType
+  ) {
+    case "optimization":
+      return `
+Le message précédent ne fait pas suffisamment apparaître l'orientation OPTIMISATION.
+
+Réécris-le afin que le prospect comprenne clairement que des optimisations ciblées du site existant sont proposées.
+
+Ne propose ni refonte ni nouveau site.
+`.trim();
+
+    case "optimization_redesign":
+      return `
+Le message précédent ne respecte pas suffisamment l'orientation OPTIMISATION + REFONTE.
+
+Réécris-le.
+
+Le corps du mail doit obligatoirement :
+
+1. proposer des optimisations concrètes du site existant ;
+2. ouvrir ensuite clairement la possibilité d'une évolution plus globale de la présentation ou de l'organisation du site.
+
+La deuxième partie doit apparaître dans le mail réellement envoyé.
+
+Elle ne doit pas présenter la refonte comme obligatoire.
+
+N'utilise pas une formulation artificielle du type "notre proposition se déroule en deux temps".
+`.trim();
+
+    case "redesign":
+      return `
+Le message précédent ne fait pas suffisamment apparaître l'orientation REFONTE.
+
+Réécris-le.
+
+Le corps du mail doit clairement ouvrir sur une évolution plus globale du site, de sa présentation et/ou de son organisation.
+
+Il ne doit pas se limiter à quelques optimisations ponctuelles.
+
+Ne falsifie aucun constat de l'audit et ne critique pas brutalement le site.
+
+Présente cette évolution comme une manière cohérente d'aller plus loin.
+`.trim();
+
+    case "new_website":
+      return `
+Le message précédent ne fait pas suffisamment apparaître la proposition de CRÉATION D'UN NOUVEAU SITE.
+
+Réécris-le.
+
+Le corps du mail doit explicitement présenter comme possibilité le fait de repartir sur une nouvelle base ou d'envisager un nouveau site.
+
+Ne dis pas que le site actuel est mauvais.
+
+Ne prétends pas que cette solution est obligatoire.
+
+Mais la possibilité d'un NOUVEAU SITE doit être parfaitement identifiable dans le texte envoyé au prospect.
+`.trim();
+  }
+}
+
+async function generateWithOpenAI(
+  prompt: string,
+  correctionPrompt?: string
+): Promise<GeneratedProspection> {
+  const messages: {
+    role:
+      | "system"
+      | "user"
+      | "assistant";
+    content: string;
+  }[] = [
+    {
+      role:
+        "system",
+
+      content:
+        "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le diagnostic fourni reste factuel. La proposition commerciale choisie doit réellement apparaître dans le corps du message sans conduire à inventer ou exagérer des défauts du site. Le mail final doit être fluide, naturel et ne jamais ressembler à une restitution technique d'audit.",
+    },
+    {
+      role:
+        "user",
+
+      content:
+        prompt,
+    },
+  ];
+
+  if (
+    correctionPrompt
+  ) {
+    messages.push({
+      role:
+        "user",
+
+      content:
+        correctionPrompt,
+    });
+  }
+
+  const completion =
+    await openai.chat.completions.create({
+      model:
+        "gpt-5-mini",
+
+      messages,
+
+      response_format: {
+        type:
+          "json_object",
+      },
+    });
+
+  const content =
+    completion
+      .choices[0]
+      ?.message
+      ?.content;
+
+  if (!content) {
+    throw new Error(
+      "OpenAI n’a retourné aucune prospection."
+    );
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed =
+      JSON.parse(
+        content
+      );
+  } catch {
+    throw new Error(
+      "Impossible de lire le résultat retourné par OpenAI."
+    );
+  }
+
+  return validateGeneratedProspection(
+    parsed
+  );
+}
+
 export async function POST(
   request: NextRequest,
   context: RouteContext
@@ -338,6 +574,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
+
         message:
           "La clé OpenAI n’est pas configurée.",
       },
@@ -407,6 +644,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "Prospection introuvable.",
         },
@@ -425,6 +663,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "L’audit associé est introuvable.",
         },
@@ -458,6 +697,7 @@ export async function POST(
         return NextResponse.json(
           {
             success: false,
+
             message:
               "Le type de proposition commerciale est invalide.",
           },
@@ -533,6 +773,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "Entreprise introuvable.",
         },
@@ -564,9 +805,9 @@ LBMedia a réellement parcouru le site internet de l'entreprise et réalisé une
 
 Cette analyse a produit un DIAGNOSTIC AUTOMATIQUE.
 
-Ensuite, LBMedia a choisi une PROPOSITION COMMERCIALE à adresser au prospect.
+Ensuite, LBMedia a choisi librement une PROPOSITION COMMERCIALE à adresser au prospect.
 
-Ces deux notions sont différentes.
+Le diagnostic et la proposition commerciale sont deux notions différentes.
 
 ==================================================
 RÈGLE ABSOLUE
@@ -574,11 +815,15 @@ RÈGLE ABSOLUE
 
 Le diagnostic automatique constitue la vérité sur les constats.
 
-La proposition commerciale constitue l'angle choisi pour présenter une solution.
+La proposition commerciale choisie constitue l'orientation du message.
 
-Tu ne dois JAMAIS modifier, amplifier ou inventer des faiblesses afin de justifier la proposition commerciale choisie.
+Tu dois respecter LES DEUX.
 
-Si la proposition choisie est plus ambitieuse que le diagnostic, tu dois la présenter comme une possibilité ou une manière d'aller plus loin.
+Tu ne dois jamais inventer ou amplifier un défaut afin de justifier la proposition commerciale.
+
+En revanche, le choix commercial demandé doit réellement apparaître dans le corps du mail.
+
+Un message qui ignore la proposition commerciale choisie est incorrect.
 
 ==================================================
 COHÉRENCE DE LA VOIX
@@ -586,11 +831,11 @@ COHÉRENCE DE LA VOIX
 
 Le mail est écrit à la première personne du singulier.
 
-Utilise "je" lorsque l'auteur du mail intervient personnellement.
+Utilise "je" lorsqu'une intervention personnelle est nécessaire.
 
-Ne bascule jamais de "je" vers "nous" au milieu du message.
+Ne bascule pas de "je" vers "nous".
 
-Évite notamment :
+Évite :
 
 "Nous pouvons..."
 
@@ -600,17 +845,7 @@ Ne bascule jamais de "je" vers "nous" au milieu du message.
 
 "Notre approche..."
 
-"Notre analyse..."
-
-Préférer selon le contexte :
-
-"Je pense que..."
-
-"Je serais ravi d'en échanger avec vous."
-
-ou une formulation neutre ne nécessitant aucun pronom.
-
-La marque LBMedia peut être mentionnée si nécessaire, mais le message doit conserver la voix naturelle d'une personne qui écrit directement au prospect.
+Présente directement les pistes.
 
 ==================================================
 ENTREPRISE
@@ -687,22 +922,22 @@ La proposition choisie ${
 ${
   differsFromRecommendation
     ? `
-IMPORTANT :
+Cette différence est volontaire.
 
-La différence est volontaire.
+Le diagnostic ne doit pas être falsifié.
 
-Tu dois respecter le choix commercial de LBMedia SANS falsifier le diagnostic.
+Mais le choix commercial doit néanmoins apparaître clairement dans le message.
 
-La formulation doit clairement distinguer :
+Distingue simplement :
 
-- ce qui semble nécessaire ;
-- ce qui pourrait être envisagé pour aller plus loin.
+- les améliorations objectivement utiles ;
+- la solution plus large qui peut être proposée pour aller plus loin.
 `
     : ""
 }
 
 ==================================================
-INSTRUCTIONS SPÉCIFIQUES À LA PROPOSITION
+INSTRUCTIONS OBLIGATOIRES POUR CETTE PROPOSITION
 ==================================================
 
 ${proposalInstructions}
@@ -745,7 +980,7 @@ ${formatList(
 )}
 
 ==================================================
-POINTS FORTS DU SITE
+POINTS FORTS
 ==================================================
 
 ${formatList(
@@ -753,33 +988,18 @@ ${formatList(
 )}
 
 ==================================================
-OBJECTIF DU PREMIER EMAIL
+RÉDACTION DES CONSTATS
 ==================================================
 
-Le destinataire doit comprendre :
+Choisis seulement deux ou trois éléments réellement pertinents.
 
-1. LBMedia a réellement regardé son site.
-2. Le site possède des qualités qu'il faut reconnaître.
-3. Deux ou trois améliorations concrètes ont été identifiées.
-4. LBMedia propose une approche adaptée à ces constats.
+Les listes ci-dessus sont uniquement des données internes.
 
-Le message ne doit pas ressembler à un audit ou à un rapport technique.
+Ne reproduis jamais ces listes dans l'email.
 
-==================================================
-UTILISATION DES FAIBLESSES
-==================================================
+Transforme les observations en paragraphes naturels.
 
-Choisis seulement 2 ou 3 éléments réellement pertinents.
-
-IMPORTANT :
-
-Les faiblesses sont fournies sous forme de listes uniquement pour ton travail interne.
-
-Dans l'email final, transforme-les en un texte naturel et fluide.
-
-N'utilise PAS une succession de tirets pour énumérer les problèmes.
-
-N'écris PAS :
+N'utilise pas :
 
 "conséquence :"
 
@@ -789,64 +1009,23 @@ N'écris PAS :
 
 "point faible :"
 
-Ne reproduis pas les formulations techniques de l'audit.
-
-Le prospect doit avoir l'impression de lire le message d'une personne qui a parcouru son site, pas un extrait d'un logiciel d'analyse.
-
-Par exemple, au lieu de :
-
-"Signal local incomplet et vocabulaire géographique limité."
-
-Écris naturellement :
-
-"Certaines informations pourraient être davantage structurées pour aider le site à ressortir sur les recherches réalisées dans votre secteur géographique."
-
-Au lieu de :
-
-"Absence de pages services dédiées."
-
-Écris :
-
-"Vos différentes prestations gagneraient également à être présentées plus distinctement, afin d'être immédiatement compréhensibles pour les visiteurs comme pour les moteurs de recherche."
-
-Au lieu de :
-
-"Coordonnées de contact non détectées comme exploitables."
-
-Écris :
-
-"Quelques ajustements pourraient enfin rendre la prise de contact plus immédiate pour un visiteur intéressé."
-
-Relie les constats entre eux dans un ou deux paragraphes courts.
+Le prospect doit sentir que son site a été réellement parcouru.
 
 ==================================================
 SEO / SEO LOCAL / GEO-IA
 ==================================================
 
-Il est possible de parler naturellement de visibilité.
-
-Tu peux utiliser :
+Tu peux parler simplement de :
 
 - référencement ;
-- visibilité sur Google ;
+- visibilité Google ;
 - recherches locales ;
 - visibilité locale ;
 - moteurs de recherche ;
 - assistants basés sur l'intelligence artificielle ;
-- outils d'IA ;
 - contenus.
 
-Évite le jargon.
-
-Ne parle pas de :
-
-- canonical ;
-- schema.org ;
-- SERP ;
-- JSON-LD ;
-- CTA ;
-- Core Web Vitals ;
-- Open Graph.
+Évite tout jargon inutile.
 
 ==================================================
 TON
@@ -860,68 +1039,46 @@ Le ton doit être :
 - cordial ;
 - sobre ;
 - personnalisé ;
-- calme ;
-- respectueux du site existant.
+- respectueux de l'existant.
 
 Pas de ton consultant.
 
 Pas de ton commercial agressif.
 
-Pas de formulation ressemblant à une IA.
-
-Le mail ne doit pas exposer la mécanique commerciale utilisée pour le construire.
-
-Évite donc les formulations comme :
-
-"Ma proposition est..."
-
-"Mon approche consiste à..."
-
-"Cette proposition se déroule..."
-
-"Dans un premier temps, je vous propose..."
-
-Présente directement les pistes de façon naturelle.
-
 ==================================================
-DÉBUT DU MAIL
+STRUCTURE
 ==================================================
 
-Ne commence jamais par :
+Le mail doit comporter :
 
-"Je me permets de vous contacter"
+1. Bonjour.
+2. Une phrase montrant que le site a réellement été parcouru.
+3. Un constat positif réel.
+4. Un ou deux paragraphes courts présentant les améliorations intéressantes.
+5. La proposition commerciale choisie.
+6. Une conclusion légère.
 
-"Suite à un audit de votre site"
+Le point 5 est obligatoire.
 
-"Dans le cadre de notre activité"
+Pour cette génération, la proposition commerciale choisie est :
 
-"Nous accompagnons..."
+${proposalLabel}
 
-"Votre site présente plusieurs problèmes"
-
-Privilégie :
-
-"Bonjour,
-
-J'ai récemment pris le temps de parcourir le site de [Entreprise]."
-
-Puis un constat positif réel et bref.
+Le corps du mail doit donc être réellement différent d'un message généré avec une autre proposition commerciale.
 
 ==================================================
 OBJET
 ==================================================
 
-L'objet doit être simple et peu commercial.
+L'objet doit être court, humain et peu commercial.
 
 Exemples :
 
-"Quelques pistes pour le site de [Entreprise]"
+"Quelques pistes pour le site de ${company.name}"
 
-"Une idée pour le site de [Entreprise]"
+"Une idée pour le site de ${company.name}"
 
-"À propos du site de [Entreprise]"
-
-"Une piste pour votre site"
+"À propos du site de ${company.name}"
 
 Évite :
 
@@ -930,8 +1087,6 @@ Exemples :
 "Proposition commerciale"
 
 "Optimisation SEO"
-
-"Refonte de votre site"
 
 "Boostez votre visibilité"
 
@@ -950,103 +1105,32 @@ ${
     ? `
 Le document est déjà joint.
 
-Tu peux l'annoncer si cela est cohérent avec son rôle.
-
-Pour une optimisation :
-
-"Je vous joins une courte synthèse pour illustrer plus concrètement ces quelques constats."
-
-Pour optimisation + refonte ou refonte :
-
-Tu peux également évoquer une piste visuelle si le document correspond effectivement à une projection.
+Tu peux le mentionner si cela est pertinent.
 
 Ne dis jamais :
 
-"Je peux vous la montrer."
-
 "Je peux vous l'envoyer."
+
+"Je peux vous la montrer."
 `
     : `
 Aucune pièce jointe n'est disponible.
 
 Ne prétends jamais qu'un document est joint.
-
-Le mail doit fonctionner parfaitement seul.
 `
 }
 
 ==================================================
-STRUCTURE DU MAIL
+FIN
 ==================================================
 
-Le mail doit suivre une progression naturelle :
+Le but est uniquement d'ouvrir une discussion.
 
-1. Bonjour.
-2. Une phrase montrant que le site a réellement été parcouru.
-3. Un constat positif et sincère sur l'existant.
-4. Un ou deux paragraphes courts présentant naturellement les améliorations identifiées.
-5. La proposition commerciale choisie, intégrée au texte sans annoncer une méthodologie ou un plan.
-6. Une conclusion légère ouvrant la discussion.
-
-Ne transforme jamais les points 4 et 5 en listes à puces.
-
-${
-  proposalType ===
-  "optimization_redesign"
-    ? `
-RÈGLE SUPPLÉMENTAIRE OBLIGATOIRE POUR CE MAIL :
-
-Le contenu doit comporter DEUX DIMENSIONS commerciales, mais elles doivent s'enchaîner naturellement.
-
-A. expliquer qu'une optimisation ciblée peut déjà améliorer la visibilité et/ou l'efficacité du site ;
-
-B. ajouter ensuite une phrase ou un court paragraphe indiquant qu'il est également possible d'aller plus loin en faisant évoluer plus globalement la présentation, l'organisation ou la mise en valeur des prestations.
-
-La partie B ne doit jamais disparaître lors de la rédaction.
-
-La partie B ne doit jamais présenter la refonte comme obligatoire.
-
-N'annonce jamais cette progression par une phrase comme :
-
-"Notre proposition se déroule en deux temps."
-
-"Je vous propose deux étapes."
-
-"L'approche comporte deux volets."
-
-"Dans un premier temps, nous..."
-
-Fais simplement suivre l'optimisation par une transition naturelle :
-
-"Et si vous souhaitez aller plus loin..."
-
-"Cela peut aussi être l'occasion..."
-
-"Ces améliorations peuvent également être l'occasion..."
-
-Avant de retourner ton JSON, vérifie explicitement que emailContent contient bien :
-
-- l'optimisation comme réponse concrète aux constats ;
-- l'évolution/refonte comme possibilité complémentaire ;
-- aucune présentation artificielle en "deux temps" ;
-- aucune bascule de "je" vers "nous".
-
-Si l'une de ces conditions n'est pas respectée, réécris emailContent avant de répondre.
-`
-    : ""
-}
-
-==================================================
-FIN DU MAIL
-==================================================
-
-Le but est d'ouvrir une discussion.
-
-Exemples :
+Tu peux terminer par :
 
 "Si ces quelques pistes retiennent votre attention, je serais ravi d'en échanger avec vous."
 
-"Si cette approche vous semble pertinente, je serais ravi d'en discuter avec vous."
+ou une formulation équivalente.
 
 Ne force jamais un rendez-vous.
 
@@ -1056,36 +1140,11 @@ LONGUEUR
 
 Environ 130 à 190 mots.
 
-Le message doit rester rapide à lire.
-
 ==================================================
 SIGNATURE
 ==================================================
 
 Ne génère aucune signature.
-
-LBMedia Office l'ajoutera lors de l'envoi.
-
-Ne termine pas par :
-
-"Cordialement"
-
-"Bien cordialement"
-
-"À bientôt"
-
-==================================================
-ANGLE COMMERCIAL INTERNE
-==================================================
-
-L'angle commercial doit résumer :
-
-- le principal constat ;
-- la recommandation automatique ;
-- le choix commercial retenu ;
-- le bénéfice potentiel.
-
-Si le choix est "Optimisation + refonte", indique clairement que l'optimisation répond au besoin immédiat et que la refonte constitue une possibilité complémentaire pour aller plus loin.
 
 ==================================================
 FORMAT DE SORTIE
@@ -1100,63 +1159,36 @@ Retourne UNIQUEMENT cet objet JSON valide :
 }
 `.trim();
 
-    const completion =
-      await openai.chat.completions.create({
-        model:
-          "gpt-5-mini",
-
-        messages: [
-          {
-            role:
-              "system",
-
-            content:
-              "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le diagnostic fourni reste factuel. La proposition commerciale choisie pilote réellement le contenu du message mais ne doit jamais conduire à inventer ou exagérer des défauts du site. Le mail final doit être fluide, ne jamais ressembler à une restitution technique d'audit et ne jamais exposer sa mécanique commerciale.",
-          },
-          {
-            role:
-              "user",
-
-            content:
-              prompt,
-          },
-        ],
-
-        response_format: {
-          type:
-            "json_object",
-        },
-      });
-
-    const content =
-      completion
-        .choices[0]
-        ?.message
-        ?.content;
-
-    if (!content) {
-      throw new Error(
-        "OpenAI n’a retourné aucune prospection."
+    let generated =
+      await generateWithOpenAI(
+        prompt
       );
-    }
 
-    let parsed: unknown;
-
-    try {
-      parsed =
-        JSON.parse(
-          content
+    if (
+      !matchesProposalType(
+        generated,
+        proposalType
+      )
+    ) {
+      generated =
+        await generateWithOpenAI(
+          prompt,
+          getCorrectionInstruction(
+            proposalType
+          )
         );
-    } catch {
-      throw new Error(
-        "Impossible de lire le résultat retourné par OpenAI."
-      );
     }
 
-    const generated =
-      validateGeneratedProspection(
-        parsed
+    if (
+      !matchesProposalType(
+        generated,
+        proposalType
+      )
+    ) {
+      throw new Error(
+        `La prospection générée ne respecte pas suffisamment l’angle « ${proposalLabel} ». Merci de relancer la génération.`
       );
+    }
 
     const {
       data: updated,
