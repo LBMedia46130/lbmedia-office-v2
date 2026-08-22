@@ -138,33 +138,48 @@ function getSeverity(
   return "low";
 }
 
-function containsAnyKeyword(
+function normalizeText(
+  text: string
+): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    );
+}
+
+function countKeywordMatches(
   text: string,
   keywords: string[]
-): boolean {
+): number {
   const normalized =
-    text
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(
-        /[\u0300-\u036f]/g,
-        ""
-      );
+    normalizeText(text);
 
-  return keywords.some(
-    (keyword) =>
-      normalized.includes(keyword)
+  return keywords.reduce(
+    (
+      count,
+      keyword
+    ) => {
+      return normalized.includes(
+        normalizeText(keyword)
+      )
+        ? count + 1
+        : count;
+    },
+    0
   );
 }
 
 function classifyWeaknesses(
-  weaknesses: string[],
-  priorities: string[]
+  weaknesses: string[]
 ): CommercialWeaknessGroup {
   const visibilityKeywords = [
     "seo",
     "referencement",
     "google",
+    "google business",
     "moteur",
     "moteurs",
     "recherche",
@@ -182,11 +197,18 @@ function classifyWeaknesses(
     "title",
     "h1",
     "schema",
+    "structured data",
+    "donnees structurees",
     "structure semantique",
     "semantique",
     "local",
     "locale",
+    "locales",
     "geographique",
+    "geographiques",
+    "zone desservie",
+    "zones desservies",
+    "servicearea",
     "geo",
     "ia",
     "intelligence artificielle",
@@ -196,6 +218,14 @@ function classifyWeaknesses(
     "indexe",
     "indexee",
     "maillage",
+    "faq",
+    "case study",
+    "cas client",
+    "cas clients",
+    "preuve",
+    "preuves",
+    "rich snippet",
+    "rich snippets",
   ];
 
   const websiteKeywords = [
@@ -204,8 +234,11 @@ function classifyWeaknesses(
     "navigation",
     "conversion",
     "contact",
+    "prise de contact",
+    "telephone",
+    "e-mail",
+    "email",
     "appel a l'action",
-    "appel à l'action",
     "cta",
     "mobile",
     "responsive",
@@ -218,54 +251,110 @@ function classifyWeaknesses(
     "visuel",
     "visuelle",
     "obsolet",
+    "obsolete",
     "vieillissant",
     "ancienne",
     "moderne",
     "moderniser",
-    "structure",
     "offre",
     "prestations",
     "comprehension",
     "hierarchie",
     "rapidite",
     "performance",
-    "technique",
-  ];
-
-  const allItems = [
-    ...weaknesses,
-    ...priorities,
+    "friction",
+    "frictions",
+    "formulaire",
+    "formulaires",
+    "rendez-vous",
+    "tarif",
+    "tarifs",
+    "disponibilite",
+    "cliquable",
+    "cliquables",
+    "utilisateur",
+    "experience utilisateur",
   ];
 
   const visibility: string[] = [];
   const website: string[] = [];
 
   for (
-    const item of allItems
+    const item of weaknesses
   ) {
-    const isVisibility =
-      containsAnyKeyword(
+    const visibilityMatches =
+      countKeywordMatches(
         item,
         visibilityKeywords
       );
 
-    const isWebsite =
-      containsAnyKeyword(
+    const websiteMatches =
+      countKeywordMatches(
         item,
         websiteKeywords
       );
 
     if (
-      isVisibility &&
-      !visibility.includes(item)
+      visibilityMatches === 0 &&
+      websiteMatches === 0
     ) {
-      visibility.push(item);
+      website.push(item);
+      continue;
     }
 
     if (
-      isWebsite &&
-      !website.includes(item)
+      visibilityMatches >
+      websiteMatches
     ) {
+      visibility.push(item);
+      continue;
+    }
+
+    if (
+      websiteMatches >
+      visibilityMatches
+    ) {
+      website.push(item);
+      continue;
+    }
+
+    /*
+     * En cas d'égalité, on cherche
+     * les signaux les plus explicites
+     * afin d'éviter qu'une faiblesse
+     * soit affichée deux fois.
+     */
+    const normalized =
+      normalizeText(item);
+
+    const explicitVisibilitySignals = [
+      "seo",
+      "referencement",
+      "google",
+      "visibilite",
+      "geographique",
+      "servicearea",
+      "zone desservie",
+      "schema",
+      "donnees structurees",
+      "moteur",
+      "assistant",
+      "indexation",
+    ];
+
+    const hasExplicitVisibilitySignal =
+      explicitVisibilitySignals.some(
+        (signal) =>
+          normalized.includes(
+            signal
+          )
+      );
+
+    if (
+      hasExplicitVisibilitySignal
+    ) {
+      visibility.push(item);
+    } else {
       website.push(item);
     }
   }
@@ -498,10 +587,20 @@ export function getWebsiteAuditCommercialDiagnosis(
       globalScore,
     ]);
 
+  /*
+   * Important :
+   * seules les faiblesses réellement
+   * constatées par l'audit alimentent
+   * le diagnostic commercial.
+   *
+   * Les priorités restent des actions
+   * recommandées et ne doivent pas
+   * être présentées comme des défauts
+   * du site.
+   */
   const weaknesses =
     classifyWeaknesses(
-      audit.weaknesses,
-      audit.priorities
+      audit.weaknesses
     );
 
   const recommendation =
