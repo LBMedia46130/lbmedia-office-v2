@@ -231,6 +231,28 @@ Ne pas créer une scène professionnelle générique.
 Le visuel doit être suffisamment fort pour attirer l'attention dans un fil LinkedIn ou Facebook tout en restant sobre, professionnel et crédible.
 
 ==================================================
+RÈGLE DE COMPOSITION PRIORITAIRE
+==================================================
+
+UNE IMAGE = UNE IDÉE.
+
+Avant de composer l'illustration :
+
+1. identifier l'idée centrale du post ;
+2. choisir UNE situation concrète permettant de l'incarner ;
+3. construire toute l'image autour de cette seule situation.
+
+Ne cherche PAS à résumer visuellement tous les arguments du post.
+
+Ne transforme PAS chaque notion importante du texte en un élément graphique différent.
+
+Si le post contient plusieurs concepts — par exemple visibilité, proximité, audience, répétition, confiance, conversion — choisis celui qui permet de créer la scène la plus naturelle et la plus forte.
+
+Une scène simple, crédible et immédiatement compréhensible est toujours préférable à une accumulation de symboles explicatifs.
+
+L'image doit évoquer l'idée du post, pas chercher à l'expliquer entièrement.
+
+==================================================
 DIRECTION VISUELLE POUR CETTE GÉNÉRATION
 ==================================================
 
@@ -358,7 +380,21 @@ Choisir cette situation plutôt qu'une représentation générique du travail de
 - les textures photographiques ;
 - l'effet reportage photo ;
 - les éclairages cinématographiques hyperréalistes ;
-- la profondeur de champ photographique artificielle.
+- la profondeur de champ photographique artificielle ;
+- les compositions qui cherchent à représenter plusieurs concepts simultanément ;
+- l'accumulation de métaphores visuelles ;
+- les scènes ressemblant à une infographie sans texte ;
+- les symboles marketing ajoutés artificiellement dans une scène réaliste ;
+- les épingles de géolocalisation ;
+- les cibles ;
+- les mégaphones symboliques ;
+- les groupes de silhouettes représentant une audience ;
+- les flèches explicatives ;
+- les icônes de synchronisation ;
+- les pictogrammes de personnes ;
+- les boutons ou commandes fictives ;
+- les symboles flottants ;
+- les éléments graphiques servant uniquement à expliquer un concept abstrait.
 
 Un ordinateur ou un smartphone peut apparaître comme élément secondaire si la situation l'exige réellement.
 
@@ -375,7 +411,9 @@ DIRECTION ARTISTIQUE
 - composition suffisamment riche mais aérée ;
 - profondeur et perspective ;
 - véritable mise en scène ;
-- 4 à 6 éléments visuels cohérents maximum ;
+- 2 à 4 éléments structurants maximum ;
+- ces éléments doivent appartenir naturellement à la même scène ;
+- ne jamais ajouter un objet uniquement pour symboliser un mot ou un concept du post ;
 - faire comprendre l'idée principale par la scène ;
 - utiliser les couleurs LBMedia comme accents ;
 - conserver des couleurs naturelles complémentaires ;
@@ -420,6 +458,24 @@ INTERDICTIONS ABSOLUES
 - AUCUN SCHÉMA FONCTIONNEL.
 
 Si des documents, carnets, feuilles ou écrans apparaissent, ils doivent rester vierges ou présenter uniquement des formes abstraites non interprétables.
+
+==================================================
+CONTRÔLE FINAL AVANT GÉNÉRATION
+==================================================
+
+Avant de produire l'image, vérifie mentalement la composition choisie.
+
+Si elle contient plusieurs symboles destinés à expliquer différentes idées du post, simplifie-la.
+
+Si un élément n'aurait aucune raison naturelle d'exister dans la scène représentée, supprime-le.
+
+Si l'image ressemble davantage à une infographie, une publicité conceptuelle ou une démonstration marketing qu'à une illustration éditoriale, recommence la conception avec une scène plus simple.
+
+Le spectateur doit d'abord voir UNE SCÈNE.
+
+Il peut ensuite comprendre l'idée qu'elle évoque.
+
+Il ne doit jamais avoir l'impression de devoir décoder une collection de symboles.
 
 ==================================================
 RÉSULTAT ATTENDU
