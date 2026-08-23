@@ -1,29 +1,16 @@
+import OpenAI from "openai";
 import {
   NextResponse,
 } from "next/server";
 
 import {
-  getWebsiteAuditById,
-} from "@/lib/website-audits";
-
-import {
   supabaseAdmin,
 } from "@/lib/supabase-admin";
-
-import {
-  updateAuditProspection,
-} from "@/lib/audit-prospections";
 
 export const dynamic =
   "force-dynamic";
 
 export const maxDuration = 60;
-
-const OPENAI_IMAGE_EDIT_URL =
-  "https://api.openai.com/v1/images/edits";
-
-const BUCKET =
-  "audit-prospection-assets";
 
 type RouteContext = {
   params: Promise<{
@@ -31,14 +18,49 @@ type RouteContext = {
   }>;
 };
 
-type OpenAIImageEditResponse = {
-  data?: Array<{
-    b64_json?: string;
-  }>;
-  error?: {
-    message?: string;
-  };
-};
+const openai = new OpenAI({
+  apiKey:
+    process.env.OPENAI_API_KEY,
+});
+
+const visualSceneDirections = [
+  "une scène de terrain dans une entreprise locale, un commerce, un atelier ou un environnement professionnel réel, avec une activité crédible directement liée au sujet",
+  "une interaction naturelle entre deux ou trois professionnels ou entre un professionnel et un client, dans une situation concrète directement liée au sujet",
+  "une composition éditoriale centrée sur une action métier, des mains en action, des documents, des objets ou des éléments professionnels ayant un rapport direct avec le sujet",
+  "une scène professionnelle en plan large montrant un véritable environnement de travail ou commercial, avec de la profondeur et plusieurs niveaux de lecture",
+  "une scène extérieure ou semi-extérieure liée à une entreprise locale, un commerce, une vitrine, une activité ou un parcours client",
+  "une composition principalement construite autour d'objets, de matières, de documents et d'éléments professionnels spécifiques au sujet, sans personnage principal",
+  "une situation de réflexion ou de décision montrée par une scène collective ou un échange professionnel concret, sans personne seule face à un écran",
+  "une métaphore visuelle crédible du problème ou de la décision évoquée dans le post, intégrée dans un environnement professionnel cohérent",
+];
+
+const visualFramings = [
+  "plan large avec environnement visible et profondeur",
+  "plan moyen naturel avec une composition éditoriale travaillée",
+  "cadrage légèrement décentré avec le sujet principal placé sur un tiers de l'image",
+  "vue immersive avec premier plan, plan intermédiaire et arrière-plan",
+  "cadrage rapproché sur une action, des mains, des documents ou des détails métier",
+  "composition panoramique laissant respirer la scène",
+];
+
+const humanDirections = [
+  "la présence humaine est possible mais ne doit pas être le sujet automatique de l'image",
+  "privilégier une scène sans personnage principal lorsque l'idée peut être exprimée plus précisément par une situation, un lieu ou une action",
+  "si des personnes apparaissent, privilégier une interaction réelle entre plusieurs personnes plutôt qu'une personne seule",
+  "utiliser éventuellement une présence humaine partielle ou secondaire : mains, silhouettes, personnes de dos ou personnages en arrière-plan",
+  "éviter les poses face caméra ; les personnes doivent sembler réellement occupées par une activité liée au sujet",
+];
+
+function getRandomItem<T>(
+  items: T[]
+): T {
+  return items[
+    Math.floor(
+      Math.random() *
+        items.length
+    )
+  ];
+}
 
 export async function POST(
   _request: Request,
@@ -59,44 +81,42 @@ export async function POST(
     );
   }
 
-  try {
-    const { id } =
-      await context.params;
+  const { id } =
+    await context.params;
 
+  try {
     const {
-      data: prospection,
-      error: prospectionError,
+      data: publication,
+      error: publicationError,
     } = await supabaseAdmin
-      .from(
-        "audit_prospections"
-      )
+      .from("publications")
       .select(
         `
           id,
-          company_id,
-          website_audit_id,
-          before_image_url,
-          after_image_url
+          news_id,
+          channel,
+          title,
+          content,
+          hashtags,
+          image_url,
+          image_alt
         `
       )
-      .eq(
-        "id",
-        id
-      )
+      .eq("id", id)
       .maybeSingle();
 
-    if (prospectionError) {
+    if (publicationError) {
       throw new Error(
-        prospectionError.message
+        publicationError.message
       );
     }
 
-    if (!prospection) {
+    if (!publication) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Prospection introuvable.",
+            "Publication introuvable.",
         },
         {
           status: 404,
@@ -105,13 +125,16 @@ export async function POST(
     }
 
     if (
-      !prospection.before_image_url
+      publication.channel !==
+        "linkedin" &&
+      publication.channel !==
+        "facebook"
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Importez d'abord la capture du site actuel.",
+            "La génération de visuel est disponible uniquement pour LinkedIn et Facebook.",
         },
         {
           status: 400,
@@ -119,329 +142,311 @@ export async function POST(
       );
     }
 
-    const audit =
-      await getWebsiteAuditById(
-        prospection.website_audit_id
-      );
-
-    if (!audit) {
+    if (
+      !publication.content?.trim()
+    ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "L'audit associé est introuvable.",
+            "Le contenu du post doit être renseigné avant de générer son visuel.",
         },
         {
-          status: 404,
+          status: 400,
         }
       );
     }
 
-    const {
-      data: company,
-      error: companyError,
-    } = await supabaseAdmin
-      .from("companies")
-      .select(
-        `
-          id,
-          name,
-          legal_name,
-          website,
-          city,
-          sector,
-          business_description
-        `
-      )
-      .eq(
-        "id",
-        prospection.company_id
-      )
-      .maybeSingle();
+    const contentExcerpt =
+      publication.content
+        .trim()
+        .replace(/\s+/g, " ")
+        .slice(0, 2600);
 
-    if (companyError) {
-      throw new Error(
-        companyError.message
-      );
-    }
-
-    if (!company) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Entreprise introuvable.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
-
-    const beforeResponse =
-      await fetch(
-        prospection.before_image_url,
-        {
-          cache: "no-store",
-        }
+    const title =
+      publication.title?.trim() ||
+      getShortSubject(
+        publication.content
       );
 
-    if (!beforeResponse.ok) {
-      throw new Error(
-        "Impossible de récupérer la capture du site actuel."
+    const sceneDirection =
+      getRandomItem(
+        visualSceneDirections
       );
-    }
 
-    const beforeBytes =
-      await beforeResponse.arrayBuffer();
+    const framingDirection =
+      getRandomItem(
+        visualFramings
+      );
 
-    const beforeContentType =
-      beforeResponse.headers.get(
-        "content-type"
-      ) ??
-      "image/png";
+    const humanDirection =
+      getRandomItem(
+        humanDirections
+      );
 
     const prompt = `
-À partir de la capture fournie, crée une PROPOSITION VISUELLE D'AMÉLIORATION de cette page web.
-
-Il s'agit d'une piste de réflexion réalisée par LBMedia pour montrer au prospect ce que certaines améliorations pourraient donner visuellement.
-
-==================================================
-ENTREPRISE
-==================================================
-
-Nom :
-${company.name}
-
-Raison sociale :
-${company.legal_name ?? "Non renseignée"}
-
-Site :
-${company.website ?? audit.website_url}
-
-Ville :
-${company.city ?? "Non renseignée"}
-
-Secteur :
-${company.sector ?? "Non renseigné"}
-
-Description :
-${company.business_description ?? "Non renseignée"}
+Créer UNE ILLUSTRATION ÉDITORIALE HORIZONTALE pour accompagner une publication ${
+      publication.channel ===
+      "linkedin"
+        ? "LinkedIn"
+        : "Facebook"
+    } de LBMedia.
 
 ==================================================
-CONSTATS ISSUS DE L'AUDIT
+SUJET
 ==================================================
 
-Synthèse :
-${audit.summary}
+${title}
 
-Points forts :
+==================================================
+CONTENU DE RÉFÉRENCE
+==================================================
+
+${contentExcerpt}
+
 ${
-  audit.strengths.length
-    ? audit.strengths
-        .map(
-          (item) =>
-            `- ${item}`
-        )
-        .join("\n")
-    : "- Aucun renseigné"
-}
+  publication.hashtags?.trim()
+    ? `
+HASHTAGS ASSOCIÉS :
 
-Points perfectibles :
-${
-  audit.weaknesses.length
-    ? audit.weaknesses
-        .map(
-          (item) =>
-            `- ${item}`
-        )
-        .join("\n")
-    : "- Aucun renseigné"
-}
-
-Priorités :
-${
-  audit.priorities.length
-    ? audit.priorities
-        .map(
-          (item) =>
-            `- ${item}`
-        )
-        .join("\n")
-    : "- Aucune renseignée"
+${publication.hashtags.trim()}
+`
+    : ""
 }
 
 ==================================================
 OBJECTIF
 ==================================================
 
-Améliore visuellement la page existante EN CONSERVANT SON IDENTITÉ.
+Comprendre d'abord l'idée centrale de la publication.
 
-La proposition doit donner l'impression d'une évolution professionnelle et crédible du site actuel, pas d'un nouveau site inventé pour une autre entreprise.
+Imaginer ensuite UNE situation visuelle précise qui représente cette idée.
 
-Utilise l'audit pour décider des améliorations pertinentes.
+Le visuel doit avoir un rapport évident avec le problème, la décision, l'action, le conseil ou la situation concrète abordée dans le post.
 
-Il peut s'agir par exemple de :
+Ne pas simplement illustrer quelques mots-clés.
 
-- mieux hiérarchiser le contenu ;
-- rendre la proposition de valeur plus immédiatement compréhensible ;
-- rendre les services ou prestations plus visibles ;
-- mieux mettre en valeur l'expérience, les références ou les éléments de confiance lorsqu'ils existent réellement ;
-- améliorer les appels à l'action ;
-- rendre la page plus claire, moderne et structurée ;
-- améliorer la lisibilité ;
-- mieux organiser les différentes sections.
+Ne pas créer une scène professionnelle générique.
+
+Le visuel doit être suffisamment fort pour attirer l'attention dans un fil LinkedIn ou Facebook tout en restant sobre, professionnel et crédible.
 
 ==================================================
-FIDÉLITÉ AU SITE EXISTANT
+DIRECTION VISUELLE POUR CETTE GÉNÉRATION
 ==================================================
 
-La capture originale est la référence principale.
-
-CONSERVER autant que possible :
-
-- le nom de l'entreprise ;
-- son identité graphique ;
-- son univers de marque ;
-- ses couleurs caractéristiques ;
-- ses photographies et visuels existants lorsqu'ils sont visibles ;
-- son logo lorsqu'il apparaît dans la capture ;
-- la nature réelle de son activité ;
-- les éléments importants déjà présents.
-
-NE PAS inventer :
-
-- un nouveau logo ;
-- une nouvelle entreprise ;
-- de nouveaux services ;
-- de fausses références ;
-- de faux clients ;
-- de faux témoignages ;
-- de fausses statistiques ;
-- de faux prix ;
-- de nouvelles activités non établies ;
-- de nouveaux visuels sans rapport avec l'entreprise.
+- ${sceneDirection};
+- ${framingDirection};
+- ${humanDirection}.
 
 ==================================================
-DIRECTION GRAPHIQUE
+STYLE VISUEL LBMEDIA — RÈGLE PRIORITAIRE
 ==================================================
 
-La proposition doit être :
+Créer une ILLUSTRATION NUMÉRIQUE ÉDITORIALE CONTEMPORAINE.
 
-- professionnelle ;
-- contemporaine ;
-- crédible ;
-- élégante ;
-- claire ;
-- adaptée à une vraie PME ou entreprise française ;
-- plus structurée que la version actuelle sans devenir une maquette générique de startup.
+Le résultat doit être clairement identifiable comme une illustration éditoriale créée pour une publication professionnelle.
 
-Évite les effets excessifs, le style futuriste et les interfaces SaaS génériques.
+CE N'EST PAS UNE PHOTOGRAPHIE.
 
-Ne transforme pas automatiquement la page en site minimaliste blanc et bleu.
+Ne pas rechercher le photoréalisme.
 
-Respecte au maximum la personnalité visuelle déjà présente dans la capture.
+Ne pas imiter :
+
+- une photographie professionnelle ;
+- une banque d'images ;
+- un reportage photographique ;
+- une publicité corporate générique.
+
+Le style doit associer :
+
+- une représentation figurative et immédiatement compréhensible ;
+- des personnages et objets reconnaissables mais volontairement stylisés ;
+- des formes légèrement simplifiées ;
+- des volumes doux et dessinés ;
+- des matières et textures illustrées ;
+- des contours subtils lorsque cela améliore la lisibilité ;
+- une lumière graphique et éditoriale ;
+- une profondeur construite par l'illustration ;
+- une composition élégante proche d'une illustration de presse ou de magazine ;
+- un niveau de détail intermédiaire.
+
+La stylisation doit être immédiatement perceptible.
+
+Les personnages ne doivent pas avoir une peau, des cheveux ou des vêtements reproduits avec un niveau de détail photographique.
+
+Les lieux ne doivent pas donner l'impression d'avoir été photographiés.
+
+Les ombres, matières, lumières et volumes doivent conserver une interprétation graphique.
+
+Le résultat doit être adulte, élégant et professionnel.
 
 ==================================================
-TEXTE
+NE PAS BASCULER VERS
 ==================================================
 
-Conserve prioritairement les vrais textes visibles dans la capture lorsqu'ils sont lisibles.
+- le cartoon enfantin ;
+- la bande dessinée ;
+- le dessin humoristique ;
+- l'illustration vectorielle plate ;
+- les personnages corporate simplistes ;
+- l'esthétique SaaS ;
+- les pictogrammes ;
+- la 3D plastique ;
+- le rendu jouet ;
+- le collage ;
+- l'aquarelle traditionnelle ;
+- la peinture classique ;
+- le photoréalisme.
 
-Tu peux raccourcir ou réorganiser un texte pour améliorer la hiérarchie visuelle.
+==================================================
+IDENTITÉ VISUELLE LBMEDIA
+==================================================
 
-N'invente jamais une information commerciale.
+Les visuels doivent pouvoir appartenir à une même collection éditoriale LBMedia.
 
-Si un texte précis n'est pas suffisamment lisible dans la capture, préfère une zone graphique crédible plutôt qu'une affirmation inventée.
+Conserver :
+
+- un degré de stylisation cohérent ;
+- une sophistication graphique comparable ;
+- des compositions éditoriales modernes ;
+- une ambiance professionnelle mais accessible ;
+- une palette cohérente ;
+- une utilisation subtile des couleurs LBMedia.
+
+La palette privilégie :
+
+- bleu nuit profond ;
+- bleu soutenu ;
+- cyan / bleu lumineux ;
+- blanc et tons clairs ;
+- quelques couleurs naturelles complémentaires nécessaires à la scène.
+
+Les couleurs LBMedia doivent structurer ou ponctuer l'image sans appliquer un filtre bleu uniforme.
+
+Le visuel doit cependant rester spécifique au sujet de cette publication.
+
+==================================================
+DIVERSITÉ ÉDITORIALE
+==================================================
+
+Avant de composer l'image, identifier mentalement :
+
+1. quel est le sujet concret du post ;
+2. quel problème, constat, conseil ou décision il présente ;
+3. quelle situation pourrait traduire visuellement cette idée ;
+4. quels éléments permettraient de comprendre la scène sans aucun texte.
+
+Choisir cette situation plutôt qu'une représentation générique du travail de bureau.
+
+==================================================
+ÉVITER EN PARTICULIER
+==================================================
+
+- une personne seule devant un ordinateur portable ;
+- une personne regardant simplement un smartphone ;
+- un professionnel pensif devant son écran ;
+- deux personnes regardant ensemble un ordinateur sans action significative ;
+- un portrait générique dans un bureau ;
+- la composition classique personnage + laptop + tasse ;
+- la composition personnage + smartphone + laptop ;
+- les réunions génériques autour d'un ordinateur ;
+- les scènes interchangeables de coworking ;
+- les décors de bureau sans rapport précis avec le post ;
+- l'esthétique de photographie corporate de banque d'images ;
+- le photoréalisme ;
+- l'hyperréalisme ;
+- les textures photographiques ;
+- l'effet reportage photo ;
+- les éclairages cinématographiques hyperréalistes ;
+- la profondeur de champ photographique artificielle.
+
+Un ordinateur ou un smartphone peut apparaître comme élément secondaire si la situation l'exige réellement.
+
+Il ne doit pas constituer automatiquement le centre de l'image.
+
+==================================================
+DIRECTION ARTISTIQUE
+==================================================
+
+- créer une véritable scène éditoriale illustrée ;
+- rendu moderne, professionnel, élégant et clairement stylisé ;
+- environnement cohérent avec le sujet ;
+- privilégier entreprises locales, commerces, ateliers, lieux professionnels, interactions clients, objets et situations concrètes lorsque le sujet le permet ;
+- composition suffisamment riche mais aérée ;
+- profondeur et perspective ;
+- véritable mise en scène ;
+- 4 à 6 éléments visuels cohérents maximum ;
+- faire comprendre l'idée principale par la scène ;
+- utiliser les couleurs LBMedia comme accents ;
+- conserver des couleurs naturelles complémentaires ;
+- lumière douce interprétée graphiquement ;
+- contrastes élégants ;
+- détails riches mais simplifiés par l'illustration ;
+- éviter le rendu publicitaire artificiel ;
+- éviter absolument le rendu photographique ;
+- éviter absolument le rendu jouet, plastique, cartoon ou pictogrammes 3D ;
+- éviter les compositions minimalistes constituées de quelques objets isolés sur un fond vide.
+
+==================================================
+INTERDICTIONS ABSOLUES
+==================================================
+
+- AUCUN TEXTE ;
+- AUCUNE LETTRE ;
+- AUCUN MOT ;
+- AUCUN CHIFFRE ;
+- AUCUNE TYPOGRAPHIE ;
+- AUCUN TITRE ;
+- AUCUN SLOGAN ;
+- AUCUNE LISTE ;
+- AUCUNE INFOGRAPHIE ;
+- AUCUN CALENDRIER ;
+- AUCUN TABLEAU ;
+- AUCUN GRAPHIQUE ;
+- AUCUNE CARTE AVEC DU TEXTE ;
+- AUCUNE INTERFACE UTILISATEUR ;
+- AUCUN FAUX SITE INTERNET ;
+- AUCUN ÉCRAN REMPLI D'ÉLÉMENTS ;
+- AUCUN LOGO ;
+- AUCUNE MARQUE ;
+- AUCUN FILIGRANE ;
+- AUCUN WIREFRAME ;
+- AUCUNE MAQUETTE D'INTERFACE ;
+- AUCUN SCHÉMA DE PAGE WEB ;
+- AUCUNE CASE À COCHER ;
+- AUCUNE COCHE ;
+- AUCUN POINT D'INTERROGATION ;
+- AUCUN DIAGRAMME ;
+- AUCUN SCHÉMA FONCTIONNEL.
+
+Si des documents, carnets, feuilles ou écrans apparaissent, ils doivent rester vierges ou présenter uniquement des formes abstraites non interprétables.
 
 ==================================================
 RÉSULTAT ATTENDU
 ==================================================
 
-Produis une seule image montrant la page d'accueil améliorée.
+Une seule illustration éditoriale horizontale.
 
-Elle doit pouvoir être présentée à côté de la capture originale sous la mention :
+Format adapté à LinkedIn et Facebook.
 
-"Une piste possible"
+Composition équilibrée.
 
-Ce n'est PAS une maquette définitive.
+Image suffisamment riche mais aérée.
 
-C'est une projection visuelle suffisamment réaliste pour permettre au prospect de comprendre immédiatement la direction proposée par LBMedia.
+Facilement recadrable.
 
-Aucun logo LBMedia.
-Aucune mention LBMedia.
-Aucun avant/après dans l'image.
-Aucun cadre de présentation.
-Uniquement la proposition de page web elle-même.
+Le concept doit provenir du contenu réel du post.
+
+Le résultat final doit être immédiatement identifiable comme une illustration numérique éditoriale LBMedia et ne doit jamais pouvoir être confondu avec une photographie.
 `.trim();
 
-    const formData =
-      new FormData();
-
-    formData.append(
-      "model",
-      "gpt-image-2"
-    );
-
-    formData.append(
-      "prompt",
-      prompt
-    );
-
-    formData.append(
-      "size",
-      "1536x1024"
-    );
-
-    formData.append(
-      "quality",
-      "medium"
-    );
-
-    formData.append(
-      "image",
-      new Blob(
-        [
-          beforeBytes,
-        ],
-        {
-          type:
-            beforeContentType,
-        }
-      ),
-      getInputFileName(
-        beforeContentType
-      )
-    );
-
-    const imageResponse =
-      await fetch(
-        OPENAI_IMAGE_EDIT_URL,
-        {
-          method: "POST",
-
-          headers: {
-            Authorization:
-              `Bearer ${process.env.OPENAI_API_KEY}`,
-          },
-
-          body:
-            formData,
-        }
-      );
-
     const result =
-      await imageResponse.json() as
-        OpenAIImageEditResponse;
-
-    if (
-      !imageResponse.ok
-    ) {
-      throw new Error(
-        result.error?.message ??
-          "OpenAI n'a pas pu générer la proposition."
-      );
-    }
+      await openai.images.generate({
+        model: "gpt-image-2",
+        prompt,
+        size: "1536x1024",
+        quality: "medium",
+      });
 
     const imageBase64 =
       result.data?.[0]
@@ -449,7 +454,7 @@ Uniquement la proposition de page web elle-même.
 
     if (!imageBase64) {
       throw new Error(
-        "OpenAI n'a retourné aucune proposition visuelle exploitable."
+        "OpenAI n'a retourné aucun visuel exploitable."
       );
     }
 
@@ -460,31 +465,28 @@ Uniquement la proposition de page web elle-même.
       );
 
     const fileName =
-      `${company.id}/${id}/proposal-${Date.now()}.png`;
+      `publications/${id}/${Date.now()}.png`;
 
     const {
       error: uploadError,
     } = await supabaseAdmin
       .storage
-      .from(BUCKET)
+      .from("news-visuals")
       .upload(
         fileName,
         imageBuffer,
         {
           contentType:
             "image/png",
-
           cacheControl:
             "3600",
-
-          upsert:
-            false,
+          upsert: false,
         }
       );
 
     if (uploadError) {
       throw new Error(
-        `Impossible d'enregistrer la proposition : ${uploadError.message}`
+        `Impossible d'enregistrer le visuel : ${uploadError.message}`
       );
     }
 
@@ -492,7 +494,7 @@ Uniquement la proposition de page web elle-même.
       data: publicUrlData,
     } = supabaseAdmin
       .storage
-      .from(BUCKET)
+      .from("news-visuals")
       .getPublicUrl(
         fileName
       );
@@ -502,48 +504,68 @@ Uniquement la proposition de page web elle-même.
 
     if (!imageUrl) {
       throw new Error(
-        "Impossible de récupérer l'URL de la proposition."
+        "Impossible de récupérer l'URL publique du visuel."
       );
     }
 
-    const updated =
-      await updateAuditProspection(
-        id,
-        {
-          afterImageUrl:
-            imageUrl,
-
-          attachmentUrl:
-            null,
-        }
+    const imageAlt =
+      buildImageAlt(
+        publication.title,
+        publication.content,
+        publication.channel
       );
+
+    const {
+      data: updatedPublication,
+      error: updateError,
+    } = await supabaseAdmin
+      .from("publications")
+      .update({
+        image_url:
+          imageUrl,
+        image_alt:
+          imageAlt,
+        updated_at:
+          new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+
+    if (
+      updateError ||
+      !updatedPublication
+    ) {
+      throw new Error(
+        updateError?.message ||
+          "Le visuel a été créé mais son URL n'a pas pu être enregistrée."
+      );
+    }
 
     return NextResponse.json({
       success: true,
-
       message:
-        "Proposition visuelle générée.",
-
+        "Visuel généré et enregistré.",
       image_url:
         imageUrl,
-
-      prospection:
-        updated,
+      image_alt:
+        imageAlt,
+      publication:
+        updatedPublication,
     });
   } catch (error) {
     console.error(
-      "Audit prospection proposal generation error:",
+      "Publication visual generation error:",
       error
     );
 
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message
-            : "Pénélope n'a pas pu générer la proposition visuelle.",
+            : "Pénélope n'a pas pu générer le visuel.",
       },
       {
         status: 500,
@@ -552,27 +574,56 @@ Uniquement la proposition de page web elle-même.
   }
 }
 
-function getInputFileName(
-  mimeType: string
+function getShortSubject(
+  content: string
 ) {
-  if (
-    mimeType.includes(
-      "jpeg"
-    ) ||
-    mimeType.includes(
-      "jpg"
-    )
-  ) {
-    return "site-actuel.jpg";
+  const cleaned =
+    content
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/#[\p{L}\p{N}_-]+/gu, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  if (!cleaned) {
+    return "Communication et activité des entreprises locales";
   }
 
+  const firstSentence =
+    cleaned.split(
+      /[.!?]\s/
+    )[0];
+
+  return firstSentence
+    .slice(0, 180)
+    .trim();
+}
+
+function buildImageAlt(
+  title: string | null,
+  content: string,
+  channel: string
+) {
+  const subject =
+    title?.trim() ||
+    getShortSubject(
+      content
+    );
+
+  const prefix =
+    channel === "linkedin"
+      ? "Illustration éditoriale LBMedia pour une publication LinkedIn"
+      : "Illustration éditoriale LBMedia pour une publication Facebook";
+
+  const alt =
+    `${prefix} sur ${subject}.`;
+
   if (
-    mimeType.includes(
-      "webp"
-    )
+    alt.length <= 220
   ) {
-    return "site-actuel.webp";
+    return alt;
   }
 
-  return "site-actuel.png";
+  return `${alt
+    .slice(0, 216)
+    .trimEnd()}...`;
 }
