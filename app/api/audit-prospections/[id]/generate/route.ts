@@ -54,6 +54,19 @@ function isProposalType(
   );
 }
 
+function requiresProposalPdf(
+  proposalType: ProposalType
+): boolean {
+  return (
+    proposalType ===
+      "optimization_redesign" ||
+    proposalType ===
+      "redesign" ||
+    proposalType ===
+      "new_website"
+  );
+}
+
 function getProposalLabel(
   proposalType: ProposalType
 ): string {
@@ -468,7 +481,7 @@ function mentionsAttachmentAlreadyPresent(
 function matchesProposalType(
   generated: GeneratedProspection,
   proposalType: ProposalType,
-  hasAttachment: boolean
+  expectsAttachment: boolean
 ): boolean {
   const email =
     generated.emailContent;
@@ -490,7 +503,7 @@ function matchesProposalType(
   }
 
   if (
-    hasAttachment &&
+    expectsAttachment &&
     containsFutureAttachmentOffer(
       email
     )
@@ -499,8 +512,7 @@ function matchesProposalType(
   }
 
   if (
-    proposalType !== "optimization" &&
-    hasAttachment &&
+    expectsAttachment &&
     !mentionsAttachmentAlreadyPresent(
       email
     )
@@ -633,7 +645,7 @@ function matchesProposalType(
 
 function getCorrectionInstruction(
   proposalType: ProposalType,
-  hasAttachment: boolean
+  expectsAttachment: boolean
 ): string {
   const commonCorrection = `
 Le message précédent doit être réécrit.
@@ -648,15 +660,16 @@ RÈGLES ABSOLUES :
 - n'utilise aucun intertitre du type "Refonte :", "Optimisation :" ou "Création d'un nouveau site :" dans le corps du mail ;
 - le mail doit ressembler à un message personnel, pas à un rapport.
 ${
-  hasAttachment
+  expectsAttachment
     ? `
-- un PDF correspondant à cette proposition EST DÉJÀ JOINT ;
+- lors de l'envoi, un PDF correspondant à cette proposition SERA JOINT au mail ;
+- rédige donc le message comme si cette pièce jointe était déjà présente ;
 - mentionne naturellement cette pièce jointe ;
 - ne dis jamais que tu peux l'envoyer, la transmettre ou la montrer plus tard.
 `
     : `
-- aucun PDF n'est actuellement joint ;
-- ne prétends pas qu'une pièce jointe existe.
+- cette proposition ne comporte aucun PDF ;
+- ne mentionne aucune pièce jointe.
 `
 }
 `.trim();
@@ -991,6 +1004,11 @@ export async function POST(
       proposalType ===
         "optimization";
 
+    const expectsAttachment =
+      requiresProposalPdf(
+        proposalType
+      );
+
     const proposalLabel =
       getProposalLabel(
         proposalType
@@ -1050,14 +1068,6 @@ export async function POST(
         }
       );
     }
-
-    const hasAttachment =
-      !shouldInvalidateVisualAssets &&
-      Boolean(
-        prospection
-          .attachment_url
-          ?.trim()
-      );
 
     const recommendation =
       commercialDiagnosis
@@ -1352,27 +1362,20 @@ Le mail doit être constitué de paragraphes naturels.
 PIÈCE JOINTE
 ==================================================
 
-Une pièce jointe correspondant à l'angle actuel est ${
-      hasAttachment
-        ? "PRÉSENTE."
-        : "ABSENTE."
-    }
-
 ${
-  proposalType ===
-  "optimization"
+  expectsAttachment
     ? `
-Cette proposition porte uniquement sur l'optimisation.
+Cette proposition commerciale comporte OBLIGATOIREMENT un PDF.
 
-Aucun PDF n'est nécessaire.
+Le PDF peut ne pas encore avoir été généré techniquement au moment où tu rédiges ce texte.
 
-Ne mentionne aucune pièce jointe.
-`
-    : hasAttachment
-      ? `
-LE PDF EST DÉJÀ JOINT AU MAIL.
+Cela n'a aucune importance :
 
-Tu dois le mentionner naturellement dans le corps du message.
+AU MOMENT DE L'ENVOI AU PROSPECT, LE PDF SERA JOINT.
+
+Tu dois donc rédiger le mail comme si le document était déjà joint.
+
+Tu dois mentionner naturellement cette pièce jointe.
 
 Ne dis JAMAIS :
 
@@ -1384,41 +1387,48 @@ Ne dis JAMAIS :
 
 "Je peux vous envoyer quelques pistes."
 
-Le prospect recevra déjà le document.
+"Je pourrais vous envoyer..."
 
-Adapte sa présentation à l'angle :
+Le prospect recevra le mail ET le document ensemble.
 
-${proposalType === "optimization_redesign"
-        ? `
+Adapte la présentation du PDF à l'angle choisi :
+
+${
+  proposalType ===
+  "optimization_redesign"
+    ? `
 Présente-le comme une piste concrète permettant d'illustrer jusqu'où le site pourrait évoluer.
 
 Par exemple :
 
 "Pour rendre cette idée plus concrète, j'ai imaginé une piste d'évolution que vous trouverez en pièce jointe."
 `
-        : proposalType === "redesign"
-          ? `
+    : proposalType ===
+      "redesign"
+      ? `
 Présente-le comme une piste de refonte illustrative.
 
 Par exemple :
 
 "Pour rendre cette idée plus concrète, j'ai imaginé une piste de refonte que vous trouverez en pièce jointe. Il ne s'agit évidemment pas d'une maquette définitive, mais simplement d'une façon d'illustrer ce que pourrait apporter une nouvelle présentation."
 `
-          : `
+      : `
 Présente-le comme une première direction permettant d'illustrer ce que pourrait être une nouvelle conception.
 
 Par exemple :
 
 "Pour rendre cette réflexion plus concrète, j'ai imaginé une première direction visuelle que vous trouverez en pièce jointe. Elle ne constitue évidemment pas une maquette définitive, mais permet d'illustrer ce que pourrait donner cette nouvelle approche."
 `
-      }
+}
 `
-      : `
-Aucun PDF compatible n'est actuellement joint.
+    : `
+Cette proposition porte uniquement sur l'optimisation du site existant.
 
-Ne prétends pas qu'un document existe.
+AUCUN PDF ne sera joint.
 
-Le mail doit fonctionner seul.
+Ne mentionne aucune pièce jointe.
+
+Ne propose pas non plus d'envoyer ultérieurement une maquette ou une projection.
 `
 }
 
@@ -1458,7 +1468,21 @@ Le but est d'ouvrir une discussion.
 
 Ne force pas un rendez-vous.
 
-Ne propose pas d'envoyer quelque chose qui est déjà joint.
+${
+  expectsAttachment
+    ? `
+Le document sera déjà joint au mail.
+
+Ne propose donc jamais de l'envoyer, de le transmettre ou de le montrer.
+
+La conclusion doit inviter uniquement à échanger autour de la piste présentée.
+`
+    : `
+Aucun document n'accompagne ce mail.
+
+La conclusion doit inviter à échanger autour des optimisations possibles.
+`
+}
 
 Tu peux utiliser une formulation naturelle du type :
 
@@ -1500,7 +1524,7 @@ Retourne UNIQUEMENT :
       !matchesProposalType(
         generated,
         proposalType,
-        hasAttachment
+        expectsAttachment
       )
     ) {
       generated =
@@ -1508,7 +1532,7 @@ Retourne UNIQUEMENT :
           prompt,
           getCorrectionInstruction(
             proposalType,
-            hasAttachment
+            expectsAttachment
           )
         );
     }
@@ -1517,7 +1541,7 @@ Retourne UNIQUEMENT :
       !matchesProposalType(
         generated,
         proposalType,
-        hasAttachment
+        expectsAttachment
       )
     ) {
       throw new Error(
