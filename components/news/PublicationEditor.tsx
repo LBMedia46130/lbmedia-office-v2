@@ -221,6 +221,11 @@ export default function PublicationEditor({
   ] = useState(false);
 
   const [
+    isMarkingLinkedInPublished,
+    setIsMarkingLinkedInPublished,
+  ] = useState(false);
+
+  const [
     message,
     setMessage,
   ] = useState<
@@ -240,6 +245,14 @@ export default function PublicationEditor({
   const supportsVisual =
     channel === "linkedin" ||
     channel === "facebook";
+
+  const isLinkedInManualDue =
+    channel === "linkedin" &&
+    status === "scheduled" &&
+    scheduledAt &&
+    new Date(
+      scheduledAt
+    ).getTime() <= Date.now();
 
   useEffect(() => {
     syncFields(publication);
@@ -521,6 +534,56 @@ export default function PublicationEditor({
       );
     } finally {
       setIsChangingStatus(false);
+    }
+  }
+
+  async function markLinkedInPublished() {
+    if (
+      channel !== "linkedin" ||
+      status !== "scheduled"
+    ) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        "Confirmer que ce post a bien été publié manuellement sur LinkedIn ?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsMarkingLinkedInPublished(
+      true
+    );
+
+    setMessage(null);
+    setError(null);
+
+    try {
+      await updatePublication(
+        "published",
+        null
+      );
+
+      setScheduledAt("");
+
+      setMessage(
+        "Publication LinkedIn marquée comme publiée."
+      );
+    } catch (
+      linkedInError
+    ) {
+      setError(
+        linkedInError instanceof Error
+          ? linkedInError.message
+          : "Une erreur est survenue."
+      );
+    } finally {
+      setIsMarkingLinkedInPublished(
+        false
+      );
     }
   }
 
@@ -1202,7 +1265,8 @@ export default function PublicationEditor({
     isCreatingBrevoDraft ||
     isApprovingBrevoSend ||
     isPublishingFacebook ||
-    isMarkingGoogleBusinessPublished;
+    isMarkingGoogleBusinessPublished ||
+    isMarkingLinkedInPublished;
 
   const canEdit =
     status !== "published";
@@ -1270,7 +1334,8 @@ export default function PublicationEditor({
           />
         ) : null}
 
-        {status === "scheduled" ? (
+        {status === "scheduled" &&
+        !isLinkedInManualDue ? (
           <StatusPanel
             tone="cyan"
             title="Publication planifiée"
@@ -1280,6 +1345,20 @@ export default function PublicationEditor({
                     scheduledAt
                   )}.`
                 : "Une date de publication doit être définie."
+            }
+          />
+        ) : null}
+
+        {isLinkedInManualDue ? (
+          <StatusPanel
+            tone="amber"
+            title="À publier manuellement"
+            description={
+              scheduledAt
+                ? `Ce post LinkedIn était prévu le ${formatDateTime(
+                    scheduledAt
+                  )}. Publie-le sur LinkedIn puis marque-le comme publié dans Office.`
+                : "Ce post LinkedIn doit être publié manuellement."
             }
           />
         ) : null}
@@ -1399,6 +1478,26 @@ export default function PublicationEditor({
             </div>
 
             <div className="flex flex-wrap justify-end gap-3">
+              {channel === "linkedin" &&
+              status === "scheduled" ? (
+                <button
+                  type="button"
+                  onClick={
+                    markLinkedInPublished
+                  }
+                  disabled={isBusy}
+                  className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    isLinkedInManualDue
+                      ? "bg-sky-600 hover:bg-sky-700"
+                      : "bg-slate-500 hover:bg-slate-600"
+                  }`}
+                >
+                  {isMarkingLinkedInPublished
+                    ? "Enregistrement..."
+                    : "Marquer comme publiée"}
+                </button>
+              ) : null}
+
               {channel === "brevo" &&
               (status === "ready" ||
                 status ===
@@ -2177,7 +2276,8 @@ function StatusPanel({
 function formatDateTime(
   value: string
 ) {
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
   if (
     Number.isNaN(
@@ -2192,6 +2292,8 @@ function formatDateTime(
     {
       dateStyle: "medium",
       timeStyle: "short",
+      timeZone:
+        "Europe/Paris",
     }
   ).format(date);
 }
