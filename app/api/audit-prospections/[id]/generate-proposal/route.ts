@@ -119,11 +119,6 @@ export async function POST(
         prospection.proposal_type
       );
 
-    /*
-     * Une optimisation seule ne nécessite
-     * volontairement aucune projection
-     * visuelle.
-     */
     if (
       proposalType ===
       "optimization"
@@ -140,12 +135,6 @@ export async function POST(
       );
     }
 
-    /*
-     * Dans le parcours Audit → Prospection,
-     * la capture actuelle reste notre
-     * référence factuelle, y compris
-     * lorsqu'on propose un nouveau site.
-     */
     if (
       !prospection.before_image_url
     ) {
@@ -251,6 +240,11 @@ export async function POST(
         proposalType
       );
 
+    const sourceUsageRules =
+      getSourceUsageRules(
+        proposalType
+      );
+
     const prompt = `
 À partir de la capture du site fournie, crée une PROJECTION VISUELLE correspondant précisément à l'orientation commerciale suivante.
 
@@ -260,19 +254,23 @@ TYPE DE PROPOSITION
 
 ${proposalDirection}
 
-CETTE ORIENTATION EST IMPORTANTE.
+CETTE ORIENTATION EST PRIORITAIRE.
 
-La proposition visuelle ne doit pas être identique quel que soit le type de projet.
+La différence entre une REFONTE et un NOUVEAU SITE doit être immédiatement perceptible.
 
-Elle doit traduire graphiquement le niveau d'évolution demandé tout en respectant strictement la réalité de l'entreprise.
+==================================================
+UTILISATION DE LA CAPTURE SOURCE
+==================================================
+
+${sourceUsageRules}
 
 ==================================================
 OBJECTIF COMMERCIAL DE LA PROJECTION
 ==================================================
 
-Cette image sera présentée commercialement par LBMedia à l'entreprise comme une piste possible d'évolution de son site.
+Cette image sera présentée commercialement par LBMedia à l'entreprise comme une piste possible pour son site internet.
 
-Il s'agit exclusivement d'un exercice de WEB DESIGN, de hiérarchisation et de restructuration VISUELLE de la page.
+Il s'agit exclusivement d'un exercice de WEB DESIGN, de hiérarchisation et de conception VISUELLE.
 
 Il ne s'agit PAS :
 
@@ -292,24 +290,24 @@ CETTE RÈGLE EST PRIORITAIRE SUR TOUTES LES AUTRES CONSIGNES.
 
 Toutes les photographies réelles visibles dans la capture constituent des ÉLÉMENTS FACTUELS.
 
-Elles doivent être considérées comme des contenus existants à réutiliser, et NON comme des références permettant de générer de nouvelles images similaires.
+Elles doivent être considérées comme des ASSETS EXISTANTS à réutiliser, et NON comme des références permettant de générer de nouvelles images similaires.
 
-Lorsqu'une photographie existante est réutilisée dans la proposition :
+Lorsqu'une photographie existante est réutilisée :
 
 - conserve exactement le même lieu ;
 - conserve exactement le même bâtiment ;
 - conserve exactement la même architecture ;
 - conserve exactement les mêmes aménagements ;
 - conserve exactement la même piscine, chambre, restaurant, produit, personne, réalisation ou environnement visible ;
-- conserve autant que possible le cadrage et le contenu photographique original.
+- conserve autant que possible son contenu photographique original.
 
 Tu peux :
 
-- recadrer légèrement une photographie existante pour l'intégrer dans une nouvelle mise en page ;
+- recadrer légèrement une photographie existante ;
 - changer ses dimensions d'affichage ;
 - l'utiliser comme image de fond ;
-- appliquer un léger voile graphique permettant de rendre du texte lisible ;
-- repositionner cette photographie dans la page.
+- appliquer un léger voile graphique pour rendre du texte lisible ;
+- la repositionner librement dans la nouvelle composition.
 
 Tu ne dois PAS :
 
@@ -325,27 +323,19 @@ Tu ne dois PAS :
 - ajouter des équipements inexistants ;
 - embellir artificiellement les lieux ;
 - créer une photographie "inspirée" de l'original ;
-- remplacer un visuel réel par une image générée qui lui ressemble seulement.
+- remplacer un visuel réel par une image générée ressemblante.
 
-EXEMPLE IMPORTANT :
-
-Si la capture montre la photographie réelle d'un hôtel, la proposition doit montrer CET HÔTEL et cette photographie réelle.
-
-Elle ne doit jamais montrer une interprétation générée de l'hôtel, même si cette interprétation paraît plus belle ou plus moderne.
-
-L'amélioration proposée concerne LE SITE INTERNET.
+L'amélioration concerne LE SITE INTERNET.
 
 Elle ne concerne PAS la réalité physique de l'entreprise.
 
-Si tu ne peux pas préserver fidèlement une photographie, préfère ne pas l'utiliser plutôt que d'en inventer une nouvelle version.
+Si tu ne peux pas préserver fidèlement une photographie, préfère ne pas l'utiliser.
 
 ==================================================
 RÈGLE ABSOLUE : AUCUNE PHOTOGRAPHIE INVENTÉE
 ==================================================
 
-CETTE RÈGLE S'APPLIQUE À TOUTES LES IMAGES DE LA PROPOSITION, Y COMPRIS AUX PETITES PHOTOGRAPHIES ET AUX VISUELS SECONDAIRES.
-
-Toute photographie affichée dans la proposition doit correspondre à une photographie RÉELLEMENT ET CLAIREMENT VISIBLE dans la capture source fournie.
+Toute photographie affichée dans la proposition doit correspondre à une photographie RÉELLEMENT ET CLAIREMENT VISIBLE dans la capture source.
 
 Cela concerne notamment :
 
@@ -371,18 +361,7 @@ NE GÉNÈRE JAMAIS une photographie pour compléter graphiquement une section.
 
 NE DÉDUIS JAMAIS l'apparence d'un élément qui n'est pas visible dans la capture.
 
-Par exemple :
-
-- si aucune chambre n'est clairement visible dans la capture, n'affiche aucune photographie de chambre ;
-- si aucun plat n'est clairement visible dans la capture, n'affiche aucune photographie de plat ;
-- si aucun restaurant n'est clairement visible dans la capture, n'invente aucune photographie de restaurant ;
-- si aucune équipe n'est visible, n'invente aucun portrait ;
-- si aucun produit n'est visible, n'invente aucune photographie de produit ;
-- si aucune réalisation n'est visible, n'invente aucune photographie de réalisation.
-
-Même si l'activité de l'entreprise permet logiquement de supposer l'existence de ces éléments, CETTE SUPPOSITION N'AUTORISE PAS LEUR GÉNÉRATION.
-
-Par exemple :
+La logique métier n'est jamais une preuve visuelle.
 
 Un hôtel possède probablement des chambres.
 
@@ -396,22 +375,20 @@ Une entreprise de construction possède probablement des réalisations.
 
 Cela ne signifie PAS que tu peux inventer une photographie de chantier ou de maison.
 
-La logique métier n'est jamais une preuve visuelle.
-
 ==================================================
 QUE FAIRE SI UNE PHOTO MANQUE ?
 ==================================================
 
-Si la nouvelle mise en page nécessiterait normalement une photographie mais qu'aucune photographie réelle correspondante n'est clairement disponible dans la capture :
+Si la nouvelle composition nécessiterait normalement une photographie mais qu'aucune photographie réelle correspondante n'est disponible :
 
 NE CRÉE PAS CETTE PHOTOGRAPHIE.
 
-Utilise à la place, selon ce qui convient au design :
+Utilise à la place :
 
 - un bloc typographique élégant ;
 - un titre ;
 - une courte description ;
-- une icône simple et générique ;
+- une icône simple ;
 - un pictogramme sobre ;
 - un aplat de couleur ;
 - une forme graphique ;
@@ -420,7 +397,7 @@ Utilise à la place, selon ce qui convient au design :
 - davantage d'espace blanc ;
 - une carte sans photographie.
 
-Tu peux également simplifier la section ou la supprimer.
+Tu peux également simplifier ou supprimer la section.
 
 UNE ZONE SANS PHOTO EST TOUJOURS PRÉFÉRABLE À UNE FAUSSE PHOTO.
 
@@ -429,21 +406,6 @@ RÈGLE DE RÉUTILISATION DES PHOTOGRAPHIES
 ==================================================
 
 Ne transforme pas une photographie source en une nouvelle photographie.
-
-Lorsque tu réutilises une photographie visible dans la capture :
-
-- traite-la comme un asset existant ;
-- conserve son contenu réel ;
-- ne change pas les personnes ;
-- ne change pas les objets ;
-- ne change pas le bâtiment ;
-- ne change pas la décoration ;
-- ne change pas le mobilier ;
-- ne change pas le paysage ;
-- ne change pas les produits ;
-- ne change pas les plats ;
-- ne change pas les véhicules ;
-- ne change pas les équipements.
 
 Une photographie source peut être :
 
@@ -457,15 +419,15 @@ Une photographie source peut être :
 
 Elle ne doit pas être recréée ou réinterprétée.
 
-Si tu n'es pas certain qu'un visuel de la proposition correspond réellement à une photographie présente dans la capture source, SUPPRIME CE VISUEL.
+Si tu n'es pas certain qu'un visuel de la proposition corresponde réellement à une photographie présente dans la capture source, SUPPRIME CE VISUEL.
 
 ==================================================
-RÈGLE ABSOLUE : PROPOSITION VISUELLE UNIQUEMENT
+PROPOSITION VISUELLE UNIQUEMENT
 ==================================================
 
 La proposition doit montrer une DIRECTION GRAPHIQUE et éditoriale.
 
-Elle ne doit PAS chercher à simuler le fonctionnement complet d'un futur site.
+Elle ne doit PAS simuler le fonctionnement complet du futur site.
 
 N'invente et n'affiche AUCUN nouveau module fonctionnel.
 
@@ -487,43 +449,15 @@ INTERDICTIONS :
 - aucun module interactif complexe ;
 - aucune interface applicative inventée.
 
-Même lorsqu'une fonctionnalité de réservation, de contact ou de demande existe déjà sur le site, NE LA REPRÉSENTE PAS sous la forme d'un formulaire ou d'un widget détaillé dans cette projection.
+Même lorsqu'une fonctionnalité existe déjà, ne la représente pas sous forme de formulaire ou widget détaillé.
 
-Si une action commerciale est pertinente, représente-la uniquement par un bouton simple et discret, par exemple :
+Une action commerciale peut être représentée uniquement par un bouton simple :
 
 - "Réserver" ;
 - "Nous contacter" ;
 - "Découvrir" ;
 - "En savoir plus" ;
 - "Demander un devis".
-
-N'affiche pas ce qui se passe après le clic.
-
-La proposition doit privilégier :
-
-- la photographie réelle ;
-- le message principal ;
-- la hiérarchie de l'offre ;
-- les contenus essentiels ;
-- les éléments de confiance ;
-- les appels à l'action simples.
-
-==================================================
-RÈGLE DE SOBRIÉTÉ FONCTIONNELLE
-==================================================
-
-NE CONÇOIS PAS DE NOUVELLES FONCTIONNALITÉS.
-
-Réorganise et valorise principalement ce qui existe déjà.
-
-Une recommandation présente dans l'audit ne signifie pas qu'elle doit obligatoirement apparaître VISUELLEMENT dans cette proposition.
-
-Par exemple :
-
-- une recommandation SEO peut être importante sans être visible dans la maquette ;
-- une amélioration technique peut être importante sans ajouter un module à l'écran ;
-- une amélioration de conversion peut être illustrée par une meilleure hiérarchie et un bouton clair, sans créer de formulaire ;
-- une amélioration de réservation peut être illustrée par un simple bouton "Réserver", sans afficher un moteur de réservation.
 
 ==================================================
 ENTREPRISE
@@ -594,9 +528,9 @@ ${
 PRINCIPE DE CONCEPTION
 ==================================================
 
-La proposition doit matérialiser VISUELLEMENT uniquement les recommandations de l'audit qui peuvent raisonnablement être traduites en amélioration de présentation.
+La proposition doit matérialiser visuellement uniquement les recommandations qui peuvent raisonnablement être traduites en présentation.
 
-Chaque changement visible doit avoir une raison liée à au moins un de ces objectifs :
+Chaque changement visible doit servir au moins un objectif :
 
 - mieux faire comprendre l'activité ;
 - mieux présenter l'offre ;
@@ -604,63 +538,65 @@ Chaque changement visible doit avoir une raison liée à au moins un de ces obje
 - mieux mettre en valeur les contenus existants ;
 - mieux guider le visiteur ;
 - mieux rassurer ;
-- mieux orienter vers une action simple lorsqu'elle est pertinente.
+- mieux orienter vers une action simple.
 
-Ne modifie pas un élément uniquement pour donner l'impression que la proposition est différente.
+Le résultat doit pouvoir être réellement reproduit dans WordPress / Elementor à partir des contenus existants.
 
-Ne cherche pas la différence pour la différence.
-
-Le résultat doit pouvoir être réellement reproduit ensuite dans un site WordPress / Elementor à partir des contenus existants de l'entreprise.
-
-Évite donc :
+Évite :
 
 - les effets graphiques impossibles ;
 - les concepts irréalisables ;
 - les interfaces artificielles ;
 - les modules fonctionnels inventés ;
-- les widgets complexes ;
-- les éléments qui monopolisent inutilement l'espace.
+- les widgets complexes.
 
 ==================================================
-FIDÉLITÉ À L'IDENTITÉ
+IDENTITÉ DE L'ENTREPRISE
 ==================================================
 
-La capture fournie est la référence de marque ET la référence factuelle.
-
-Le résultat doit être immédiatement reconnaissable comme une évolution du site de CETTE entreprise.
+Le résultat doit être immédiatement reconnaissable comme appartenant à CETTE entreprise.
 
 Conserve :
 
 - le vrai logo visible dans la capture ;
 - le vrai nom de l'entreprise ;
-- les couleurs caractéristiques pertinentes ;
-- l'univers graphique pertinent ;
-- les photographies réelles utilisées dans la proposition ;
+- les couleurs de marque réellement identifiables lorsqu'elles sont pertinentes ;
+- les photographies réelles utilisées ;
 - la nature exacte de l'activité ;
 - les informations commerciales établies.
 
-Tu peux faire évoluer :
+ATTENTION :
 
-- la disposition ;
-- les proportions ;
-- les espacements ;
-- les fonds graphiques ;
-- la hiérarchie ;
-- la typographie ;
-- les cartes ;
-- les encadrés ;
-- la navigation ;
-- les boutons simples ;
-- la présentation des contenus ;
-- la manière dont les photographies existantes sont mises en valeur.
+CONSERVER L'IDENTITÉ NE SIGNIFIE PAS CONSERVER LE DESIGN ACTUEL.
 
-LIBERTÉ DE DESIGN : OUI.
+Le logo, les couleurs, les photographies et les contenus sont des ASSETS.
 
-LIBERTÉ D'INVENTER LA RÉALITÉ DE L'ENTREPRISE : NON.
+La composition actuelle de la page n'est PAS un asset.
 
-LIBERTÉ D'INVENTER DES PHOTOGRAPHIES : NON.
+Le header actuel n'est PAS un asset.
 
-LIBERTÉ D'INVENTER DES FONCTIONNALITÉS : NON.
+Le hero actuel n'est PAS un asset.
+
+La grille actuelle n'est PAS un asset.
+
+L'ordre actuel des sections n'est PAS un asset.
+
+La navigation actuelle n'est PAS un asset.
+
+${
+  proposalType ===
+  "new_website"
+    ? `
+POUR LE NOUVEAU SITE :
+
+Cette distinction est ABSOLUE.
+
+Tu dois conserver l'identité de l'entreprise mais NE PAS reproduire son système de mise en page actuel.
+
+La nouvelle composition doit pouvoir être dessinée sans regarder la disposition actuelle, une fois les assets et les faits identifiés.
+`
+    : ""
+}
 
 ==================================================
 CONTENU
@@ -672,11 +608,11 @@ Utilise uniquement des informations établies par :
 2. les informations sur l'entreprise fournies ci-dessus ;
 3. les constats de l'audit.
 
-N'invente aucune nouvelle activité ou promesse commerciale.
+N'invente aucune activité ou promesse commerciale.
 
 Lorsque les vrais textes sont lisibles, conserve-les ou utilise-les comme base.
 
-Tu peux raccourcir une formulation pour améliorer la hiérarchie visuelle, à condition de ne jamais changer son sens.
+Tu peux raccourcir une formulation pour améliorer la hiérarchie visuelle sans en changer le sens.
 
 Si un texte précis n'est pas lisible, utilise un traitement graphique sobre plutôt que d'inventer une affirmation.
 
@@ -684,7 +620,7 @@ Si un texte précis n'est pas lisible, utilise un traitement graphique sobre plu
 ÉLÉMENTS DE CONFIANCE
 ==================================================
 
-N'utilise que les éléments de confiance réellement visibles ou établis dans les informations fournies.
+N'utilise que les éléments de confiance réellement visibles ou établis.
 
 N'invente jamais :
 
@@ -700,8 +636,6 @@ N'invente jamais :
 - de fausses références ;
 - de faux prix.
 
-Si un élément de réassurance n'est pas établi, ne l'affiche pas.
-
 ==================================================
 DIRECTION GRAPHIQUE
 ==================================================
@@ -712,33 +646,119 @@ La projection doit être :
 - contemporaine ;
 - élégante ;
 - crédible ;
-- plus aérée ;
-- visuellement plus forte ;
+- aérée ;
+- visuellement forte ;
 - réaliste ;
 - adaptée à une vraie entreprise française.
 
 Le design peut être nettement meilleur que l'original.
 
-La fidélité à l'entreprise ne signifie PAS fidélité à la mise en page actuelle.
-
-L'objectif est de montrer comment les contenus réels peuvent être mieux présentés selon le TYPE DE PROPOSITION défini au début de cette consigne.
-
 La photographie principale doit rester un élément visuel fort lorsqu'elle est pertinente.
-
-Ne masque pas inutilement une belle photographie réelle avec :
-
-- un grand formulaire ;
-- une carte massive ;
-- un panneau fonctionnel ;
-- un widget ;
-- un bloc technique.
 
 Pour les sections secondaires :
 
-- utilise une photographie uniquement si cette photographie existe clairement dans la capture source ;
-- sinon, privilégie une présentation typographique ou iconographique ;
-- ne remplis jamais artificiellement une grille avec des photographies générées ;
-- une mise en page sobre avec moins d'images est préférable à une mise en page riche contenant de fausses images.
+- utilise une photographie uniquement si elle existe clairement dans la capture source ;
+- sinon, privilégie typographie, espace, aplats, formes ou pictogrammes ;
+- ne remplis jamais artificiellement une grille avec des photographies générées.
+
+${
+  proposalType ===
+  "new_website"
+    ? `
+==================================================
+RUPTURE VISUELLE OBLIGATOIRE — NOUVEAU SITE
+==================================================
+
+CETTE PARTIE EST DÉTERMINANTE.
+
+Tu ne réalises PAS une version modernisée de la page fournie.
+
+Tu conçois UNE NOUVELLE PAGE D'ACCUEIL.
+
+Commence mentalement avec UNE TOILE BLANCHE.
+
+Ensuite seulement, réintroduis :
+
+- le logo réel ;
+- les couleurs pertinentes ;
+- les photographies réellement disponibles ;
+- les informations factuelles ;
+- les prestations réellement établies.
+
+LA COMPOSITION DOIT ÊTRE NOUVELLE.
+
+Change obligatoirement plusieurs éléments structurels majeurs :
+
+1. une nouvelle architecture du header ;
+2. une nouvelle composition du hero ;
+3. une nouvelle hiérarchie typographique ;
+4. une nouvelle organisation des contenus après le hero ;
+5. un nouveau rythme entre textes, espaces et photographies ;
+6. une nouvelle logique de mise en avant des prestations ;
+7. une nouvelle position et une nouvelle hiérarchie des appels à l'action.
+
+NE CONSERVE PAS :
+
+- la même disposition du header ;
+- le même découpage du hero ;
+- la même position relative du logo, du titre et de l'image ;
+- la même grille principale ;
+- la même succession visuelle de sections ;
+- les mêmes proportions générales ;
+- le même rythme vertical ;
+- la même logique de cartes simplement restylées.
+
+IMPORTANT :
+
+Une nouvelle palette ou une nouvelle typographie appliquée à la même structure NE SUFFIT PAS.
+
+Déplacer quelques blocs NE SUFFIT PAS.
+
+Arrondir les cartes NE SUFFIT PAS.
+
+Agrandir le hero NE SUFFIT PAS.
+
+Changer les boutons NE SUFFIT PAS.
+
+Le squelette de la page doit être différent.
+
+Si quelqu'un place la capture actuelle et la proposition côte à côte, il doit immédiatement voir :
+
+"Même entreprise, mais site conçu autrement."
+
+et NON :
+
+"Même site avec un nouveau design."
+
+La photographie source peut être réutilisée dans une position totalement différente.
+
+Par exemple, une image actuellement secondaire peut devenir le hero si elle est pertinente.
+
+Une image actuellement dans le hero peut être utilisée plus bas.
+
+Les contenus peuvent être regroupés autrement.
+
+Les sections peuvent être réordonnées.
+
+Les textes peuvent être hiérarchisés autrement.
+
+Le nombre de blocs visibles peut être réduit.
+
+L'espace blanc peut devenir un élément majeur de composition.
+
+La proposition doit donner l'impression qu'un webdesigner a reçu :
+
+- le logo ;
+- les photos ;
+- les contenus ;
+- les objectifs ;
+
+SANS recevoir la maquette du site actuel.
+
+C'est exactement l'effet recherché.
+`
+    : ""
+}
 
 ==================================================
 CADRAGE
@@ -746,16 +766,16 @@ CADRAGE
 
 Ne cherche PAS à faire entrer toute la page d'accueil dans l'image.
 
-Concentre la projection sur environ les 1 à 2 premiers écrans desktop du site.
+Concentre la projection sur environ les 1 à 2 premiers écrans desktop.
 
-Les éléments doivent être suffisamment grands pour être lisibles dans une présentation commerciale.
+Les éléments doivent être suffisamment grands pour être lisibles.
 
 La projection doit occuper tout le visuel.
 
 Pas de navigateur autour.
 Pas d'ordinateur.
 Pas de téléphone.
-Pas de mockup posé dans un décor.
+Pas de mockup dans un décor.
 
 L'image doit ressembler directement à une capture d'écran du site proposé.
 
@@ -765,25 +785,43 @@ VÉRIFICATION AVANT DE PRODUIRE
 
 Avant de produire l'image, vérifie mentalement :
 
-1. Ai-je bien respecté le TYPE DE PROPOSITION indiqué au début ?
+1. Ai-je respecté le TYPE DE PROPOSITION ?
 2. Ai-je conservé l'identité réelle de l'entreprise ?
-3. CHAQUE photographie utilisée existe-t-elle réellement dans la capture source ?
-4. Pour CHAQUE petite vignette photographique, puis-je identifier clairement son équivalent dans la capture source ?
-5. Ai-je inventé ou modifié un bâtiment, un lieu, un produit ou une réalisation ?
-6. Ai-je inventé une chambre, un plat, un restaurant, une équipe, un produit ou une réalisation simplement parce que l'activité de l'entreprise le suggère ?
-7. Ai-je inventé une fonctionnalité ou un module qui n'est pas nécessaire à cette démonstration visuelle ?
-8. Un formulaire, calendrier, moteur de réservation ou widget occupe-t-il une partie de la proposition ? Si oui, supprime-le.
+3. Chaque photographie utilisée existe-t-elle réellement dans la capture ?
+4. Chaque vignette photographique possède-t-elle un équivalent clair dans la source ?
+5. Ai-je inventé ou modifié un bâtiment, lieu, produit ou réalisation ?
+6. Ai-je inventé une photographie parce que l'activité la suggère ?
+7. Ai-je inventé une fonctionnalité ?
+8. Un formulaire, calendrier ou widget occupe-t-il la proposition ?
 9. Les changements portent-ils principalement sur le DESIGN DU SITE ?
-10. Les changements répondent-ils réellement aux constats de l'audit ?
+10. Les changements répondent-ils aux constats de l'audit ?
 11. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
-12. Le niveau d'évolution visuelle correspond-il réellement à ${getProposalShortLabel(
+12. Le niveau d'évolution correspond-il réellement à ${getProposalShortLabel(
       proposalType
     )} ?
+${
+  proposalType ===
+  "new_website"
+    ? `
+13. Ai-je réellement commencé par une page blanche ?
+14. Le header est-il structurellement différent ?
+15. Le hero est-il structurellement différent ?
+16. L'ordre et la hiérarchie des contenus sont-ils différents ?
+17. Ai-je évité de reproduire la grille et le rythme du site actuel ?
+18. En voyant les deux images côte à côte, dira-t-on "nouveau site" plutôt que "refonte" ?
+
+SI L'UNE DES RÉPONSES 13 À 18 EST NON :
+
+REPENSE LA COMPOSITION AVANT DE PRODUIRE L'IMAGE.
+`
+    : ""
+}
 
 SI LA RÉPONSE À LA QUESTION 3 OU 4 EST NON OU INCERTAINE :
+
 SUPPRIME LA PHOTOGRAPHIE CONCERNÉE.
 
-Ne la remplace surtout pas par une photographie générée.
+Ne la remplace jamais par une photographie générée.
 
 ==================================================
 RÉSULTAT
@@ -810,7 +848,20 @@ ${getProposalShortLabel(
   proposalType
 )}
 
-La proposition doit être construite à partir de la réalité visuelle de l'entreprise et du diagnostic issu de l'audit.
+${
+  proposalType ===
+  "new_website"
+    ? `
+RAPPEL FINAL :
+
+NOUVEAU SITE = NOUVELLE ARCHITECTURE VISUELLE.
+
+Utilise la capture comme bibliothèque d'assets et de faits.
+
+NE L'UTILISE PAS COMME MODÈLE DE MISE EN PAGE.
+`
+    : ""
+}
 `.trim();
 
     const formData =
@@ -911,13 +962,6 @@ La proposition doit être construite à partir de la réalité visuelle de l'ent
         "base64"
       );
 
-    /*
-     * Le type de proposition est intégré
-     * au nom du fichier.
-     *
-     * Cela permet de distinguer clairement
-     * les différentes orientations générées.
-     */
     const fileName =
       `${company.id}/${id}/proposal-${proposalType}-${Date.now()}.png`;
 
@@ -965,10 +1009,6 @@ La proposition doit être construite à partir de la réalité visuelle de l'ent
       );
     }
 
-    /*
-     * Toute nouvelle projection invalide
-     * le PDF précédemment généré.
-     */
     const updated =
       await updateAuditProspection(
         id,
@@ -1056,6 +1096,79 @@ function getProposalShortLabel(
   }
 }
 
+function getSourceUsageRules(
+  proposalType: Exclude<
+    ProposalType,
+    "optimization"
+  >
+): string {
+  if (
+    proposalType ===
+    "new_website"
+  ) {
+    return `
+La capture actuelle n'est PAS une maquette à modifier.
+
+Elle est uniquement :
+
+- une bibliothèque de photographies réelles ;
+- une source pour le logo et le nom ;
+- une source pour les couleurs de marque réellement identifiables ;
+- une source pour les textes et informations factuelles ;
+- une preuve de l'activité réelle de l'entreprise.
+
+IGNORE COMME RÉFÉRENCE DE DESIGN :
+
+- la structure actuelle ;
+- le header actuel ;
+- la navigation actuelle ;
+- le hero actuel ;
+- la grille actuelle ;
+- l'ordre des sections ;
+- les proportions ;
+- les espacements ;
+- la position actuelle des photographies ;
+- la hiérarchie typographique actuelle ;
+- la position actuelle des boutons.
+
+Tu dois extraire mentalement les ASSETS de la capture, puis concevoir une page neuve.
+
+Imagine que l'on t'a fourni séparément le logo, les photographies et les contenus, mais AUCUNE maquette du site existant.
+
+La proposition finale ne doit donc pas être une édition visuelle de la capture.
+
+Elle doit être une nouvelle composition utilisant les mêmes éléments factuels.
+`.trim();
+  }
+
+  if (
+    proposalType ===
+    "redesign"
+  ) {
+    return `
+La capture actuelle est à la fois :
+
+- une source factuelle ;
+- une référence d'identité ;
+- une référence permettant de comprendre le site existant.
+
+Pour cette REFONTE, tu peux modifier fortement la structure et la présentation.
+
+Il reste néanmoins pertinent que l'on puisse comprendre qu'il s'agit d'une transformation du site existant.
+
+Tu peux conserver certains repères ou certaines logiques si elles fonctionnent, mais tu n'es pas obligé de conserver la mise en page.
+`.trim();
+  }
+
+  return `
+La capture actuelle constitue une base à faire évoluer.
+
+Pour cette proposition OPTIMISATION + REFONTE, conserve une continuité perceptible avec le site actuel.
+
+Améliore nettement la hiérarchie, la lisibilité, la présentation et la mise en valeur des contenus sans donner l'impression d'avoir totalement abandonné la base existante.
+`.trim();
+}
+
 function getProposalDirection(
   proposalType: Exclude<
     ProposalType,
@@ -1099,11 +1212,11 @@ La projection doit faire penser :
       return `
 REFONTE DU SITE EXISTANT
 
-La proposition peut faire évoluer beaucoup plus franchement la structure et la présentation du site actuel.
+Tu travailles à partir du SITE EXISTANT.
 
-L'objectif est de montrer ce que pourrait apporter une véritable refonte graphique et éditoriale.
+La proposition doit montrer une transformation importante de sa présentation et de son organisation.
 
-Tu peux notamment revoir fortement :
+Tu peux revoir fortement :
 
 - la composition du haut de page ;
 - l'organisation de la navigation ;
@@ -1116,73 +1229,112 @@ Tu peux notamment revoir fortement :
 - les appels à l'action ;
 - la manière de valoriser les photographies existantes.
 
-La nouvelle présentation doit être nettement différente du site actuel tout en conservant :
+Mais le raisonnement reste celui d'une REFONTE :
 
-- la vraie entreprise ;
-- son identité ;
-- son logo ;
-- ses couleurs pertinentes ;
-- ses contenus factuels ;
-- ses photographies réelles.
+on part de ce qui existe pour le repenser et mieux le présenter.
 
-La projection doit faire penser :
+La projection peut conserver certains repères pertinents du site actuel.
 
-"Voici à quoi pourrait ressembler une véritable refonte de ce site."
+Elle doit faire penser :
+
+"Voici une nouvelle version, profondément retravaillée, de ce site existant."
+
+Elle ne doit PAS donner l'impression qu'un nouveau projet a été conçu sans tenir compte de la structure précédente.
 `.trim();
 
     case "new_website":
       return `
-NOUVEAU SITE
+NOUVEAU SITE — CONCEPTION À PARTIR D'UNE PAGE BLANCHE
 
-La capture actuelle sert uniquement de SOURCE FACTUELLE et de référence pour l'identité réelle de l'entreprise.
+CETTE PROPOSITION DOIT ÊTRE STRUCTURELLEMENT DIFFÉRENTE D'UNE REFONTE.
 
-Tu n'es PAS obligé de conserver la structure, la disposition ou l'organisation actuelle du site.
+Tu ne dois PAS améliorer la maquette actuelle.
 
-Imagine une nouvelle page d'accueil construite dès le départ autour :
+Tu ne dois PAS moderniser sa structure.
+
+Tu ne dois PAS prendre le header actuel et le redessiner.
+
+Tu ne dois PAS prendre le hero actuel et le moderniser.
+
+Tu ne dois PAS conserver la grille actuelle en changeant simplement son style.
+
+TU DOIS CONCEVOIR UNE NOUVELLE PAGE.
+
+La capture source sert exclusivement à récupérer :
+
+- l'identité réelle ;
+- le logo ;
+- les couleurs pertinentes ;
+- les photographies existantes ;
+- les contenus factuels ;
+- les prestations réellement établies.
+
+Une fois ces éléments identifiés, IGNORE LA MISE EN PAGE SOURCE.
+
+Pars mentalement d'une page totalement blanche.
+
+Demande-toi :
+
+"Si cette entreprise n'avait aujourd'hui aucun site, comment construirais-je sa première page d'accueil à partir de ses vrais contenus et de ses objectifs ?"
+
+Conçois alors une nouvelle architecture éditoriale et graphique autour :
 
 - de la compréhension immédiate de l'activité ;
-- des prestations prioritaires ;
-- de la visibilité ;
-- du référencement ;
-- de la visibilité locale lorsque pertinente ;
-- de la compréhension par les moteurs et les IA ;
-- de la conversion ;
-- d'un parcours simple vers le contact.
+- des prestations réellement proposées ;
+- du savoir-faire réellement établi ;
+- de la zone géographique lorsqu'elle est pertinente ;
+- de la visibilité Google ;
+- de la visibilité locale ;
+- des nouveaux usages de recherche et des assistants IA ;
+- de la confiance ;
+- de la prise de contact.
 
-Tu peux repenser largement :
+Tu dois repenser franchement :
 
-- le header ;
+- l'architecture du header ;
 - la navigation ;
 - le hero ;
 - la hiérarchie éditoriale ;
+- l'ordre des informations ;
 - la disposition des blocs ;
+- le rythme visuel ;
 - les proportions ;
 - la typographie ;
 - les espaces ;
 - les appels à l'action ;
-- la présentation des prestations.
+- la manière d'utiliser les photographies réelles.
 
-MAIS :
+LE SQUELETTE DOIT ÊTRE NOUVEAU.
 
-tu dois toujours conserver strictement la réalité de l'entreprise.
+Même entreprise : OUI.
 
-La liberté concerne LE SITE, pas l'entreprise elle-même.
+Même identité : OUI.
 
-N'invente :
+Mêmes photographies réelles disponibles : OUI.
 
-- aucune photo ;
-- aucun service ;
-- aucune activité ;
-- aucun produit ;
-- aucune réalisation ;
-- aucune promesse ;
-- aucune fonctionnalité.
+Même structure de site : NON.
 
-Le résultat doit être plus libre qu'une refonte classique.
+Même hero : NON.
+
+Même grille : NON.
+
+Même succession de sections : NON.
+
+Même rythme de page : NON.
+
+Une simple modernisation graphique est un ÉCHEC.
+
+Une refonte poussée de la structure actuelle est encore un ÉCHEC.
+
+Le résultat attendu est une NOUVELLE CONCEPTION.
 
 La projection doit faire penser :
 
-"Si nous concevions aujourd'hui un nouveau site pour cette entreprise à partir de sa réalité et de ses objectifs, voici une direction possible."
+"Cette entreprise possède maintenant un site conçu aujourd'hui à partir de zéro."
+
+et non :
+
+"Son ancien site a été joliment refait."
 `.trim();
   }
 }
