@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import {
+  notFound,
+} from "next/navigation";
 
+import AuditDeleteButton from "@/components/companies/AuditDeleteButton";
 import AuditOpportunityButton from "@/components/companies/AuditOpportunityButton";
 import PageBanner from "@/components/dashboard/PageBanner";
 
@@ -47,6 +50,7 @@ export default async function AuditDetailPage({
     audit,
   ] = await Promise.all([
     getCompanyById(id),
+
     getWebsiteAuditById(
       auditId
     ),
@@ -61,14 +65,18 @@ export default async function AuditDetailPage({
 
   const auditCompanyId =
     String(
-      audit.company_id ?? ""
+      audit.company_id ??
+        ""
     );
 
   const companyId =
-    String(company.id);
+    String(
+      company.id
+    );
 
   if (
-    auditCompanyId !== companyId
+    auditCompanyId !==
+    companyId
   ) {
     notFound();
   }
@@ -94,7 +102,9 @@ export default async function AuditDetailPage({
       <div className="mx-auto max-w-6xl px-6 py-10">
         <PageBanner
           eyebrow="Audit de site"
-          title={company.name}
+          title={
+            company.name
+          }
           description={`Audit réalisé le ${formatDateTime(
             audit.created_at
           )}`}
@@ -105,10 +115,11 @@ export default async function AuditDetailPage({
             href={`/companies/${company.id}`}
             className="text-sm font-semibold text-slate-500 transition hover:text-slate-950"
           >
-            ← Retour à l’entreprise
+            ← Retour à
+            l’entreprise
           </Link>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-start gap-3">
             <AuditOpportunityButton
               companyId={
                 companyId
@@ -173,6 +184,15 @@ export default async function AuditDetailPage({
             >
               Nouvel audit
             </Link>
+
+            <AuditDeleteButton
+              auditId={
+                audit.id
+              }
+              companyId={
+                companyId
+              }
+            />
           </div>
         </div>
 
@@ -196,7 +216,8 @@ export default async function AuditDetailPage({
               </p>
 
               <p className="mt-1 text-xs text-blue-500">
-                Grille de notation{" "}
+                Grille de
+                notation{" "}
                 {
                   audit.scoring_version
                 }
@@ -212,6 +233,7 @@ export default async function AuditDetailPage({
                 {
                   audit.global_score
                 }
+
                 <span className="ml-1 text-base font-medium text-slate-400">
                   /100
                 </span>
@@ -262,7 +284,8 @@ export default async function AuditDetailPage({
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">
-                  Faisabilité technique
+                  Faisabilité
+                  technique
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -278,7 +301,7 @@ export default async function AuditDetailPage({
                     <span className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-bold text-violet-700">
                       Confiance :{" "}
                       {getConfidenceLabel(
-                        audit.technical_confidence as TechnicalConfidence
+                        audit.technical_confidence
                       )}
                     </span>
                   ) : null}
@@ -288,7 +311,9 @@ export default async function AuditDetailPage({
               {audit.migration_likely ===
               true ? (
                 <span className="self-start rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
-                  Migration probablement nécessaire
+                  Migration
+                  probablement
+                  nécessaire
                 </span>
               ) : null}
             </div>
@@ -306,7 +331,7 @@ export default async function AuditDetailPage({
                 <FeasibilityCard
                   label="Optimisation"
                   value={
-                    audit.optimization_feasibility as TechnicalFeasibility
+                    audit.optimization_feasibility
                   }
                 />
               ) : null}
@@ -315,7 +340,7 @@ export default async function AuditDetailPage({
                 <FeasibilityCard
                   label="Refonte"
                   value={
-                    audit.redesign_feasibility as TechnicalFeasibility
+                    audit.redesign_feasibility
                   }
                 />
               ) : null}
@@ -324,20 +349,18 @@ export default async function AuditDetailPage({
                 <FeasibilityCard
                   label="Nouveau site"
                   value={
-                    audit.new_website_feasibility as TechnicalFeasibility
+                    audit.new_website_feasibility
                   }
                 />
               ) : null}
             </div>
 
-            {Array.isArray(
-              audit.technical_evidence
-            ) &&
-            audit.technical_evidence
-              .length > 0 ? (
+            {audit.technical_evidence.length >
+            0 ? (
               <div className="mt-6 border-t border-violet-200 pt-5">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Indices détectés
+                  Indices
+                  détectés
                 </p>
 
                 <ul className="mt-3 space-y-2">
@@ -377,7 +400,8 @@ export default async function AuditDetailPage({
             <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">
-                  Recommandation LBMedia
+                  Recommandation
+                  LBMedia
                 </p>
 
                 <h2 className="mt-1 text-3xl font-bold text-slate-950">
@@ -453,33 +477,32 @@ export default async function AuditDetailPage({
             0 ? (
               <div className="mt-7">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Enjeux principaux
+                  Enjeux
+                  principaux
                 </p>
 
                 <ul className="mt-4 grid gap-3 lg:grid-cols-2">
-                  {commercialDiagnosis
-                    .main_issues
-                    .map(
-                      (
-                        issue,
-                        index
-                      ) => (
-                        <li
-                          key={`${issue}-${index}`}
-                          className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700"
-                        >
-                          <span className="font-bold text-indigo-600">
-                            •
-                          </span>
+                  {commercialDiagnosis.main_issues.map(
+                    (
+                      issue,
+                      index
+                    ) => (
+                      <li
+                        key={`${issue}-${index}`}
+                        className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700"
+                      >
+                        <span className="font-bold text-indigo-600">
+                          •
+                        </span>
 
-                          <span>
-                            {
-                              issue
-                            }
-                          </span>
-                        </li>
-                      )
-                    )}
+                        <span>
+                          {
+                            issue
+                          }
+                        </span>
+                      </li>
+                    )
+                  )}
                 </ul>
               </div>
             ) : null}
@@ -514,11 +537,14 @@ export default async function AuditDetailPage({
           </p>
 
           <h2 className="mt-2 text-2xl font-bold text-slate-900">
-            Synthèse de l’audit
+            Synthèse de
+            l’audit
           </h2>
 
           <p className="mt-5 whitespace-pre-line text-sm leading-7 text-slate-700">
-            {audit.summary}
+            {
+              audit.summary
+            }
           </p>
         </section>
 
@@ -548,11 +574,17 @@ export default async function AuditDetailPage({
             </p>
 
             <h2 className="mt-2 text-2xl font-bold text-slate-900">
-              Vérifications complémentaires
+              Vérifications
+              complémentaires
             </h2>
 
             <p className="mt-2 text-sm text-slate-600">
-              Ces éléments nécessitent des données ou outils complémentaires avant de pouvoir être confirmés.
+              Ces éléments
+              nécessitent des
+              données ou outils
+              complémentaires avant
+              de pouvoir être
+              confirmés.
             </p>
 
             <ul className="mt-5 space-y-3">
@@ -605,7 +637,9 @@ export default async function AuditDetailPage({
                   </div>
 
                   <p className="pt-1 text-sm leading-6 text-slate-700">
-                    {priority}
+                    {
+                      priority
+                    }
                   </p>
                 </li>
               )
@@ -630,12 +664,16 @@ export default async function AuditDetailPage({
               ) => (
                 <a
                   key={`${url}-${index}`}
-                  href={url}
+                  href={
+                    url
+                  }
                   target="_blank"
                   rel="noreferrer"
                   className="block break-all rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
                 >
-                  {url}
+                  {
+                    url
+                  }
                 </a>
               )
             )}
@@ -647,7 +685,8 @@ export default async function AuditDetailPage({
             href={`/companies/${company.id}`}
             className="inline-flex rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
-            ← Retour à la fiche entreprise
+            ← Retour à la fiche
+            entreprise
           </Link>
         </div>
       </div>
@@ -660,7 +699,8 @@ function FeasibilityCard({
   value,
 }: {
   label: string;
-  value: TechnicalFeasibility;
+  value:
+    TechnicalFeasibility;
 }) {
   const presentation =
     getFeasibilityPresentation(
@@ -693,7 +733,8 @@ function FeasibilityCard({
 }
 
 function getFeasibilityPresentation(
-  feasibility: TechnicalFeasibility
+  feasibility:
+    TechnicalFeasibility
 ) {
   switch (
     feasibility
@@ -702,8 +743,10 @@ function getFeasibilityPresentation(
       return {
         label:
           "Bonne faisabilité",
+
         description:
           "La plateforme semble permettre ce type d’intervention dans de bonnes conditions.",
+
         className:
           "bg-emerald-100 text-emerald-700",
       };
@@ -712,8 +755,10 @@ function getFeasibilityPresentation(
       return {
         label:
           "Possibilités limitées",
+
         description:
           "Certaines évolutions sont possibles, mais la plateforme peut imposer des limites techniques.",
+
         className:
           "bg-amber-100 text-amber-800",
       };
@@ -722,8 +767,10 @@ function getFeasibilityPresentation(
       return {
         label:
           "Migration à prévoir",
+
         description:
           "Cette orientation implique probablement de repartir sur une plateforme plus adaptée.",
+
         className:
           "bg-orange-100 text-orange-800",
       };
@@ -732,8 +779,10 @@ function getFeasibilityPresentation(
       return {
         label:
           "À vérifier",
+
         description:
           "Une vérification technique complémentaire est nécessaire avant de confirmer la prestation.",
+
         className:
           "bg-slate-100 text-slate-700",
       };
@@ -741,7 +790,8 @@ function getFeasibilityPresentation(
 }
 
 function getConfidenceLabel(
-  confidence: TechnicalConfidence
+  confidence:
+    TechnicalConfidence
 ) {
   switch (
     confidence
@@ -806,12 +856,15 @@ function RecommendationBadge({
     | "optimization"
     | "redesign"
     | "new_website";
+
   label: string;
 }) {
   const className =
-    type === "new_website"
+    type ===
+    "new_website"
       ? "border-rose-200 bg-rose-50 text-rose-700"
-      : type === "redesign"
+      : type ===
+          "redesign"
         ? "border-amber-200 bg-amber-50 text-amber-700"
         : "border-emerald-200 bg-emerald-50 text-emerald-700";
 
@@ -833,22 +886,27 @@ function CommercialScoreCard({
   label: string;
   description: string;
   score: number;
+
   severity:
     | "low"
     | "medium"
     | "high";
 }) {
   const severityLabel =
-    severity === "high"
+    severity ===
+    "high"
       ? "Prioritaire"
-      : severity === "medium"
+      : severity ===
+          "medium"
         ? "À renforcer"
         : "Satisfaisant";
 
   const severityClassName =
-    severity === "high"
+    severity ===
+    "high"
       ? "text-rose-600"
-      : severity === "medium"
+      : severity ===
+          "medium"
         ? "text-amber-600"
         : "text-emerald-600";
 
@@ -861,13 +919,16 @@ function CommercialScoreCard({
           </p>
 
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            {description}
+            {
+              description
+            }
           </p>
         </div>
 
         <div className="text-right">
           <p className="text-2xl font-bold text-slate-950">
             {score}
+
             <span className="ml-1 text-xs font-medium text-slate-400">
               /100
             </span>
@@ -917,10 +978,13 @@ function CommercialWeaknessList({
       </h3>
 
       <p className="mt-1 text-xs leading-5 text-slate-500">
-        {description}
+        {
+          description
+        }
       </p>
 
-      {items.length > 0 ? (
+      {items.length >
+      0 ? (
         <ul className="mt-4 space-y-3">
           {items
             .slice(
@@ -941,7 +1005,9 @@ function CommercialWeaknessList({
                   </span>
 
                   <span>
-                    {item}
+                    {
+                      item
+                    }
                   </span>
                 </li>
               )
@@ -949,7 +1015,9 @@ function CommercialWeaknessList({
         </ul>
       ) : (
         <p className="mt-4 text-sm italic text-slate-400">
-          Aucun point prioritaire identifié dans cette catégorie.
+          Aucun point prioritaire
+          identifié dans cette
+          catégorie.
         </p>
       )}
     </div>
@@ -971,6 +1039,7 @@ function ScoreCard({
 
       <p className="mt-2 text-2xl font-bold text-slate-900">
         {score}
+
         <span className="ml-1 text-xs font-medium text-slate-400">
           /100
         </span>
@@ -1006,7 +1075,9 @@ function AuditList({
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
-        {eyebrow}
+        {
+          eyebrow
+        }
       </p>
 
       <h2 className="mt-2 text-2xl font-bold text-slate-900">
@@ -1028,7 +1099,9 @@ function AuditList({
               </span>
 
               <span>
-                {item}
+                {
+                  item
+                }
               </span>
             </li>
           )
@@ -1042,7 +1115,9 @@ function formatDateTime(
   value: string
 ) {
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -1057,8 +1132,11 @@ function formatDateTime(
     {
       dateStyle:
         "long",
+
       timeStyle:
         "short",
     }
-  ).format(date);
+  ).format(
+    date
+  );
 }
