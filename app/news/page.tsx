@@ -504,6 +504,8 @@ function formatDateTime(
     {
       dateStyle: "medium",
       timeStyle: "short",
+      timeZone:
+        "Europe/Paris",
     }
   ).format(date);
 }
