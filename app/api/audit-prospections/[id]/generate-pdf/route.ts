@@ -44,6 +44,12 @@ type ProposalType =
   | "redesign"
   | "new_website";
 
+type PdfProposalType =
+  Exclude<
+    ProposalType,
+    "optimization"
+  >;
+
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -140,9 +146,9 @@ export async function POST(
       );
 
     /*
-     * Une prospection basée uniquement
-     * sur l'optimisation ne nécessite
-     * volontairement aucun PDF.
+     * Une optimisation seule
+     * ne nécessite volontairement
+     * aucun PDF.
      */
     if (
       proposalType ===
@@ -160,15 +166,45 @@ export async function POST(
       );
     }
 
+    /*
+     * La proposition visuelle est
+     * toujours nécessaire dès qu'un
+     * PDF doit être généré.
+     */
     if (
-      !prospection.before_image_url ||
       !prospection.after_image_url
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Les deux visuels sont nécessaires avant de générer le PDF.",
+            "Le visuel de proposition est nécessaire avant de générer le PDF.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /*
+     * Pour une optimisation + refonte
+     * ou une refonte, le comparatif
+     * nécessite obligatoirement
+     * le site actuel.
+     *
+     * Pour un nouveau site,
+     * la capture actuelle est facultative.
+     */
+    if (
+      proposalType !==
+        "new_website" &&
+      !prospection.before_image_url
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Le visuel du site actuel est nécessaire pour générer ce comparatif.",
         },
         {
           status: 400,
@@ -267,14 +303,27 @@ export async function POST(
         proposalType
       );
 
+    /*
+     * Un nouveau site peut être proposé
+     * sans capture d'un site existant.
+     */
+    const hasCurrentVisual =
+      Boolean(
+        prospection.before_image_url
+      );
+
     const [
       beforeAsset,
       afterAsset,
       logoBytes,
     ] = await Promise.all([
-      fetchImage(
-        prospection.before_image_url
-      ),
+      prospection.before_image_url
+        ? fetchImage(
+            prospection.before_image_url
+          )
+        : Promise.resolve(
+            null
+          ),
 
       fetchImage(
         prospection.after_image_url
@@ -317,14 +366,10 @@ export async function POST(
      */
     page.drawRectangle({
       x: 0,
-
       y:
         height - 72,
-
       width,
-
       height: 72,
-
       color:
         rgb(
           0.04,
@@ -349,7 +394,6 @@ export async function POST(
       Math.min(
         logoBoxWidth /
           logoDimensions.width,
-
         logoBoxHeight /
           logoDimensions.height
       );
@@ -366,15 +410,12 @@ export async function POST(
       logo,
       {
         x: 42,
-
         y:
           height -
           36 -
           logoHeight / 2,
-
         width:
           logoWidth,
-
         height:
           logoHeight,
       }
@@ -384,15 +425,11 @@ export async function POST(
       messaging.title,
       {
         x: 155,
-
         y:
           height - 41,
-
         size: 17,
-
         font:
           boldFont,
-
         color:
           rgb(
             1,
@@ -409,15 +446,11 @@ export async function POST(
       company.name,
       {
         x: 42,
-
         y:
           height - 103,
-
         size: 18,
-
         font:
           boldFont,
-
         color:
           rgb(
             0.08,
@@ -434,14 +467,10 @@ export async function POST(
         company.website,
         {
           x: 42,
-
           y:
             height - 121,
-
           size: 9,
-
           font,
-
           color:
             rgb(
               0.35,
@@ -452,22 +481,14 @@ export async function POST(
       );
     }
 
-    /*
-     * Mention explicative adaptée
-     * au type de proposition.
-     */
     page.drawText(
       messaging.introLine1,
       {
         x: 42,
-
         y:
           height - 148,
-
         size: 9.5,
-
         font,
-
         color:
           rgb(
             0.22,
@@ -481,14 +502,10 @@ export async function POST(
       messaging.introLine2,
       {
         x: 42,
-
         y:
           height - 162,
-
         size: 9.5,
-
         font,
-
         color:
           rgb(
             0.22,
@@ -499,119 +516,166 @@ export async function POST(
     );
 
     /*
-     * Comparatif
+     * Zone visuelle.
+     *
+     * Cas 1 :
+     * site actuel + proposition
+     * => comparatif deux colonnes.
+     *
+     * Cas 2 :
+     * nouveau site sans visuel actuel
+     * => proposition seule et centrée.
      */
-    const leftX =
-      42;
-
-    const rightX =
-      width / 2 + 10;
-
-    const columnWidth =
-      width / 2 - 52;
-
     const imageTop =
       height - 205;
 
     const imageHeight =
       220;
 
-    page.drawText(
-      messaging.currentLabel,
-      {
-        x:
-          leftX,
+    if (
+      hasCurrentVisual &&
+      beforeAsset
+    ) {
+      const leftX =
+        42;
 
-        y:
-          imageTop + 16,
+      const rightX =
+        width / 2 + 10;
 
-        size: 9,
+      const columnWidth =
+        width / 2 - 52;
 
-        font:
-          boldFont,
+      page.drawText(
+        messaging.currentLabel,
+        {
+          x:
+            leftX,
+          y:
+            imageTop + 16,
+          size: 9,
+          font:
+            boldFont,
+          color:
+            rgb(
+              0.35,
+              0.4,
+              0.5
+            ),
+        }
+      );
 
-        color:
-          rgb(
-            0.35,
-            0.4,
-            0.5
-          ),
-      }
-    );
+      page.drawText(
+        messaging.proposalLabel,
+        {
+          x:
+            rightX,
+          y:
+            imageTop + 16,
+          size: 9,
+          font:
+            boldFont,
+          color:
+            rgb(
+              0.1,
+              0.3,
+              0.9
+            ),
+        }
+      );
 
-    page.drawText(
-      messaging.proposalLabel,
-      {
-        x:
-          rightX,
+      drawImageFrame(
+        page,
+        leftX,
+        imageTop -
+          imageHeight,
+        columnWidth,
+        imageHeight
+      );
 
-        y:
-          imageTop + 16,
+      drawImageFrame(
+        page,
+        rightX,
+        imageTop -
+          imageHeight,
+        columnWidth,
+        imageHeight
+      );
 
-        size: 9,
+      await drawTopCroppedImage(
+        pdf,
+        page,
+        beforeAsset,
+        leftX + 6,
+        imageTop -
+          imageHeight +
+          6,
+        columnWidth - 12,
+        imageHeight - 12
+      );
 
-        font:
-          boldFont,
+      await drawContainedImage(
+        pdf,
+        page,
+        afterAsset,
+        rightX + 6,
+        imageTop -
+          imageHeight +
+          6,
+        columnWidth - 12,
+        imageHeight - 12
+      );
+    } else {
+      /*
+       * Nouveau site sans site actuel :
+       * aucune colonne vide,
+       * aucune mention "SITE ACTUEL".
+       */
+      const proposalX =
+        110;
 
-        color:
-          rgb(
-            0.1,
-            0.3,
-            0.9
-          ),
-      }
-    );
+      const proposalWidth =
+        width - 220;
 
-    drawImageFrame(
-      page,
-      leftX,
-      imageTop -
-        imageHeight,
-      columnWidth,
-      imageHeight
-    );
+      page.drawText(
+        messaging.proposalLabel,
+        {
+          x:
+            proposalX,
+          y:
+            imageTop + 16,
+          size: 9,
+          font:
+            boldFont,
+          color:
+            rgb(
+              0.1,
+              0.3,
+              0.9
+            ),
+        }
+      );
 
-    drawImageFrame(
-      page,
-      rightX,
-      imageTop -
-        imageHeight,
-      columnWidth,
-      imageHeight
-    );
+      drawImageFrame(
+        page,
+        proposalX,
+        imageTop -
+          imageHeight,
+        proposalWidth,
+        imageHeight
+      );
 
-    /*
-     * Capture actuelle :
-     * affichage cadré sur le haut
-     * de la capture pleine page.
-     */
-    await drawTopCroppedImage(
-      pdf,
-      page,
-      beforeAsset,
-      leftX + 6,
-      imageTop -
-        imageHeight +
-        6,
-      columnWidth - 12,
-      imageHeight - 12
-    );
-
-    /*
-     * Proposition :
-     * affichage complet dans le cadre.
-     */
-    await drawContainedImage(
-      pdf,
-      page,
-      afterAsset,
-      rightX + 6,
-      imageTop -
-        imageHeight +
-        6,
-      columnWidth - 12,
-      imageHeight - 12
-    );
+      await drawContainedImage(
+        pdf,
+        page,
+        afterAsset,
+        proposalX + 6,
+        imageTop -
+          imageHeight +
+          6,
+        proposalWidth - 12,
+        imageHeight - 12
+      );
+    }
 
     /*
      * Bloc des améliorations
@@ -633,27 +697,21 @@ export async function POST(
     page.drawRectangle({
       x:
         reasonsX,
-
       y:
         reasonsTop -
         reasonsHeight,
-
       width:
         reasonsWidth,
-
       height:
         reasonsHeight,
-
       borderWidth:
         1,
-
       borderColor:
         rgb(
           0.82,
           0.87,
           0.96
         ),
-
       color:
         rgb(
           0.965,
@@ -667,15 +725,11 @@ export async function POST(
       {
         x:
           reasonsX + 14,
-
         y:
           reasonsTop - 20,
-
         size: 9,
-
         font:
           boldFont,
-
         color:
           rgb(
             0.1,
@@ -690,14 +744,10 @@ export async function POST(
       {
         x:
           reasonsX + 14,
-
         y:
           reasonsTop - 36,
-
         size: 8.5,
-
         font,
-
         color:
           rgb(
             0.28,
@@ -730,16 +780,12 @@ export async function POST(
         {
           x:
             reasonsX + 16,
-
           y:
             bulletY,
-
           size:
             9,
-
           font:
             boldFont,
-
           color:
             rgb(
               0.1,
@@ -761,15 +807,11 @@ export async function POST(
           {
             x:
               reasonsX + 29,
-
             y:
               bulletY,
-
             size:
               8.2,
-
             font,
-
             color:
               rgb(
                 0.2,
@@ -798,22 +840,14 @@ export async function POST(
 
     /*
      * Mention de bas de page.
-     *
-     * Important :
-     * le document reste explicitement
-     * une projection non contractuelle.
      */
     page.drawText(
-      "Exemple non contractuel - réflexion réalisée par LBMedia à partir des éléments visibles du site et des constats de l'audit.",
+      "Exemple non contractuel - réflexion réalisée par LBMedia à partir des éléments disponibles et des constats de l'audit.",
       {
         x: 42,
-
         y: 18,
-
         size: 8,
-
         font,
-
         color:
           rgb(
             0.45,
@@ -827,12 +861,8 @@ export async function POST(
       await pdf.save();
 
     /*
-     * Le type de proposition fait partie
-     * du nom du fichier.
-     *
-     * Cela évite notamment qu'un PDF
-     * correspondant à un ancien angle
-     * commercial soit réutilisé par erreur.
+     * Le type de proposition est
+     * intégré au nom du fichier.
      */
     const storagePath =
       `${company.id}/${id}/proposition-${proposalType}-lbmedia.pdf`;
@@ -848,10 +878,8 @@ export async function POST(
         {
           contentType:
             "application/pdf",
-
           upsert:
             true,
-
           cacheControl:
             "3600",
         }
@@ -885,11 +913,8 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-
       proposalType,
-
       attachmentUrl,
-
       prospection:
         updated,
     });
@@ -902,7 +927,6 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message
@@ -935,10 +959,8 @@ function normalizeProposalType(
 }
 
 function getPdfMessaging(
-  proposalType: Exclude<
-    ProposalType,
-    "optimization"
-  >
+  proposalType:
+    PdfProposalType
 ): PdfMessaging {
   switch (
     proposalType
@@ -994,25 +1016,25 @@ function getPdfMessaging(
     case "new_website":
       return {
         title:
-          "Une nouvelle approche pour votre site",
+          "Une nouvelle approche pour votre présence en ligne",
 
         introLine1:
           "Cette proposition illustre une direction possible pour un nouveau site construit autour de vos prestations et de vos objectifs.",
 
         introLine2:
-          "Il ne s'agit pas d'une maquette définitive, mais d'un exemple permettant de visualiser une nouvelle base de travail.",
+          "Il ne s'agit pas d'une maquette définitive, mais d'une piste permettant de visualiser une nouvelle base de travail.",
 
         currentLabel:
           "SITE ACTUEL",
 
         proposalLabel:
-          "NOUVELLE ORIENTATION",
+          "PROPOSITION DE DIRECTION",
 
         improvementTitle:
           "CE QU'UN NOUVEAU SITE POURRAIT APPORTER",
 
         improvementIntro:
-          "Cette piste illustre comment une nouvelle base pourrait intégrer dès sa conception les principaux enjeux identifiés lors de l'audit.",
+          "Cette piste montre comment une nouvelle base pourrait intégrer dès sa conception les principaux enjeux identifiés.",
       };
   }
 }
@@ -1116,7 +1138,6 @@ async function drawContainedImage(
     Math.min(
       width /
         dimensions.width,
-
       height /
         dimensions.height
     );
@@ -1137,16 +1158,13 @@ async function drawContainedImage(
         (width -
           drawWidth) /
           2,
-
       y:
         y +
         (height -
           drawHeight) /
           2,
-
       width:
         drawWidth,
-
       height:
         drawHeight,
     }
@@ -1215,13 +1233,10 @@ async function drawTopCroppedImage(
     image,
     {
       x,
-
       y:
         drawY,
-
       width:
         drawWidth,
-
       height:
         drawHeight,
     }
@@ -1246,16 +1261,13 @@ function drawImageFrame(
     y,
     width,
     height,
-
     borderWidth: 1,
-
     borderColor:
       rgb(
         0.82,
         0.85,
         0.9
       ),
-
     color:
       rgb(
         0.98,
