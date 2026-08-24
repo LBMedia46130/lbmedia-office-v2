@@ -21,12 +21,48 @@ type AuditResult = {
   priorities: string[];
 };
 
+type TechnicalPlatform =
+  | "wordpress"
+  | "eatbu"
+  | "wix"
+  | "squarespace"
+  | "webflow"
+  | "jimdo"
+  | "shopify"
+  | "prestashop"
+  | "custom"
+  | "unknown";
+
+type TechnicalConfidence =
+  | "high"
+  | "medium"
+  | "low";
+
+type TechnicalFeasibility =
+  | "good"
+  | "limited"
+  | "verify"
+  | "migration_recommended";
+
+type TechnicalProfile = {
+  platform: TechnicalPlatform;
+  platformLabel: string;
+  confidence: TechnicalConfidence;
+  evidence: string[];
+  optimizationFeasibility: TechnicalFeasibility;
+  redesignFeasibility: TechnicalFeasibility;
+  newWebsiteFeasibility: TechnicalFeasibility;
+  migrationLikely: boolean | null;
+  note: string;
+};
+
 type AuditResponse = {
   success: boolean;
   url: string;
   pagesAnalyzed: number;
   analyzedUrls: string[];
   scoringVersion: string;
+  technicalProfile?: TechnicalProfile;
   audit: AuditResult;
 };
 
@@ -299,6 +335,10 @@ export default function AuditPage() {
                 analyzedUrls:
                   result.analyzedUrls,
 
+                technicalProfile:
+                  result.technicalProfile ??
+                  null,
+
                 audit:
                   result.audit,
               }),
@@ -508,6 +548,14 @@ export default function AuditPage() {
                 </div>
               )}
             </section>
+
+            {result.technicalProfile ? (
+              <TechnicalProfileCard
+                profile={
+                  result.technicalProfile
+                }
+              />
+            ) : null}
 
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <ScoreCard
@@ -834,6 +882,215 @@ export default function AuditPage() {
       </div>
     </main>
   );
+}
+
+function TechnicalProfileCard({
+  profile,
+}: {
+  profile: TechnicalProfile;
+}) {
+  const confidenceLabel =
+    getConfidenceLabel(
+      profile.confidence
+    );
+
+  return (
+    <section className="rounded-2xl border border-violet-200 bg-violet-50 p-6 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-600">
+            Faisabilité technique
+          </p>
+
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h2 className="text-xl font-bold text-slate-900">
+              Plateforme :{" "}
+              {
+                profile.platformLabel
+              }
+            </h2>
+
+            <span className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-bold text-violet-700">
+              Confiance :{" "}
+              {
+                confidenceLabel
+              }
+            </span>
+          </div>
+        </div>
+
+        {profile.migrationLikely ===
+        true ? (
+          <span className="self-start rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
+            Migration probablement
+            nécessaire
+          </span>
+        ) : null}
+      </div>
+
+      <p className="mt-4 max-w-5xl text-sm leading-6 text-slate-700">
+        {profile.note}
+      </p>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <FeasibilityCard
+          label="Optimisation"
+          value={
+            profile.optimizationFeasibility
+          }
+        />
+
+        <FeasibilityCard
+          label="Refonte"
+          value={
+            profile.redesignFeasibility
+          }
+        />
+
+        <FeasibilityCard
+          label="Nouveau site"
+          value={
+            profile.newWebsiteFeasibility
+          }
+        />
+      </div>
+
+      {profile.evidence.length >
+      0 ? (
+        <div className="mt-5 border-t border-violet-200 pt-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+            Indices détectés
+          </p>
+
+          <ul className="mt-3 space-y-2">
+            {profile.evidence.map(
+              (
+                evidence,
+                index
+              ) => (
+                <li
+                  key={`${evidence}-${index}`}
+                  className="flex gap-2 text-sm text-slate-600"
+                >
+                  <span className="text-violet-500">
+                    •
+                  </span>
+
+                  <span>
+                    {evidence}
+                  </span>
+                </li>
+              )
+            )}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function FeasibilityCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: TechnicalFeasibility;
+}) {
+  const presentation =
+    getFeasibilityPresentation(
+      value
+    );
+
+  return (
+    <div className="rounded-xl border border-violet-200 bg-white p-4">
+      <p className="text-sm font-semibold text-slate-600">
+        {label}
+      </p>
+
+      <div className="mt-3">
+        <span
+          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${presentation.className}`}
+        >
+          {
+            presentation.label
+          }
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm leading-5 text-slate-500">
+        {
+          presentation.description
+        }
+      </p>
+    </div>
+  );
+}
+
+function getConfidenceLabel(
+  confidence:
+    TechnicalConfidence
+) {
+  switch (
+    confidence
+  ) {
+    case "high":
+      return "élevée";
+
+    case "medium":
+      return "moyenne";
+
+    case "low":
+      return "faible";
+  }
+}
+
+function getFeasibilityPresentation(
+  feasibility:
+    TechnicalFeasibility
+) {
+  switch (
+    feasibility
+  ) {
+    case "good":
+      return {
+        label:
+          "Bonne faisabilité",
+        description:
+          "La plateforme semble permettre ce type d’intervention dans de bonnes conditions.",
+        className:
+          "bg-emerald-100 text-emerald-700",
+      };
+
+    case "limited":
+      return {
+        label:
+          "Possibilités limitées",
+        description:
+          "Certaines évolutions sont possibles, mais la plateforme peut imposer des limites techniques.",
+        className:
+          "bg-amber-100 text-amber-800",
+      };
+
+    case "migration_recommended":
+      return {
+        label:
+          "Migration à prévoir",
+        description:
+          "Cette orientation implique probablement de repartir sur une plateforme plus adaptée.",
+        className:
+          "bg-orange-100 text-orange-800",
+      };
+
+    case "verify":
+      return {
+        label:
+          "À vérifier",
+        description:
+          "Une vérification technique complémentaire est nécessaire avant de confirmer la prestation.",
+        className:
+          "bg-slate-100 text-slate-700",
+      };
+  }
 }
 
 function ScoreCard({
