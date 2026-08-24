@@ -117,7 +117,11 @@ export type WebsiteAuditCommercialDiagnosis = {
   weaknesses: CommercialWeaknessGroup;
 
   main_issues: string[];
+
   commercial_summary: string;
+
+  technical_caution:
+    string | null;
 };
 
 function normalizeStringArray(
@@ -495,10 +499,13 @@ function buildRecommendation(
     return {
       type:
         "new_website",
+
       label:
         "Création d’un nouveau site",
+
       short_label:
         "Nouveau site",
+
       description:
         "Les faiblesses relevées touchent à la fois la structure du site, son efficacité commerciale et sa visibilité. Une optimisation ponctuelle risquerait de ne corriger qu’une partie du problème. Repartir sur une base plus adaptée apparaît comme la solution la plus cohérente.",
     };
@@ -515,10 +522,13 @@ function buildRecommendation(
     return {
       type:
         "redesign",
+
       label:
         "Refonte du site existant",
+
       short_label:
         "Refonte",
+
       description:
         "Le site possède une base exploitable, mais son organisation, sa présentation ou son parcours limitent son efficacité. Une refonte permettrait de conserver ce qui fonctionne tout en améliorant la lisibilité, la conversion et la visibilité.",
     };
@@ -527,12 +537,132 @@ function buildRecommendation(
   return {
     type:
       "optimization",
+
     label:
       "Optimisation du site existant",
+
     short_label:
       "Optimisation",
+
     description:
       "Le site constitue une base satisfaisante. Les principaux gains peuvent être obtenus en renforçant sa visibilité, ses contenus et certains éléments de conversion sans engager une refonte complète.",
+  };
+}
+
+function getRecommendationFeasibility(
+  audit: WebsiteAudit,
+  recommendationType:
+    CommercialRecommendationType
+): TechnicalFeasibility | null {
+  switch (
+    recommendationType
+  ) {
+    case "optimization":
+      return audit
+        .optimization_feasibility;
+
+    case "redesign":
+      return audit
+        .redesign_feasibility;
+
+    case "new_website":
+      return audit
+        .new_website_feasibility;
+  }
+}
+
+function getTechnicalCaution(
+  audit: WebsiteAudit,
+  recommendation:
+    CommercialRecommendation
+): string | null {
+  const feasibility =
+    getRecommendationFeasibility(
+      audit,
+      recommendation.type
+    );
+
+  if (
+    !feasibility
+  ) {
+    return null;
+  }
+
+  const platformLabel =
+    audit.technical_platform_label ??
+    "la plateforme actuelle";
+
+  if (
+    feasibility === "good"
+  ) {
+    return null;
+  }
+
+  if (
+    feasibility === "limited"
+  ) {
+    if (
+      recommendation.type ===
+      "optimization"
+    ) {
+      return `La recommandation d’optimisation reste commercialement pertinente, mais ${platformLabel} peut limiter certaines interventions. Les possibilités exactes devront être vérifiées avant chiffrage.`;
+    }
+
+    if (
+      recommendation.type ===
+      "redesign"
+    ) {
+      return `La refonte reste pertinente au regard du diagnostic, mais ${platformLabel} peut limiter une évolution avancée du site. Une migration vers une solution plus flexible pourra être nécessaire selon le niveau de refonte retenu.`;
+    }
+
+    return `Le projet reste pertinent, mais les possibilités offertes par ${platformLabel} devront être vérifiées avant chiffrage.`;
+  }
+
+  if (
+    feasibility ===
+    "migration_recommended"
+  ) {
+    if (
+      recommendation.type ===
+      "new_website"
+    ) {
+      return `La création d’un nouveau site est cohérente avec le diagnostic. La plateforme actuelle (${platformLabel}) étant probablement trop limitée pour cette évolution, le projet devra vraisemblablement prévoir une migration vers une nouvelle solution.`;
+    }
+
+    return `La prestation envisagée nécessitera probablement une migration depuis ${platformLabel} vers une solution plus adaptée. Ce changement devra être intégré au périmètre et au chiffrage du projet.`;
+  }
+
+  if (
+    feasibility === "verify"
+  ) {
+    return `La recommandation commerciale reste valable, mais la technologie du site ou ses possibilités d’évolution ne sont pas suffisamment établies. Une vérification technique sera nécessaire avant de confirmer la prestation et son chiffrage.`;
+  }
+
+  return null;
+}
+
+function applyTechnicalContextToRecommendation(
+  audit: WebsiteAudit,
+  recommendation:
+    CommercialRecommendation
+): CommercialRecommendation {
+  const technicalCaution =
+    getTechnicalCaution(
+      audit,
+      recommendation
+    );
+
+  if (
+    !technicalCaution
+  ) {
+    return recommendation;
+  }
+
+  return {
+    ...recommendation,
+
+    description:
+      `${recommendation.description} ${technicalCaution}`,
   };
 }
 
@@ -600,7 +730,8 @@ function buildMainIssues(
 }
 
 function buildCommercialSummary(
-  recommendation: CommercialRecommendation,
+  recommendation:
+    CommercialRecommendation,
   visibilityScore: number,
   websiteEffectivenessScore: number
 ): string {
@@ -633,6 +764,31 @@ function buildCommercialSummary(
   }
 
   return "Le site présente une base satisfaisante et ne nécessite pas de refonte prioritaire. Des optimisations ciblées sur les contenus, la visibilité et le parcours de conversion devraient permettre d’en améliorer l’efficacité.";
+}
+
+function applyTechnicalContextToCommercialSummary(
+  audit: WebsiteAudit,
+  recommendation:
+    CommercialRecommendation,
+  commercialSummary: string
+): string {
+  const technicalCaution =
+    getTechnicalCaution(
+      audit,
+      recommendation
+    );
+
+  if (
+    !technicalCaution
+  ) {
+    return commercialSummary;
+  }
+
+  return `${commercialSummary} Sur le plan technique, ${technicalCaution.charAt(
+    0
+  ).toLowerCase()}${technicalCaution.slice(
+    1
+  )}`;
 }
 
 export function getWebsiteAuditCommercialDiagnosis(
@@ -687,12 +843,38 @@ export function getWebsiteAuditCommercialDiagnosis(
       audit.weaknesses
     );
 
-  const recommendation =
+  const baseRecommendation =
     buildRecommendation(
       globalScore,
       visibilityScore,
       websiteEffectivenessScore,
       positioningScore
+    );
+
+  const recommendation =
+    applyTechnicalContextToRecommendation(
+      audit,
+      baseRecommendation
+    );
+
+  const baseCommercialSummary =
+    buildCommercialSummary(
+      baseRecommendation,
+      visibilityScore,
+      websiteEffectivenessScore
+    );
+
+  const commercialSummary =
+    applyTechnicalContextToCommercialSummary(
+      audit,
+      baseRecommendation,
+      baseCommercialSummary
+    );
+
+  const technicalCaution =
+    getTechnicalCaution(
+      audit,
+      baseRecommendation
     );
 
   return {
@@ -724,11 +906,10 @@ export function getWebsiteAuditCommercialDiagnosis(
       ),
 
     commercial_summary:
-      buildCommercialSummary(
-        recommendation,
-        visibilityScore,
-        websiteEffectivenessScore
-      ),
+      commercialSummary,
+
+    technical_caution:
+      technicalCaution,
   };
 }
 
@@ -741,7 +922,9 @@ export async function getCompanyWebsiteAudits(
     data,
     error,
   } = await supabaseAdmin
-    .from("website_audits")
+    .from(
+      "website_audits"
+    )
     .select(
       `
         id,
@@ -789,7 +972,9 @@ export async function getWebsiteAuditById(
     data,
     error,
   } = await supabaseAdmin
-    .from("website_audits")
+    .from(
+      "website_audits"
+    )
     .select(
       `
         id,
