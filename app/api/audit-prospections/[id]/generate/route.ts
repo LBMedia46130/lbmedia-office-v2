@@ -86,95 +86,146 @@ function getProposalInstructions(
   ) {
     case "optimization":
       return `
-La proposition commerciale choisie est une OPTIMISATION DU SITE EXISTANT.
+==================================================
+ANGLE NARRATIF : AMÉLIORER CE QUI EXISTE
+==================================================
 
-Le mail doit valoriser la base actuelle.
+La proposition choisie est une OPTIMISATION DU SITE EXISTANT.
 
-Il doit expliquer que des améliorations ciblées peuvent être apportées sans remettre en cause l'ensemble du site.
+IDÉE CENTRALE DU MAIL :
 
-Les pistes peuvent concerner :
+"Votre site constitue une base exploitable. Plusieurs améliorations ciblées pourraient maintenant lui permettre d'être plus visible et plus efficace."
 
-- SEO ;
-- SEO local ;
-- GEO / visibilité IA ;
-- contenus ;
-- structuration des prestations ;
-- conversion ;
-- prise de contact.
+Le mail doit partir de l'EXISTANT et de ses qualités.
 
-Le corps du mail doit clairement proposer une OPTIMISATION.
+Il doit donner le sentiment qu'il n'est absolument pas nécessaire de refaire le site pour obtenir des améliorations intéressantes.
 
-Il ne doit proposer ni refonte ni nouveau site.
+Les constats de l'audit doivent conduire naturellement vers quelques actions ciblées, par exemple :
+
+- améliorer le référencement ;
+- renforcer la visibilité locale ;
+- mieux structurer certaines pages ;
+- mieux présenter les prestations ;
+- enrichir ou clarifier certains contenus ;
+- faciliter la prise de contact ;
+- mieux préparer les contenus à la recherche via les assistants IA.
+
+IMPORTANT :
+
+Le mail doit clairement rassurer sur la conservation du site actuel.
+
+Une formulation de ce type doit apparaître naturellement :
+
+"Votre site constitue déjà une base intéressante et plusieurs optimisations pourraient être apportées sans remettre en cause l'ensemble."
+
+ou une formulation équivalente.
+
+INTERDICTIONS :
+
+- ne parle pas de refonte ;
+- ne parle pas de nouveau site ;
+- ne parle pas de repartir sur une nouvelle base ;
+- ne suggère pas qu'une évolution graphique globale serait nécessaire.
+
+CONCLUSION COMMERCIALE :
+
+La discussion proposée porte sur les améliorations prioritaires qui pourraient être apportées AU SITE ACTUEL.
 `.trim();
 
     case "optimization_redesign":
       return `
-La proposition commerciale choisie est OPTIMISATION + REFONTE.
+==================================================
+ANGLE NARRATIF : OPTIMISER, PUIS OUVRIR LE CHAMP
+==================================================
 
-Le mail doit contenir DEUX DIMENSIONS visibles mais intégrées naturellement au texte.
+La proposition choisie est OPTIMISATION + REFONTE.
 
-1. OPTIMISATION
+IDÉE CENTRALE DU MAIL :
 
-Explique que des optimisations ciblées peuvent déjà améliorer :
+"Des optimisations concrètes sont possibles sur le site actuel, mais ces améliorations peuvent aussi être l'occasion d'envisager une évolution plus globale de sa présentation."
 
-- la visibilité ;
-- les contenus ;
-- la présentation des prestations ;
-- la prise de contact ;
-- l'efficacité commerciale.
+Le mail doit commencer par les améliorations objectivement identifiées lors de l'audit.
 
-2. ÉVOLUTION / REFONTE
+Il doit montrer qu'il existe des leviers immédiatement exploitables concernant par exemple :
 
-Le mail doit ensuite ouvrir explicitement la possibilité d'aller plus loin avec une évolution plus globale de la présentation ou de l'organisation du site.
+- visibilité Google ;
+- référencement local ;
+- contenus ;
+- présentation des prestations ;
+- parcours ;
+- prise de contact.
 
-Cette seconde dimension est OBLIGATOIRE.
+PUIS le mail doit changer légèrement de perspective.
 
-Si l'audit recommande uniquement une optimisation, ne prétends jamais qu'une refonte est nécessaire.
+Après avoir évoqué ces optimisations, ouvre explicitement une seconde possibilité :
 
-Présente-la comme une possibilité complémentaire.
+profiter de ces améliorations pour faire évoluer plus largement la présentation et l'organisation du site.
 
-Par exemple :
+Cette ouverture est importante mais elle ne doit jamais faire croire que la refonte est indispensable.
 
-"Quelques optimisations ciblées pourraient déjà renforcer la visibilité et l'efficacité du site."
+Une idée équivalente à celle-ci doit apparaître :
 
-Puis naturellement :
+"Ces optimisations pourraient être réalisées sur le site actuel. Elles peuvent aussi être l'occasion, si vous souhaitez aller plus loin, de faire évoluer plus globalement sa présentation et la manière dont vos prestations sont mises en valeur."
 
-"Et si vous souhaitez aller plus loin, cela peut aussi être l'occasion de faire évoluer plus globalement sa présentation et son organisation afin de mieux mettre en valeur vos différentes prestations."
+IMPORTANT :
 
-Ne présente jamais cette logique comme une proposition "en deux temps".
+Le site actuel reste une base possible.
 
-Le mail doit rester naturel.
+La refonte est une OPPORTUNITÉ COMPLÉMENTAIRE.
+
+Le mail doit être perceptiblement différent de l'angle "Optimisation" :
+
+- Optimisation = on améliore l'existant.
+- Optimisation + refonte = on peut améliorer l'existant ET profiter de ces travaux pour aller plus loin.
+
+Ne présente jamais cela comme un plan artificiel "en deux étapes" ou "en deux temps".
 `.trim();
 
     case "redesign":
       return `
-La proposition commerciale choisie est une REFONTE DU SITE EXISTANT.
+==================================================
+ANGLE NARRATIF : REPENSER LA PRÉSENTATION DU SITE
+==================================================
 
-C'est cette orientation qui doit apparaître clairement dans le corps du mail.
+La proposition choisie est une REFONTE DU SITE EXISTANT.
 
-Même si le diagnostic automatique recommande seulement une optimisation, LBMedia souhaite ici proposer une évolution plus globale du site.
+IDÉE CENTRALE DU MAIL :
+
+"Les contenus et l'activité sont là, mais une nouvelle organisation du site permettrait de mieux les mettre en valeur et de traiter plus globalement les enjeux identifiés."
+
+Contrairement à l'angle Optimisation, le mail ne doit PAS être construit autour d'une liste de petites corrections à apporter.
+
+Pars des constats de l'audit pour montrer qu'ils touchent plusieurs dimensions du site :
+
+- compréhension de l'offre ;
+- visibilité ;
+- organisation ;
+- hiérarchie ;
+- valorisation des prestations ;
+- parcours vers le contact.
+
+Le raisonnement commercial doit être :
+
+plutôt que de traiter chaque sujet séparément, une évolution plus globale du site permettrait de les travailler de manière cohérente.
+
+Une idée de ce type doit apparaître clairement :
+
+"Plutôt que de traiter ces différents points séparément, il pourrait être intéressant de repenser plus globalement la présentation et l'organisation du site afin de mieux valoriser vos prestations tout en intégrant les enjeux de visibilité identifiés."
 
 IMPORTANT :
 
-Tu ne dois pas inventer de défauts.
+Une REFONTE signifie ici :
 
-Tu dois partir des constats réels et expliquer qu'ils pourraient être traités dans le cadre d'une évolution plus globale de la présentation, de l'organisation et de la mise en valeur des prestations.
+- conserver l'entreprise ;
+- conserver ses contenus utiles ;
+- conserver son identité pertinente ;
+- mais repenser nettement la manière dont le site les présente et les organise.
 
-Le mail doit clairement contenir une idée équivalente à :
+Le mail doit donner envie de découvrir une AUTRE PRÉSENTATION DU SITE ACTUEL.
 
-"Une évolution plus globale du site pourrait permettre de travailler ces différents points de manière cohérente, tout en faisant évoluer sa présentation et la manière dont vos prestations sont mises en valeur."
+Il ne doit pas donner l'impression qu'on propose simplement quelques optimisations SEO.
 
-ou :
-
-"Plutôt que de traiter ces différents points séparément, il pourrait être intéressant de profiter de ces améliorations pour faire évoluer plus largement la présentation et l'organisation du site."
-
-Le mot "refonte" n'est pas obligatoire.
-
-En revanche, l'idée d'une ÉVOLUTION GLOBALE DU SITE est obligatoire.
-
-Le mail est incorrect s'il se limite à proposer quelques optimisations ponctuelles.
-
-Ne critique jamais brutalement le site.
+INTERDICTIONS :
 
 Ne dis jamais :
 
@@ -184,47 +235,86 @@ Ne dis jamais :
 
 "Votre site est mal conçu."
 
-La refonte doit être présentée comme une opportunité d'amélioration globale, pas comme une sanction.
+"Il faut refaire votre site."
+
+Ne transforme jamais la refonte en sanction.
+
+Elle doit apparaître comme une opportunité de mieux exploiter les contenus et l'activité déjà existants.
 `.trim();
 
     case "new_website":
       return `
-La proposition commerciale choisie est la CRÉATION D'UN NOUVEAU SITE.
+==================================================
+ANGLE NARRATIF : REPARTIR D'UNE PAGE BLANCHE
+==================================================
 
-Cette orientation doit apparaître clairement dans le corps du mail.
+La proposition choisie est la CRÉATION D'UN NOUVEAU SITE.
 
-Même si le diagnostic automatique est moins sévère, LBMedia souhaite ici ouvrir la possibilité de repartir sur une nouvelle base.
+CET ANGLE DOIT ÊTRE RADICALEMENT DIFFÉRENT DE L'ANGLE REFONTE.
 
-IMPORTANT :
+IDÉE CENTRALE DU MAIL :
 
-Tu ne dois jamais inventer de défauts pour justifier cette proposition.
+"Plutôt que d'adapter l'organisation actuelle, une autre piste serait de repartir d'une page blanche et de concevoir aujourd'hui un site directement autour de vos prestations, de votre visibilité et de la prise de contact."
 
-Tu dois distinguer :
+Le mail ne doit PAS présenter cette solution comme une refonte plus importante.
 
-- les constats objectifs issus de l'audit ;
-- la possibilité commerciale de repartir sur une base plus actuelle pour aller plus loin.
+Il s'agit d'une autre logique.
 
-Le mail doit obligatoirement contenir une idée équivalente à :
+REFONTE :
 
-"Si vous souhaitez aller plus loin, il pourrait également être intéressant d'envisager un nouveau site, pensé dès le départ autour de vos prestations, de votre visibilité et de la prise de contact."
+on repense la présentation et l'organisation du site existant.
+
+NOUVEAU SITE :
+
+on se demande comment le site serait conçu AUJOURD'HUI si l'on repartait d'une page blanche à partir :
+
+- de l'activité réelle de l'entreprise ;
+- de ses prestations ;
+- de ses priorités ;
+- de sa clientèle ;
+- de sa zone géographique ;
+- des enjeux SEO ;
+- du référencement local ;
+- de la visibilité dans les moteurs et assistants IA ;
+- de la conversion et de la prise de contact.
+
+Le mail doit explicitement introduire cette idée de NOUVELLE CONCEPTION.
+
+Une formulation équivalente à celle-ci doit obligatoirement apparaître :
+
+"Une autre piste serait de repartir d'une page blanche et d'imaginer un nouveau site pensé dès le départ autour de vos prestations, de votre visibilité sur Google et des nouveaux usages de recherche, ainsi que de la prise de contact."
 
 ou :
 
-"Une autre possibilité serait de repartir sur une nouvelle base afin d'intégrer dès le départ ces différents enjeux dans un site plus cohérent et plus directement orienté vers vos objectifs actuels."
+"Plutôt que de faire évoluer l'organisation actuelle, il pourrait être intéressant d'imaginer ce que serait aujourd'hui un nouveau site conçu dès le départ autour de vos objectifs."
 
-Le mail est incorrect s'il se limite à parler d'optimisation ou d'évolution ponctuelle.
+IMPORTANT :
 
-La création d'un NOUVEAU SITE doit être identifiable sans ambiguïté.
+Ne justifie JAMAIS cette proposition en dénigrant le site actuel.
 
-Ne dis jamais :
+Le raisonnement n'est pas :
 
-"Votre site est mauvais."
+"Le site actuel est mauvais, donc il faut le remplacer."
 
-"Il faut tout refaire."
+Le raisonnement est :
 
-"Votre site doit être remplacé."
+"Les enjeux identifiés permettent d'imaginer une nouvelle base construite directement autour des objectifs actuels."
 
-Présente cette piste comme une possibilité commerciale ambitieuse, pas comme une obligation.
+Le prospect doit comprendre sans ambiguïté qu'on lui propose de réfléchir à la CRÉATION D'UN NOUVEAU SITE.
+
+INTERDICTIONS :
+
+Ne présente pas cela comme :
+
+- une simple optimisation ;
+- une modernisation ;
+- une évolution graphique ;
+- une grosse refonte ;
+- une accumulation de corrections.
+
+Le concept de PAGE BLANCHE / NOUVELLE BASE / NOUVELLE CONCEPTION doit être présent.
+
+La conclusion commerciale doit inviter à découvrir ou échanger autour de cette nouvelle direction.
 `.trim();
   }
 }
@@ -397,6 +487,7 @@ function matchesProposalType(
         "evolution globale",
         "faire evoluer plus largement",
         "faire evoluer le site",
+        "repenser plus globalement",
         "presentation et l'organisation",
         "presentation et organisation",
       ]
@@ -408,8 +499,10 @@ function matchesProposalType(
     [
       "nouveau site",
       "nouvelle base",
+      "page blanche",
+      "nouvelle conception",
+      "repartir d'une page blanche",
       "repartir sur une nouvelle base",
-      "repartir sur une base",
       "creer un nouveau site",
       "creation d'un nouveau site",
     ]
@@ -428,6 +521,10 @@ Le message précédent ne fait pas suffisamment apparaître l'orientation OPTIMI
 
 Réécris-le afin que le prospect comprenne clairement que des optimisations ciblées du site existant sont proposées.
 
+Le raisonnement doit être :
+
+"Le site actuel constitue une base exploitable que l'on peut améliorer sans le refaire."
+
 Ne propose ni refonte ni nouveau site.
 `.trim();
 
@@ -437,14 +534,16 @@ Le message précédent ne respecte pas suffisamment l'orientation OPTIMISATION +
 
 Réécris-le.
 
-Le corps du mail doit obligatoirement :
+Le raisonnement doit être clairement différent d'une optimisation seule.
 
-1. proposer des optimisations concrètes du site existant ;
-2. ouvrir ensuite clairement la possibilité d'une évolution plus globale de la présentation ou de l'organisation du site.
+Le corps du mail doit :
 
-La deuxième partie doit apparaître dans le mail réellement envoyé.
+1. montrer que des optimisations concrètes sont possibles sur le site existant ;
+2. ouvrir ensuite naturellement la possibilité de profiter de ces améliorations pour faire évoluer plus globalement la présentation et l'organisation du site.
 
-Elle ne doit pas présenter la refonte comme obligatoire.
+La refonte n'est pas obligatoire.
+
+Elle constitue une possibilité complémentaire permettant d'aller plus loin.
 
 N'utilise pas une formulation artificielle du type "notre proposition se déroule en deux temps".
 `.trim();
@@ -453,30 +552,43 @@ N'utilise pas une formulation artificielle du type "notre proposition se déroul
       return `
 Le message précédent ne fait pas suffisamment apparaître l'orientation REFONTE.
 
-Réécris-le.
+Réécris-le en changeant réellement son raisonnement commercial.
 
-Le corps du mail doit clairement ouvrir sur une évolution plus globale du site, de sa présentation et/ou de son organisation.
+Le mail ne doit pas être une liste d'optimisations ponctuelles suivie du mot "refonte".
 
-Il ne doit pas se limiter à quelques optimisations ponctuelles.
+Pars des constats réels pour expliquer qu'ils pourraient être traités de manière cohérente en repensant plus globalement :
 
-Ne falsifie aucun constat de l'audit et ne critique pas brutalement le site.
+- la présentation ;
+- l'organisation ;
+- la hiérarchie ;
+- la mise en valeur des prestations.
 
-Présente cette évolution comme une manière cohérente d'aller plus loin.
+Le lecteur doit comprendre qu'on lui propose de repenser le SITE EXISTANT.
+
+Ne falsifie aucun constat et ne dénigre jamais le site.
 `.trim();
 
     case "new_website":
       return `
-Le message précédent ne fait pas suffisamment apparaître la proposition de CRÉATION D'UN NOUVEAU SITE.
+Le message précédent reste trop proche d'une proposition de REFONTE.
 
-Réécris-le.
+Réécris-le avec un raisonnement radicalement différent.
 
-Le corps du mail doit explicitement présenter comme possibilité le fait de repartir sur une nouvelle base ou d'envisager un nouveau site.
+Le sujet n'est PAS de faire évoluer plus fortement le site actuel.
 
-Ne dis pas que le site actuel est mauvais.
+Le sujet est :
 
-Ne prétends pas que cette solution est obligatoire.
+"Si ce site devait être conçu aujourd'hui à partir d'une page blanche, comment pourrait-il être pensé directement autour des prestations, de la visibilité, des nouveaux usages de recherche et de la prise de contact ?"
 
-Mais la possibilité d'un NOUVEAU SITE doit être parfaitement identifiable dans le texte envoyé au prospect.
+Le corps du mail doit explicitement parler :
+
+- d'un NOUVEAU SITE ;
+- ou d'une NOUVELLE BASE ;
+- ou d'une conception à partir d'une PAGE BLANCHE.
+
+Le prospect doit comprendre sans ambiguïté qu'il s'agit d'une nouvelle conception et non d'une grosse refonte.
+
+Ne critique jamais le site actuel pour justifier cette proposition.
 `.trim();
   }
 }
@@ -497,7 +609,7 @@ async function generateWithOpenAI(
         "system",
 
       content:
-        "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le diagnostic fourni reste factuel. La proposition commerciale choisie doit réellement apparaître dans le corps du message sans conduire à inventer ou exagérer des défauts du site. Le mail final doit être fluide, naturel et ne jamais ressembler à une restitution technique d'audit.",
+        "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le diagnostic fourni reste factuel. La proposition commerciale choisie doit déterminer le raisonnement et la construction du message, pas seulement une phrase ajoutée à la fin. Deux types de propositions différents doivent produire deux approches commerciales perceptiblement différentes. Le mail final doit rester fluide, humain et ne jamais ressembler à une restitution technique d'audit.",
     },
     {
       role:
@@ -861,9 +973,11 @@ Tu dois respecter LES DEUX.
 
 Tu ne dois jamais inventer ou amplifier un défaut afin de justifier la proposition commerciale.
 
-En revanche, le choix commercial demandé doit réellement apparaître dans le corps du mail.
+En revanche, le choix commercial demandé doit réellement déterminer le raisonnement du mail.
 
-Un message qui ignore la proposition commerciale choisie est incorrect.
+Il ne suffit PAS d'écrire un mail générique sur les optimisations puis d'ajouter la proposition choisie dans le dernier paragraphe.
+
+Deux propositions commerciales différentes doivent produire deux messages dont l'approche est perceptiblement différente.
 
 ==================================================
 COHÉRENCE DE LA VOIX
@@ -966,12 +1080,14 @@ Cette différence est volontaire.
 
 Le diagnostic ne doit pas être falsifié.
 
-Mais le choix commercial doit néanmoins apparaître clairement dans le message.
+Mais le choix commercial doit néanmoins déterminer l'approche du message.
 
 Distingue simplement :
 
-- les améliorations objectivement utiles ;
-- la solution plus large qui peut être proposée pour aller plus loin.
+- les constats objectivement établis ;
+- l'orientation commerciale choisie pour y répondre.
+
+Ne cherche jamais à rendre le diagnostic plus sévère pour justifier une solution plus ambitieuse.
 `
     : ""
 }
@@ -1086,25 +1202,30 @@ Pas de ton consultant.
 Pas de ton commercial agressif.
 
 ==================================================
-STRUCTURE
+STRUCTURE DU MESSAGE
 ==================================================
 
 Le mail doit comporter :
 
 1. Bonjour.
-2. Une phrase montrant que le site a réellement été parcouru.
-3. Un constat positif réel.
-4. Un ou deux paragraphes courts présentant les améliorations intéressantes.
-5. La proposition commerciale choisie.
-6. Une conclusion légère.
+2. Une entrée montrant naturellement que le site a réellement été parcouru.
+3. Un élément positif réel et personnalisé.
+4. Le développement commercial correspondant à l'ANGLE NARRATIF imposé ci-dessus.
+5. Une conclusion légère ouvrant la discussion.
 
-Le point 5 est obligatoire.
+IMPORTANT :
 
-Pour cette génération, la proposition commerciale choisie est :
+Il n'existe PAS de structure de corps de mail commune aux quatre propositions.
+
+L'angle commercial doit influencer la construction même du message, et pas seulement une phrase ajoutée à la fin.
+
+Pour cette génération :
 
 ${proposalLabel}
 
-Le corps du mail doit donc être réellement différent d'un message généré avec une autre proposition commerciale.
+Le lecteur doit pouvoir comprendre l'orientation choisie en lisant le mail, même sans connaître le champ proposal_type.
+
+Deux générations effectuées avec deux types de propositions différents doivent produire des raisonnements commerciaux perceptiblement différents.
 
 ==================================================
 OBJET
@@ -1112,13 +1233,17 @@ OBJET
 
 L'objet doit être court, humain et peu commercial.
 
-Exemples :
+L'objet peut lui aussi varier légèrement selon l'angle choisi.
+
+Exemples possibles :
 
 "Quelques pistes pour le site de ${company.name}"
 
 "Une idée pour le site de ${company.name}"
 
 "À propos du site de ${company.name}"
+
+"Une piste pour ${company.name}"
 
 Évite :
 
@@ -1156,11 +1281,19 @@ Le document est déjà joint et correspond à l'angle commercial actuel.
 
 Tu peux le mentionner si cela est pertinent.
 
+Si tu le mentionnes, décris-le conformément à l'angle choisi :
+
+- Optimisation + refonte : une piste d'évolution possible du site ;
+- Refonte : une piste de refonte ou une autre manière d'organiser et présenter le site ;
+- Nouveau site : une proposition de direction pour imaginer une nouvelle base ou un nouveau site.
+
 Ne dis jamais :
 
 "Je peux vous l'envoyer."
 
 "Je peux vous la montrer."
+
+Le document est déjà joint.
 `
       : `
 Aucune pièce jointe compatible avec l'angle commercial actuel n'est disponible au moment de la rédaction.
@@ -1179,19 +1312,26 @@ FIN
 
 Le but est uniquement d'ouvrir une discussion.
 
-Tu peux terminer par :
+La conclusion doit rester cohérente avec l'angle choisi.
 
-"Si ces quelques pistes retiennent votre attention, je serais ravi d'en échanger avec vous."
+Elle peut proposer d'échanger :
 
-ou une formulation équivalente.
+- sur les optimisations prioritaires ;
+- sur une évolution possible du site ;
+- sur une piste de refonte ;
+- sur une nouvelle direction pour le site.
 
 Ne force jamais un rendez-vous.
+
+Évite de terminer systématiquement tous les types de mails par exactement la même phrase.
 
 ==================================================
 LONGUEUR
 ==================================================
 
-Environ 130 à 190 mots.
+Environ 140 à 210 mots.
+
+Privilégie la fluidité du raisonnement à une longueur strictement uniforme entre les différents types de proposition.
 
 ==================================================
 SIGNATURE
