@@ -3,10 +3,47 @@ import {
   NextResponse,
 } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
 
 export const dynamic =
   "force-dynamic";
+
+type TechnicalPlatform =
+  | "wordpress"
+  | "eatbu"
+  | "wix"
+  | "squarespace"
+  | "webflow"
+  | "jimdo"
+  | "shopify"
+  | "prestashop"
+  | "custom"
+  | "unknown";
+
+type TechnicalConfidence =
+  | "high"
+  | "medium"
+  | "low";
+
+type TechnicalFeasibility =
+  | "good"
+  | "limited"
+  | "verify"
+  | "migration_recommended";
+
+type TechnicalProfile = {
+  platform: TechnicalPlatform;
+  platformLabel: string;
+  confidence: TechnicalConfidence;
+  evidence: string[];
+  optimizationFeasibility: TechnicalFeasibility;
+  redesignFeasibility: TechnicalFeasibility;
+  newWebsiteFeasibility: TechnicalFeasibility;
+  migrationLikely: boolean | null;
+  note: string;
+};
 
 type SaveAuditBody = {
   companyId?: string | null;
@@ -16,6 +53,10 @@ type SaveAuditBody = {
 
   pagesAnalyzed?: number;
   analyzedUrls?: string[];
+
+  technicalProfile?:
+    | TechnicalProfile
+    | null;
 
   audit?: {
     globalScore?: number;
@@ -37,9 +78,14 @@ type SaveAuditBody = {
 function normalizeScore(
   value: unknown
 ) {
-  const score = Number(value);
+  const score =
+    Number(value);
 
-  if (!Number.isFinite(score)) {
+  if (
+    !Number.isFinite(
+      score
+    )
+  ) {
     return 0;
   }
 
@@ -47,7 +93,9 @@ function normalizeScore(
     0,
     Math.min(
       100,
-      Math.round(score)
+      Math.round(
+        score
+      )
     )
   );
 }
@@ -55,14 +103,145 @@ function normalizeScore(
 function stringArray(
   value: unknown
 ): string[] {
-  if (!Array.isArray(value)) {
+  if (
+    !Array.isArray(
+      value
+    )
+  ) {
     return [];
   }
 
   return value.filter(
-    (item): item is string =>
-      typeof item === "string"
+    (
+      item
+    ): item is string =>
+      typeof item ===
+      "string"
   );
+}
+
+function isTechnicalPlatform(
+  value: unknown
+): value is TechnicalPlatform {
+  return (
+    value === "wordpress" ||
+    value === "eatbu" ||
+    value === "wix" ||
+    value === "squarespace" ||
+    value === "webflow" ||
+    value === "jimdo" ||
+    value === "shopify" ||
+    value === "prestashop" ||
+    value === "custom" ||
+    value === "unknown"
+  );
+}
+
+function isTechnicalConfidence(
+  value: unknown
+): value is TechnicalConfidence {
+  return (
+    value === "high" ||
+    value === "medium" ||
+    value === "low"
+  );
+}
+
+function isTechnicalFeasibility(
+  value: unknown
+): value is TechnicalFeasibility {
+  return (
+    value === "good" ||
+    value === "limited" ||
+    value === "verify" ||
+    value ===
+      "migration_recommended"
+  );
+}
+
+function normalizeTechnicalProfile(
+  value: unknown
+): TechnicalProfile | null {
+  if (
+    !value ||
+    typeof value !==
+      "object"
+  ) {
+    return null;
+  }
+
+  const data =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  if (
+    !isTechnicalPlatform(
+      data.platform
+    ) ||
+    !isTechnicalConfidence(
+      data.confidence
+    ) ||
+    !isTechnicalFeasibility(
+      data.optimizationFeasibility
+    ) ||
+    !isTechnicalFeasibility(
+      data.redesignFeasibility
+    ) ||
+    !isTechnicalFeasibility(
+      data.newWebsiteFeasibility
+    )
+  ) {
+    return null;
+  }
+
+  const platformLabel =
+    typeof data.platformLabel ===
+      "string" &&
+    data.platformLabel.trim()
+      ? data.platformLabel.trim()
+      : "À vérifier";
+
+  const note =
+    typeof data.note ===
+    "string"
+      ? data.note.trim()
+      : "";
+
+  const migrationLikely =
+    typeof data.migrationLikely ===
+    "boolean"
+      ? data.migrationLikely
+      : null;
+
+  return {
+    platform:
+      data.platform,
+
+    platformLabel,
+
+    confidence:
+      data.confidence,
+
+    evidence:
+      stringArray(
+        data.evidence
+      ),
+
+    optimizationFeasibility:
+      data.optimizationFeasibility,
+
+    redesignFeasibility:
+      data.redesignFeasibility,
+
+    newWebsiteFeasibility:
+      data.newWebsiteFeasibility,
+
+    migrationLikely,
+
+    note,
+  };
 }
 
 export async function POST(
@@ -82,6 +261,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "L’URL du site est obligatoire.",
         },
@@ -93,11 +273,13 @@ export async function POST(
 
     if (
       !body.audit ||
-      typeof body.audit !== "object"
+      typeof body.audit !==
+        "object"
     ) {
       return NextResponse.json(
         {
           success: false,
+
           message:
             "Les données de l’audit sont absentes.",
         },
@@ -123,7 +305,9 @@ export async function POST(
 
     const pagesAnalyzed =
       Number.isFinite(
-        Number(body.pagesAnalyzed)
+        Number(
+          body.pagesAnalyzed
+        )
       )
         ? Math.max(
             0,
@@ -140,6 +324,11 @@ export async function POST(
         body.analyzedUrls
       );
 
+    const technicalProfile =
+      normalizeTechnicalProfile(
+        body.technicalProfile
+      );
+
     const summary =
       typeof body.audit.summary ===
       "string"
@@ -150,6 +339,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "La synthèse de l’audit est absente.",
         },
@@ -159,11 +349,17 @@ export async function POST(
       );
     }
 
-    const { data, error } =
+    const {
+      data,
+      error,
+    } =
       await supabaseAdmin
-        .from("website_audits")
+        .from(
+          "website_audits"
+        )
         .insert({
-          company_id: companyId,
+          company_id:
+            companyId,
 
           website_url:
             websiteUrl,
@@ -197,7 +393,8 @@ export async function POST(
 
           seo_score:
             normalizeScore(
-              body.audit.seoScore
+              body.audit
+                .seoScore
             ),
 
           local_seo_score:
@@ -208,7 +405,8 @@ export async function POST(
 
           geo_score:
             normalizeScore(
-              body.audit.geoScore
+              body.audit
+                .geoScore
             ),
 
           summary,
@@ -236,6 +434,51 @@ export async function POST(
               body.audit
                 .priorities
             ),
+
+          technical_platform:
+            technicalProfile
+              ?.platform ??
+            null,
+
+          technical_platform_label:
+            technicalProfile
+              ?.platformLabel ??
+            null,
+
+          technical_confidence:
+            technicalProfile
+              ?.confidence ??
+            null,
+
+          technical_evidence:
+            technicalProfile
+              ?.evidence ??
+            [],
+
+          optimization_feasibility:
+            technicalProfile
+              ?.optimizationFeasibility ??
+            null,
+
+          redesign_feasibility:
+            technicalProfile
+              ?.redesignFeasibility ??
+            null,
+
+          new_website_feasibility:
+            technicalProfile
+              ?.newWebsiteFeasibility ??
+            null,
+
+          migration_likely:
+            technicalProfile
+              ?.migrationLikely ??
+            null,
+
+          technical_note:
+            technicalProfile
+              ?.note ??
+            null,
         })
         .select(
           `
@@ -250,6 +493,15 @@ export async function POST(
             seo_score,
             local_seo_score,
             geo_score,
+            technical_platform,
+            technical_platform_label,
+            technical_confidence,
+            technical_evidence,
+            optimization_feasibility,
+            redesign_feasibility,
+            new_website_feasibility,
+            migration_likely,
+            technical_note,
             created_at
           `
         )
@@ -264,8 +516,10 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "Impossible d’enregistrer l’audit.",
+
           detail:
             error.message,
         },
@@ -288,6 +542,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
+
         message:
           error instanceof Error
             ? error.message
