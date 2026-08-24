@@ -101,7 +101,7 @@ LE SITE ACTUEL CONSTITUE UNE BONNE BASE ET PEUT ÊTRE AMÉLIORÉ SANS ÊTRE REFA
 
 Après l'introduction personnalisée, entre directement dans cette logique.
 
-Choisis seulement quelques améliorations réellement utiles parmi les constats disponibles.
+Choisis seulement quelques enjeux réellement utiles parmi les constats disponibles.
 
 Traduis-les en bénéfices compréhensibles :
 
@@ -114,6 +114,8 @@ Traduis-les en bénéfices compréhensibles :
 - meilleure adaptation aux nouveaux usages de recherche.
 
 Ne restitue pas techniquement l'audit.
+
+Ne transforme pas automatiquement une absence détectée en solution précise.
 
 Le prospect doit comprendre :
 
@@ -657,6 +659,11 @@ RÈGLES ABSOLUES :
 - ne révèle jamais le fonctionnement interne de LBMedia Office ;
 - ne restitue pas les détails techniques bruts de l'audit ;
 - traduis les constats techniques en enjeux simples et commerciaux ;
+- n'invente jamais une solution précise à partir d'une absence détectée ;
+- n'invente jamais un contenu que l'entreprise devrait posséder ;
+- parle de l'objectif à atteindre lorsque la solution n'est pas explicitement établie ;
+- évite le jargon marketing comme "convertir les visiteurs" ;
+- préfère "faciliter la prise de contact", "rassurer un nouveau visiteur", "mieux faire comprendre l'offre" ou "aider le visiteur à passer à l'action" ;
 - n'utilise aucun intertitre du type "Refonte :", "Optimisation :" ou "Création d'un nouveau site :" dans le corps du mail ;
 - le mail doit ressembler à un message personnel, pas à un rapport.
 ${
@@ -759,7 +766,7 @@ async function generateWithOpenAI(
         "system",
 
       content:
-        "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le prospect ne doit jamais savoir qu'un diagnostic ou une analyse automatique existe. Les données d'audit servent uniquement de matière interne. Traduis-les en enjeux simples et compréhensibles. La proposition commerciale choisie doit déterminer tout le raisonnement du message, pas seulement une phrase ajoutée à la fin. N'utilise jamais d'intertitres artificiels comme « Refonte : », « Optimisation : » ou « Création d'un nouveau site : ». Le mail doit ressembler à un message réellement écrit après avoir parcouru le site.",
+        "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le prospect ne doit jamais savoir qu'un diagnostic ou une analyse automatique existe. Les données d'audit servent uniquement de matière interne. Traduis-les en enjeux simples et compréhensibles. N'invente jamais un contenu, une prestation ou une solution précise qui n'est pas établie par les données. Lorsqu'une absence est détectée, formule l'objectif commercial correspondant plutôt que d'inventer le moyen de le résoudre. La proposition commerciale choisie doit déterminer tout le raisonnement du message, pas seulement une phrase ajoutée à la fin. Évite le jargon marketing comme « convertir les visiteurs ». N'utilise jamais d'intertitres artificiels comme « Refonte : », « Optimisation : » ou « Création d'un nouveau site : ». Le mail doit ressembler à un message réellement écrit après avoir parcouru le site.",
     },
     {
       role:
@@ -1124,9 +1131,85 @@ La proposition commerciale choisie détermine L'ANGLE DU MAIL.
 
 Tu ne dois jamais inventer ou amplifier un défaut afin de justifier cette proposition.
 
+Tu ne dois jamais inventer une prestation, un contenu, un témoignage, un événement, une FAQ, une page ou un autre élément dont l'existence n'est pas établie.
+
 En revanche, tu ne dois PAS écrire un mail générique sur les améliorations puis ajouter la proposition choisie dans le dernier paragraphe.
 
 L'angle choisi doit structurer tout le développement commercial.
+
+==================================================
+CONSTATS ≠ SOLUTIONS
+==================================================
+
+CETTE RÈGLE EST ESSENTIELLE.
+
+Une absence détectée indique un ENJEU.
+
+Elle ne t'autorise pas automatiquement à prescrire une SOLUTION PRÉCISE.
+
+Exemples :
+
+Si l'analyse indique qu'aucune page "À propos" dédiée n'a été repérée :
+
+NE DIS PAS automatiquement :
+
+"Il faudrait créer une page À propos."
+
+Tu peux dire :
+
+"Votre histoire, votre équipe et votre savoir-faire pourraient être davantage mis en valeur."
+
+Si aucun témoignage n'a été repéré :
+
+NE DIS PAS automatiquement :
+
+"Il faudrait ajouter des témoignages."
+
+Tu peux dire :
+
+"Certains éléments pourraient davantage rassurer un nouveau visiteur et renforcer la confiance."
+
+Si aucune FAQ n'a été repérée :
+
+NE DIS PAS automatiquement :
+
+"Il faudrait ajouter une FAQ."
+
+Tu peux dire :
+
+"Certains contenus pourraient mieux répondre aux questions que se pose un visiteur avant de prendre contact."
+
+Si aucune page Contact distincte n'a été repérée :
+
+NE DIS PAS automatiquement :
+
+"Il faudrait créer une page Contact."
+
+Tu peux dire :
+
+"Le parcours vers la prise de contact pourrait être encore simplifié."
+
+Si des éléments locaux sont perfectibles :
+
+NE PRESCRIS PAS automatiquement une technique particulière.
+
+Tu peux dire :
+
+"Votre visibilité dans les recherches locales pourrait être renforcée."
+
+Si un constat concerne les assistants IA ou le GEO :
+
+NE DÉTAILLE PAS une solution technique.
+
+Tu peux dire :
+
+"Les contenus pourraient aussi être mieux adaptés aux nouveaux usages de recherche, notamment via les assistants IA."
+
+PRINCIPE :
+
+PARLE D'ABORD DE CE QUE LE SITE POURRAIT MIEUX ACCOMPLIR.
+
+NE PRÉCISE LE MOYEN QUE S'IL EST DIRECTEMENT ET EXPLICITEMENT ÉTABLI PAR LES DONNÉES.
 
 ==================================================
 RÈGLE DE TRADUCTION COMMERCIALE
@@ -1163,6 +1246,46 @@ un problème lié au GEO peut devenir :
 "mieux préparer les contenus aux nouveaux usages de recherche et aux assistants IA".
 
 Le mail doit parler des bénéfices, pas restituer un rapport technique.
+
+==================================================
+VOCABULAIRE COMMERCIAL
+==================================================
+
+Évite le jargon d'agence ou de consultant.
+
+Évite notamment :
+
+"convertir les visiteurs"
+
+"optimiser la conversion"
+
+"tunnel de conversion"
+
+"maximiser les conversions"
+
+"performance digitale"
+
+"leviers"
+
+"activation"
+
+"acquisition"
+
+Préférer des formulations humaines comme :
+
+"faciliter la prise de contact"
+
+"donner envie d'aller plus loin"
+
+"rassurer un nouveau visiteur"
+
+"mieux faire comprendre vos prestations"
+
+"aider le visiteur à trouver rapidement ce qu'il cherche"
+
+"guider plus naturellement vers la réservation"
+
+"renforcer votre visibilité"
 
 ==================================================
 COHÉRENCE DE LA VOIX
@@ -1316,6 +1439,24 @@ Ne cherche pas à montrer au prospect tout ce que l'analyse a détecté.
 Deux ou trois observations bien intégrées valent mieux qu'une liste exhaustive.
 
 Transforme toujours les observations en prose naturelle.
+
+ATTENTION :
+
+Les priorités internes peuvent contenir des solutions concrètes.
+
+Ne les reprends pas automatiquement telles quelles.
+
+Utilise-les d'abord pour comprendre l'OBJECTIF recherché.
+
+N'invente jamais :
+
+- des témoignages que l'entreprise posséderait ;
+- des événements privés si cette activité n'est pas établie ;
+- une équipe ou des personnes non mentionnées ;
+- une prestation absente des données ;
+- une FAQ à créer ;
+- une page spécifique à créer ;
+- des contenus que le prospect devrait produire.
 
 N'utilise jamais les mots :
 
