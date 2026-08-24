@@ -25,6 +25,12 @@ const OPENAI_IMAGE_EDIT_URL =
 const BUCKET =
   "audit-prospection-assets";
 
+type ProposalType =
+  | "optimization"
+  | "optimization_redesign"
+  | "redesign"
+  | "new_website";
+
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -78,6 +84,7 @@ export async function POST(
           id,
           company_id,
           website_audit_id,
+          proposal_type,
           before_image_url,
           after_image_url
         `
@@ -107,6 +114,38 @@ export async function POST(
       );
     }
 
+    const proposalType =
+      normalizeProposalType(
+        prospection.proposal_type
+      );
+
+    /*
+     * Une optimisation seule ne nécessite
+     * volontairement aucune projection
+     * visuelle.
+     */
+    if (
+      proposalType ===
+      "optimization"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Aucune projection visuelle n’est nécessaire pour une optimisation seule.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /*
+     * Dans le parcours Audit → Prospection,
+     * la capture actuelle reste notre
+     * référence factuelle, y compris
+     * lorsqu'on propose un nouveau site.
+     */
     if (
       !prospection.before_image_url
     ) {
@@ -144,7 +183,9 @@ export async function POST(
       data: company,
       error: companyError,
     } = await supabaseAdmin
-      .from("companies")
+      .from(
+        "companies"
+      )
       .select(
         `
           id,
@@ -205,14 +246,36 @@ export async function POST(
       ) ??
       "image/png";
 
+    const proposalDirection =
+      getProposalDirection(
+        proposalType
+      );
+
     const prompt = `
-À partir de la capture du site fournie, crée une PROJECTION VISUELLE D'AMÉLIORATION de sa page d'accueil.
+À partir de la capture du site fournie, crée une PROJECTION VISUELLE correspondant précisément à l'orientation commerciale suivante.
+
+==================================================
+TYPE DE PROPOSITION
+==================================================
+
+${proposalDirection}
+
+CETTE ORIENTATION EST IMPORTANTE.
+
+La proposition visuelle ne doit pas être identique quel que soit le type de projet.
+
+Elle doit traduire graphiquement le niveau d'évolution demandé tout en respectant strictement la réalité de l'entreprise.
+
+==================================================
+OBJECTIF COMMERCIAL DE LA PROJECTION
+==================================================
 
 Cette image sera présentée commercialement par LBMedia à l'entreprise comme une piste possible d'évolution de son site.
 
 Il s'agit exclusivement d'un exercice de WEB DESIGN, de hiérarchisation et de restructuration VISUELLE de la page.
 
 Il ne s'agit PAS :
+
 - de réinventer l'entreprise ;
 - de réinventer ses locaux ;
 - de réinventer ses produits ;
@@ -445,8 +508,6 @@ La proposition doit privilégier :
 - les éléments de confiance ;
 - les appels à l'action simples.
 
-L'objectif est que le prospect regarde d'abord SON ENTREPRISE et la nouvelle manière de la présenter, pas une fonctionnalité inventée.
-
 ==================================================
 RÈGLE DE SOBRIÉTÉ FONCTIONNELLE
 ==================================================
@@ -463,41 +524,6 @@ Par exemple :
 - une amélioration technique peut être importante sans ajouter un module à l'écran ;
 - une amélioration de conversion peut être illustrée par une meilleure hiérarchie et un bouton clair, sans créer de formulaire ;
 - une amélioration de réservation peut être illustrée par un simple bouton "Réserver", sans afficher un moteur de réservation.
-
-La projection doit rester volontairement simple, élégante et démonstrative.
-
-==================================================
-OBJECTIF
-==================================================
-
-Créer une nouvelle présentation du HAUT DE LA PAGE D'ACCUEIL à partir des contenus réels disponibles.
-
-La proposition doit montrer comment le même site pourrait être :
-
-- plus clair ;
-- mieux structuré ;
-- plus actuel ;
-- plus convaincant ;
-- plus facile à comprendre ;
-- plus efficace commercialement.
-
-L'amélioration doit provenir principalement de :
-
-- la structure de la page ;
-- la hiérarchie de l'information ;
-- la typographie ;
-- les espacements ;
-- les proportions ;
-- les appels à l'action simples ;
-- la navigation ;
-- les blocs de contenu ;
-- la mise en valeur des informations ;
-- la mise en valeur des photographies existantes ;
-- les éléments de réassurance réellement disponibles.
-
-Ne cherche PAS à rendre l'entreprise elle-même plus belle.
-
-Cherche à rendre SON SITE plus efficace pour présenter l'entreprise telle qu'elle est réellement.
 
 ==================================================
 ENTREPRISE
@@ -677,45 +703,6 @@ N'invente jamais :
 Si un élément de réassurance n'est pas établi, ne l'affiche pas.
 
 ==================================================
-INTERDICTIONS ABSOLUES
-==================================================
-
-N'invente jamais :
-
-- un nouveau logo ;
-- une nouvelle marque ;
-- une nouvelle activité ;
-- de nouveaux services non établis ;
-- un nouveau bâtiment ;
-- un nouvel établissement ;
-- de nouveaux locaux ;
-- un nouveau produit ;
-- une nouvelle réalisation ;
-- une nouvelle photographie présentée comme réelle ;
-- une photographie secondaire absente de la capture ;
-- une vignette photographique absente de la capture ;
-- une image de chambre absente de la capture ;
-- une image de restaurant absente de la capture ;
-- une image de plat absente de la capture ;
-- une image de produit absente de la capture ;
-- une image de réalisation absente de la capture ;
-- une image de personne absente de la capture ;
-- une nouvelle fonctionnalité ;
-- un nouveau formulaire ;
-- un nouveau système de réservation ;
-- un nouveau module interactif.
-
-Ne transforme pas automatiquement le site en startup technologique.
-
-Ne lui applique pas arbitrairement une palette bleue.
-
-Ne crée pas une maquette générique qui pourrait appartenir à n'importe quelle entreprise.
-
-Ne fais pas croire que LBMedia propose de transformer physiquement l'entreprise.
-
-Ne fais pas croire que LBMedia propose une fonctionnalité qui n'a pas été étudiée ou validée.
-
-==================================================
 DIRECTION GRAPHIQUE
 ==================================================
 
@@ -734,7 +721,7 @@ Le design peut être nettement meilleur que l'original.
 
 La fidélité à l'entreprise ne signifie PAS fidélité à la mise en page actuelle.
 
-L'objectif est de montrer comment LES MÊMES CONTENUS et LES MÊMES VISUELS peuvent être mieux présentés.
+L'objectif est de montrer comment les contenus réels peuvent être mieux présentés selon le TYPE DE PROPOSITION défini au début de cette consigne.
 
 La photographie principale doit rester un élément visuel fort lorsqu'elle est pertinente.
 
@@ -753,8 +740,6 @@ Pour les sections secondaires :
 - ne remplis jamais artificiellement une grille avec des photographies générées ;
 - une mise en page sobre avec moins d'images est préférable à une mise en page riche contenant de fausses images.
 
-Privilégie l'espace, la lisibilité et la mise en valeur du visuel réel.
-
 ==================================================
 CADRAGE
 ==================================================
@@ -772,7 +757,7 @@ Pas d'ordinateur.
 Pas de téléphone.
 Pas de mockup posé dans un décor.
 
-L'image doit ressembler directement à une capture d'écran du site amélioré.
+L'image doit ressembler directement à une capture d'écran du site proposé.
 
 ==================================================
 VÉRIFICATION AVANT DE PRODUIRE
@@ -780,26 +765,25 @@ VÉRIFICATION AVANT DE PRODUIRE
 
 Avant de produire l'image, vérifie mentalement :
 
-1. Ai-je conservé l'identité réelle de l'entreprise ?
-2. CHAQUE photographie utilisée existe-t-elle réellement dans la capture source ?
-3. Pour CHAQUE petite vignette photographique, puis-je identifier clairement son équivalent dans la capture source ?
-4. Ai-je inventé ou modifié un bâtiment, un lieu, un produit ou une réalisation ?
-5. Ai-je inventé une chambre, un plat, un restaurant, une équipe, un produit ou une réalisation simplement parce que l'activité de l'entreprise le suggère ?
-6. Ai-je inventé une fonctionnalité ou un module qui n'est pas nécessaire à cette démonstration visuelle ?
-7. Un formulaire, calendrier, moteur de réservation ou widget occupe-t-il une partie de la proposition ? Si oui, supprime-le.
-8. Les changements portent-ils principalement sur le DESIGN DU SITE ?
-9. Les changements répondent-ils réellement aux constats de l'audit ?
-10. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
-11. La photographie réelle reste-t-elle suffisamment visible et valorisée ?
+1. Ai-je bien respecté le TYPE DE PROPOSITION indiqué au début ?
+2. Ai-je conservé l'identité réelle de l'entreprise ?
+3. CHAQUE photographie utilisée existe-t-elle réellement dans la capture source ?
+4. Pour CHAQUE petite vignette photographique, puis-je identifier clairement son équivalent dans la capture source ?
+5. Ai-je inventé ou modifié un bâtiment, un lieu, un produit ou une réalisation ?
+6. Ai-je inventé une chambre, un plat, un restaurant, une équipe, un produit ou une réalisation simplement parce que l'activité de l'entreprise le suggère ?
+7. Ai-je inventé une fonctionnalité ou un module qui n'est pas nécessaire à cette démonstration visuelle ?
+8. Un formulaire, calendrier, moteur de réservation ou widget occupe-t-il une partie de la proposition ? Si oui, supprime-le.
+9. Les changements portent-ils principalement sur le DESIGN DU SITE ?
+10. Les changements répondent-ils réellement aux constats de l'audit ?
+11. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
+12. Le niveau d'évolution visuelle correspond-il réellement à ${getProposalShortLabel(
+      proposalType
+    )} ?
 
-SI LA RÉPONSE À LA QUESTION 2 OU 3 EST NON OU INCERTAINE :
+SI LA RÉPONSE À LA QUESTION 3 OU 4 EST NON OU INCERTAINE :
 SUPPRIME LA PHOTOGRAPHIE CONCERNÉE.
 
 Ne la remplace surtout pas par une photographie générée.
-
-Si une photographie risque d'être réinterprétée ou inventée, ne l'utilise pas.
-
-Si une fonctionnalité risque de détourner l'attention de la proposition visuelle, ne l'affiche pas.
 
 ==================================================
 RÉSULTAT
@@ -820,7 +804,13 @@ Aucun moteur de réservation.
 Aucun widget fonctionnel.
 AUCUNE photographie qui ne soit pas clairement présente dans la capture source.
 
-Uniquement la projection VISUELLE du site amélioré, construite à partir de la réalité visuelle de l'entreprise.
+Uniquement la projection VISUELLE correspondant à :
+
+${getProposalShortLabel(
+  proposalType
+)}
+
+La proposition doit être construite à partir de la réalité visuelle de l'entreprise et du diagnostic issu de l'audit.
 `.trim();
 
     const formData =
@@ -921,8 +911,15 @@ Uniquement la projection VISUELLE du site amélioré, construite à partir de la
         "base64"
       );
 
+    /*
+     * Le type de proposition est intégré
+     * au nom du fichier.
+     *
+     * Cela permet de distinguer clairement
+     * les différentes orientations générées.
+     */
     const fileName =
-      `${company.id}/${id}/proposal-${Date.now()}.png`;
+      `${company.id}/${id}/proposal-${proposalType}-${Date.now()}.png`;
 
     const {
       error: uploadError,
@@ -968,6 +965,10 @@ Uniquement la projection VISUELLE du site amélioré, construite à partir de la
       );
     }
 
+    /*
+     * Toute nouvelle projection invalide
+     * le PDF précédemment généré.
+     */
     const updated =
       await updateAuditProspection(
         id,
@@ -982,6 +983,8 @@ Uniquement la projection VISUELLE du site amélioré, construite à partir de la
 
     return NextResponse.json({
       success: true,
+
+      proposalType,
 
       message:
         "Proposition visuelle générée.",
@@ -1011,6 +1014,176 @@ Uniquement la projection VISUELLE du site amélioré, construite à partir de la
         status: 500,
       }
     );
+  }
+}
+
+function normalizeProposalType(
+  value: unknown
+): ProposalType {
+  if (
+    value ===
+      "optimization" ||
+    value ===
+      "optimization_redesign" ||
+    value ===
+      "redesign" ||
+    value ===
+      "new_website"
+  ) {
+    return value;
+  }
+
+  return "optimization";
+}
+
+function getProposalShortLabel(
+  proposalType: Exclude<
+    ProposalType,
+    "optimization"
+  >
+) {
+  switch (
+    proposalType
+  ) {
+    case "optimization_redesign":
+      return "UNE ÉVOLUTION DU SITE ASSOCIANT OPTIMISATION ET REFONTE";
+
+    case "redesign":
+      return "UNE REFONTE DU SITE EXISTANT";
+
+    case "new_website":
+      return "LA CRÉATION D'UN NOUVEAU SITE";
+  }
+}
+
+function getProposalDirection(
+  proposalType: Exclude<
+    ProposalType,
+    "optimization"
+  >
+) {
+  switch (
+    proposalType
+  ) {
+    case "optimization_redesign":
+      return `
+OPTIMISATION + REFONTE
+
+Le site actuel constitue une base exploitable.
+
+L'objectif n'est PAS de repartir totalement de zéro.
+
+La proposition doit montrer comment le site pourrait évoluer en conservant ce qui fonctionne déjà tout en améliorant nettement :
+
+- la hiérarchie des informations ;
+- la clarté des prestations ;
+- la lisibilité ;
+- la navigation ;
+- la mise en valeur des contenus ;
+- les appels à l'action ;
+- la perception de modernité ;
+- la capacité du site à mieux soutenir les optimisations SEO, locales et GEO / IA identifiées dans l'audit.
+
+Le visiteur doit pouvoir reconnaître le site et l'entreprise, mais constater une évolution significative de la présentation.
+
+Conserve une continuité visuelle avec l'existant.
+
+Ne produis pas une rupture complète d'identité.
+
+La projection doit faire penser :
+
+"Le site actuel pourrait devenir nettement plus efficace et actuel sans nécessairement repartir de zéro."
+`.trim();
+
+    case "redesign":
+      return `
+REFONTE DU SITE EXISTANT
+
+La proposition peut faire évoluer beaucoup plus franchement la structure et la présentation du site actuel.
+
+L'objectif est de montrer ce que pourrait apporter une véritable refonte graphique et éditoriale.
+
+Tu peux notamment revoir fortement :
+
+- la composition du haut de page ;
+- l'organisation de la navigation ;
+- la hiérarchie des contenus ;
+- les proportions ;
+- la typographie ;
+- les espaces ;
+- les blocs de présentation ;
+- la mise en valeur des prestations ;
+- les appels à l'action ;
+- la manière de valoriser les photographies existantes.
+
+La nouvelle présentation doit être nettement différente du site actuel tout en conservant :
+
+- la vraie entreprise ;
+- son identité ;
+- son logo ;
+- ses couleurs pertinentes ;
+- ses contenus factuels ;
+- ses photographies réelles.
+
+La projection doit faire penser :
+
+"Voici à quoi pourrait ressembler une véritable refonte de ce site."
+`.trim();
+
+    case "new_website":
+      return `
+NOUVEAU SITE
+
+La capture actuelle sert uniquement de SOURCE FACTUELLE et de référence pour l'identité réelle de l'entreprise.
+
+Tu n'es PAS obligé de conserver la structure, la disposition ou l'organisation actuelle du site.
+
+Imagine une nouvelle page d'accueil construite dès le départ autour :
+
+- de la compréhension immédiate de l'activité ;
+- des prestations prioritaires ;
+- de la visibilité ;
+- du référencement ;
+- de la visibilité locale lorsque pertinente ;
+- de la compréhension par les moteurs et les IA ;
+- de la conversion ;
+- d'un parcours simple vers le contact.
+
+Tu peux repenser largement :
+
+- le header ;
+- la navigation ;
+- le hero ;
+- la hiérarchie éditoriale ;
+- la disposition des blocs ;
+- les proportions ;
+- la typographie ;
+- les espaces ;
+- les appels à l'action ;
+- la présentation des prestations.
+
+MAIS :
+
+tu dois toujours conserver strictement la réalité de l'entreprise.
+
+La liberté concerne LE SITE, pas l'entreprise elle-même.
+
+N'invente :
+
+- aucune photo ;
+- aucun service ;
+- aucune activité ;
+- aucun produit ;
+- aucune réalisation ;
+- aucune promesse ;
+- aucune fonctionnalité.
+
+Le résultat doit être plus libre qu'une refonte classique.
+
+La projection doit faire penser :
+
+"Si nous concevions aujourd'hui un nouveau site pour cette entreprise à partir de sa réalité et de ses objectifs, voici une direction possible."
+`.trim();
   }
 }
 
