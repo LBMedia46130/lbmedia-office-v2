@@ -363,18 +363,6 @@ NE DÉDUIS JAMAIS l'apparence d'un élément qui n'est pas visible dans la captu
 
 La logique métier n'est jamais une preuve visuelle.
 
-Un hôtel possède probablement des chambres.
-
-Cela ne signifie PAS que tu peux inventer une photographie de chambre.
-
-Un restaurant sert probablement des plats.
-
-Cela ne signifie PAS que tu peux inventer une photographie de plat.
-
-Une entreprise de construction possède probablement des réalisations.
-
-Cela ne signifie PAS que tu peux inventer une photographie de chantier ou de maison.
-
 ==================================================
 QUE FAIRE SI UNE PHOTO MANQUE ?
 ==================================================
@@ -400,26 +388,6 @@ Utilise à la place :
 Tu peux également simplifier ou supprimer la section.
 
 UNE ZONE SANS PHOTO EST TOUJOURS PRÉFÉRABLE À UNE FAUSSE PHOTO.
-
-==================================================
-RÈGLE DE RÉUTILISATION DES PHOTOGRAPHIES
-==================================================
-
-Ne transforme pas une photographie source en une nouvelle photographie.
-
-Une photographie source peut être :
-
-- déplacée ;
-- agrandie ;
-- réduite ;
-- légèrement recadrée ;
-- intégrée dans une carte ;
-- utilisée en arrière-plan ;
-- accompagnée de texte.
-
-Elle ne doit pas être recréée ou réinterprétée.
-
-Si tu n'es pas certain qu'un visuel de la proposition corresponde réellement à une photographie présente dans la capture source, SUPPRIME CE VISUEL.
 
 ==================================================
 PROPOSITION VISUELLE UNIQUEMENT
@@ -448,8 +416,6 @@ INTERDICTIONS :
 - aucun widget fonctionnel ;
 - aucun module interactif complexe ;
 - aucune interface applicative inventée.
-
-Même lorsqu'une fonctionnalité existe déjà, ne la représente pas sous forme de formulaire ou widget détaillé.
 
 Une action commerciale peut être représentée uniquement par un bouton simple :
 
@@ -525,32 +491,6 @@ ${
 }
 
 ==================================================
-PRINCIPE DE CONCEPTION
-==================================================
-
-La proposition doit matérialiser visuellement uniquement les recommandations qui peuvent raisonnablement être traduites en présentation.
-
-Chaque changement visible doit servir au moins un objectif :
-
-- mieux faire comprendre l'activité ;
-- mieux présenter l'offre ;
-- mieux hiérarchiser les informations ;
-- mieux mettre en valeur les contenus existants ;
-- mieux guider le visiteur ;
-- mieux rassurer ;
-- mieux orienter vers une action simple.
-
-Le résultat doit pouvoir être réellement reproduit dans WordPress / Elementor à partir des contenus existants.
-
-Évite :
-
-- les effets graphiques impossibles ;
-- les concepts irréalisables ;
-- les interfaces artificielles ;
-- les modules fonctionnels inventés ;
-- les widgets complexes.
-
-==================================================
 IDENTITÉ DE L'ENTREPRISE
 ==================================================
 
@@ -560,7 +500,7 @@ Conserve :
 
 - le vrai logo visible dans la capture ;
 - le vrai nom de l'entreprise ;
-- les couleurs de marque réellement identifiables lorsqu'elles sont pertinentes ;
+- les couleurs de marque réellement identifiables lorsqu'elles sont pertinentes, sauf pour une proposition "Nouveau site" où elles peuvent être librement réinterprétées ;
 - les photographies réelles utilisées ;
 - la nature exacte de l'activité ;
 - les informations commerciales établies.
@@ -569,7 +509,11 @@ ATTENTION :
 
 CONSERVER L'IDENTITÉ NE SIGNIFIE PAS CONSERVER LE DESIGN ACTUEL.
 
-Le logo, les couleurs, les photographies et les contenus sont des ASSETS.
+Le logo, les photographies et les contenus sont des ASSETS.
+
+La palette actuelle peut être considérée comme un asset pour une évolution ou une refonte.
+
+Pour un NOUVEAU SITE, elle devient seulement une référence possible parmi d'autres.
 
 La composition actuelle de la page n'est PAS un asset.
 
@@ -593,6 +537,10 @@ Cette distinction est ABSOLUE.
 
 Tu dois conserver l'identité de l'entreprise mais NE PAS reproduire son système de mise en page actuel.
 
+Tu n'es PAS obligé de conserver sa palette de couleurs actuelle.
+
+Tu peux proposer une direction chromatique sensiblement différente si elle est cohérente avec l'activité et le positionnement.
+
 La nouvelle composition doit pouvoir être dessinée sans regarder la disposition actuelle, une fois les assets et les faits identifiés.
 `
     : ""
@@ -613,8 +561,6 @@ N'invente aucune activité ou promesse commerciale.
 Lorsque les vrais textes sont lisibles, conserve-les ou utilise-les comme base.
 
 Tu peux raccourcir une formulation pour améliorer la hiérarchie visuelle sans en changer le sens.
-
-Si un texte précis n'est pas lisible, utilise un traitement graphique sobre plutôt que d'inventer une affirmation.
 
 ==================================================
 ÉLÉMENTS DE CONFIANCE
@@ -653,23 +599,55 @@ La projection doit être :
 
 Le design peut être nettement meilleur que l'original.
 
-La photographie principale doit rester un élément visuel fort lorsqu'elle est pertinente.
-
-Pour les sections secondaires :
-
-- utilise une photographie uniquement si elle existe clairement dans la capture source ;
-- sinon, privilégie typographie, espace, aplats, formes ou pictogrammes ;
-- ne remplis jamais artificiellement une grille avec des photographies générées.
-
 ${
   proposalType ===
   "new_website"
     ? `
 ==================================================
-RUPTURE VISUELLE OBLIGATOIRE — NOUVEAU SITE
+LIBERTÉ DE DIRECTION ARTISTIQUE — NOUVEAU SITE
 ==================================================
 
-CETTE PARTIE EST DÉTERMINANTE.
+Pour un NOUVEAU SITE, les couleurs du site actuel ne constituent PAS une contrainte.
+
+Elles peuvent servir d'inspiration si elles sont pertinentes, mais tu es explicitement autorisé à proposer une palette sensiblement différente.
+
+Le logo réel, les photographies réelles, l'activité et les contenus factuels assurent déjà la continuité avec l'entreprise.
+
+Tu peux donc explorer une direction artistique plus audacieuse et plus contemporaine.
+
+Tu peux notamment :
+
+- introduire une nouvelle couleur dominante ;
+- réduire fortement l'importance des couleurs actuelles ;
+- utiliser une palette plus sobre, premium, chaleureuse, naturelle ou éditoriale selon l'activité ;
+- créer de nouveaux contrastes ;
+- utiliser davantage de blanc ou d'espaces neutres ;
+- employer des tons profonds ou naturels ;
+- choisir une typographie donnant une personnalité très différente au site ;
+- faire évoluer radicalement le rapport entre photographie, texte et couleur.
+
+NE CHERCHE PAS systématiquement à reproduire la palette du site actuel.
+
+NE CONSIDÈRE PAS les couleurs actuelles comme faisant nécessairement partie de l'identité intangible de l'entreprise.
+
+En revanche :
+
+- ne modifie pas le logo lui-même ;
+- ne recolore pas artificiellement les photographies pour changer la réalité ;
+- ne crée pas une direction artistique incohérente avec l'activité ;
+- ne cherche pas l'originalité au détriment de la crédibilité commerciale.
+
+La proposition doit pouvoir être PLUS AUDACIEUSE qu'une refonte.
+
+Elle doit montrer au prospect qu'en repartant d'une page blanche, une autre expression visuelle de son entreprise est réellement possible.
+
+Si la meilleure direction artistique conserve certaines couleurs actuelles, tu peux les conserver.
+
+Mais fais-en un CHOIX DE DESIGN et non une conséquence automatique de la capture source.
+
+==================================================
+RUPTURE VISUELLE OBLIGATOIRE — NOUVEAU SITE
+==================================================
 
 Tu ne réalises PAS une version modernisée de la page fournie.
 
@@ -680,7 +658,6 @@ Commence mentalement avec UNE TOILE BLANCHE.
 Ensuite seulement, réintroduis :
 
 - le logo réel ;
-- les couleurs pertinentes ;
 - les photographies réellement disponibles ;
 - les informations factuelles ;
 - les prestations réellement établies.
@@ -695,7 +672,9 @@ Change obligatoirement plusieurs éléments structurels majeurs :
 4. une nouvelle organisation des contenus après le hero ;
 5. un nouveau rythme entre textes, espaces et photographies ;
 6. une nouvelle logique de mise en avant des prestations ;
-7. une nouvelle position et une nouvelle hiérarchie des appels à l'action.
+7. une nouvelle position et une nouvelle hiérarchie des appels à l'action ;
+8. une palette de couleurs pouvant être sensiblement différente ;
+9. un univers graphique général pouvant être réinterprété.
 
 NE CONSERVE PAS :
 
@@ -708,19 +687,11 @@ NE CONSERVE PAS :
 - le même rythme vertical ;
 - la même logique de cartes simplement restylées.
 
-IMPORTANT :
+Une nouvelle palette appliquée à la même structure NE SUFFIT PAS.
 
-Une nouvelle palette ou une nouvelle typographie appliquée à la même structure NE SUFFIT PAS.
+Une nouvelle structure avec exactement les mêmes codes visuels NE SUFFIT PAS NON PLUS.
 
-Déplacer quelques blocs NE SUFFIT PAS.
-
-Arrondir les cartes NE SUFFIT PAS.
-
-Agrandir le hero NE SUFFIT PAS.
-
-Changer les boutons NE SUFFIT PAS.
-
-Le squelette de la page doit être différent.
+Il faut une vraie nouvelle direction.
 
 Si quelqu'un place la capture actuelle et la proposition côte à côte, il doit immédiatement voir :
 
@@ -730,22 +701,6 @@ et NON :
 
 "Même site avec un nouveau design."
 
-La photographie source peut être réutilisée dans une position totalement différente.
-
-Par exemple, une image actuellement secondaire peut devenir le hero si elle est pertinente.
-
-Une image actuellement dans le hero peut être utilisée plus bas.
-
-Les contenus peuvent être regroupés autrement.
-
-Les sections peuvent être réordonnées.
-
-Les textes peuvent être hiérarchisés autrement.
-
-Le nombre de blocs visibles peut être réduit.
-
-L'espace blanc peut devenir un élément majeur de composition.
-
 La proposition doit donner l'impression qu'un webdesigner a reçu :
 
 - le logo ;
@@ -753,7 +708,7 @@ La proposition doit donner l'impression qu'un webdesigner a reçu :
 - les contenus ;
 - les objectifs ;
 
-SANS recevoir la maquette du site actuel.
+SANS recevoir la maquette ni la palette du site actuel.
 
 C'est exactement l'effet recherché.
 `
@@ -788,40 +743,31 @@ Avant de produire l'image, vérifie mentalement :
 1. Ai-je respecté le TYPE DE PROPOSITION ?
 2. Ai-je conservé l'identité réelle de l'entreprise ?
 3. Chaque photographie utilisée existe-t-elle réellement dans la capture ?
-4. Chaque vignette photographique possède-t-elle un équivalent clair dans la source ?
-5. Ai-je inventé ou modifié un bâtiment, lieu, produit ou réalisation ?
-6. Ai-je inventé une photographie parce que l'activité la suggère ?
-7. Ai-je inventé une fonctionnalité ?
-8. Un formulaire, calendrier ou widget occupe-t-il la proposition ?
-9. Les changements portent-ils principalement sur le DESIGN DU SITE ?
-10. Les changements répondent-ils aux constats de l'audit ?
-11. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
-12. Le niveau d'évolution correspond-il réellement à ${getProposalShortLabel(
+4. Ai-je inventé une photographie ?
+5. Ai-je inventé une fonctionnalité ?
+6. Cette proposition serait-elle réalisable par LBMedia avec les contenus réels du client ?
+7. Le niveau d'évolution correspond-il réellement à ${getProposalShortLabel(
       proposalType
     )} ?
 ${
   proposalType ===
   "new_website"
     ? `
-13. Ai-je réellement commencé par une page blanche ?
-14. Le header est-il structurellement différent ?
-15. Le hero est-il structurellement différent ?
-16. L'ordre et la hiérarchie des contenus sont-ils différents ?
-17. Ai-je évité de reproduire la grille et le rythme du site actuel ?
-18. En voyant les deux images côte à côte, dira-t-on "nouveau site" plutôt que "refonte" ?
+8. Ai-je réellement commencé par une page blanche ?
+9. Le header est-il structurellement différent ?
+10. Le hero est-il structurellement différent ?
+11. L'ordre et la hiérarchie des contenus sont-ils différents ?
+12. Ai-je évité de reproduire la grille et le rythme du site actuel ?
+13. Ai-je réellement envisagé une palette différente plutôt que de reprendre automatiquement les couleurs existantes ?
+14. La direction artistique est-elle suffisamment distincte d'une simple refonte ?
+15. En voyant les deux images côte à côte, dira-t-on "nouveau site" plutôt que "refonte" ?
 
-SI L'UNE DES RÉPONSES 13 À 18 EST NON :
+SI L'UNE DES RÉPONSES 8 À 15 EST NON :
 
-REPENSE LA COMPOSITION AVANT DE PRODUIRE L'IMAGE.
+REPENSE LA COMPOSITION ET LA DIRECTION ARTISTIQUE AVANT DE PRODUIRE L'IMAGE.
 `
     : ""
 }
-
-SI LA RÉPONSE À LA QUESTION 3 OU 4 EST NON OU INCERTAINE :
-
-SUPPRIME LA PHOTOGRAPHIE CONCERNÉE.
-
-Ne la remplace jamais par une photographie générée.
 
 ==================================================
 RÉSULTAT
@@ -854,11 +800,13 @@ ${
     ? `
 RAPPEL FINAL :
 
-NOUVEAU SITE = NOUVELLE ARCHITECTURE VISUELLE.
+NOUVEAU SITE = NOUVELLE ARCHITECTURE VISUELLE + LIBERTÉ DE DIRECTION ARTISTIQUE.
 
 Utilise la capture comme bibliothèque d'assets et de faits.
 
-NE L'UTILISE PAS COMME MODÈLE DE MISE EN PAGE.
+NE L'UTILISE PAS comme modèle de mise en page.
+
+NE REPRENDS PAS automatiquement sa palette de couleurs.
 `
     : ""
 }
@@ -1113,9 +1061,12 @@ Elle est uniquement :
 
 - une bibliothèque de photographies réelles ;
 - une source pour le logo et le nom ;
-- une source pour les couleurs de marque réellement identifiables ;
 - une source pour les textes et informations factuelles ;
 - une preuve de l'activité réelle de l'entreprise.
+
+Les couleurs du site actuel ne sont PAS une contrainte.
+
+Elles peuvent être conservées, réduites, réinterprétées ou largement abandonnées au profit d'une nouvelle direction artistique cohérente.
 
 IGNORE COMME RÉFÉRENCE DE DESIGN :
 
@@ -1129,15 +1080,12 @@ IGNORE COMME RÉFÉRENCE DE DESIGN :
 - les espacements ;
 - la position actuelle des photographies ;
 - la hiérarchie typographique actuelle ;
-- la position actuelle des boutons.
+- la position actuelle des boutons ;
+- la palette actuelle comme contrainte obligatoire.
 
 Tu dois extraire mentalement les ASSETS de la capture, puis concevoir une page neuve.
 
-Imagine que l'on t'a fourni séparément le logo, les photographies et les contenus, mais AUCUNE maquette du site existant.
-
-La proposition finale ne doit donc pas être une édition visuelle de la capture.
-
-Elle doit être une nouvelle composition utilisant les mêmes éléments factuels.
+Imagine que l'on t'a fourni séparément le logo, les photographies et les contenus, mais AUCUNE maquette ni palette imposée.
 `.trim();
   }
 
@@ -1156,7 +1104,7 @@ Pour cette REFONTE, tu peux modifier fortement la structure et la présentation.
 
 Il reste néanmoins pertinent que l'on puisse comprendre qu'il s'agit d'une transformation du site existant.
 
-Tu peux conserver certains repères ou certaines logiques si elles fonctionnent, mais tu n'es pas obligé de conserver la mise en page.
+Tu peux conserver certains repères ou certaines logiques si elles fonctionnent.
 `.trim();
   }
 
@@ -1194,14 +1142,9 @@ La proposition doit montrer comment le site pourrait évoluer en conservant ce q
 - la navigation ;
 - la mise en valeur des contenus ;
 - les appels à l'action ;
-- la perception de modernité ;
-- la capacité du site à mieux soutenir les optimisations SEO, locales et GEO / IA identifiées dans l'audit.
-
-Le visiteur doit pouvoir reconnaître le site et l'entreprise, mais constater une évolution significative de la présentation.
+- la perception de modernité.
 
 Conserve une continuité visuelle avec l'existant.
-
-Ne produis pas une rupture complète d'identité.
 
 La projection doit faire penser :
 
@@ -1233,30 +1176,22 @@ Mais le raisonnement reste celui d'une REFONTE :
 
 on part de ce qui existe pour le repenser et mieux le présenter.
 
-La projection peut conserver certains repères pertinents du site actuel.
-
-Elle doit faire penser :
+La projection doit faire penser :
 
 "Voici une nouvelle version, profondément retravaillée, de ce site existant."
-
-Elle ne doit PAS donner l'impression qu'un nouveau projet a été conçu sans tenir compte de la structure précédente.
 `.trim();
 
     case "new_website":
       return `
 NOUVEAU SITE — CONCEPTION À PARTIR D'UNE PAGE BLANCHE
 
-CETTE PROPOSITION DOIT ÊTRE STRUCTURELLEMENT DIFFÉRENTE D'UNE REFONTE.
+CETTE PROPOSITION DOIT ÊTRE STRUCTURELLEMENT ET ARTISTIQUEMENT DIFFÉRENTE D'UNE REFONTE.
 
 Tu ne dois PAS améliorer la maquette actuelle.
 
-Tu ne dois PAS moderniser sa structure.
+Tu ne dois PAS moderniser simplement sa structure.
 
-Tu ne dois PAS prendre le header actuel et le redessiner.
-
-Tu ne dois PAS prendre le hero actuel et le moderniser.
-
-Tu ne dois PAS conserver la grille actuelle en changeant simplement son style.
+Tu ne dois PAS reprendre automatiquement sa palette.
 
 TU DOIS CONCEVOIR UNE NOUVELLE PAGE.
 
@@ -1264,30 +1199,19 @@ La capture source sert exclusivement à récupérer :
 
 - l'identité réelle ;
 - le logo ;
-- les couleurs pertinentes ;
 - les photographies existantes ;
 - les contenus factuels ;
 - les prestations réellement établies.
 
-Une fois ces éléments identifiés, IGNORE LA MISE EN PAGE SOURCE.
+Une fois ces éléments identifiés, IGNORE LA MISE EN PAGE SOURCE ET SES CODES GRAPHIQUES NON ESSENTIELS.
 
 Pars mentalement d'une page totalement blanche.
 
 Demande-toi :
 
-"Si cette entreprise n'avait aujourd'hui aucun site, comment construirais-je sa première page d'accueil à partir de ses vrais contenus et de ses objectifs ?"
+"Si cette entreprise n'avait aujourd'hui aucun site, quelle architecture ET quelle direction artistique proposerais-je avec ses vrais contenus ?"
 
-Conçois alors une nouvelle architecture éditoriale et graphique autour :
-
-- de la compréhension immédiate de l'activité ;
-- des prestations réellement proposées ;
-- du savoir-faire réellement établi ;
-- de la zone géographique lorsqu'elle est pertinente ;
-- de la visibilité Google ;
-- de la visibilité locale ;
-- des nouveaux usages de recherche et des assistants IA ;
-- de la confiance ;
-- de la prise de contact.
+Conçois alors une nouvelle architecture éditoriale et graphique.
 
 Tu dois repenser franchement :
 
@@ -1302,17 +1226,19 @@ Tu dois repenser franchement :
 - la typographie ;
 - les espaces ;
 - les appels à l'action ;
-- la manière d'utiliser les photographies réelles.
+- la manière d'utiliser les photographies réelles ;
+- la palette de couleurs ;
+- l'univers graphique général.
 
-LE SQUELETTE DOIT ÊTRE NOUVEAU.
+LE SQUELETTE ET LA DIRECTION ARTISTIQUE DOIVENT ÊTRE NOUVEAUX.
 
 Même entreprise : OUI.
 
-Même identité : OUI.
+Même logo : OUI.
 
 Mêmes photographies réelles disponibles : OUI.
 
-Même structure de site : NON.
+Même structure : NON.
 
 Même hero : NON.
 
@@ -1320,7 +1246,7 @@ Même grille : NON.
 
 Même succession de sections : NON.
 
-Même rythme de page : NON.
+Même palette obligatoire : NON.
 
 Une simple modernisation graphique est un ÉCHEC.
 
