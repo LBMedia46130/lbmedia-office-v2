@@ -46,7 +46,6 @@ type AuditResult =
 
 type SiteSignals = {
   pagesCount: number;
-
   pagesWithTitle: number;
   pagesWithMetaDescription: number;
   pagesWithCanonical: number;
@@ -55,28 +54,23 @@ type SiteSignals = {
   pagesWithStructuredData: number;
   pagesWithH1: number;
   pagesWithH2: number;
-
   totalTextLength: number;
   averageTextLength: number;
-
   hasContactPage: boolean;
   hasAboutPage: boolean;
   hasServicesPage: boolean;
   hasPricingPage: boolean;
   hasBlogOrNews: boolean;
-
   hasPhone: boolean;
   hasEmail: boolean;
   hasPostalCode: boolean;
   hasAddressSignal: boolean;
   hasLocationSignal: boolean;
   hasServiceAreaSignal: boolean;
-
   hasPrimaryCTA: boolean;
   hasSecondaryCTA: boolean;
   hasQuoteCTA: boolean;
   hasContactCTA: boolean;
-
   hasPricingSignal: boolean;
   hasExperienceSignal: boolean;
   hasExpertiseSignal: boolean;
@@ -84,18 +78,663 @@ type SiteSignals = {
   hasTestimonialSignal: boolean;
   hasCaseStudySignal: boolean;
   hasFaqSignal: boolean;
-
   hasClearServiceVocabulary: boolean;
   serviceVocabularyCount: number;
   geographicVocabularyCount: number;
 };
 
-function normalizeUrl(value: string) {
-  const trimmed = value.trim();
+type TechnicalPlatform =
+  | "wordpress"
+  | "eatbu"
+  | "wix"
+  | "squarespace"
+  | "webflow"
+  | "jimdo"
+  | "shopify"
+  | "prestashop"
+  | "custom"
+  | "unknown";
+
+type TechnicalConfidence =
+  | "high"
+  | "medium"
+  | "low";
+
+type TechnicalFeasibility =
+  | "good"
+  | "limited"
+  | "verify"
+  | "migration_recommended";
+
+type TechnicalProfile = {
+  platform: TechnicalPlatform;
+  platformLabel: string;
+  confidence: TechnicalConfidence;
+  evidence: string[];
+  optimizationFeasibility: TechnicalFeasibility;
+  redesignFeasibility: TechnicalFeasibility;
+  newWebsiteFeasibility: TechnicalFeasibility;
+  migrationLikely: boolean | null;
+  note: string;
+};
+
+type PlatformDetection = {
+  platform: Exclude<
+    TechnicalPlatform,
+    "custom" | "unknown"
+  >;
+  label: string;
+  score: number;
+  evidence: string[];
+};
+
+function detectTechnicalProfile(
+  html: string,
+  finalUrl: string
+): TechnicalProfile {
+  const source =
+    html.toLowerCase();
+
+  let hostname = "";
+
+  try {
+    hostname =
+      new URL(
+        finalUrl
+      ).hostname.toLowerCase();
+  } catch {
+    hostname = "";
+  }
+
+  const detections:
+    PlatformDetection[] = [
+      {
+        platform:
+          "eatbu",
+        label:
+          "EATBU",
+        score:
+          0,
+        evidence:
+          [],
+      },
+      {
+        platform:
+          "wordpress",
+        label:
+          "WordPress",
+        score:
+          0,
+        evidence:
+          [],
+      },
+      {
+        platform:
+          "wix",
+        label:
+          "Wix",
+        score:
+          0,
+        evidence:
+          [],
+      },
+      {
+        platform:
+          "squarespace",
+        label:
+          "Squarespace",
+        score:
+          0,
+        evidence:
+          [],
+      },
+      {
+        platform:
+          "webflow",
+        label:
+          "Webflow",
+        score:
+          0,
+        evidence:
+          [],
+      },
+      {
+        platform:
+          "jimdo",
+        label:
+          "Jimdo",
+        score:
+          0,
+        evidence:
+          [],
+      },
+      {
+        platform:
+          "shopify",
+        label:
+          "Shopify",
+        score:
+          0,
+        evidence:
+          [],
+      },
+      {
+        platform:
+          "prestashop",
+        label:
+          "PrestaShop",
+        score:
+          0,
+        evidence:
+          [],
+      },
+    ];
+
+  function addEvidence(
+    platform:
+      PlatformDetection["platform"],
+    points: number,
+    evidence: string
+  ) {
+    const detection =
+      detections.find(
+        (item) =>
+          item.platform ===
+          platform
+      );
+
+    if (!detection) {
+      return;
+    }
+
+    detection.score +=
+      points;
+
+    if (
+      !detection.evidence.includes(
+        evidence
+      )
+    ) {
+      detection.evidence.push(
+        evidence
+      );
+    }
+  }
+
+  // EATBU
+  if (
+    hostname.includes(
+      "eatbu."
+    ) ||
+    hostname.endsWith(
+      ".eatbu.com"
+    )
+  ) {
+    addEvidence(
+      "eatbu",
+      100,
+      "Domaine EATBU détecté."
+    );
+  }
 
   if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://")
+    source.includes(
+      "eatbu"
+    )
+  ) {
+    addEvidence(
+      "eatbu",
+      60,
+      "Signature EATBU détectée dans le code source."
+    );
+  }
+
+  // WordPress
+  if (
+    source.includes(
+      "/wp-content/"
+    )
+  ) {
+    addEvidence(
+      "wordpress",
+      55,
+      "Ressources wp-content détectées."
+    );
+  }
+
+  if (
+    source.includes(
+      "/wp-includes/"
+    )
+  ) {
+    addEvidence(
+      "wordpress",
+      45,
+      "Ressources wp-includes détectées."
+    );
+  }
+
+  if (
+    /<meta[^>]+generator[^>]+wordpress/i.test(
+      html
+    )
+  ) {
+    addEvidence(
+      "wordpress",
+      70,
+      "Meta generator WordPress détectée."
+    );
+  }
+
+  // Wix
+  if (
+    source.includes(
+      "wixstatic.com"
+    )
+  ) {
+    addEvidence(
+      "wix",
+      60,
+      "Ressources Wix Static détectées."
+    );
+  }
+
+  if (
+    source.includes(
+      "wix.com"
+    ) ||
+    source.includes(
+      "wix-code"
+    )
+  ) {
+    addEvidence(
+      "wix",
+      45,
+      "Signature Wix détectée."
+    );
+  }
+
+  // Squarespace
+  if (
+    source.includes(
+      "static1.squarespace.com"
+    )
+  ) {
+    addEvidence(
+      "squarespace",
+      60,
+      "Ressources Squarespace détectées."
+    );
+  }
+
+  if (
+    source.includes(
+      "squarespace.com"
+    )
+  ) {
+    addEvidence(
+      "squarespace",
+      45,
+      "Signature Squarespace détectée."
+    );
+  }
+
+  // Webflow
+  if (
+    source.includes(
+      "webflow.css"
+    ) ||
+    source.includes(
+      "webflow.js"
+    )
+  ) {
+    addEvidence(
+      "webflow",
+      60,
+      "Ressources Webflow détectées."
+    );
+  }
+
+  if (
+    source.includes(
+      "website-files.com"
+    ) ||
+    source.includes(
+      "webflow.io"
+    )
+  ) {
+    addEvidence(
+      "webflow",
+      45,
+      "Infrastructure Webflow détectée."
+    );
+  }
+
+  if (
+    /data-wf-page=/i.test(
+      html
+    ) ||
+    /data-wf-site=/i.test(
+      html
+    )
+  ) {
+    addEvidence(
+      "webflow",
+      65,
+      "Attributs techniques Webflow détectés."
+    );
+  }
+
+  // Jimdo
+  if (
+    source.includes(
+      "jimdo.com"
+    ) ||
+    source.includes(
+      "jimstatic.com"
+    )
+  ) {
+    addEvidence(
+      "jimdo",
+      60,
+      "Ressources Jimdo détectées."
+    );
+  }
+
+  if (
+    /<meta[^>]+generator[^>]+jimdo/i.test(
+      html
+    )
+  ) {
+    addEvidence(
+      "jimdo",
+      70,
+      "Meta generator Jimdo détectée."
+    );
+  }
+
+  // Shopify
+  if (
+    source.includes(
+      "cdn.shopify.com"
+    )
+  ) {
+    addEvidence(
+      "shopify",
+      60,
+      "CDN Shopify détecté."
+    );
+  }
+
+  if (
+    source.includes(
+      "shopify.theme"
+    ) ||
+    source.includes(
+      "shopify-section"
+    )
+  ) {
+    addEvidence(
+      "shopify",
+      55,
+      "Signature de thème Shopify détectée."
+    );
+  }
+
+  // PrestaShop
+  if (
+    /<meta[^>]+generator[^>]+prestashop/i.test(
+      html
+    )
+  ) {
+    addEvidence(
+      "prestashop",
+      70,
+      "Meta generator PrestaShop détectée."
+    );
+  }
+
+  if (
+    source.includes(
+      "/modules/ps_"
+    ) ||
+    source.includes(
+      "prestashop"
+    )
+  ) {
+    addEvidence(
+      "prestashop",
+      50,
+      "Signature PrestaShop détectée."
+    );
+  }
+
+  const ranked =
+    [
+      ...detections,
+    ].sort(
+      (
+        a,
+        b
+      ) =>
+        b.score -
+        a.score
+    );
+
+  const best =
+    ranked[0];
+
+  const second =
+    ranked[1];
+
+  if (
+    !best ||
+    best.score < 35
+  ) {
+    return {
+      platform:
+        "unknown",
+
+      platformLabel:
+        "À vérifier",
+
+      confidence:
+        "low",
+
+      evidence:
+        [],
+
+      optimizationFeasibility:
+        "verify",
+
+      redesignFeasibility:
+        "verify",
+
+      newWebsiteFeasibility:
+        "verify",
+
+      migrationLikely:
+        null,
+
+      note:
+        "La technologie du site n’a pas pu être identifiée avec suffisamment de certitude. Une vérification technique sera nécessaire avant chiffrage.",
+    };
+  }
+
+  const scoreGap =
+    best.score -
+    (
+      second?.score ??
+      0
+    );
+
+  const confidence:
+    TechnicalConfidence =
+      best.score >=
+        70 &&
+      scoreGap >= 20
+        ? "high"
+        : best.score >=
+              50 &&
+            scoreGap >=
+              10
+          ? "medium"
+          : "low";
+
+  return buildTechnicalProfile(
+    best.platform,
+    best.label,
+    confidence,
+    best.evidence
+  );
+}
+
+function buildTechnicalProfile(
+  platform: Exclude<
+    TechnicalPlatform,
+    "custom" | "unknown"
+  >,
+  platformLabel: string,
+  confidence:
+    TechnicalConfidence,
+  evidence: string[]
+): TechnicalProfile {
+  switch (
+    platform
+  ) {
+    case "eatbu":
+      return {
+        platform,
+        platformLabel,
+        confidence,
+        evidence,
+
+        optimizationFeasibility:
+          "limited",
+
+        redesignFeasibility:
+          "limited",
+
+        newWebsiteFeasibility:
+          "migration_recommended",
+
+        migrationLikely:
+          true,
+
+        note:
+          "La plateforme EATBU peut limiter les possibilités d’optimisation et de refonte avancée. Une évolution profonde ou un nouveau site nécessitera probablement une migration vers une solution plus flexible. À confirmer avant chiffrage.",
+      };
+
+    case "wix":
+    case "squarespace":
+    case "jimdo":
+      return {
+        platform,
+        platformLabel,
+        confidence,
+        evidence,
+
+        optimizationFeasibility:
+          "limited",
+
+        redesignFeasibility:
+          "verify",
+
+        newWebsiteFeasibility:
+          "migration_recommended",
+
+        migrationLikely:
+          true,
+
+        note:
+          `La plateforme ${platformLabel} permet certaines évolutions mais peut limiter une refonte très poussée. Une migration peut être nécessaire selon le projet retenu et devra être vérifiée avant chiffrage.`,
+      };
+
+    case "wordpress":
+      return {
+        platform,
+        platformLabel,
+        confidence,
+        evidence,
+
+        optimizationFeasibility:
+          "good",
+
+        redesignFeasibility:
+          "good",
+
+        newWebsiteFeasibility:
+          "good",
+
+        migrationLikely:
+          false,
+
+        note:
+          "WordPress offre généralement une bonne latitude pour l’optimisation et la refonte. La faisabilité réelle dépendra néanmoins du thème, du constructeur, des extensions et des accès disponibles.",
+      };
+
+    case "webflow":
+      return {
+        platform,
+        platformLabel,
+        confidence,
+        evidence,
+
+        optimizationFeasibility:
+          "good",
+
+        redesignFeasibility:
+          "good",
+
+        newWebsiteFeasibility:
+          "verify",
+
+        migrationLikely:
+          false,
+
+        note:
+          "Webflow offre généralement une bonne liberté de conception. Les accès au projet et les contraintes fonctionnelles devront être vérifiés avant chiffrage.",
+      };
+
+    case "shopify":
+    case "prestashop":
+      return {
+        platform,
+        platformLabel,
+        confidence,
+        evidence,
+
+        optimizationFeasibility:
+          "good",
+
+        redesignFeasibility:
+          "verify",
+
+        newWebsiteFeasibility:
+          "verify",
+
+        migrationLikely:
+          null,
+
+        note:
+          `${platformLabel} est une plateforme e-commerce. Une refonte est envisageable, mais les contraintes du thème, des modules et du catalogue devront être étudiées avant chiffrage.`,
+      };
+  }
+}
+
+function normalizeUrl(
+  value: string
+) {
+  const trimmed =
+    value.trim();
+
+  if (
+    trimmed.startsWith(
+      "http://"
+    ) ||
+    trimmed.startsWith(
+      "https://"
+    )
   ) {
     return trimmed;
   }
@@ -103,25 +742,55 @@ function normalizeUrl(value: string) {
   return `https://${trimmed}`;
 }
 
-function decodeHtmlEntities(value: string) {
+function decodeHtmlEntities(
+  value: string
+) {
   return value
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/&apos;/gi, "'")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
+    .replace(
+      /&nbsp;/gi,
+      " "
+    )
+    .replace(
+      /&amp;/gi,
+      "&"
+    )
+    .replace(
+      /&quot;/gi,
+      '"'
+    )
+    .replace(
+      /&#39;/gi,
+      "'"
+    )
+    .replace(
+      /&apos;/gi,
+      "'"
+    )
+    .replace(
+      /&lt;/gi,
+      "<"
+    )
+    .replace(
+      /&gt;/gi,
+      ">"
+    )
     .replace(
       /&#(\d+);/g,
-      (_, code) =>
+      (
+        _,
+        code
+      ) =>
         String.fromCharCode(
-          Number(code)
+          Number(
+            code
+          )
         )
     );
 }
 
-function cleanHtml(html: string) {
+function cleanHtml(
+  html: string
+) {
   return decodeHtmlEntities(
     html
       .replace(
@@ -140,19 +809,30 @@ function cleanHtml(html: string) {
         /<!--[\s\S]*?-->/g,
         " "
       )
-      .replace(/<[^>]+>/g, " ")
+      .replace(
+        /<[^>]+>/g,
+        " "
+      )
   )
-    .replace(/\s+/g, " ")
+    .replace(
+      /\s+/g,
+      " "
+    )
     .trim();
 }
 
-function extractTitle(html: string) {
-  const match = html.match(
-    /<title[^>]*>([\s\S]*?)<\/title>/i
-  );
+function extractTitle(
+  html: string
+) {
+  const match =
+    html.match(
+      /<title[^>]*>([\s\S]*?)<\/title>/i
+    );
 
   return match
-    ? cleanHtml(match[1])
+    ? cleanHtml(
+        match[1]
+      )
     : null;
 }
 
@@ -164,17 +844,23 @@ function extractMetaDescription(
       /<meta\b[^>]*>/gi
     ) ?? [];
 
-  for (const tag of metaTags) {
+  for (
+    const tag of
+    metaTags
+  ) {
     if (
       /name\s*=\s*["']description["']/i.test(
         tag
       )
     ) {
-      const content = tag.match(
-        /content\s*=\s*["']([^"']*)["']/i
-      );
+      const content =
+        tag.match(
+          /content\s*=\s*["']([^"']*)["']/i
+        );
 
-      if (content?.[1]) {
+      if (
+        content?.[1]
+      ) {
         return decodeHtmlEntities(
           content[1]
         ).trim();
@@ -185,17 +871,25 @@ function extractMetaDescription(
   return null;
 }
 
-function extractHeadings(html: string) {
-  const headings: string[] = [];
+function extractHeadings(
+  html: string
+) {
+  const headings:
+    string[] = [];
 
-  const matches = html.matchAll(
-    /<(h1|h2|h3)[^>]*>([\s\S]*?)<\/\1>/gi
-  );
-
-  for (const match of matches) {
-    const text = cleanHtml(
-      match[2]
+  const matches =
+    html.matchAll(
+      /<(h1|h2|h3)[^>]*>([\s\S]*?)<\/\1>/gi
     );
+
+  for (
+    const match of
+    matches
+  ) {
+    const text =
+      cleanHtml(
+        match[2]
+      );
 
     if (text) {
       headings.push(
@@ -203,7 +897,10 @@ function extractHeadings(html: string) {
       );
     }
 
-    if (headings.length >= 35) {
+    if (
+      headings.length >=
+      35
+    ) {
       break;
     }
   }
@@ -211,25 +908,33 @@ function extractHeadings(html: string) {
   return headings;
 }
 
-function hasJsonLd(html: string) {
+function hasJsonLd(
+  html: string
+) {
   return /application\/ld\+json/i.test(
     html
   );
 }
 
-function hasCanonical(html: string) {
+function hasCanonical(
+  html: string
+) {
   return /<link[^>]+rel\s*=\s*["']canonical["']/i.test(
     html
   );
 }
 
-function hasViewport(html: string) {
+function hasViewport(
+  html: string
+) {
   return /<meta[^>]+name\s*=\s*["']viewport["']/i.test(
     html
   );
 }
 
-function hasOpenGraph(html: string) {
+function hasOpenGraph(
+  html: string
+) {
   return /property\s*=\s*["']og:/i.test(
     html
   );
@@ -240,7 +945,10 @@ function normalizeComparableHost(
 ) {
   return hostname
     .toLowerCase()
-    .replace(/^www\./, "");
+    .replace(
+      /^www\./,
+      ""
+    );
 }
 
 function isSameWebsite(
@@ -262,16 +970,19 @@ function cleanDiscoveredUrl(
   baseUrl: URL
 ) {
   try {
-    const candidate = new URL(
-      href,
-      baseUrl
-    );
+    const candidate =
+      new URL(
+        href,
+        baseUrl
+      );
 
     if (
       ![
         "http:",
         "https:",
-      ].includes(candidate.protocol)
+      ].includes(
+        candidate.protocol
+      )
     ) {
       return null;
     }
@@ -285,17 +996,21 @@ function cleanDiscoveredUrl(
       return null;
     }
 
-    candidate.hash = "";
+    candidate.hash =
+      "";
 
-    for (const key of [
-      "utm_source",
-      "utm_medium",
-      "utm_campaign",
-      "utm_content",
-      "utm_term",
-      "fbclid",
-      "gclid",
-    ]) {
+    for (
+      const key of
+      [
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_content",
+        "utm_term",
+        "fbclid",
+        "gclid",
+      ]
+    ) {
       candidate.searchParams.delete(
         key
       );
@@ -324,52 +1039,59 @@ function scoreCandidate(
   const lower =
     url.toLowerCase();
 
-  let score = 0;
+  let score =
+    0;
 
-  const highPriority = [
-    "contact",
-    "agence",
-    "a-propos",
-    "about",
-    "service",
-    "prestation",
-    "creation",
-    "site-internet",
-    "seo",
-    "referencement",
-    "tarif",
-    "prix",
-  ];
+  const highPriority =
+    [
+      "contact",
+      "agence",
+      "a-propos",
+      "about",
+      "service",
+      "prestation",
+      "creation",
+      "site-internet",
+      "seo",
+      "referencement",
+      "tarif",
+      "prix",
+    ];
 
-  const mediumPriority = [
-    "actualite",
-    "article",
-    "blog",
-    "realisation",
-    "portfolio",
-    "reference",
-    "client",
-    "faq",
-  ];
+  const mediumPriority =
+    [
+      "actualite",
+      "article",
+      "blog",
+      "realisation",
+      "portfolio",
+      "reference",
+      "client",
+      "faq",
+    ];
 
-  const lowPriority = [
-    "mentions-legales",
-    "confidentialite",
-    "privacy",
-    "cookie",
-    "cgv",
-    "connexion",
-    "login",
-  ];
+  const lowPriority =
+    [
+      "mentions-legales",
+      "confidentialite",
+      "privacy",
+      "cookie",
+      "cgv",
+      "connexion",
+      "login",
+    ];
 
   for (
     const keyword of
     highPriority
   ) {
     if (
-      lower.includes(keyword)
+      lower.includes(
+        keyword
+      )
     ) {
-      score += 20;
+      score +=
+        20;
     }
   }
 
@@ -378,9 +1100,12 @@ function scoreCandidate(
     mediumPriority
   ) {
     if (
-      lower.includes(keyword)
+      lower.includes(
+        keyword
+      )
     ) {
-      score += 8;
+      score +=
+        8;
     }
   }
 
@@ -389,17 +1114,28 @@ function scoreCandidate(
     lowPriority
   ) {
     if (
-      lower.includes(keyword)
+      lower.includes(
+        keyword
+      )
     ) {
-      score -= 30;
+      score -=
+        30;
     }
   }
 
-  const depth = new URL(url)
-    .pathname.split("/")
-    .filter(Boolean).length;
+  const depth =
+    new URL(
+      url
+    )
+      .pathname.split(
+        "/"
+      )
+      .filter(
+        Boolean
+      ).length;
 
-  score -= depth * 2;
+  score -=
+    depth * 2;
 
   return score;
 }
@@ -409,14 +1145,19 @@ function discoverInternalLinks(
   baseUrl: URL
 ) {
   const urls =
-    new Set<string>();
+    new Set<
+      string
+    >();
 
   const matches =
     html.matchAll(
       /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi
     );
 
-  for (const match of matches) {
+  for (
+    const match of
+    matches
+  ) {
     const url =
       cleanDiscoveredUrl(
         match[1],
@@ -424,23 +1165,37 @@ function discoverInternalLinks(
       );
 
     if (url) {
-      urls.add(url);
+      urls.add(
+        url
+      );
     }
   }
 
-  return [...urls].sort(
-    (a, b) => {
+  return [
+    ...urls,
+  ].sort(
+    (
+      a,
+      b
+    ) => {
       const scoreDifference =
-        scoreCandidate(b) -
-        scoreCandidate(a);
+        scoreCandidate(
+          b
+        ) -
+        scoreCandidate(
+          a
+        );
 
       if (
-        scoreDifference !== 0
+        scoreDifference !==
+        0
       ) {
         return scoreDifference;
       }
 
-      return a.localeCompare(b);
+      return a.localeCompare(
+        b
+      );
     }
   );
 }
@@ -449,22 +1204,33 @@ async function fetchHtml(
   url: string
 ) {
   const response =
-    await fetch(url, {
-      method: "GET",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; LBMediaOffice/2.1; WebsiteAudit)",
-        Accept:
-          "text/html,application/xhtml+xml",
-      },
-      redirect: "follow",
-      signal:
-        AbortSignal.timeout(
-          12000
-        ),
-    });
+    await fetch(
+      url,
+      {
+        method:
+          "GET",
 
-  if (!response.ok) {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (compatible; LBMediaOffice/2.1; WebsiteAudit)",
+
+          Accept:
+            "text/html,application/xhtml+xml",
+        },
+
+        redirect:
+          "follow",
+
+        signal:
+          AbortSignal.timeout(
+            12000
+          ),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       `HTTP ${response.status}`
     );
@@ -473,7 +1239,8 @@ async function fetchHtml(
   const contentType =
     response.headers.get(
       "content-type"
-    ) ?? "";
+    ) ??
+    "";
 
   if (
     !contentType.includes(
@@ -490,8 +1257,10 @@ async function fetchHtml(
 
   return {
     html,
+
     finalUrl:
-      response.url || url,
+      response.url ||
+      url,
   };
 }
 
@@ -501,26 +1270,49 @@ function buildPageData(
 ): PageData {
   return {
     url,
+
     title:
-      extractTitle(html),
+      extractTitle(
+        html
+      ),
+
     metaDescription:
       extractMetaDescription(
         html
       ),
+
     headings:
-      extractHeadings(html),
-    text: cleanHtml(html).slice(
-      0,
-      MAX_TEXT_PER_PAGE
-    ),
+      extractHeadings(
+        html
+      ),
+
+    text:
+      cleanHtml(
+        html
+      ).slice(
+        0,
+        MAX_TEXT_PER_PAGE
+      ),
+
     canonical:
-      hasCanonical(html),
+      hasCanonical(
+        html
+      ),
+
     viewport:
-      hasViewport(html),
+      hasViewport(
+        html
+      ),
+
     openGraph:
-      hasOpenGraph(html),
+      hasOpenGraph(
+        html
+      ),
+
     structuredData:
-      hasJsonLd(html),
+      hasJsonLd(
+        html
+      ),
   };
 }
 
@@ -531,10 +1323,11 @@ function includesAny(
   const normalized =
     text.toLowerCase();
 
-  return terms.some((term) =>
-    normalized.includes(
-      term.toLowerCase()
-    )
+  return terms.some(
+    (term) =>
+      normalized.includes(
+        term.toLowerCase()
+      )
   );
 }
 
@@ -545,10 +1338,11 @@ function countTerms(
   const normalized =
     text.toLowerCase();
 
-  return terms.filter((term) =>
-    normalized.includes(
-      term.toLowerCase()
-    )
+  return terms.filter(
+    (term) =>
+      normalized.includes(
+        term.toLowerCase()
+      )
   ).length;
 }
 
@@ -556,11 +1350,12 @@ function pageUrlIncludes(
   pages: PageData[],
   terms: string[]
 ) {
-  return pages.some((page) =>
-    includesAny(
-      page.url,
-      terms
-    )
+  return pages.some(
+    (page) =>
+      includesAny(
+        page.url,
+        terms
+      )
   );
 }
 
@@ -578,7 +1373,9 @@ function buildSiteSignals(
             " "
           )} ${page.text}`
       )
-      .join(" ")
+      .join(
+        " "
+      )
       .toLowerCase();
 
   const pagesWithTitle =
@@ -622,194 +1419,221 @@ function buildSiteSignals(
     ).length;
 
   const pagesWithH1 =
-    pages.filter((page) =>
-      page.headings.some(
-        (heading) =>
-          heading.startsWith(
-            "H1 :"
-          )
-      )
+    pages.filter(
+      (page) =>
+        page.headings.some(
+          (heading) =>
+            heading.startsWith(
+              "H1 :"
+            )
+        )
     ).length;
 
   const pagesWithH2 =
-    pages.filter((page) =>
-      page.headings.some(
-        (heading) =>
-          heading.startsWith(
-            "H2 :"
-          )
-      )
+    pages.filter(
+      (page) =>
+        page.headings.some(
+          (heading) =>
+            heading.startsWith(
+              "H2 :"
+            )
+        )
     ).length;
 
   const totalTextLength =
     pages.reduce(
-      (total, page) =>
+      (
+        total,
+        page
+      ) =>
         total +
         page.text.length,
       0
     );
 
   const averageTextLength =
-    pages.length > 0
+    pages.length >
+    0
       ? Math.round(
           totalTextLength /
             pages.length
         )
       : 0;
 
-  const serviceTerms = [
-    "service",
-    "services",
-    "prestation",
-    "prestations",
-    "solution",
-    "solutions",
-    "création",
-    "creation",
-    "accompagnement",
-    "conseil",
-    "audit",
-    "site internet",
-    "sites internet",
-    "référencement",
-    "referencement",
-    "seo",
-    "communication",
-    "publicité",
-    "publicite",
-  ];
+  const serviceTerms =
+    [
+      "service",
+      "services",
+      "prestation",
+      "prestations",
+      "solution",
+      "solutions",
+      "création",
+      "creation",
+      "accompagnement",
+      "conseil",
+      "audit",
+      "site internet",
+      "sites internet",
+      "référencement",
+      "referencement",
+      "seo",
+      "communication",
+      "publicité",
+      "publicite",
+    ];
 
-  const geographicTerms = [
-    "lot",
-    "occitanie",
-    "local",
-    "locale",
-    "région",
-    "region",
-    "ville",
-    "commune",
-    "département",
-    "departement",
-    "zone",
-    "secteur",
-    "proximité",
-    "proximite",
-    "france",
-  ];
+  const geographicTerms =
+    [
+      "lot",
+      "occitanie",
+      "local",
+      "locale",
+      "région",
+      "region",
+      "ville",
+      "commune",
+      "département",
+      "departement",
+      "zone",
+      "secteur",
+      "proximité",
+      "proximite",
+      "france",
+    ];
 
-  const primaryCtaTerms = [
-    "contactez",
-    "contact",
-    "demandez",
-    "demander",
-    "découvrir",
-    "decouvrir",
-    "en savoir plus",
-    "prendre rendez-vous",
-    "prendre rendez vous",
-    "réserver",
-    "reserver",
-    "commencer",
-  ];
+  const primaryCtaTerms =
+    [
+      "contactez",
+      "contact",
+      "demandez",
+      "demander",
+      "découvrir",
+      "decouvrir",
+      "en savoir plus",
+      "prendre rendez-vous",
+      "prendre rendez vous",
+      "réserver",
+      "reserver",
+      "commencer",
+    ];
 
-  const secondaryCtaTerms = [
-    "voir nos",
-    "voir les",
-    "nos services",
-    "nos offres",
-    "nos tarifs",
-    "découvrez",
-    "decouvrez",
-    "lire",
-    "consulter",
-  ];
+  const secondaryCtaTerms =
+    [
+      "voir nos",
+      "voir les",
+      "nos services",
+      "nos offres",
+      "nos tarifs",
+      "découvrez",
+      "decouvrez",
+      "lire",
+      "consulter",
+    ];
 
-  const quoteTerms = [
-    "devis",
-    "estimation",
-    "audit gratuit",
-    "demande de tarif",
-    "demandez un tarif",
-  ];
+  const quoteTerms =
+    [
+      "devis",
+      "estimation",
+      "audit gratuit",
+      "demande de tarif",
+      "demandez un tarif",
+    ];
 
-  const contactTerms = [
-    "téléphone",
-    "telephone",
-    "appelez",
-    "appeler",
-    "contact",
-    "e-mail",
-    "email",
-    "mail",
-  ];
+  const contactTerms =
+    [
+      "téléphone",
+      "telephone",
+      "appelez",
+      "appeler",
+      "contact",
+      "e-mail",
+      "email",
+      "mail",
+    ];
 
-  const expertiseTerms = [
-    "expertise",
-    "expert",
-    "spécialiste",
-    "specialiste",
-    "expérience",
-    "experience",
-    "savoir-faire",
-    "conseil",
-  ];
+  const expertiseTerms =
+    [
+      "expertise",
+      "expert",
+      "spécialiste",
+      "specialiste",
+      "expérience",
+      "experience",
+      "savoir-faire",
+      "conseil",
+    ];
 
-  const clientTerms = [
-    "client",
-    "clients",
-    "référence",
-    "reference",
-    "références",
-    "references",
-    "ils nous font confiance",
-    "partenaire",
-  ];
+  const clientTerms =
+    [
+      "client",
+      "clients",
+      "référence",
+      "reference",
+      "références",
+      "references",
+      "ils nous font confiance",
+      "partenaire",
+    ];
 
-  const testimonialTerms = [
-    "témoignage",
-    "temoignage",
-    "avis client",
-    "avis clients",
-    "ce que disent nos clients",
-  ];
+  const testimonialTerms =
+    [
+      "témoignage",
+      "temoignage",
+      "avis client",
+      "avis clients",
+      "ce que disent nos clients",
+    ];
 
-  const caseStudyTerms = [
-    "étude de cas",
-    "etude de cas",
-    "cas client",
-    "réalisation",
-    "realisation",
-    "portfolio",
-    "projet client",
-  ];
+  const caseStudyTerms =
+    [
+      "étude de cas",
+      "etude de cas",
+      "cas client",
+      "réalisation",
+      "realisation",
+      "portfolio",
+      "projet client",
+    ];
 
-  const faqTerms = [
-    "faq",
-    "questions fréquentes",
-    "questions frequentes",
-    "foire aux questions",
-  ];
+  const faqTerms =
+    [
+      "faq",
+      "questions fréquentes",
+      "questions frequentes",
+      "foire aux questions",
+    ];
 
   return {
     pagesCount:
       pages.length,
 
     pagesWithTitle,
+
     pagesWithMetaDescription,
+
     pagesWithCanonical,
+
     pagesWithViewport,
+
     pagesWithOpenGraph,
+
     pagesWithStructuredData,
+
     pagesWithH1,
+
     pagesWithH2,
 
     totalTextLength,
+
     averageTextLength,
 
     hasContactPage:
       pageUrlIncludes(
         pages,
-        ["contact"]
+        [
+          "contact",
+        ]
       ),
 
     hasAboutPage:
@@ -1017,7 +1841,9 @@ function clampScore(
     0,
     Math.min(
       100,
-      Math.round(score)
+      Math.round(
+        score
+      )
     )
   );
 }
@@ -1027,306 +1853,366 @@ function ratioScore(
   total: number,
   maximumPoints: number
 ) {
-  if (total <= 0) {
+  if (
+    total <= 0
+  ) {
     return 0;
   }
 
   return (
-    (value / total) *
+    value /
+    total *
     maximumPoints
   );
 }
 
 function calculatePositioningScore(
-  signals: SiteSignals
+  signals:
+    SiteSignals
 ) {
-  let score = 15;
+  let score =
+    15;
 
   if (
     signals.hasClearServiceVocabulary
   ) {
-    score += 22;
+    score +=
+      22;
   }
 
   if (
     signals.serviceVocabularyCount >=
     7
   ) {
-    score += 6;
+    score +=
+      6;
   }
 
   if (
     signals.hasServicesPage
   ) {
-    score += 14;
+    score +=
+      14;
   }
 
   if (
     signals.hasAboutPage
   ) {
-    score += 9;
+    score +=
+      9;
   }
 
   if (
     signals.hasExperienceSignal
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.hasExpertiseSignal
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.hasLocationSignal
   ) {
-    score += 6;
+    score +=
+      6;
   }
 
   if (
     signals.averageTextLength >=
     2500
   ) {
-    score += 7;
+    score +=
+      7;
   } else if (
     signals.averageTextLength >=
     1500
   ) {
-    score += 4;
+    score +=
+      4;
   }
 
-  return clampScore(score);
+  return clampScore(
+    score
+  );
 }
 
 function calculateConversionScore(
-  signals: SiteSignals
+  signals:
+    SiteSignals
 ) {
-  let score = 10;
+  let score =
+    10;
 
   if (
     signals.hasPrimaryCTA
   ) {
-    score += 15;
+    score +=
+      15;
   }
 
   if (
     signals.hasSecondaryCTA
   ) {
-    score += 5;
+    score +=
+      5;
   }
 
   if (
     signals.hasQuoteCTA
   ) {
-    score += 12;
+    score +=
+      12;
   }
 
   if (
     signals.hasContactCTA
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.hasContactPage
   ) {
-    score += 10;
+    score +=
+      10;
   }
 
   if (
     signals.hasPhone
   ) {
-    score += 6;
+    score +=
+      6;
   }
 
   if (
     signals.hasEmail
   ) {
-    score += 5;
+    score +=
+      5;
   }
 
   if (
     signals.hasPricingPage ||
     signals.hasPricingSignal
   ) {
-    score += 7;
+    score +=
+      7;
   }
 
   if (
     signals.hasClientSignal
   ) {
-    score += 5;
+    score +=
+      5;
   }
 
   if (
     signals.hasTestimonialSignal
   ) {
-    score += 9;
+    score +=
+      9;
   }
 
   if (
     signals.hasCaseStudySignal
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
-  return clampScore(score);
+  return clampScore(
+    score
+  );
 }
 
 function calculateSeoScore(
-  signals: SiteSignals
+  signals:
+    SiteSignals
 ) {
   const total =
     signals.pagesCount;
 
-  let score = 5;
+  let score =
+    5;
 
-  score += ratioScore(
-    signals.pagesWithTitle,
-    total,
-    14
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithTitle,
+      total,
+      14
+    );
 
-  score += ratioScore(
-    signals.pagesWithMetaDescription,
-    total,
-    11
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithMetaDescription,
+      total,
+      11
+    );
 
-  score += ratioScore(
-    signals.pagesWithCanonical,
-    total,
-    8
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithCanonical,
+      total,
+      8
+    );
 
-  score += ratioScore(
-    signals.pagesWithViewport,
-    total,
-    3
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithViewport,
+      total,
+      3
+    );
 
-  score += ratioScore(
-    signals.pagesWithH1,
-    total,
-    14
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithH1,
+      total,
+      14
+    );
 
-  score += ratioScore(
-    signals.pagesWithH2,
-    total,
-    8
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithH2,
+      total,
+      8
+    );
 
-  score += ratioScore(
-    signals.pagesWithOpenGraph,
-    total,
-    3
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithOpenGraph,
+      total,
+      3
+    );
 
-  score += ratioScore(
-    signals.pagesWithStructuredData,
-    total,
-    6
-  );
+  score +=
+    ratioScore(
+      signals.pagesWithStructuredData,
+      total,
+      6
+    );
 
   if (
     signals.averageTextLength >=
     3500
   ) {
-    score += 14;
+    score +=
+      14;
   } else if (
     signals.averageTextLength >=
     2500
   ) {
-    score += 11;
+    score +=
+      11;
   } else if (
     signals.averageTextLength >=
     1500
   ) {
-    score += 7;
+    score +=
+      7;
   } else if (
     signals.averageTextLength >=
     750
   ) {
-    score += 3;
+    score +=
+      3;
   }
 
   if (
     signals.hasServicesPage
   ) {
-    score += 7;
+    score +=
+      7;
   }
 
   if (
     signals.hasBlogOrNews
   ) {
-    score += 7;
+    score +=
+      7;
   }
 
-  return clampScore(score);
+  return clampScore(
+    score
+  );
 }
 
 function calculateLocalSeoScore(
-  signals: SiteSignals
+  signals:
+    SiteSignals
 ) {
-  let score = 5;
+  let score =
+    5;
 
   if (
     signals.hasLocationSignal
   ) {
-    score += 18;
+    score +=
+      18;
   }
 
   if (
     signals.geographicVocabularyCount >=
     4
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.hasPostalCode
   ) {
-    score += 10;
+    score +=
+      10;
   }
 
   if (
     signals.hasAddressSignal
   ) {
-    score += 10;
+    score +=
+      10;
   }
 
   if (
     signals.hasPhone
   ) {
-    score += 6;
+    score +=
+      6;
   }
 
   if (
     signals.hasEmail
   ) {
-    score += 3;
+    score +=
+      3;
   }
 
   if (
     signals.hasContactPage
   ) {
-    score += 6;
+    score +=
+      6;
   }
 
   if (
     signals.hasServiceAreaSignal
   ) {
-    score += 14;
+    score +=
+      14;
   }
 
   if (
     signals.pagesWithStructuredData >
     0
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   /*
@@ -1339,95 +2225,115 @@ function calculateLocalSeoScore(
    * On limite donc volontairement le score
    * automatique à 88.
    */
+
   return Math.min(
     88,
-    clampScore(score)
+    clampScore(
+      score
+    )
   );
 }
 
 function calculateGeoScore(
-  signals: SiteSignals
+  signals:
+    SiteSignals
 ) {
-  let score = 10;
+  let score =
+    10;
 
   if (
     signals.hasClearServiceVocabulary
   ) {
-    score += 16;
+    score +=
+      16;
   }
 
   if (
     signals.hasServicesPage
   ) {
-    score += 10;
+    score +=
+      10;
   }
 
   if (
     signals.hasExpertiseSignal
   ) {
-    score += 10;
+    score +=
+      10;
   }
 
   if (
     signals.hasExperienceSignal
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.hasLocationSignal
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.hasAboutPage
   ) {
-    score += 7;
+    score +=
+      7;
   }
 
   if (
     signals.hasBlogOrNews
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.hasFaqSignal
   ) {
-    score += 8;
+    score +=
+      8;
   }
 
   if (
     signals.pagesWithStructuredData >
     0
   ) {
-    score += 7;
+    score +=
+      7;
   }
 
   if (
     signals.averageTextLength >=
     2500
   ) {
-    score += 5;
+    score +=
+      5;
   } else if (
     signals.averageTextLength >=
     1500
   ) {
-    score += 3;
+    score +=
+      3;
   }
 
   if (
     signals.hasCaseStudySignal
   ) {
-    score += 3;
+    score +=
+      3;
   }
 
-  return clampScore(score);
+  return clampScore(
+    score
+  );
 }
 
 function calculateScores(
-  signals: SiteSignals
+  signals:
+    SiteSignals
 ): AuditScores {
   const positioningScore =
     calculatePositioningScore(
@@ -1456,11 +2362,16 @@ function calculateScores(
 
   const globalScore =
     clampScore(
-      positioningScore * 0.2 +
-        conversionScore * 0.2 +
-        seoScore * 0.25 +
-        localSeoScore * 0.15 +
-        geoScore * 0.2
+      positioningScore *
+        0.2 +
+        conversionScore *
+          0.2 +
+        seoScore *
+          0.25 +
+        localSeoScore *
+          0.15 +
+        geoScore *
+          0.2
     );
 
   return {
@@ -1476,12 +2387,15 @@ function calculateScores(
 function getStringArray(
   value: unknown
 ) {
-  return Array.isArray(value)
+  return Array.isArray(
+    value
+  )
     ? value.filter(
         (
           item
         ): item is string =>
-          typeof item === "string"
+          typeof item ===
+          "string"
       )
     : [];
 }
@@ -1491,17 +2405,19 @@ function validateQualitativeAudit(
 ): QualitativeAudit {
   if (
     !value ||
-    typeof value !== "object"
+    typeof value !==
+      "object"
   ) {
     throw new Error(
       "Le résultat retourné par l’IA est invalide."
     );
   }
 
-  const data = value as Record<
-    string,
-    unknown
-  >;
+  const data =
+    value as Record<
+      string,
+      unknown
+    >;
 
   return {
     summary:
@@ -1513,39 +2429,56 @@ function validateQualitativeAudit(
     strengths:
       getStringArray(
         data.strengths
-      ).slice(0, 6),
+      ).slice(
+        0,
+        6
+      ),
 
     weaknesses:
       getStringArray(
         data.weaknesses
-      ).slice(0, 6),
+      ).slice(
+        0,
+        6
+      ),
 
     limitations:
       getStringArray(
         data.limitations
-      ).slice(0, 5),
+      ).slice(
+        0,
+        5
+      ),
 
     priorities:
       getStringArray(
         data.priorities
-      ).slice(0, 3),
+      ).slice(
+        0,
+        3
+      ),
   };
 }
 
 export async function POST(
-  request: NextRequest
+  request:
+    NextRequest
 ) {
   if (
-    !process.env.OPENAI_API_KEY
+    !process.env
+      .OPENAI_API_KEY
   ) {
     return NextResponse.json(
       {
-        success: false,
+        success:
+          false,
+
         message:
           "La clé OpenAI n’est pas configurée.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }
@@ -1560,36 +2493,49 @@ export async function POST(
         ? body.url
         : "";
 
-    if (!rawUrl.trim()) {
+    if (
+      !rawUrl.trim()
+    ) {
       return NextResponse.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
             "L’URL du site est obligatoire.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
 
     const requestedUrl =
-      normalizeUrl(rawUrl);
+      normalizeUrl(
+        rawUrl
+      );
 
-    let requestedParsed: URL;
+    let requestedParsed:
+      URL;
 
     try {
       requestedParsed =
-        new URL(requestedUrl);
+        new URL(
+          requestedUrl
+        );
     } catch {
       return NextResponse.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
             "L’URL renseignée n’est pas valide.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
@@ -1604,12 +2550,15 @@ export async function POST(
     ) {
       return NextResponse.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
             "Seules les adresses HTTP et HTTPS sont acceptées.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
@@ -1624,12 +2573,20 @@ export async function POST(
         homeFetch.finalUrl
       );
 
-    const pages: PageData[] = [
-      buildPageData(
-        homeUrl.toString(),
-        homeFetch.html
-      ),
-    ];
+    const technicalProfile =
+      detectTechnicalProfile(
+        homeFetch.html,
+        homeFetch.finalUrl
+      );
+
+    const pages:
+      PageData[] =
+      [
+        buildPageData(
+          homeUrl.toString(),
+          homeFetch.html
+        ),
+      ];
 
     const discovered =
       discoverInternalLinks(
@@ -1685,7 +2642,9 @@ export async function POST(
               normalizedFinalUrl
           );
 
-        if (alreadyAdded) {
+        if (
+          alreadyAdded
+        ) {
           continue;
         }
 
@@ -1696,12 +2655,15 @@ export async function POST(
           );
 
         if (
-          page.text.length < 100
+          page.text.length <
+          100
         ) {
           continue;
         }
 
-        pages.push(page);
+        pages.push(
+          page
+        );
       } catch {
         // Une page inaccessible
         // ne bloque pas l'audit.
@@ -1709,17 +2671,22 @@ export async function POST(
     }
 
     const signals =
-      buildSiteSignals(pages);
+      buildSiteSignals(
+        pages
+      );
 
     const scores =
-      calculateScores(signals);
+      calculateScores(
+        signals
+      );
 
-    const siteData = pages
-      .map(
-        (
-          page,
-          index
-        ) => `
+    const siteData =
+      pages
+        .map(
+          (
+            page,
+            index
+          ) => `
 ==============================
 PAGE ${index + 1}
 ==============================
@@ -1737,28 +2704,33 @@ ${
 }
 
 SIGNAUX TECHNIQUES :
+
 - Canonical : ${
-          page.canonical
-            ? "oui"
-            : "non détectée"
-        }
+            page.canonical
+              ? "oui"
+              : "non détectée"
+          }
+
 - Viewport : ${
-          page.viewport
-            ? "oui"
-            : "non détecté"
-        }
+            page.viewport
+              ? "oui"
+              : "non détecté"
+          }
+
 - Open Graph : ${
-          page.openGraph
-            ? "oui"
-            : "non détecté"
-        }
+            page.openGraph
+              ? "oui"
+              : "non détecté"
+          }
+
 - Données structurées JSON-LD : ${
-          page.structuredData
-            ? "oui"
-            : "non détectées"
-        }
+            page.structuredData
+              ? "oui"
+              : "non détectées"
+          }
 
 TITRES :
+
 ${
   page.headings.join(
     "\n"
@@ -1767,33 +2739,42 @@ ${
 }
 
 CONTENU :
+
 ${page.text}
 `
-      )
-      .join("\n");
+        )
+        .join(
+          "\n"
+        );
 
     const prompt = `
 Tu réalises un pré-audit professionnel de site internet pour LBMedia.
 
 IMPORTANT :
+
 Les scores ont déjà été calculés par LBMedia Office selon une grille déterministe.
 
 TU NE DOIS PAS :
+
 - recalculer les scores ;
 - contester les scores ;
 - proposer d'autres notes ;
 - introduire d'autres scores dans ton texte.
 
 TON RÔLE :
+
 Interpréter les données observées et expliquer le diagnostic de façon professionnelle.
 
 SITE :
+
 ${homeUrl.toString()}
 
 PAGES ANALYSÉES :
+
 ${pages.length}
 
 SCORES CALCULÉS PAR LBMEDIA OFFICE :
+
 - Global : ${scores.globalScore}/100
 - Positionnement : ${scores.positioningScore}/100
 - Conversion : ${scores.conversionScore}/100
@@ -1802,6 +2783,7 @@ SCORES CALCULÉS PAR LBMEDIA OFFICE :
 - GEO / IA : ${scores.geoScore}/100
 
 SIGNAUX UTILISÉS PAR LE MOTEUR :
+
 ${JSON.stringify(
   signals,
   null,
@@ -1809,6 +2791,7 @@ ${JSON.stringify(
 )}
 
 RÈGLE ABSOLUE :
+
 Distingue strictement :
 
 1. Les qualités réellement observées.
@@ -1818,7 +2801,9 @@ Distingue strictement :
 Ne transforme jamais une limite de l'outil en défaut du site.
 
 Exemple :
+
 "PageSpeed n'a pas été mesuré"
+
 = limitation.
 
 Ce n'est PAS un point faible.
@@ -1826,12 +2811,15 @@ Ce n'est PAS un point faible.
 UNE ABSENCE DANS L'ÉCHANTILLON N'EST PAS UNE CERTITUDE SUR LE SITE ENTIER.
 
 Écris :
+
 "Aucun témoignage n'a été repéré dans les pages analysées."
 
 N'écris pas :
+
 "Le site ne possède aucun témoignage."
 
 TU N'AS PAS ACCÈS À :
+
 - Core Web Vitals ;
 - PageSpeed Insights ;
 - Search Console ;
@@ -1844,7 +2832,9 @@ TU N'AS PAS ACCÈS À :
 - avis Google.
 
 POSITIONNEMENT :
+
 Analyse :
+
 - compréhension de l'activité ;
 - proposition de valeur ;
 - cible ;
@@ -1852,7 +2842,9 @@ Analyse :
 - cohérence de l'offre.
 
 CONVERSION :
+
 Analyse :
+
 - appels à l'action ;
 - possibilités de contact ;
 - réassurance ;
@@ -1861,7 +2853,9 @@ Analyse :
 - capacité du parcours à favoriser une prise de contact.
 
 SEO :
+
 Analyse :
+
 - titles ;
 - meta descriptions ;
 - H1/H2/H3 ;
@@ -1871,7 +2865,9 @@ Analyse :
 - compréhension des services.
 
 SEO LOCAL :
+
 Analyse uniquement les éléments observables :
+
 - localisation ;
 - adresse ;
 - coordonnées ;
@@ -1882,7 +2878,9 @@ Analyse uniquement les éléments observables :
 Ne prétends jamais avoir contrôlé la fiche Google Business.
 
 GEO / IA :
+
 Analyse la capacité des contenus à être compris, synthétisés et potentiellement cités par les moteurs et assistants IA :
+
 - expertise explicite ;
 - entités clairement identifiées ;
 - services clairement expliqués ;
@@ -1893,6 +2891,7 @@ Analyse la capacité des contenus à être compris, synthétisés et potentielle
 - données structurées observables.
 
 TON :
+
 - professionnel ;
 - mature ;
 - concret ;
@@ -1906,6 +2905,7 @@ Ne cherche pas artificiellement des défauts.
 Ne recommande jamais une refonte complète si les observations ne la justifient pas.
 
 DONNÉES DES PAGES :
+
 ${siteData}
 
 Retourne UNIQUEMENT cet objet JSON valide :
@@ -1929,55 +2929,82 @@ Retourne UNIQUEMENT cet objet JSON valide :
 }
 
 STRENGTHS :
+
 3 à 6 éléments utiles.
 
 WEAKNESSES :
+
 3 à 6 éléments maximum.
+
 Pas de faux défaut pour remplir la liste.
 
 LIMITATIONS :
+
 2 à 5 éléments maximum.
+
 Uniquement des limites réellement importantes.
 
 PRIORITIES :
+
 Exactement 3 actions.
+
 Classe-les selon leur impact business probable.
 `.trim();
 
     const completion =
-      await openai.chat.completions.create({
-        model: "gpt-5-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Tu es consultant senior en stratégie web, UX, SEO et visibilité dans les moteurs de recherche et assistants IA. Tu interprètes les observations sans modifier la notation calculée par LBMedia Office.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        response_format: {
-          type: "json_object",
-        },
-      });
+      await openai.chat.completions.create(
+        {
+          model:
+            "gpt-5-mini",
+
+          messages:
+            [
+              {
+                role:
+                  "system",
+
+                content:
+                  "Tu es consultant senior en stratégie web, UX, SEO et visibilité dans les moteurs de recherche et assistants IA. Tu interprètes les observations sans modifier la notation calculée par LBMedia Office.",
+              },
+              {
+                role:
+                  "user",
+
+                content:
+                  prompt,
+              },
+            ],
+
+          response_format:
+            {
+              type:
+                "json_object",
+            },
+        }
+      );
 
     const content =
-      completion.choices[0]
-        ?.message?.content;
+      completion
+        .choices[0]
+        ?.message
+        ?.content;
 
-    if (!content) {
+    if (
+      !content
+    ) {
       throw new Error(
         "OpenAI n’a retourné aucune analyse."
       );
     }
 
-    let parsedAudit: unknown;
+    let parsedAudit:
+      unknown;
 
     try {
       parsedAudit =
-        JSON.parse(content);
+        JSON.parse(
+          content
+        );
     } catch {
       throw new Error(
         "Impossible de lire le résultat retourné par OpenAI."
@@ -1989,32 +3016,40 @@ Classe-les selon leur impact business probable.
         parsedAudit
       );
 
-    const audit: AuditResult = {
-      ...scores,
-      ...qualitativeAudit,
-    };
+    const audit:
+      AuditResult = {
+        ...scores,
+        ...qualitativeAudit,
+      };
 
-    return NextResponse.json({
-      success: true,
+    return NextResponse.json(
+      {
+        success:
+          true,
 
-      url:
-        homeUrl.toString(),
+        url:
+          homeUrl.toString(),
 
-      pagesAnalyzed:
-        pages.length,
+        pagesAnalyzed:
+          pages.length,
 
-      analyzedUrls:
-        pages.map(
-          (page) =>
-            page.url
-        ),
+        analyzedUrls:
+          pages.map(
+            (page) =>
+              page.url
+          ),
 
-      scoringVersion:
-        "1.1",
+        scoringVersion:
+          "1.1",
 
-      audit,
-    });
-  } catch (error) {
+        technicalProfile,
+
+        audit,
+      }
+    );
+  } catch (
+    error
+  ) {
     console.error(
       "Website audit error:",
       error
@@ -2022,15 +3057,18 @@ Classe-les selon leur impact business probable.
 
     return NextResponse.json(
       {
-        success: false,
+        success:
+          false,
 
         message:
-          error instanceof Error
+          error instanceof
+          Error
             ? error.message
             : "Une erreur est survenue pendant l’analyse du site.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }
