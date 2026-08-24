@@ -582,9 +582,7 @@ function getTechnicalCaution(
       recommendation.type
     );
 
-  if (
-    !feasibility
-  ) {
+  if (!feasibility) {
     return null;
   }
 
@@ -639,31 +637,6 @@ function getTechnicalCaution(
   }
 
   return null;
-}
-
-function applyTechnicalContextToRecommendation(
-  audit: WebsiteAudit,
-  recommendation:
-    CommercialRecommendation
-): CommercialRecommendation {
-  const technicalCaution =
-    getTechnicalCaution(
-      audit,
-      recommendation
-    );
-
-  if (
-    !technicalCaution
-  ) {
-    return recommendation;
-  }
-
-  return {
-    ...recommendation,
-
-    description:
-      `${recommendation.description} ${technicalCaution}`,
-  };
 }
 
 function buildMainIssues(
@@ -843,7 +816,7 @@ export function getWebsiteAuditCommercialDiagnosis(
       audit.weaknesses
     );
 
-  const baseRecommendation =
+  const recommendation =
     buildRecommendation(
       globalScore,
       visibilityScore,
@@ -851,15 +824,9 @@ export function getWebsiteAuditCommercialDiagnosis(
       positioningScore
     );
 
-  const recommendation =
-    applyTechnicalContextToRecommendation(
-      audit,
-      baseRecommendation
-    );
-
   const baseCommercialSummary =
     buildCommercialSummary(
-      baseRecommendation,
+      recommendation,
       visibilityScore,
       websiteEffectivenessScore
     );
@@ -867,14 +834,14 @@ export function getWebsiteAuditCommercialDiagnosis(
   const commercialSummary =
     applyTechnicalContextToCommercialSummary(
       audit,
-      baseRecommendation,
+      recommendation,
       baseCommercialSummary
     );
 
   const technicalCaution =
     getTechnicalCaution(
       audit,
-      baseRecommendation
+      recommendation
     );
 
   return {
