@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  useEffect,
-  useRef,
   useState,
 } from "react";
 
@@ -166,10 +164,10 @@ function getPresentationContent(
           "La proposition ne constitue pas une maquette définitive. Elle illustre une orientation possible pour un nouveau site pensé autour des prestations, de la visibilité et de la prise de contact.",
 
         currentLabel:
-          "Site existant — facultatif",
+          "Site actuel",
 
         proposalLabel:
-          "Proposition de direction",
+          "Nouvelle orientation",
 
         generateLabel:
           "Générer une nouvelle orientation",
@@ -197,11 +195,6 @@ export default function AuditProspectionAssets({
 
   const presentation =
     getPresentationContent(
-      effectiveProposalType
-    );
-
-  const previousProposalType =
-    useRef<ProposalType>(
       effectiveProposalType
     );
 
@@ -243,99 +236,6 @@ export default function AuditProspectionAssets({
   ] = useState<
     string | null
   >(null);
-
-  const isNewWebsite =
-    effectiveProposalType ===
-    "new_website";
-
-  const currentVisualRequired =
-    effectiveProposalType ===
-      "optimization_redesign" ||
-    effectiveProposalType ===
-      "redesign";
-
-  const canGenerateProposal =
-    isNewWebsite ||
-    Boolean(
-      beforeImageUrl
-    );
-
-  const canGeneratePdf =
-    Boolean(
-      afterImageUrl
-    ) &&
-    (
-      isNewWebsite ||
-      Boolean(
-        beforeImageUrl
-      )
-    );
-
-  /*
-   * Synchronisation avec les données
-   * reçues du serveur.
-   */
-  useEffect(
-    () => {
-      setBeforeImageUrl(
-        initialBeforeImageUrl
-      );
-    },
-    [
-      initialBeforeImageUrl,
-    ]
-  );
-
-  useEffect(
-    () => {
-      setAfterImageUrl(
-        initialAfterImageUrl
-      );
-    },
-    [
-      initialAfterImageUrl,
-    ]
-  );
-
-  /*
-   * Lorsqu'on change le type de
-   * proposition, on ne présente pas
-   * automatiquement l'ancien PDF comme
-   * s'il correspondait au nouvel angle.
-   *
-   * Après rafraîchissement sans changement
-   * de type, le PDF reçu du serveur reste
-   * en revanche affiché normalement.
-   */
-  useEffect(
-    () => {
-      if (
-        previousProposalType.current !==
-        effectiveProposalType
-      ) {
-        previousProposalType.current =
-          effectiveProposalType;
-
-        setAttachmentUrl(
-          null
-        );
-
-        setError(
-          null
-        );
-
-        return;
-      }
-
-      setAttachmentUrl(
-        initialAttachmentUrl
-      );
-    },
-    [
-      effectiveProposalType,
-      initialAttachmentUrl,
-    ]
-  );
 
   async function readApiResponse(
     response: Response
@@ -748,10 +648,6 @@ export default function AuditProspectionAssets({
         );
       }
 
-      /*
-       * Toute modification d'un visuel
-       * invalide le PDF précédent.
-       */
       setAttachmentUrl(
         null
       );
@@ -779,7 +675,6 @@ export default function AuditProspectionAssets({
 
   async function generateProposal() {
     if (
-      currentVisualRequired &&
       !beforeImageUrl
     ) {
       setError(
@@ -886,21 +781,11 @@ export default function AuditProspectionAssets({
     }
 
     if (
+      !beforeImageUrl ||
       !afterImageUrl
     ) {
       setError(
-        "La proposition visuelle doit être disponible avant de générer le PDF."
-      );
-
-      return;
-    }
-
-    if (
-      currentVisualRequired &&
-      !beforeImageUrl
-    ) {
-      setError(
-        "La capture du site actuel est nécessaire pour générer ce comparatif."
+        "Les deux visuels doivent être disponibles avant de générer le PDF."
       );
 
       return;
@@ -1068,16 +953,6 @@ export default function AuditProspectionAssets({
           disabled={
             isBusy
           }
-          emptyText={
-            isNewWebsite
-              ? "Aucun site existant importé — facultatif"
-              : "Aucun visuel importé"
-          }
-          helpText={
-            isNewWebsite
-              ? "Cette capture est facultative pour un nouveau site. Elle peut servir de référence si un ancien site existe."
-              : "Aperçu du haut de la capture. Cliquez sur l’image pour voir la page complète."
-          }
           onFile={(file) =>
             uploadFile(
               "before",
@@ -1120,9 +995,7 @@ export default function AuditProspectionAssets({
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  {isNewWebsite
-                    ? "Générez une orientation ou importez directement un visuel de proposition."
-                    : "Importez d’abord la capture du site actuel."}
+                  Importez d’abord la capture du site actuel.
                 </p>
               </div>
             </div>
@@ -1135,7 +1008,7 @@ export default function AuditProspectionAssets({
                 generateProposal
               }
               disabled={
-                !canGenerateProposal ||
+                !beforeImageUrl ||
                 isBusy
               }
               className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1190,24 +1063,18 @@ export default function AuditProspectionAssets({
               />
             </label>
           </div>
-
-          {isNewWebsite &&
-          !beforeImageUrl ? (
-            <p className="mt-3 text-xs leading-5 text-slate-500">
-              Aucun visuel du site actuel n’est nécessaire pour le PDF d’un nouveau site.
-            </p>
-          ) : null}
         </div>
       </div>
 
-      {isNewWebsite ? (
+      {effectiveProposalType ===
+      "new_website" ? (
         <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
           <p className="text-sm font-semibold text-blue-900">
             Projection illustrative
           </p>
 
           <p className="mt-1 text-sm leading-6 text-blue-800">
-            Cette proposition sert à illustrer une direction possible pour un nouveau site. La capture d’un éventuel ancien site reste facultative. Elle ne constitue ni une maquette définitive ni un BAT.
+            Cette proposition sert à illustrer une direction possible pour un nouveau site. Elle ne constitue ni une maquette définitive ni un BAT.
           </p>
         </div>
       ) : null}
@@ -1241,9 +1108,7 @@ export default function AuditProspectionAssets({
             </>
           ) : (
             <p className="text-sm text-slate-500">
-              {isNewWebsite
-                ? "Une fois la proposition visuelle validée, vous pourrez générer la présentation PDF."
-                : "Une fois les deux visuels validés, vous pourrez générer la présentation PDF adaptée à cette proposition."}
+              Une fois les deux visuels validés, vous pourrez générer la présentation PDF adaptée à cette proposition.
             </p>
           )}
         </div>
@@ -1254,7 +1119,8 @@ export default function AuditProspectionAssets({
             generatePdf
           }
           disabled={
-            !canGeneratePdf ||
+            !beforeImageUrl ||
+            !afterImageUrl ||
             isBusy
           }
           className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1282,10 +1148,6 @@ type AssetCardProps = {
 
   disabled: boolean;
 
-  emptyText?: string;
-
-  helpText?: string;
-
   onFile: (
     file: File
   ) => void;
@@ -1296,10 +1158,6 @@ function AssetCard({
   imageUrl,
   loading,
   disabled,
-  emptyText =
-    "Aucun visuel importé",
-  helpText =
-    "Aperçu du haut de la capture. Cliquez sur l’image pour voir la page complète.",
   onFile,
 }: AssetCardProps) {
   return (
@@ -1329,17 +1187,15 @@ function AssetCard({
         </a>
       ) : (
         <div className="mt-3 flex h-56 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-5 text-center text-sm text-slate-400">
-          {
-            emptyText
-          }
+          Aucun visuel importé
         </div>
       )}
 
-      {helpText ? (
-        <p className="mt-2 text-xs leading-5 text-slate-400">
-          {
-            helpText
-          }
+      {imageUrl ? (
+        <p className="mt-2 text-xs text-slate-400">
+          Aperçu du haut de la capture.
+          Cliquez sur l’image pour
+          voir la page complète.
         </p>
       ) : null}
 
