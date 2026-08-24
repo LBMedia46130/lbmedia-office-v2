@@ -19,6 +19,29 @@ export type WebsiteAuditSummary = {
   created_at: string;
 };
 
+export type TechnicalPlatform =
+  | "wordpress"
+  | "eatbu"
+  | "wix"
+  | "squarespace"
+  | "webflow"
+  | "jimdo"
+  | "shopify"
+  | "prestashop"
+  | "custom"
+  | "unknown";
+
+export type TechnicalConfidence =
+  | "high"
+  | "medium"
+  | "low";
+
+export type TechnicalFeasibility =
+  | "good"
+  | "limited"
+  | "verify"
+  | "migration_recommended";
+
 export type WebsiteAudit =
   WebsiteAuditSummary & {
     analyzed_urls: string[];
@@ -29,6 +52,33 @@ export type WebsiteAudit =
     weaknesses: string[];
     limitations: string[];
     priorities: string[];
+
+    technical_platform:
+      TechnicalPlatform | null;
+
+    technical_platform_label:
+      string | null;
+
+    technical_confidence:
+      TechnicalConfidence | null;
+
+    technical_evidence:
+      string[];
+
+    optimization_feasibility:
+      TechnicalFeasibility | null;
+
+    redesign_feasibility:
+      TechnicalFeasibility | null;
+
+    new_website_feasibility:
+      TechnicalFeasibility | null;
+
+    migration_likely:
+      boolean | null;
+
+    technical_note:
+      string | null;
   };
 
 export type CommercialRecommendationType =
@@ -170,6 +220,57 @@ function countKeywordMatches(
     },
     0
   );
+}
+
+function normalizeTechnicalPlatform(
+  value: unknown
+): TechnicalPlatform | null {
+  if (
+    value === "wordpress" ||
+    value === "eatbu" ||
+    value === "wix" ||
+    value === "squarespace" ||
+    value === "webflow" ||
+    value === "jimdo" ||
+    value === "shopify" ||
+    value === "prestashop" ||
+    value === "custom" ||
+    value === "unknown"
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
+function normalizeTechnicalConfidence(
+  value: unknown
+): TechnicalConfidence | null {
+  if (
+    value === "high" ||
+    value === "medium" ||
+    value === "low"
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
+function normalizeTechnicalFeasibility(
+  value: unknown
+): TechnicalFeasibility | null {
+  if (
+    value === "good" ||
+    value === "limited" ||
+    value === "verify" ||
+    value ===
+      "migration_recommended"
+  ) {
+    return value;
+  }
+
+  return null;
 }
 
 function classifyWeaknesses(
@@ -318,12 +419,6 @@ function classifyWeaknesses(
       continue;
     }
 
-    /*
-     * En cas d'égalité, on cherche
-     * les signaux les plus explicites
-     * afin d'éviter qu'une faiblesse
-     * soit affichée deux fois.
-     */
     const normalized =
       normalizeText(item);
 
@@ -587,17 +682,6 @@ export function getWebsiteAuditCommercialDiagnosis(
       globalScore,
     ]);
 
-  /*
-   * Important :
-   * seules les faiblesses réellement
-   * constatées par l'audit alimentent
-   * le diagnostic commercial.
-   *
-   * Les priorités restent des actions
-   * recommandées et ne doivent pas
-   * être présentées comme des défauts
-   * du site.
-   */
   const weaknesses =
     classifyWeaknesses(
       audit.weaknesses
@@ -725,6 +809,15 @@ export async function getWebsiteAuditById(
         weaknesses,
         limitations,
         priorities,
+        technical_platform,
+        technical_platform_label,
+        technical_confidence,
+        technical_evidence,
+        optimization_feasibility,
+        redesign_feasibility,
+        new_website_feasibility,
+        migration_likely,
+        technical_note,
         created_at
       `
     )
@@ -805,6 +898,54 @@ export async function getWebsiteAuditById(
       normalizeStringArray(
         data.priorities
       ),
+
+    technical_platform:
+      normalizeTechnicalPlatform(
+        data.technical_platform
+      ),
+
+    technical_platform_label:
+      typeof data.technical_platform_label ===
+      "string"
+        ? data.technical_platform_label
+        : null,
+
+    technical_confidence:
+      normalizeTechnicalConfidence(
+        data.technical_confidence
+      ),
+
+    technical_evidence:
+      normalizeStringArray(
+        data.technical_evidence
+      ),
+
+    optimization_feasibility:
+      normalizeTechnicalFeasibility(
+        data.optimization_feasibility
+      ),
+
+    redesign_feasibility:
+      normalizeTechnicalFeasibility(
+        data.redesign_feasibility
+      ),
+
+    new_website_feasibility:
+      normalizeTechnicalFeasibility(
+        data.new_website_feasibility
+      ),
+
+    migration_likely:
+      typeof data.migration_likely ===
+      "boolean"
+        ? data.migration_likely
+        : null,
+
+    technical_note:
+      typeof data.technical_note ===
+      "string"
+        ? data.technical_note
+        : null,
 
     created_at:
       data.created_at,

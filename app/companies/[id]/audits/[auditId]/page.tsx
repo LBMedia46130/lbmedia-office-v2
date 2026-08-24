@@ -23,6 +23,17 @@ type AuditPageProps = {
   }>;
 };
 
+type TechnicalConfidence =
+  | "high"
+  | "medium"
+  | "low";
+
+type TechnicalFeasibility =
+  | "good"
+  | "limited"
+  | "verify"
+  | "migration_recommended";
+
 export default async function AuditDetailPage({
   params,
 }: AuditPageProps) {
@@ -65,6 +76,17 @@ export default async function AuditDetailPage({
   const commercialDiagnosis =
     getWebsiteAuditCommercialDiagnosis(
       audit
+    );
+
+  const hasTechnicalProfile =
+    Boolean(
+      audit.technical_platform ||
+        audit.technical_platform_label ||
+        audit.technical_confidence ||
+        audit.optimization_feasibility ||
+        audit.redesign_feasibility ||
+        audit.new_website_feasibility ||
+        audit.technical_note
     );
 
   return (
@@ -234,6 +256,117 @@ export default async function AuditDetailPage({
             }
           />
         </section>
+
+        {hasTechnicalProfile ? (
+          <section className="mt-8 rounded-2xl border border-violet-200 bg-violet-50 p-7 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">
+                  Faisabilité technique
+                </p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <h2 className="text-2xl font-bold text-slate-950">
+                    Plateforme :{" "}
+                    {audit.technical_platform_label ??
+                      getPlatformLabel(
+                        audit.technical_platform
+                      )}
+                  </h2>
+
+                  {audit.technical_confidence ? (
+                    <span className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-bold text-violet-700">
+                      Confiance :{" "}
+                      {getConfidenceLabel(
+                        audit.technical_confidence as TechnicalConfidence
+                      )}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              {audit.migration_likely ===
+              true ? (
+                <span className="self-start rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
+                  Migration probablement nécessaire
+                </span>
+              ) : null}
+            </div>
+
+            {audit.technical_note ? (
+              <p className="mt-4 max-w-5xl text-sm leading-7 text-slate-700">
+                {
+                  audit.technical_note
+                }
+              </p>
+            ) : null}
+
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {audit.optimization_feasibility ? (
+                <FeasibilityCard
+                  label="Optimisation"
+                  value={
+                    audit.optimization_feasibility as TechnicalFeasibility
+                  }
+                />
+              ) : null}
+
+              {audit.redesign_feasibility ? (
+                <FeasibilityCard
+                  label="Refonte"
+                  value={
+                    audit.redesign_feasibility as TechnicalFeasibility
+                  }
+                />
+              ) : null}
+
+              {audit.new_website_feasibility ? (
+                <FeasibilityCard
+                  label="Nouveau site"
+                  value={
+                    audit.new_website_feasibility as TechnicalFeasibility
+                  }
+                />
+              ) : null}
+            </div>
+
+            {Array.isArray(
+              audit.technical_evidence
+            ) &&
+            audit.technical_evidence
+              .length > 0 ? (
+              <div className="mt-6 border-t border-violet-200 pt-5">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Indices détectés
+                </p>
+
+                <ul className="mt-3 space-y-2">
+                  {audit.technical_evidence.map(
+                    (
+                      evidence,
+                      index
+                    ) => (
+                      <li
+                        key={`${evidence}-${index}`}
+                        className="flex gap-3 text-sm leading-6 text-slate-600"
+                      >
+                        <span className="font-bold text-violet-500">
+                          •
+                        </span>
+
+                        <span>
+                          {
+                            evidence
+                          }
+                        </span>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         <section className="mt-8 overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm">
           <div className="border-b border-indigo-100 bg-indigo-50 px-7 py-5">
@@ -520,6 +653,149 @@ export default async function AuditDetailPage({
       </div>
     </main>
   );
+}
+
+function FeasibilityCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: TechnicalFeasibility;
+}) {
+  const presentation =
+    getFeasibilityPresentation(
+      value
+    );
+
+  return (
+    <div className="rounded-xl border border-violet-200 bg-white p-5">
+      <p className="text-sm font-bold text-slate-900">
+        {label}
+      </p>
+
+      <div className="mt-3">
+        <span
+          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${presentation.className}`}
+        >
+          {
+            presentation.label
+          }
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm leading-6 text-slate-600">
+        {
+          presentation.description
+        }
+      </p>
+    </div>
+  );
+}
+
+function getFeasibilityPresentation(
+  feasibility: TechnicalFeasibility
+) {
+  switch (
+    feasibility
+  ) {
+    case "good":
+      return {
+        label:
+          "Bonne faisabilité",
+        description:
+          "La plateforme semble permettre ce type d’intervention dans de bonnes conditions.",
+        className:
+          "bg-emerald-100 text-emerald-700",
+      };
+
+    case "limited":
+      return {
+        label:
+          "Possibilités limitées",
+        description:
+          "Certaines évolutions sont possibles, mais la plateforme peut imposer des limites techniques.",
+        className:
+          "bg-amber-100 text-amber-800",
+      };
+
+    case "migration_recommended":
+      return {
+        label:
+          "Migration à prévoir",
+        description:
+          "Cette orientation implique probablement de repartir sur une plateforme plus adaptée.",
+        className:
+          "bg-orange-100 text-orange-800",
+      };
+
+    case "verify":
+      return {
+        label:
+          "À vérifier",
+        description:
+          "Une vérification technique complémentaire est nécessaire avant de confirmer la prestation.",
+        className:
+          "bg-slate-100 text-slate-700",
+      };
+  }
+}
+
+function getConfidenceLabel(
+  confidence: TechnicalConfidence
+) {
+  switch (
+    confidence
+  ) {
+    case "high":
+      return "élevée";
+
+    case "medium":
+      return "moyenne";
+
+    case "low":
+      return "faible";
+  }
+}
+
+function getPlatformLabel(
+  platform:
+    | string
+    | null
+    | undefined
+) {
+  switch (
+    platform
+  ) {
+    case "wordpress":
+      return "WordPress";
+
+    case "eatbu":
+      return "EATBU";
+
+    case "wix":
+      return "Wix";
+
+    case "squarespace":
+      return "Squarespace";
+
+    case "webflow":
+      return "Webflow";
+
+    case "jimdo":
+      return "Jimdo";
+
+    case "shopify":
+      return "Shopify";
+
+    case "prestashop":
+      return "PrestaShop";
+
+    case "custom":
+      return "Développement spécifique";
+
+    default:
+      return "À vérifier";
+  }
 }
 
 function RecommendationBadge({
