@@ -107,6 +107,39 @@ export default function AuditProspectionEditor({
     ]);
 
   useEffect(() => {
+    setRecipientEmail(
+      initialRecipientEmail
+    );
+
+    setSubject(
+      initialSubject
+    );
+
+    setEmailContent(
+      initialEmailContent
+    );
+
+    setSavedRecipientEmail(
+      initialRecipientEmail
+    );
+
+    setSavedSubject(
+      initialSubject
+    );
+
+    setSavedEmailContent(
+      initialEmailContent
+    );
+
+    setMessage(null);
+    setError(null);
+  }, [
+    initialRecipientEmail,
+    initialSubject,
+    initialEmailContent,
+  ]);
+
+  useEffect(() => {
     window.dispatchEvent(
       new CustomEvent(
         "audit-prospection-edit-state",
