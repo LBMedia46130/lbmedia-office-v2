@@ -55,7 +55,7 @@ export default async function ImportZohoPage() {
   let contacts:
     ZohoContact[] = [];
 
-  let existingZohoIds =
+  let activeZohoIds =
     new Set<string>();
 
   let errorMessage:
@@ -74,9 +74,13 @@ export default async function ImportZohoPage() {
     contacts =
       zohoContacts;
 
-    existingZohoIds =
+    activeZohoIds =
       new Set(
         companies
+          .filter(
+            (company) =>
+              company.is_active
+          )
           .map(
             (company) =>
               company.zoho_contact_id
@@ -105,7 +109,7 @@ export default async function ImportZohoPage() {
     contacts
       .filter(
         (contact) =>
-          !existingZohoIds.has(
+          !activeZohoIds.has(
             contact.contact_id
           )
       )
@@ -133,6 +137,14 @@ export default async function ImportZohoPage() {
             }
           )
       );
+
+  const alreadyInOffice =
+    contacts.filter(
+      (contact) =>
+        activeZohoIds.has(
+          contact.contact_id
+        )
+    ).length;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -162,11 +174,12 @@ export default async function ImportZohoPage() {
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Seuls les clients qui ne
-            possèdent actuellement
-            aucune fiche Office avec
-            le même identifiant Zoho
-            sont proposés.
+            Les clients déjà liés à
+            une fiche Office active
+            sont masqués. Une ancienne
+            fiche Office inactive peut
+            en revanche être restaurée
+            à partir de Zoho Books.
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -180,8 +193,7 @@ export default async function ImportZohoPage() {
             <Stat
               label="Déjà dans Office"
               value={
-                contacts.length -
-                availableContacts.length
+                alreadyInOffice
               }
             />
 

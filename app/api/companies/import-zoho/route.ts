@@ -84,6 +84,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "Identifiant du client Zoho manquant.",
         },
@@ -94,10 +95,16 @@ export async function POST(
     }
 
     /*
-     * Première sécurité anti-doublon :
-     * un même contact Zoho ne doit
-     * correspondre qu'à une seule
-     * entreprise Office.
+     * On recherche d’abord une fiche
+     * Office portant déjà cet identifiant
+     * Zoho.
+     *
+     * Si elle est active :
+     * le client existe réellement déjà.
+     *
+     * Si elle est inactive :
+     * on la restaurera au lieu de créer
+     * une nouvelle fiche.
      */
     const {
       data:
@@ -112,6 +119,8 @@ export async function POST(
         `
           id,
           name,
+          email,
+          is_active,
           zoho_contact_id
         `
       )
@@ -131,6 +140,7 @@ export async function POST(
 
     if (
       existingCompany
+        ?.is_active
     ) {
       return NextResponse.json(
         {
@@ -168,6 +178,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
+
           message:
             "Le contact Zoho ne possède aucun nom exploitable.",
         },
@@ -235,17 +246,138 @@ export async function POST(
       );
 
     /*
-     * Seconde sécurité :
-     * une adresse email déjà utilisée
-     * dans Office bloque l'import afin
-     * d'éviter un doublon silencieux.
+     * Si une ancienne fiche inactive
+     * porte déjà ce Zoho ID, on la
+     * restaure avec les données actuelles
+     * de Zoho Books.
+     */
+    if (
+      existingCompany &&
+      !existingCompany.is_active
+    ) {
+      const {
+        data:
+          restoredCompany,
+        error:
+          restoreError,
+      } = await supabaseAdmin
+        .from(
+          "companies"
+        )
+        .update({
+          name:
+            companyName,
+
+          legal_name:
+            optionalString(
+              contact.company_name
+            ),
+
+          email,
+
+          phone,
+
+          address,
+
+          address_line_2:
+            addressLine2,
+
+          postal_code:
+            postalCode,
+
+          city,
+
+          state,
+
+          country,
+
+          customer_number:
+            customerNumber,
+
+          zoho_contact_id:
+            contact.contact_id,
+
+          is_active:
+            true,
+
+          relationship_status:
+            "client",
+
+          pipeline_stage:
+            "client",
+        })
+        .eq(
+          "id",
+          existingCompany.id
+        )
+        .select(
+          `
+            id,
+            name,
+            zoho_contact_id
+          `
+        )
+        .single();
+
+      if (
+        restoreError ||
+        !restoredCompany
+      ) {
+        throw new Error(
+          restoreError
+            ? `Impossible de restaurer le client dans Office : ${restoreError.message}`
+            : "Impossible de restaurer le client dans Office."
+        );
+      }
+
+      console.info(
+        "Client Zoho réactivé dans Office",
+        {
+          companyId:
+            restoredCompany.id,
+
+          companyName:
+            restoredCompany.name,
+
+          zohoContactId:
+            restoredCompany.zoho_contact_id,
+
+          addressImported:
+            Boolean(
+              address ||
+              postalCode ||
+              city
+            ),
+        }
+      );
+
+      return NextResponse.json({
+        success: true,
+
+        restored:
+          true,
+
+        message:
+          "Client restauré dans LBMedia Office.",
+
+        companyId:
+          restoredCompany.id,
+      });
+    }
+
+    /*
+     * Pour une création réelle, on garde
+     * la sécurité sur l’adresse email.
+     *
+     * Seules les fiches actives doivent
+     * bloquer l’import.
      */
     if (
       email
     ) {
       const {
         data:
-          possibleDuplicate,
+          possibleDuplicates,
         error:
           duplicateError,
       } = await supabaseAdmin
@@ -257,14 +389,14 @@ export async function POST(
             id,
             name,
             email,
+            is_active,
             zoho_contact_id
           `
         )
         .ilike(
           "email",
           email
-        )
-        .maybeSingle();
+        );
 
       if (
         duplicateError
@@ -274,18 +406,27 @@ export async function POST(
         );
       }
 
+      const activeDuplicate =
+        (
+          possibleDuplicates ??
+          []
+        ).find(
+          (company) =>
+            company.is_active
+        );
+
       if (
-        possibleDuplicate
+        activeDuplicate
       ) {
         return NextResponse.json(
           {
             success: false,
 
             companyId:
-              possibleDuplicate.id,
+              activeDuplicate.id,
 
             message:
-              `Une entreprise Office utilise déjà l’adresse ${email}. Vérifie cette fiche avant d’importer le client Zoho.`,
+              `Une entreprise Office active utilise déjà l’adresse ${email}. Vérifie cette fiche avant d’importer le client Zoho.`,
           },
           {
             status: 409,
@@ -388,6 +529,9 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+
+      restored:
+        false,
 
       message:
         "Client restauré dans LBMedia Office.",
