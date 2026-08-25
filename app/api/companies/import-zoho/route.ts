@@ -29,6 +29,13 @@ type ZohoBillingAddress = {
   country?: string;
 };
 
+type ZohoCustomField = {
+  customfield_id?: string;
+  label?: string;
+  api_name?: string;
+  value?: unknown;
+};
+
 type ZohoContactWithAddress = Awaited<
   ReturnType<
     typeof getZohoContact
@@ -36,6 +43,9 @@ type ZohoContactWithAddress = Awaited<
 > & {
   billing_address?:
     ZohoBillingAddress;
+
+  custom_fields?:
+    ZohoCustomField[];
 };
 
 function optionalString(
@@ -53,6 +63,157 @@ function optionalString(
 
   return trimmed ||
     null;
+}
+
+function normalizeDigits(
+  value: unknown
+): string | null {
+  if (
+    typeof value !==
+      "string" &&
+    typeof value !==
+      "number"
+  ) {
+    return null;
+  }
+
+  const digits =
+    String(value).replace(
+      /\D/g,
+      ""
+    );
+
+  return digits ||
+    null;
+}
+
+function normalizeSiret(
+  value: unknown
+): string | null {
+  const digits =
+    normalizeDigits(
+      value
+    );
+
+  if (
+    !digits ||
+    digits.length !==
+      14
+  ) {
+    return null;
+  }
+
+  return digits;
+}
+
+function getCustomFieldValue(
+  customFields:
+    ZohoCustomField[] | undefined,
+  names: string[]
+): unknown {
+  if (
+    !Array.isArray(
+      customFields
+    )
+  ) {
+    return null;
+  }
+
+  const normalizedNames =
+    names.map(
+      (name) =>
+        name
+          .trim()
+          .toLocaleLowerCase(
+            "fr-FR"
+          )
+          .replace(
+            /[\s_-]+/g,
+            ""
+          )
+    );
+
+  for (
+    const field of
+    customFields
+  ) {
+    const candidates =
+      [
+        field.label,
+        field.api_name,
+      ]
+        .filter(
+          (
+            value
+          ): value is string =>
+            typeof value ===
+            "string"
+        )
+        .map(
+          (value) =>
+            value
+              .trim()
+              .toLocaleLowerCase(
+                "fr-FR"
+              )
+              .replace(
+                /[\s_-]+/g,
+                ""
+              )
+        );
+
+    const matches =
+      candidates.some(
+        (candidate) =>
+          normalizedNames.includes(
+            candidate
+          )
+      );
+
+    if (
+      matches
+    ) {
+      return field.value;
+    }
+  }
+
+  return null;
+}
+
+function getZohoSiret(
+  contact:
+    ZohoContactWithAddress
+): string | null {
+  const customFieldValue =
+    getCustomFieldValue(
+      contact.custom_fields,
+      [
+        "Siret",
+        "SIRET",
+        "CF.Siret",
+        "CF Siret",
+      ]
+    );
+
+  return normalizeSiret(
+    customFieldValue
+  );
+}
+
+function getSirenFromSiret(
+  siret: string | null
+): string | null {
+  if (
+    !siret ||
+    siret.length !== 14
+  ) {
+    return null;
+  }
+
+  return siret.slice(
+    0,
+    9
+  );
 }
 
 export async function POST(
@@ -95,16 +256,9 @@ export async function POST(
     }
 
     /*
-     * On recherche d’abord une fiche
-     * Office portant déjà cet identifiant
-     * Zoho.
-     *
-     * Si elle est active :
-     * le client existe réellement déjà.
-     *
-     * Si elle est inactive :
-     * on la restaurera au lieu de créer
-     * une nouvelle fiche.
+     * Recherche d'une éventuelle
+     * fiche Office déjà liée au
+     * contact Zoho.
      */
     const {
       data:
@@ -121,7 +275,10 @@ export async function POST(
           name,
           email,
           is_active,
-          zoho_contact_id
+          zoho_contact_id,
+          siren,
+          siret,
+          vat_number
         `
       )
       .eq(
@@ -246,10 +403,27 @@ export async function POST(
       );
 
     /*
+     * Données légales Zoho.
+     *
+     * Le SIRET est stocké dans
+     * un champ personnalisé Zoho
+     * ("Siret" / "CF.Siret").
+     */
+    const zohoSiret =
+      getZohoSiret(
+        contact
+      );
+
+    const zohoSiren =
+      getSirenFromSiret(
+        zohoSiret
+      );
+
+    /*
      * Si une ancienne fiche inactive
-     * porte déjà ce Zoho ID, on la
-     * restaure avec les données actuelles
-     * de Zoho Books.
+     * existe, on la restaure et on
+     * actualise ses données depuis
+     * Zoho Books.
      */
     if (
       existingCompany &&
@@ -297,6 +471,25 @@ export async function POST(
           zoho_contact_id:
             contact.contact_id,
 
+          /*
+           * Si Zoho renvoie un nouveau
+           * SIRET, il devient la valeur
+           * de référence.
+           *
+           * Sinon on conserve la valeur
+           * déjà présente dans Office.
+           */
+          siret:
+            zohoSiret ??
+            existingCompany.siret,
+
+          siren:
+            zohoSiren ??
+            existingCompany.siren,
+
+          vat_number:
+            existingCompany.vat_number,
+
           is_active:
             true,
 
@@ -314,7 +507,9 @@ export async function POST(
           `
             id,
             name,
-            zoho_contact_id
+            zoho_contact_id,
+            siren,
+            siret
           `
         )
         .single();
@@ -342,6 +537,12 @@ export async function POST(
           zohoContactId:
             restoredCompany.zoho_contact_id,
 
+          siretImported:
+            restoredCompany.siret,
+
+          sirenImported:
+            restoredCompany.siren,
+
           addressImported:
             Boolean(
               address ||
@@ -358,7 +559,7 @@ export async function POST(
           true,
 
         message:
-          "Client restauré dans LBMedia Office.",
+          "Client restauré et actualisé depuis Zoho Books.",
 
         companyId:
           restoredCompany.id,
@@ -366,11 +567,10 @@ export async function POST(
     }
 
     /*
-     * Pour une création réelle, on garde
-     * la sécurité sur l’adresse email.
-     *
-     * Seules les fiches actives doivent
-     * bloquer l’import.
+     * Pour une création réelle,
+     * une fiche Office active avec
+     * la même adresse email bloque
+     * l'import.
      */
     if (
       email
@@ -477,6 +677,12 @@ export async function POST(
         zoho_contact_id:
           contact.contact_id,
 
+        siren:
+          zohoSiren,
+
+        siret:
+          zohoSiret,
+
         is_active:
           true,
 
@@ -490,7 +696,9 @@ export async function POST(
         `
           id,
           name,
-          zoho_contact_id
+          zoho_contact_id,
+          siren,
+          siret
         `
       )
       .single();
@@ -517,6 +725,12 @@ export async function POST(
 
         zohoContactId:
           createdCompany.zoho_contact_id,
+
+        siretImported:
+          createdCompany.siret,
+
+        sirenImported:
+          createdCompany.siren,
 
         addressImported:
           Boolean(
