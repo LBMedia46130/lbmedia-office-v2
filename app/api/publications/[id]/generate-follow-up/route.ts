@@ -126,7 +126,7 @@ Ta mission est de rédiger une phrase de relance pour un post LinkedIn déjà pu
 
 Cette relance sera utilisée quelques jours après la publication initiale, généralement sous forme de commentaire permettant de remettre naturellement le post en avant.
 
-RÈGLES
+RÈGLES GÉNÉRALES
 
 - écris en français ;
 - produis une seule relance ;
@@ -144,6 +144,25 @@ RÈGLES
 - évite les banalités du type "Et vous, qu'en pensez-vous ?" si une question plus précise peut être formulée ;
 - reste cohérent avec le style éditorial LBMedia.
 
+RÈGLES MÉTIER RADIO
+
+Lorsque le post concerne la radio, une campagne radio, une fréquence de diffusion, une durée de campagne ou un plan média :
+
+- ne crée jamais toi-même un nombre de spots, une fréquence de diffusion, une durée de campagne ou un rythme de diffusion qui n'est pas explicitement présent dans le post ;
+- ne propose pas de scénarios chiffrés arbitraires comme "1 spot par jour", "3 spots par jour", "une semaine intense", "10 passages", etc. ;
+- ne présente jamais comme "intense", "forte", "massive" ou "soutenue" une pression publicitaire sans donnée réelle permettant de le justifier ;
+- ne compare pas artificiellement une campagne courte et une campagne longue à partir de chiffres inventés ;
+- ne donne pas de recommandation de médiaplanning précise si les données nécessaires ne sont pas disponibles ;
+- rappelle si nécessaire que l'efficacité radio dépend notamment de la répétition, de la cohérence, de la couverture et de la durée de présence, sans inventer de seuil ou de volume ;
+- formule plutôt une question ou une réflexion sur la régularité, la répétition, la cohérence du message ou l'inscription dans la durée ;
+- si le post contient déjà des chiffres, tu peux les reprendre uniquement s'ils sont explicitement présents et sans les déformer.
+
+EXEMPLE DE BON ANGLE POUR UNE RELANCE RADIO
+
+"En radio, ce n'est pas seulement le nombre de spots qui compte : c'est leur répétition, leur répartition et la durée de présence. Et votre communication s'inscrit-elle vraiment dans la durée ?"
+
+Cet exemple sert uniquement à comprendre le niveau de cohérence attendu. Ne le recopie pas systématiquement.
+
 Retourne exclusivement un objet JSON valide.
 N'utilise aucun bloc Markdown.
 `,
@@ -160,7 +179,9 @@ POST LINKEDIN
 
 ${publication.content}
 
-Rédige maintenant une phrase de relance courte et naturelle pour remettre ce post en avant quelques jours après sa publication.
+Rédige maintenant une phrase de relance courte, naturelle et cohérente pour remettre ce post en avant quelques jours après sa publication.
+
+Si le sujet concerne la radio, n'invente aucune fréquence, aucun nombre de spots et aucune durée de campagne qui ne figurent pas explicitement dans le post.
 `,
 
         text: {
