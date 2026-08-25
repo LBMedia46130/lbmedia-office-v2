@@ -31,12 +31,16 @@ type ZohoBillingAddress = {
 
 type ZohoCustomField = {
   customfield_id?: string;
+  index?: number;
+
   label?: string;
   api_name?: string;
+
   value?: unknown;
+  value_formatted?: unknown;
 };
 
-type ZohoContactWithAddress = Awaited<
+type ZohoContactWithDetails = Awaited<
   ReturnType<
     typeof getZohoContact
   >
@@ -46,6 +50,8 @@ type ZohoContactWithAddress = Awaited<
 
   custom_fields?:
     ZohoCustomField[];
+
+  [key: string]: unknown;
 };
 
 function optionalString(
@@ -106,11 +112,35 @@ function normalizeSiret(
   return digits;
 }
 
-function getCustomFieldValue(
+function normalizeFieldName(
+  value: unknown
+): string {
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return "";
+  }
+
+  return value
+    .normalize(
+      "NFD"
+    )
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase()
+    .replace(
+      /[^a-z0-9]/g,
+      ""
+    );
+}
+
+function getSiretFromCustomFields(
   customFields:
-    ZohoCustomField[] | undefined,
-  names: string[]
-): unknown {
+    ZohoCustomField[] | undefined
+): string | null {
   if (
     !Array.isArray(
       customFields
@@ -119,61 +149,94 @@ function getCustomFieldValue(
     return null;
   }
 
-  const normalizedNames =
-    names.map(
-      (name) =>
-        name
-          .trim()
-          .toLocaleLowerCase(
-            "fr-FR"
-          )
-          .replace(
-            /[\s_-]+/g,
-            ""
-          )
-    );
-
   for (
     const field of
     customFields
   ) {
-    const candidates =
-      [
-        field.label,
-        field.api_name,
-      ]
-        .filter(
-          (
-            value
-          ): value is string =>
-            typeof value ===
-            "string"
-        )
-        .map(
-          (value) =>
-            value
-              .trim()
-              .toLocaleLowerCase(
-                "fr-FR"
-              )
-              .replace(
-                /[\s_-]+/g,
-                ""
-              )
-        );
+    const label =
+      normalizeFieldName(
+        field.label
+      );
 
-    const matches =
-      candidates.some(
-        (candidate) =>
-          normalizedNames.includes(
-            candidate
-          )
+    const apiName =
+      normalizeFieldName(
+        field.api_name
+      );
+
+    const isSiretField =
+      label.includes(
+        "siret"
+      ) ||
+      apiName.includes(
+        "siret"
       );
 
     if (
-      matches
+      !isSiretField
     ) {
-      return field.value;
+      continue;
+    }
+
+    const fromValue =
+      normalizeSiret(
+        field.value
+      );
+
+    if (
+      fromValue
+    ) {
+      return fromValue;
+    }
+
+    const fromFormattedValue =
+      normalizeSiret(
+        field.value_formatted
+      );
+
+    if (
+      fromFormattedValue
+    ) {
+      return fromFormattedValue;
+    }
+  }
+
+  return null;
+}
+
+function getSiretFromFlatContactFields(
+  contact:
+    ZohoContactWithDetails
+): string | null {
+  for (
+    const [
+      key,
+      value,
+    ] of Object.entries(
+      contact
+    )
+  ) {
+    const normalizedKey =
+      normalizeFieldName(
+        key
+      );
+
+    if (
+      !normalizedKey.includes(
+        "siret"
+      )
+    ) {
+      continue;
+    }
+
+    const normalizedSiret =
+      normalizeSiret(
+        value
+      );
+
+    if (
+      normalizedSiret
+    ) {
+      return normalizedSiret;
     }
   }
 
@@ -182,22 +245,42 @@ function getCustomFieldValue(
 
 function getZohoSiret(
   contact:
-    ZohoContactWithAddress
+    ZohoContactWithDetails
 ): string | null {
-  const customFieldValue =
-    getCustomFieldValue(
-      contact.custom_fields,
-      [
-        "Siret",
-        "SIRET",
-        "CF.Siret",
-        "CF Siret",
-      ]
+  /*
+   * 1. Cas normal documenté Zoho :
+   * custom_fields avec label/value.
+   */
+  const customFieldSiret =
+    getSiretFromCustomFields(
+      contact.custom_fields
     );
 
-  return normalizeSiret(
-    customFieldValue
-  );
+  if (
+    customFieldSiret
+  ) {
+    return customFieldSiret;
+  }
+
+  /*
+   * 2. Sécurité :
+   * certaines réponses Zoho peuvent
+   * également exposer des propriétés
+   * dérivées de l'API name :
+   * cf_siret, cf_siret_unformatted, etc.
+   */
+  const flatFieldSiret =
+    getSiretFromFlatContactFields(
+      contact
+    );
+
+  if (
+    flatFieldSiret
+  ) {
+    return flatFieldSiret;
+  }
+
+  return null;
 }
 
 function getSirenFromSiret(
@@ -213,6 +296,34 @@ function getSirenFromSiret(
   return siret.slice(
     0,
     9
+  );
+}
+
+function getCustomFieldDebugInfo(
+  contact:
+    ZohoContactWithDetails
+) {
+  return (
+    contact.custom_fields ??
+    []
+  ).map(
+    (field) => ({
+      label:
+        field.label ??
+        null,
+
+      apiName:
+        field.api_name ??
+        null,
+
+      value:
+        field.value ??
+        null,
+
+      formattedValue:
+        field.value_formatted ??
+        null,
+    })
   );
 }
 
@@ -255,11 +366,6 @@ export async function POST(
       );
     }
 
-    /*
-     * Recherche d'une éventuelle
-     * fiche Office déjà liée au
-     * contact Zoho.
-     */
     const {
       data:
         existingCompany,
@@ -321,7 +427,52 @@ export async function POST(
       );
 
     const contact =
-      rawContact as ZohoContactWithAddress;
+      rawContact as ZohoContactWithDetails;
+
+    /*
+     * Diagnostic temporaire utile :
+     * cela nous montrera dans les logs
+     * Vercel exactement quels champs
+     * personnalisés Zoho sont renvoyés.
+     */
+    console.info(
+      "Données Zoho contact détaillées",
+      {
+        contactId,
+
+        contactName:
+          contact.contact_name,
+
+        customFields:
+          getCustomFieldDebugInfo(
+            contact
+          ),
+
+        siretLikeProperties:
+          Object.entries(
+            contact
+          )
+            .filter(
+              ([key]) =>
+                normalizeFieldName(
+                  key
+                ).includes(
+                  "siret"
+                )
+            )
+            .map(
+              (
+                [
+                  key,
+                  value,
+                ]
+              ) => ({
+                key,
+                value,
+              })
+            ),
+      }
+    );
 
     const companyName =
       contact.company_name
@@ -402,13 +553,6 @@ export async function POST(
           ?.country
       );
 
-    /*
-     * Données légales Zoho.
-     *
-     * Le SIRET est stocké dans
-     * un champ personnalisé Zoho
-     * ("Siret" / "CF.Siret").
-     */
     const zohoSiret =
       getZohoSiret(
         contact
@@ -419,16 +563,95 @@ export async function POST(
         zohoSiret
       );
 
+    console.info(
+      "SIRET Zoho détecté",
+      {
+        contactId,
+
+        zohoSiret,
+
+        zohoSiren,
+
+        previousSiret:
+          existingCompany
+            ?.siret ??
+          null,
+
+        previousSiren:
+          existingCompany
+            ?.siren ??
+          null,
+      }
+    );
+
     /*
-     * Si une ancienne fiche inactive
-     * existe, on la restaure et on
-     * actualise ses données depuis
-     * Zoho Books.
+     * Ancienne fiche inactive :
+     * on la restaure et on actualise
+     * les données depuis Zoho.
      */
     if (
       existingCompany &&
       !existingCompany.is_active
     ) {
+      const updatePayload = {
+        name:
+          companyName,
+
+        legal_name:
+          optionalString(
+            contact.company_name
+          ),
+
+        email,
+
+        phone,
+
+        address,
+
+        address_line_2:
+          addressLine2,
+
+        postal_code:
+          postalCode,
+
+        city,
+
+        state,
+
+        country,
+
+        customer_number:
+          customerNumber,
+
+        zoho_contact_id:
+          contact.contact_id,
+
+        /*
+         * Zoho devient la référence
+         * lorsque le SIRET est bien
+         * détecté.
+         */
+        siret:
+          zohoSiret ??
+          existingCompany.siret,
+
+        siren:
+          zohoSiren ??
+          existingCompany.siren,
+
+        vat_number:
+          existingCompany.vat_number,
+
+        is_active:
+          true,
+
+        relationship_status:
+          "client",
+
+        pipeline_stage:
+          "client",
+      };
+
       const {
         data:
           restoredCompany,
@@ -438,67 +661,9 @@ export async function POST(
         .from(
           "companies"
         )
-        .update({
-          name:
-            companyName,
-
-          legal_name:
-            optionalString(
-              contact.company_name
-            ),
-
-          email,
-
-          phone,
-
-          address,
-
-          address_line_2:
-            addressLine2,
-
-          postal_code:
-            postalCode,
-
-          city,
-
-          state,
-
-          country,
-
-          customer_number:
-            customerNumber,
-
-          zoho_contact_id:
-            contact.contact_id,
-
-          /*
-           * Si Zoho renvoie un nouveau
-           * SIRET, il devient la valeur
-           * de référence.
-           *
-           * Sinon on conserve la valeur
-           * déjà présente dans Office.
-           */
-          siret:
-            zohoSiret ??
-            existingCompany.siret,
-
-          siren:
-            zohoSiren ??
-            existingCompany.siren,
-
-          vat_number:
-            existingCompany.vat_number,
-
-          is_active:
-            true,
-
-          relationship_status:
-            "client",
-
-          pipeline_stage:
-            "client",
-        })
+        .update(
+          updatePayload
+        )
         .eq(
           "id",
           existingCompany.id
@@ -543,6 +708,9 @@ export async function POST(
           sirenImported:
             restoredCompany.siren,
 
+          zohoSiretDetected:
+            zohoSiret,
+
           addressImported:
             Boolean(
               address ||
@@ -559,18 +727,30 @@ export async function POST(
           true,
 
         message:
-          "Client restauré et actualisé depuis Zoho Books.",
+          zohoSiret
+            ? "Client restauré et SIRET actualisé depuis Zoho Books."
+            : "Client restauré depuis Zoho Books. Aucun nouveau SIRET n’a été détecté dans la réponse Zoho.",
 
         companyId:
           restoredCompany.id,
+
+        legalData: {
+          siret:
+            restoredCompany.siret,
+
+          siren:
+            restoredCompany.siren,
+
+          zohoSiretDetected:
+            zohoSiret,
+        },
       });
     }
 
     /*
-     * Pour une création réelle,
-     * une fiche Office active avec
-     * la même adresse email bloque
-     * l'import.
+     * Nouvelle fiche :
+     * vérification d'un éventuel
+     * doublon actif par email.
      */
     if (
       email
@@ -732,6 +912,9 @@ export async function POST(
         sirenImported:
           createdCompany.siren,
 
+        zohoSiretDetected:
+          zohoSiret,
+
         addressImported:
           Boolean(
             address ||
@@ -748,10 +931,23 @@ export async function POST(
         false,
 
       message:
-        "Client restauré dans LBMedia Office.",
+        zohoSiret
+          ? "Client importé avec son SIRET Zoho."
+          : "Client importé. Aucun SIRET n’a été détecté dans la réponse Zoho.",
 
       companyId:
         createdCompany.id,
+
+      legalData: {
+        siret:
+          createdCompany.siret,
+
+        siren:
+          createdCompany.siren,
+
+        zohoSiretDetected:
+          zohoSiret,
+      },
     });
   } catch (error) {
     console.error(
