@@ -169,6 +169,11 @@ export default function PublicationEditor({
   );
 
   const [
+    isFollowUpCopied,
+    setIsFollowUpCopied,
+  ] = useState(false);
+
+  const [
     brevoSendApprovedAt,
     setBrevoSendApprovedAt,
   ] = useState(
@@ -764,6 +769,39 @@ export default function PublicationEditor({
     }
   }
 
+  async function copyFollowUpText() {
+    if (!followUpText.trim()) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        followUpText.trim()
+      );
+
+      setIsFollowUpCopied(true);
+      setError(null);
+      setMessage(
+        "Relance LinkedIn copiée dans le presse-papiers."
+      );
+
+      window.setTimeout(
+        () => {
+          setIsFollowUpCopied(
+            false
+          );
+        },
+        2000
+      );
+    } catch {
+      setIsFollowUpCopied(false);
+      setMessage(null);
+      setError(
+        "Impossible de copier automatiquement la relance LinkedIn."
+      );
+    }
+  }
+
   async function generateFollowUp() {
     if (channel !== "linkedin") {
       return;
@@ -787,6 +825,8 @@ export default function PublicationEditor({
     if (!confirmed) {
       return;
     }
+
+    setIsFollowUpCopied(false);
 
     setIsGeneratingFollowUp(
       true
@@ -1250,6 +1290,8 @@ export default function PublicationEditor({
       updatedPublication.follow_up_text ??
         ""
     );
+
+    setIsFollowUpCopied(false);
 
     setBrevoSendApprovedAt(
       updatedPublication.brevo_send_approved_at
@@ -1863,32 +1905,56 @@ export default function PublicationEditor({
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={
-                        generateFollowUp
-                      }
-                      disabled={
-                        isBusy ||
-                        !content.trim()
-                      }
-                      className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isGeneratingFollowUp
-                        ? "Génération de la relance..."
-                        : followUpText
-                          ? "Régénérer la relance"
-                          : "Générer la relance"}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      {followUpText ? (
+                        <button
+                          type="button"
+                          onClick={
+                            copyFollowUpText
+                          }
+                          disabled={isBusy}
+                          className="rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isFollowUpCopied
+                            ? "Copiée ✓"
+                            : "Copier la relance"}
+                        </button>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        onClick={
+                          generateFollowUp
+                        }
+                        disabled={
+                          isBusy ||
+                          !content.trim()
+                        }
+                        className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isGeneratingFollowUp
+                          ? "Génération de la relance..."
+                          : followUpText
+                            ? "Régénérer la relance"
+                            : "Générer la relance"}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4">
                     <TextArea
                       label="Texte de relance"
                       value={followUpText}
-                      onChange={
-                        setFollowUpText
-                      }
+                      onChange={(
+                        value
+                      ) => {
+                        setFollowUpText(
+                          value
+                        );
+                        setIsFollowUpCopied(
+                          false
+                        );
+                      }}
                       rows={3}
                       disabled={
                         !canEdit ||
