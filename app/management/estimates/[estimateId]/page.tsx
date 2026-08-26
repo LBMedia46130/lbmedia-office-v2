@@ -9,6 +9,7 @@ import {
 } from "@/lib/zoho-books";
 
 import ConvertEstimateToInvoiceButton from "./ConvertEstimateToInvoiceButton";
+import GenerateGammaPresentationButton from "./GenerateGammaPresentationButton";
 import SendEstimateEmailButton from "./SendEstimateEmailButton";
 
 export const dynamic = "force-dynamic";
@@ -54,8 +55,7 @@ function formatDateTime(
     return "—";
   }
 
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
     return value;
@@ -646,6 +646,39 @@ export default async function EstimateDetailPage({
                     )}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-lg text-white">
+                  ✦
+                </div>
+
+                <div>
+                  <h2 className="font-semibold text-slate-900">
+                    Présentation commerciale
+                  </h2>
+
+                  <p className="mt-1 text-sm leading-5 text-slate-500">
+                    Génération automatique depuis
+                    le modèle Gamma Radio LBMedia.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <GenerateGammaPresentationButton
+                  estimateId={
+                    estimate.estimate_id
+                  }
+                  estimateNumber={
+                    estimate.estimate_number
+                  }
+                  customerName={
+                    estimate.customer_name
+                  }
+                />
               </div>
             </div>
 
