@@ -301,6 +301,9 @@ export default async function CompanyPage({
                 companyId={
                   company.id
                 }
+                initialLogoUrl={
+                  company.logo_url
+                }
                 initialLinkedinUrl={
                   company.linkedin_url
                 }
