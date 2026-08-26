@@ -321,15 +321,13 @@ export default function CompanyWebEnrichment({
                 Logo
               </p>
 
-              <div className="mt-3 flex min-h-20 min-w-40 items-center justify-center rounded-lg bg-white">
-                <img
-                  src={
-                    initialLogoUrl
-                  }
-                  alt="Logo de l’entreprise"
-                  className="max-h-20 max-w-48 object-contain"
-                />
-              </div>
+              <LogoPreview
+                src={
+                  initialLogoUrl
+                }
+                alt="Logo de l’entreprise"
+                size="compact"
+              />
             </div>
           ) : null}
 
@@ -533,15 +531,11 @@ function LogoResultBlock({
         </p>
       ) : (
         <>
-          <div className="mt-3 flex min-h-24 items-center justify-center rounded-lg border border-slate-100 bg-white p-3">
-            <img
-              src={
-                value
-              }
-              alt="Logo trouvé pour l’entreprise"
-              className="max-h-20 max-w-full object-contain"
-            />
-          </div>
+          <LogoPreview
+            src={value}
+            alt="Logo trouvé pour l’entreprise"
+            size="large"
+          />
 
           <a
             href={value}
@@ -553,6 +547,52 @@ function LogoResultBlock({
           </a>
         </>
       )}
+    </div>
+  );
+}
+
+function LogoPreview({
+  src,
+  alt,
+  size,
+}: {
+  src: string;
+  alt: string;
+  size:
+    | "compact"
+    | "large";
+}) {
+  const sizeClasses =
+    size === "compact"
+      ? "min-h-20 min-w-40"
+      : "min-h-24 w-full";
+
+  return (
+    <div
+      className={`relative mt-3 flex items-center justify-center overflow-hidden rounded-lg border border-slate-200 p-3 ${sizeClasses}`}
+      style={{
+        backgroundColor:
+          "#ffffff",
+
+        backgroundImage: `
+          linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+          linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+          linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)
+        `,
+
+        backgroundSize:
+          "20px 20px",
+
+        backgroundPosition:
+          "0 0, 0 10px, 10px -10px, -10px 0px",
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className="relative z-10 max-h-20 max-w-full object-contain"
+      />
     </div>
   );
 }
