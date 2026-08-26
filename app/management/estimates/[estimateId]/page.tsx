@@ -8,11 +8,17 @@ import {
   type ZohoEstimate,
 } from "@/lib/zoho-books";
 
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
+
+import CampaignObjectiveEditor from "./CampaignObjectiveEditor";
 import ConvertEstimateToInvoiceButton from "./ConvertEstimateToInvoiceButton";
 import GenerateGammaPresentationButton from "./GenerateGammaPresentationButton";
 import SendEstimateEmailButton from "./SendEstimateEmailButton";
 
-export const dynamic = "force-dynamic";
+export const dynamic =
+  "force-dynamic";
 
 type EstimateDetailPageProps = {
   params: Promise<{
@@ -24,22 +30,34 @@ function formatCurrency(
   value?: number,
   currency = "EUR"
 ) {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency,
-  }).format(Number(value) || 0);
+  return new Intl.NumberFormat(
+    "fr-FR",
+    {
+      style: "currency",
+      currency,
+    }
+  ).format(
+    Number(value) || 0
+  );
 }
 
-function formatDate(value?: string) {
+function formatDate(
+  value?: string
+) {
   if (!value) {
     return "—";
   }
 
-  const date = new Date(
-    `${value}T00:00:00`
-  );
+  const date =
+    new Date(
+      `${value}T00:00:00`
+    );
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
     return value;
   }
 
@@ -55,17 +73,24 @@ function formatDateTime(
     return "—";
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
     return value;
   }
 
   return new Intl.DateTimeFormat(
     "fr-FR",
     {
-      dateStyle: "short",
-      timeStyle: "short",
+      dateStyle:
+        "short",
+      timeStyle:
+        "short",
     }
   ).format(date);
 }
@@ -76,21 +101,29 @@ function getStatusLabel(
   switch (status) {
     case "draft":
       return "Brouillon";
+
     case "sent":
       return "Envoyé";
+
     case "viewed":
       return "Consulté";
+
     case "accepted":
       return "À facturer";
+
     case "declined":
       return "Refusé";
+
     case "invoiced":
       return "Facturé";
+
     case "expired":
       return "Expiré";
+
     case "void":
     case "cancelled":
       return "Annulé";
+
     default:
       return status;
   }
@@ -129,10 +162,12 @@ function getStatusClass(
 export default async function EstimateDetailPage({
   params,
 }: EstimateDetailPageProps) {
-  const { estimateId } =
-    await params;
+  const {
+    estimateId,
+  } = await params;
 
-  let estimate: ZohoEstimate;
+  let estimate:
+    ZohoEstimate;
 
   try {
     estimate =
@@ -143,28 +178,75 @@ export default async function EstimateDetailPage({
     notFound();
   }
 
-  let contact:
-    | ZohoContact
-    | null = null;
-
-  try {
-    contact =
-      await getZohoContact(
+  const [
+    contactResult,
+    campaignContextResult,
+  ] =
+    await Promise.all([
+      getZohoContact(
         estimate.customer_id
-      );
-  } catch {
-    contact = null;
+      )
+        .then(
+          (value) => ({
+            value,
+          })
+        )
+        .catch(() => ({
+          value:
+            null,
+        })),
+
+      supabaseAdmin
+        .from(
+          "estimate_campaign_contexts"
+        )
+        .select(
+          `
+            campaign_objective
+          `
+        )
+        .eq(
+          "zoho_estimate_id",
+          estimate.estimate_id
+        )
+        .maybeSingle(),
+    ]);
+
+  const contact:
+    | ZohoContact
+    | null =
+      contactResult.value;
+
+  if (
+    campaignContextResult.error
+  ) {
+    console.error(
+      "Impossible de charger l’objectif de campagne :",
+      campaignContextResult.error
+    );
   }
+
+  const campaignObjective =
+    typeof campaignContextResult
+      .data
+      ?.campaign_objective ===
+      "string"
+      ? campaignContextResult
+          .data
+          .campaign_objective
+      : "";
 
   const currency =
     estimate.currency_code ||
     "EUR";
 
   const lineItems =
-    estimate.line_items ?? [];
+    estimate.line_items ??
+    [];
 
   const taxes =
-    estimate.taxes ?? [];
+    estimate.taxes ??
+    [];
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -336,6 +418,18 @@ export default async function EstimateDetailPage({
                 </p>
               </div>
             </div>
+
+            <CampaignObjectiveEditor
+              estimateId={
+                estimate.estimate_id
+              }
+              customerId={
+                estimate.customer_id
+              }
+              initialObjective={
+                campaignObjective
+              }
+            />
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-6 py-5">
