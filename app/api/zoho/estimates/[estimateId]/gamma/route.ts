@@ -536,6 +536,16 @@ Elle doit permettre au client de comprendre immédiatement :
 
 Ne pas utiliser un discours générique de notoriété si l'objectif fourni concerne une opération ponctuelle, un événement, des portes ouvertes, une promotion, une ouverture, un recrutement ou toute autre finalité spécifique.
 
+POSITIONNEMENT RFM :
+- Ne jamais inventer ni extrapoler un positionnement de supériorité pour RFM.
+- Ne jamais écrire que RFM est "leader", "radio leader", "n°1", "numéro 1", "première radio", "radio préférée" ou toute formulation équivalente, sauf si cette affirmation figure explicitement dans les données fournies.
+- Ne jamais déduire un classement à partir des chiffres d'audience.
+- Ne pas transformer les données Médiamétrie en revendication de leadership ou de supériorité.
+- Pour présenter RFM dans les textes commerciaux, privilégier des formulations factuelles telles que "média de proximité à forte audience locale" ou "radio musicale de proximité".
+- Il est également possible de s'appuyer directement sur les données d'audience présentes dans le template sans leur attribuer de classement.
+- Toute affirmation chiffrée concernant l'audience doit provenir exclusivement des données Médiamétrie présentes dans le template.
+- Ne jamais inventer de chiffre, de classement ou de part de marché.
+
 AUDIENCES RFM :
 - Conserver les informations générales RFM Lot déjà présentes dans le template.
 - Conserver exactement les données d'audience RFM Lot présentes dans le template.
@@ -621,15 +631,16 @@ Avant de finaliser la présentation, vérifier impérativement que :
   } ;
 4. le territoire affiché est cohérent avec "${campaignContext.territory}" ;
 5. la carte des zones de diffusion du template est conservée ;
-6. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
-7. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
-8. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
-9. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
-10. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
-11. les données d'audience RFM Lot du template sont conservées ;
-12. les montants correspondent exactement au devis ;
-13. aucune prestation absente du devis n'a été ajoutée ;
-14. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté.
+6. aucune affirmation de leadership ou de classement de RFM n'a été inventée ;
+7. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
+8. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
+9. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
+10. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
+11. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
+12. les données d'audience RFM Lot du template sont conservées ;
+13. les montants correspondent exactement au devis ;
+14. aucune prestation absente du devis n'a été ajoutée ;
+15. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté.
 `.trim();
 }
 
