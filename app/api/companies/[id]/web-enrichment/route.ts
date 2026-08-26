@@ -19,10 +19,14 @@ type WebEnrichmentResult = {
   website: string;
   phone: string;
   email: string;
+  logo_url: string;
   business_description: string;
   linkedin_url: string;
   facebook_url: string;
-  confidence: string;
+  confidence:
+    | "high"
+    | "medium"
+    | "low";
 };
 
 export async function POST(
@@ -63,6 +67,7 @@ export async function POST(
           website,
           phone,
           email,
+          logo_url,
           ape_code,
           ape_label
         `
@@ -124,6 +129,7 @@ Recherche uniquement des informations publiques utiles au CRM :
 - site internet officiel ;
 - numéro de téléphone professionnel public ;
 - adresse e-mail professionnelle publique ;
+- logo officiel de l'entreprise ;
 - page LinkedIn officielle de l'entreprise ;
 - page Facebook officielle de l'entreprise ;
 - courte description factuelle de l'activité.
@@ -141,6 +147,16 @@ Pour le téléphone :
 Pour l'e-mail :
 - retourne uniquement une adresse publiquement affichée ;
 - n'invente jamais de format d'adresse.
+
+Pour le logo :
+- retourne uniquement une URL HTTPS publique pointant directement vers un logo officiel de l'entreprise ;
+- privilégie le logo utilisé sur le site officiel de l'entreprise ;
+- privilégie une image de bonne qualité et suffisamment grande pour être utilisée dans un document commercial ;
+- évite les favicons, icônes de navigateur, captures d'écran, photos, bannières ou images contenant plusieurs marques ;
+- n'utilise pas un logo provenant d'un annuaire ou d'un site tiers si un logo officiel est disponible ;
+- l'URL doit désigner une image accessible publiquement sans authentification ;
+- si tu ne peux pas identifier avec certitude une URL directe vers le logo officiel, retourne une chaîne vide ;
+- n'invente jamais une URL d'image.
 
 Pour LinkedIn et Facebook :
 - retourne uniquement une page officielle suffisamment identifiable ;
@@ -205,6 +221,9 @@ ${company.phone || "Non renseigné"}
 E-mail :
 ${company.email || "Non renseigné"}
 
+Logo :
+${company.logo_url || "Non renseigné"}
+
 Recherche maintenant les informations publiques fiables de cette entreprise.
 `,
 
@@ -227,6 +246,10 @@ Recherche maintenant les informations publiques fiables de cette entreprise.
                 },
 
                 email: {
+                  type: "string",
+                },
+
+                logo_url: {
                   type: "string",
                 },
 
@@ -256,6 +279,7 @@ Recherche maintenant les informations publiques fiables de cette entreprise.
                 "website",
                 "phone",
                 "email",
+                "logo_url",
                 "business_description",
                 "linkedin_url",
                 "facebook_url",

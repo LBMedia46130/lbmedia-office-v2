@@ -22,6 +22,7 @@ export type Company = {
   email: string | null;
   phone: string | null;
   website: string | null;
+  logo_url: string | null;
 
   linkedin_url: string | null;
   facebook_url: string | null;
@@ -90,6 +91,7 @@ export type UpdateCompanyInput = {
   email: string | null;
   phone: string | null;
   website: string | null;
+  logo_url?: string | null;
 
   linkedin_url?: string | null;
   facebook_url?: string | null;
@@ -156,6 +158,10 @@ function normalizeCompany(
 ): Company {
   return {
     ...company,
+
+    logo_url:
+      company.logo_url ??
+      null,
 
     services:
       company.services ?? [],

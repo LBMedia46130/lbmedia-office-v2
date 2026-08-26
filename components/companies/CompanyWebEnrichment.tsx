@@ -1,20 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useState,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
 
 type WebEnrichmentResult = {
   website: string;
   phone: string;
   email: string;
+  logo_url: string;
   business_description: string;
   linkedin_url: string;
   facebook_url: string;
-  confidence: "high" | "medium" | "low";
+  confidence:
+    | "high"
+    | "medium"
+    | "low";
 };
 
 type CompanyWebEnrichmentProps = {
   companyId: string;
+  initialLogoUrl?: string | null;
   initialLinkedinUrl?: string | null;
   initialFacebookUrl?: string | null;
   initialBusinessDescription?: string | null;
@@ -22,15 +32,18 @@ type CompanyWebEnrichmentProps = {
 
 export default function CompanyWebEnrichment({
   companyId,
+  initialLogoUrl,
   initialLinkedinUrl,
   initialFacebookUrl,
   initialBusinessDescription,
 }: CompanyWebEnrichmentProps) {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const initiallyEnriched =
     Boolean(
-      initialLinkedinUrl ||
+      initialLogoUrl ||
+        initialLinkedinUrl ||
         initialFacebookUrl ||
         initialBusinessDescription
     );
@@ -38,9 +51,10 @@ export default function CompanyWebEnrichment({
   const [
     enrichment,
     setEnrichment,
-  ] = useState<WebEnrichmentResult | null>(
-    null
-  );
+  ] =
+    useState<WebEnrichmentResult | null>(
+      null
+    );
 
   const [
     isSearching,
@@ -55,16 +69,18 @@ export default function CompanyWebEnrichment({
   const [
     error,
     setError,
-  ] = useState<string | null>(
-    null
-  );
+  ] =
+    useState<string | null>(
+      null
+    );
 
   const [
     success,
     setSuccess,
-  ] = useState<string | null>(
-    null
-  );
+  ] =
+    useState<string | null>(
+      null
+    );
 
   const [
     isEnriched,
@@ -135,7 +151,10 @@ export default function CompanyWebEnrichment({
   }
 
   async function handleSearch() {
-    setIsSearching(true);
+    setIsSearching(
+      true
+    );
+
     setError(null);
     setSuccess(null);
     setEnrichment(null);
@@ -147,14 +166,18 @@ export default function CompanyWebEnrichment({
       setEnrichment(
         result
       );
-    } catch (searchError) {
+    } catch (
+      searchError
+    ) {
       setError(
         searchError instanceof Error
           ? searchError.message
           : "Recherche impossible."
       );
     } finally {
-      setIsSearching(false);
+      setIsSearching(
+        false
+      );
     }
   }
 
@@ -163,7 +186,10 @@ export default function CompanyWebEnrichment({
       return;
     }
 
-    setIsImporting(true);
+    setIsImporting(
+      true
+    );
+
     setError(null);
     setSuccess(null);
 
@@ -181,7 +207,8 @@ export default function CompanyWebEnrichment({
           : [];
 
       if (
-        updated.length === 0
+        updated.length ===
+        0
       ) {
         setSuccess(
           "Aucune donnée vide à compléter."
@@ -192,23 +219,35 @@ export default function CompanyWebEnrichment({
         );
       }
 
-      setIsEnriched(true);
-      setEnrichment(null);
+      setIsEnriched(
+        true
+      );
+
+      setEnrichment(
+        null
+      );
 
       router.refresh();
-    } catch (importError) {
+    } catch (
+      importError
+    ) {
       setError(
         importError instanceof Error
           ? importError.message
           : "Import impossible."
       );
     } finally {
-      setIsImporting(false);
+      setIsImporting(
+        false
+      );
     }
   }
 
   async function handleRefresh() {
-    setIsSearching(true);
+    setIsSearching(
+      true
+    );
+
     setError(null);
     setSuccess(null);
     setEnrichment(null);
@@ -220,14 +259,18 @@ export default function CompanyWebEnrichment({
       setEnrichment(
         result
       );
-    } catch (refreshError) {
+    } catch (
+      refreshError
+    ) {
       setError(
         refreshError instanceof Error
           ? refreshError.message
           : "Actualisation impossible."
       );
     } finally {
-      setIsSearching(false);
+      setIsSearching(
+        false
+      );
     }
   }
 
@@ -242,7 +285,7 @@ export default function CompanyWebEnrichment({
           <p className="mt-1 text-sm text-slate-600">
             {isEnriched
               ? "Les informations publiques de cette entreprise ont déjà été enrichies."
-              : "Recherche des coordonnées et de la présence publique de l’entreprise sur Internet."}
+              : "Recherche des coordonnées, du logo et de la présence publique de l’entreprise sur Internet."}
           </p>
         </div>
 
@@ -271,24 +314,44 @@ export default function CompanyWebEnrichment({
 
       {isEnriched &&
       !enrichment ? (
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          {initialLinkedinUrl ? (
-            <SocialLink
-              label="LinkedIn"
-              href={
-                initialLinkedinUrl
-              }
-            />
+        <div className="mt-4 space-y-4">
+          {initialLogoUrl ? (
+            <div className="w-fit rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                Logo
+              </p>
+
+              <div className="mt-3 flex min-h-20 min-w-40 items-center justify-center rounded-lg bg-white">
+                <img
+                  src={
+                    initialLogoUrl
+                  }
+                  alt="Logo de l’entreprise"
+                  className="max-h-20 max-w-48 object-contain"
+                />
+              </div>
+            </div>
           ) : null}
 
-          {initialFacebookUrl ? (
-            <SocialLink
-              label="Facebook"
-              href={
-                initialFacebookUrl
-              }
-            />
-          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            {initialLinkedinUrl ? (
+              <SocialLink
+                label="LinkedIn"
+                href={
+                  initialLinkedinUrl
+                }
+              />
+            ) : null}
+
+            {initialFacebookUrl ? (
+              <SocialLink
+                label="Facebook"
+                href={
+                  initialFacebookUrl
+                }
+              />
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -377,6 +440,12 @@ export default function CompanyWebEnrichment({
               }
               link
             />
+
+            <LogoResultBlock
+              value={
+                enrichment.logo_url
+              }
+            />
           </div>
 
           {enrichment.business_description ? (
@@ -442,6 +511,47 @@ function ResultBlock({
         <p className="mt-2 break-words text-sm font-semibold text-slate-800">
           {value}
         </p>
+      )}
+    </div>
+  );
+}
+
+function LogoResultBlock({
+  value,
+}: {
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+        Logo
+      </p>
+
+      {!value ? (
+        <p className="mt-2 text-sm text-slate-400">
+          Non trouvé
+        </p>
+      ) : (
+        <>
+          <div className="mt-3 flex min-h-24 items-center justify-center rounded-lg border border-slate-100 bg-white p-3">
+            <img
+              src={
+                value
+              }
+              alt="Logo trouvé pour l’entreprise"
+              className="max-h-20 max-w-full object-contain"
+            />
+          </div>
+
+          <a
+            href={value}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 block break-all text-xs font-semibold text-blue-600 transition hover:text-blue-700"
+          >
+            Voir l’image
+          </a>
+        </>
       )}
     </div>
   );

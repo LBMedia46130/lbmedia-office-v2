@@ -18,6 +18,7 @@ type WebEnrichmentPayload = {
   website?: string;
   phone?: string;
   email?: string;
+  logo_url?: string;
   business_description?: string;
   linkedin_url?: string;
   facebook_url?: string;
@@ -36,6 +37,39 @@ function normalizeValue(
     value.trim();
 
   return cleaned || null;
+}
+
+function normalizeHttpUrl(
+  value: unknown
+): string | null {
+  const normalized =
+    normalizeValue(
+      value
+    );
+
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    const url =
+      new URL(
+        normalized
+      );
+
+    if (
+      url.protocol !==
+        "https:" &&
+      url.protocol !==
+        "http:"
+    ) {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(
@@ -60,6 +94,7 @@ export async function POST(
           website,
           phone,
           email,
+          logo_url,
           business_description,
           linkedin_url,
           facebook_url
@@ -93,7 +128,7 @@ export async function POST(
     > = {};
 
     const website =
-      normalizeValue(
+      normalizeHttpUrl(
         body.website
       );
 
@@ -107,18 +142,23 @@ export async function POST(
         body.email
       );
 
+    const logoUrl =
+      normalizeHttpUrl(
+        body.logo_url
+      );
+
     const businessDescription =
       normalizeValue(
         body.business_description
       );
 
     const linkedinUrl =
-      normalizeValue(
+      normalizeHttpUrl(
         body.linkedin_url
       );
 
     const facebookUrl =
-      normalizeValue(
+      normalizeHttpUrl(
         body.facebook_url
       );
 
@@ -144,6 +184,14 @@ export async function POST(
     ) {
       updates.email =
         email;
+    }
+
+    if (
+      !company.logo_url &&
+      logoUrl
+    ) {
+      updates.logo_url =
+        logoUrl;
     }
 
     if (

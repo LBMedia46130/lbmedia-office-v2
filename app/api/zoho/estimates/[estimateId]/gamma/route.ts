@@ -26,7 +26,7 @@ const LBMEDIA_CONTACT = {
   name: "Laurent Barrès",
   phone: "05 65 33 76 44",
   email: "laurent@lbmedia.fr",
-  website: "lbmedia.fr",
+  website: "www.lbmedia.fr",
 } as const;
 
 function formatCurrency(
