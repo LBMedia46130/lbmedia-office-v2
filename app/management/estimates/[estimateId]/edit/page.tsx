@@ -7,9 +7,14 @@ import {
   getZohoTaxes,
 } from "@/lib/zoho-books";
 
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
+
 import EditEstimateForm from "./EditEstimateForm";
 
-export const dynamic = "force-dynamic";
+export const dynamic =
+  "force-dynamic";
 
 type EditEstimatePageProps = {
   params: Promise<{
@@ -69,11 +74,6 @@ function readDiscount(
     }
   }
 
-  /*
-   * Dans l'API Zoho, une valeur numérique
-   * sans symbole % représente une remise
-   * monétaire fixe.
-   */
   if (
     typeof discount === "number" &&
     Number.isFinite(discount) &&
@@ -85,11 +85,6 @@ function readDiscount(
     };
   }
 
-  /*
-   * Si Zoho ne renvoie que discount_amount,
-   * on ne tente plus de fabriquer un
-   * pourcentage. On conserve le montant €.
-   */
   if (
     typeof discountAmount === "number" &&
     Number.isFinite(discountAmount) &&
@@ -127,10 +122,45 @@ export default async function EditEstimatePage({
   const [
     taxes,
     items,
+    campaignContextResult,
   ] = await Promise.all([
     getZohoTaxes(),
     getAllZohoItems(),
+
+    supabaseAdmin
+      .from(
+        "estimate_campaign_contexts"
+      )
+      .select(
+        `
+          campaign_objective
+        `
+      )
+      .eq(
+        "zoho_estimate_id",
+        estimateId
+      )
+      .maybeSingle(),
   ]);
+
+  if (
+    campaignContextResult.error
+  ) {
+    console.error(
+      "Impossible de charger l’objectif de campagne :",
+      campaignContextResult.error
+    );
+  }
+
+  const campaignObjective =
+    typeof campaignContextResult
+      .data
+      ?.campaign_objective ===
+      "string"
+      ? campaignContextResult
+          .data
+          .campaign_objective
+      : "";
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -153,9 +183,10 @@ export default async function EditEstimatePage({
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Les modifications seront
-            enregistrées directement dans
-            Zoho Books.
+            Les données du devis sont
+            synchronisées avec Zoho Books.
+            L’objectif de campagne reste
+            enregistré dans LBMedia Office.
           </p>
         </div>
 
@@ -172,6 +203,9 @@ export default async function EditEstimatePage({
 
             customer_name:
               estimate.customer_name,
+
+            campaign_objective:
+              campaignObjective,
 
             date:
               estimate.date || "",

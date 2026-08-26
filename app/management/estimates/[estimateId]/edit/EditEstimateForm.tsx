@@ -47,6 +47,7 @@ type InitialEstimate = {
   estimate_number: string;
   customer_id: string;
   customer_name: string;
+  campaign_objective: string;
   date: string;
   expiry_date: string;
   reference_number: string;
@@ -113,9 +114,12 @@ function createLine(
     description: "",
     quantity: "1",
     rate: "",
-    discount_mode: "percent",
-    discount_value: "0",
-    tax_id: defaultTaxId,
+    discount_mode:
+      "percent",
+    discount_value:
+      "0",
+    tax_id:
+      defaultTaxId,
   };
 }
 
@@ -123,8 +127,12 @@ function calculateLineGross(
   line: EstimateLine
 ) {
   return (
-    numberValue(line.quantity) *
-    numberValue(line.rate)
+    numberValue(
+      line.quantity
+    ) *
+    numberValue(
+      line.rate
+    )
   );
 }
 
@@ -132,7 +140,9 @@ function calculateLineDiscount(
   line: EstimateLine
 ) {
   const gross =
-    calculateLineGross(line);
+    calculateLineGross(
+      line
+    );
 
   const value =
     Math.max(
@@ -169,8 +179,12 @@ function calculateLineTotal(
 ) {
   return Math.max(
     0,
-    calculateLineGross(line) -
-      calculateLineDiscount(line)
+    calculateLineGross(
+      line
+    ) -
+      calculateLineDiscount(
+        line
+      )
   );
 }
 
@@ -227,6 +241,13 @@ export default function EditEstimateForm({
   );
 
   const [
+    campaignObjective,
+    setCampaignObjective,
+  ] = useState(
+    estimate.campaign_objective
+  );
+
+  const [
     notes,
     setNotes,
   ] = useState(
@@ -243,7 +264,9 @@ export default function EditEstimateForm({
   const [
     lines,
     setLines,
-  ] = useState<EstimateLine[]>(
+  ] = useState<
+    EstimateLine[]
+  >(
     estimate.line_items.length
       ? estimate.line_items.map(
           (line) => ({
@@ -252,7 +275,8 @@ export default function EditEstimateForm({
               `${Date.now()}-${Math.random()}`,
 
             item_id:
-              line.item_id || "",
+              line.item_id ||
+              "",
 
             name:
               line.name,
@@ -280,13 +304,15 @@ export default function EditEstimateForm({
 
             tax_id:
               line.tax_id ||
-              defaultTax?.tax_id ||
+              defaultTax
+                ?.tax_id ||
               "",
           })
         )
       : [
           createLine(
-            defaultTax?.tax_id
+            defaultTax
+              ?.tax_id
           ),
         ]
   );
@@ -313,7 +339,10 @@ export default function EditEstimateForm({
   const subtotalBeforeDiscount =
     useMemo(() => {
       return lines.reduce(
-        (total, line) =>
+        (
+          total,
+          line
+        ) =>
           total +
           calculateLineGross(
             line
@@ -325,7 +354,10 @@ export default function EditEstimateForm({
   const discountTotal =
     useMemo(() => {
       return lines.reduce(
-        (total, line) =>
+        (
+          total,
+          line
+        ) =>
           total +
           calculateLineDiscount(
             line
@@ -337,7 +369,10 @@ export default function EditEstimateForm({
   const subtotal =
     useMemo(() => {
       return lines.reduce(
-        (total, line) =>
+        (
+          total,
+          line
+        ) =>
           total +
           calculateLineTotal(
             line
@@ -349,7 +384,10 @@ export default function EditEstimateForm({
   const taxAmount =
     useMemo(() => {
       return lines.reduce(
-        (total, line) => {
+        (
+          total,
+          line
+        ) => {
           const tax =
             taxes.find(
               (item) =>
@@ -358,7 +396,8 @@ export default function EditEstimateForm({
             );
 
           const percentage =
-            tax?.tax_percentage ??
+            tax
+              ?.tax_percentage ??
             0;
 
           return (
@@ -372,10 +411,14 @@ export default function EditEstimateForm({
         },
         0
       );
-    }, [lines, taxes]);
+    }, [
+      lines,
+      taxes,
+    ]);
 
   const total =
-    subtotal + taxAmount;
+    subtotal +
+    taxAmount;
 
   function updateLine(
     id: string,
@@ -411,7 +454,8 @@ export default function EditEstimateForm({
 
             return {
               ...line,
-              [field]: value,
+              [field]:
+                value,
             };
           }
         )
@@ -451,19 +495,25 @@ export default function EditEstimateForm({
             lineId
               ? {
                   ...line,
+
                   item_id:
                     item.item_id,
+
                   name:
                     item.name,
+
                   description:
                     item.description,
+
                   rate:
                     String(
                       item.rate
                     ),
+
                   tax_id:
                     item.tax_id ||
-                    defaultTax?.tax_id ||
+                    defaultTax
+                      ?.tax_id ||
                     "",
                 }
               : line
@@ -486,13 +536,20 @@ export default function EditEstimateForm({
     if (!search) {
       return items
         .slice()
-        .sort((a, b) =>
-          a.name.localeCompare(
-            b.name,
-            "fr"
-          )
+        .sort(
+          (
+            a,
+            b
+          ) =>
+            a.name.localeCompare(
+              b.name,
+              "fr"
+            )
         )
-        .slice(0, 8);
+        .slice(
+          0,
+          8
+        );
     }
 
     const startsWith =
@@ -552,15 +609,20 @@ export default function EditEstimateForm({
       ...startsWith,
       ...containsInName,
       ...containsInDescription,
-    ].slice(0, 8);
+    ].slice(
+      0,
+      8
+    );
   }
 
   function addLine() {
     setLines(
       (current) => [
         ...current,
+
         createLine(
-          defaultTax?.tax_id
+          defaultTax
+            ?.tax_id
         ),
       ]
     );
@@ -572,14 +634,16 @@ export default function EditEstimateForm({
     setLines(
       (current) => {
         if (
-          current.length === 1
+          current.length ===
+          1
         ) {
           return current;
         }
 
         return current.filter(
           (line) =>
-            line.id !== id
+            line.id !==
+            id
         );
       }
     );
@@ -599,7 +663,20 @@ export default function EditEstimateForm({
   ) {
     event.preventDefault();
 
-    setErrorMessage(null);
+    setErrorMessage(
+      null
+    );
+
+    if (
+      !campaignObjective
+        .trim()
+    ) {
+      setErrorMessage(
+        "Précise l’objectif de la campagne."
+      );
+
+      return;
+    }
 
     const normalizedLines =
       lines.map(
@@ -614,11 +691,12 @@ export default function EditEstimateForm({
             | undefined;
 
           if (
-            discountValue > 0
+            discountValue >
+            0
           ) {
             discount =
               line.discount_mode ===
-              "percent"
+                "percent"
                 ? `${Math.round(
                     discountValue
                   )}%`
@@ -659,7 +737,10 @@ export default function EditEstimateForm({
 
     const invalidLine =
       normalizedLines.some(
-        (line, index) => {
+        (
+          line,
+          index
+        ) => {
           const sourceLine =
             lines[index];
 
@@ -671,23 +752,29 @@ export default function EditEstimateForm({
 
           if (
             !line.name ||
-            line.quantity <= 0 ||
-            line.rate < 0 ||
-            discountValue < 0
+            line.quantity <=
+              0 ||
+            line.rate <
+              0 ||
+            discountValue <
+              0
           ) {
             return true;
           }
 
           if (
-            sourceLine.discount_mode ===
+            sourceLine
+              .discount_mode ===
               "percent" &&
-            discountValue > 100
+            discountValue >
+              100
           ) {
             return true;
           }
 
           if (
-            sourceLine.discount_mode ===
+            sourceLine
+              .discount_mode ===
               "amount" &&
             discountValue >
               calculateLineGross(
@@ -709,7 +796,9 @@ export default function EditEstimateForm({
       return;
     }
 
-    setSubmitting(true);
+    setSubmitting(
+      true
+    );
 
     try {
       const response =
@@ -728,6 +817,9 @@ export default function EditEstimateForm({
               JSON.stringify({
                 customer_id:
                   estimate.customer_id,
+
+                campaign_objective:
+                  campaignObjective.trim(),
 
                 date:
                   date ||
@@ -759,6 +851,7 @@ export default function EditEstimateForm({
         (await response.json()) as {
           success?: boolean;
           error?: string;
+          warning?: string;
         };
 
       if (
@@ -783,7 +876,9 @@ export default function EditEstimateForm({
           : "Impossible de modifier le devis."
       );
     } finally {
-      setSubmitting(false);
+      setSubmitting(
+        false
+      );
     }
   }
 
@@ -836,12 +931,16 @@ export default function EditEstimateForm({
             <input
               id="date"
               type="date"
-              value={date}
+              value={
+                date
+              }
               onChange={(
                 event
               ) =>
                 setDate(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
               className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -866,7 +965,9 @@ export default function EditEstimateForm({
                 event
               ) =>
                 setExpiryDate(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
               className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -890,13 +991,51 @@ export default function EditEstimateForm({
                 event
               ) =>
                 setReferenceNumber(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
               placeholder="Optionnel"
               className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
+        </div>
+
+        <div className="mt-5">
+          <label
+            htmlFor="campaign-objective"
+            className="mb-2 block text-sm font-semibold text-slate-700"
+          >
+            Objectif de la campagne
+          </label>
+
+          <textarea
+            id="campaign-objective"
+            rows={3}
+            required
+            value={
+              campaignObjective
+            }
+            onChange={(
+              event
+            ) =>
+              setCampaignObjective(
+                event
+                  .target
+                  .value
+              )
+            }
+            placeholder="Ex. : Promouvoir les Journées Portes Ouvertes et générer du trafic en concession."
+            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            Information interne
+            LBMedia Office utilisée
+            pour personnaliser la
+            présentation commerciale.
+          </p>
         </div>
       </section>
 
@@ -916,7 +1055,9 @@ export default function EditEstimateForm({
 
           <button
             type="button"
-            onClick={addLine}
+            onClick={
+              addLine
+            }
             className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
           >
             + Ajouter une ligne
@@ -1319,12 +1460,16 @@ export default function EditEstimateForm({
               <textarea
                 id="notes"
                 rows={4}
-                value={notes}
+                value={
+                  notes
+                }
                 onChange={(
                   event
                 ) =>
                   setNotes(
-                    event.target.value
+                    event
+                      .target
+                      .value
                   )
                 }
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -1342,12 +1487,16 @@ export default function EditEstimateForm({
               <textarea
                 id="terms"
                 rows={5}
-                value={terms}
+                value={
+                  terms
+                }
                 onChange={(
                   event
                 ) =>
                   setTerms(
-                    event.target.value
+                    event
+                      .target
+                      .value
                   )
                 }
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -1457,8 +1606,9 @@ export default function EditEstimateForm({
           </button>
 
           <p className="mt-3 text-center text-xs text-slate-400">
-            Modification directe
-            dans Zoho Books
+            Devis synchronisé avec
+            Zoho Books · Objectif
+            conservé dans Office
           </p>
         </div>
       </section>

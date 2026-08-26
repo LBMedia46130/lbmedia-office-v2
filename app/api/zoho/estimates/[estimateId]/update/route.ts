@@ -8,8 +8,14 @@ import {
   type CreateZohoEstimateLineItemInput,
 } from "@/lib/zoho-books";
 
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
+
 type UpdateEstimateRequestBody = {
   customer_id: string;
+
+  campaign_objective: string;
 
   date?: string;
   expiry_date?: string;
@@ -30,7 +36,8 @@ function cleanOptionalString(
   value: unknown
 ): string | undefined {
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
     return undefined;
   }
@@ -43,12 +50,27 @@ function cleanOptionalString(
     : undefined;
 }
 
+function cleanRequiredString(
+  value: unknown
+): string {
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return "";
+  }
+
+  return value.trim();
+}
+
 export async function PUT(
   request: NextRequest,
   context: RouteContext
 ) {
   try {
-    const { estimateId } =
+    const {
+      estimateId,
+    } =
       await context.params;
 
     if (!estimateId) {
@@ -84,11 +106,32 @@ export async function PUT(
       );
     }
 
+    const campaignObjective =
+      cleanRequiredString(
+        body.campaign_objective
+      );
+
+    if (
+      !campaignObjective
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "L’objectif de la campagne est obligatoire.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     if (
       !Array.isArray(
         body.line_items
       ) ||
-      body.line_items.length === 0
+      body.line_items.length ===
+        0
     ) {
       return NextResponse.json(
         {
@@ -139,8 +182,78 @@ export async function PUT(
         }
       );
 
+    const {
+      data:
+        company,
+      error:
+        companyError,
+    } = await supabaseAdmin
+      .from(
+        "companies"
+      )
+      .select("id")
+      .eq(
+        "zoho_contact_id",
+        body.customer_id
+      )
+      .maybeSingle();
+
+    if (
+      companyError
+    ) {
+      console.error(
+        "Impossible de retrouver l’entreprise Office du devis :",
+        companyError
+      );
+    }
+
+    const {
+      error:
+        contextError,
+    } = await supabaseAdmin
+      .from(
+        "estimate_campaign_contexts"
+      )
+      .upsert(
+        {
+          zoho_estimate_id:
+            estimateId,
+
+          company_id:
+            company?.id ??
+            null,
+
+          campaign_objective:
+            campaignObjective,
+
+          updated_at:
+            new Date().toISOString(),
+        },
+        {
+          onConflict:
+            "zoho_estimate_id",
+        }
+      );
+
+    let warning:
+      string | undefined;
+
+    if (
+      contextError
+    ) {
+      console.error(
+        "Impossible d’enregistrer l’objectif de campagne :",
+        contextError
+      );
+
+      warning =
+        "Le devis a été modifié dans Zoho Books, mais l’objectif de campagne n’a pas pu être enregistré dans Office.";
+    }
+
     return NextResponse.json({
       success: true,
+
+      warning,
 
       estimate: {
         estimate_id:
