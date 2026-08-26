@@ -150,7 +150,31 @@ async function getCompanyLogoUrl(
       ? data.logo_url.trim()
       : "";
 
-  return logoUrl || null;
+  if (!logoUrl) {
+    return null;
+  }
+
+  const isStoredInCompanyLogos =
+    logoUrl.includes(
+      "/storage/v1/object/public/company-logos/"
+    );
+
+  if (!isStoredInCompanyLogos) {
+    console.warn(
+      "Logo client ignoré pour Gamma car il n'est pas stocké dans company-logos :",
+      {
+        companyId:
+          data?.id,
+        companyName:
+          data?.name,
+        logoUrl,
+      }
+    );
+
+    return null;
+  }
+
+  return logoUrl;
 }
 
 function buildGammaPrompt(
