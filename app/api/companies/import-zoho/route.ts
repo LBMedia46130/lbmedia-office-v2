@@ -195,32 +195,6 @@ function isValidLuhn(
   );
 }
 
-function isLikelySiret(
-  value: unknown
-): value is string {
-  const siret =
-    normalizeSiret(
-      value
-    );
-
-  if (!siret) {
-    return false;
-  }
-
-  /*
-   * La grande majorité des SIRET
-   * suivent l'algorithme de Luhn.
-   *
-   * On accepte également un numéro
-   * de 14 chiffres trouvé dans un
-   * champ explicitement nommé SIRET,
-   * même si Luhn ne passe pas.
-   */
-  return isValidLuhn(
-    siret
-  );
-}
-
 function getSiretFromNamedValue(
   key: unknown,
   value: unknown
@@ -255,10 +229,6 @@ function getSiretFromCustomFields(
     return null;
   }
 
-  /*
-   * Première passe :
-   * champ explicitement nommé SIRET.
-   */
   for (
     const field of
     customFields
@@ -308,15 +278,6 @@ function getSiretFromCustomFields(
     }
   }
 
-  /*
-   * Deuxième passe :
-   * Zoho peut renvoyer le champ
-   * personnalisé sans son label
-   * exploitable.
-   *
-   * On recherche alors une valeur
-   * de 14 chiffres compatible SIRET.
-   */
   for (
     const field of
     customFields
@@ -476,10 +437,6 @@ function getZohoSiret(
   contact:
     ZohoContactWithDetails
 ): string | null {
-  /*
-   * 1. Format officiel Zoho :
-   * custom_fields.
-   */
   const fromCustomFields =
     getSiretFromCustomFields(
       contact.custom_fields
@@ -491,10 +448,6 @@ function getZohoSiret(
     return fromCustomFields;
   }
 
-  /*
-   * 2. Variante fréquemment exposée
-   * par les API Zoho.
-   */
   const fromHash =
     getSiretFromCustomFieldHash(
       contact.custom_field_hash
@@ -506,10 +459,6 @@ function getZohoSiret(
     return fromHash;
   }
 
-  /*
-   * 3. Propriété à plat :
-   * cf_siret, siret, etc.
-   */
   for (
     const [
       key,
@@ -531,12 +480,6 @@ function getZohoSiret(
     }
   }
 
-  /*
-   * 4. Dernière sécurité :
-   * recherche récursive d'une
-   * propriété explicitement liée
-   * au SIRET.
-   */
   return findSiretRecursively(
     contact
   );
@@ -620,7 +563,6 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-
           message:
             "Identifiant du client Zoho manquant.",
         },
@@ -779,7 +721,6 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-
           message:
             "Le contact Zoho ne possède aucun nom exploitable.",
         },
@@ -892,14 +833,6 @@ export async function POST(
           zoho_contact_id:
             contact.contact_id,
 
-          /*
-           * Important :
-           *
-           * lorsqu'on restaure une fiche,
-           * on ne remet plus silencieusement
-           * une ancienne donnée légale que
-           * Zoho ne nous renvoie pas.
-           */
           siret:
             zohoSiret,
 
@@ -1004,14 +937,28 @@ export async function POST(
       });
     }
 
+    /*
+     * IMPORTANT :
+     *
+     * On ne bloque plus l'import
+     * lorsqu'une autre entreprise active
+     * utilise la même adresse e-mail.
+     *
+     * Une adresse professionnelle peut
+     * être commune à plusieurs
+     * établissements / sociétés.
+     *
+     * L'identifiant Zoho reste la clé
+     * principale de rapprochement.
+     */
     if (
       email
     ) {
       const {
         data:
-          possibleDuplicates,
+          companiesWithSameEmail,
         error:
-          duplicateError,
+          emailLookupError,
       } = await supabaseAdmin
         .from(
           "companies"
@@ -1031,37 +978,43 @@ export async function POST(
         );
 
       if (
-        duplicateError
+        emailLookupError
       ) {
-        throw new Error(
-          `Impossible de vérifier les doublons : ${duplicateError.message}`
+        console.warn(
+          "Impossible de vérifier les autres entreprises utilisant le même email :",
+          emailLookupError.message
         );
-      }
-
-      const activeDuplicate =
-        (
-          possibleDuplicates ??
-          []
-        ).find(
-          (company) =>
-            company.is_active
-        );
-
-      if (
-        activeDuplicate
+      } else if (
+        companiesWithSameEmail &&
+        companiesWithSameEmail.length >
+          0
       ) {
-        return NextResponse.json(
+        console.info(
+          "Adresse email déjà utilisée par d'autres fiches Office",
           {
-            success: false,
+            email,
 
-            companyId:
-              activeDuplicate.id,
+            currentZohoContactId:
+              contact.contact_id,
 
-            message:
-              `Une entreprise Office active utilise déjà l’adresse ${email}. Vérifie cette fiche avant d’importer le client Zoho.`,
-          },
-          {
-            status: 409,
+            companies:
+              companiesWithSameEmail.map(
+                (
+                  company
+                ) => ({
+                  id:
+                    company.id,
+
+                  name:
+                    company.name,
+
+                  isActive:
+                    company.is_active,
+
+                  zohoContactId:
+                    company.zoho_contact_id,
+                })
+              ),
           }
         );
       }
