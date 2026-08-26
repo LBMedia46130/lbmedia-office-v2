@@ -13,6 +13,10 @@ import {
   type ZohoEstimate,
 } from "@/lib/zoho-books";
 
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
+
 export const dynamic =
   "force-dynamic";
 
@@ -106,8 +110,52 @@ function formatDiscount(
   return "Aucune";
 }
 
+async function getCompanyLogoUrl(
+  zohoContactId: string
+) {
+  if (!zohoContactId) {
+    return null;
+  }
+
+  const {
+    data,
+    error,
+  } = await supabaseAdmin
+    .from("companies")
+    .select(
+      `
+        id,
+        name,
+        logo_url
+      `
+    )
+    .eq(
+      "zoho_contact_id",
+      zohoContactId
+    )
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Erreur récupération logo entreprise :",
+      error
+    );
+
+    return null;
+  }
+
+  const logoUrl =
+    typeof data?.logo_url ===
+      "string"
+      ? data.logo_url.trim()
+      : "";
+
+  return logoUrl || null;
+}
+
 function buildGammaPrompt(
-  estimate: ZohoEstimate
+  estimate: ZohoEstimate,
+  clientLogoUrl: string | null
 ) {
   const currency =
     estimate.currency_code ||
@@ -166,6 +214,36 @@ function buildGammaPrompt(
           .join("\n\n")
       : "Aucune prestation détaillée.";
 
+  const clientLogoInstructions =
+    clientLogoUrl
+      ? `
+LOGO CLIENT :
+Le logo officiel du client est disponible à cette URL :
+${clientLogoUrl}
+
+RÈGLES POUR LE LOGO CLIENT :
+- utiliser cette image comme logo officiel du client ;
+- remplacer le placeholder ou emplacement "logo client" du template par cette image ;
+- ne pas inventer un autre logo ;
+- ne pas utiliser une autre image à la place ;
+- conserver les proportions du logo ;
+- ne pas étirer ni déformer le logo ;
+- ne pas rogner le logo ;
+- le positionner proprement dans la zone prévue sur la couverture ;
+- ne pas afficher l'URL du logo dans la présentation ;
+- ne pas afficher de texte "Logo client" ou de placeholder si le logo est disponible.
+`
+      : `
+LOGO CLIENT :
+Aucun logo client fiable n'est disponible dans la fiche entreprise.
+
+RÈGLES :
+- ne pas inventer de logo ;
+- ne pas générer de faux logo ;
+- ne pas utiliser une image générique à la place ;
+- supprimer tout placeholder du type "Logo client" si aucun logo n'est disponible.
+`;
+
   return `
 Créer une proposition commerciale Radio LBMedia à partir du template existant.
 
@@ -195,6 +273,8 @@ ${LBMEDIA_CONTACT.website}
 Ces coordonnées sont des données fixes fournies par LBMedia.
 Elles doivent être reproduites exactement.
 Ne pas les résumer, les reformuler, les masquer ou les remplacer par des placeholders.
+
+${clientLogoInstructions}
 
 AUDIENCES RFM :
 - Conserver les informations générales RFM Lot déjà présentes dans le template.
@@ -267,15 +347,20 @@ Le document doit pouvoir être envoyé directement au client avec le devis Zoho 
 
 Avant de finaliser la présentation, vérifier impérativement que :
 1. le logo officiel LBMedia est toujours présent ;
-2. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
-3. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
-4. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
-5. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
-6. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
-7. les données d'audience RFM Lot du template sont conservées ;
-8. les montants correspondent exactement au devis ;
-9. aucune prestation absente du devis n'a été ajoutée ;
-10. aucun compte rendu après diffusion n'a été ajouté.
+2. ${
+    clientLogoUrl
+      ? "le logo officiel du client fourni par URL est bien présent sur la couverture"
+      : "aucun faux logo client n'a été ajouté"
+  } ;
+3. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
+4. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
+5. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
+6. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
+7. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
+8. les données d'audience RFM Lot du template sont conservées ;
+9. les montants correspondent exactement au devis ;
+10. aucune prestation absente du devis n'a été ajoutée ;
+11. aucun compte rendu après diffusion n'a été ajouté.
 `.trim();
 }
 
@@ -317,9 +402,15 @@ export async function POST(
         normalizedEstimateId
       );
 
+    const clientLogoUrl =
+      await getCompanyLogoUrl(
+        estimate.customer_id
+      );
+
     const prompt =
       buildGammaPrompt(
-        estimate
+        estimate,
+        clientLogoUrl
       );
 
     const generation =
@@ -332,6 +423,10 @@ export async function POST(
         generationId:
           generation.generationId,
         status: "pending",
+        clientLogoFound:
+          Boolean(
+            clientLogoUrl
+          ),
       }
     );
   } catch (error) {
