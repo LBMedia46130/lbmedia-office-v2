@@ -33,6 +33,13 @@ const LBMEDIA_CONTACT = {
   website: "www.lbmedia.fr",
 } as const;
 
+type CampaignContext = {
+  objective: string | null;
+  territory: string;
+  hasFigeac: boolean;
+  hasSaintCere: boolean;
+};
+
 function formatCurrency(
   value: number | undefined,
   currency = "EUR"
@@ -110,6 +117,164 @@ function formatDiscount(
   return "Aucune";
 }
 
+function normalizeForDetection(
+  value: string
+) {
+  return value
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase();
+}
+
+function detectRadioTerritory(
+  estimate: ZohoEstimate
+) {
+  const searchableText =
+    (
+      estimate.line_items ??
+      []
+    )
+      .map((line) =>
+        [
+          line.name,
+          line.description,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      )
+      .join(" ");
+
+  const normalized =
+    normalizeForDetection(
+      searchableText
+    );
+
+  const hasFigeac =
+    normalized.includes(
+      "rfm figeac"
+    );
+
+  const hasSaintCere =
+    normalized.includes(
+      "rfm saint cere"
+    ) ||
+    normalized.includes(
+      "rfm st cere"
+    ) ||
+    normalized.includes(
+      "rfm st-cere"
+    ) ||
+    normalized.includes(
+      "rfm saint-cere"
+    );
+
+  if (
+    hasFigeac &&
+    hasSaintCere
+  ) {
+    return {
+      territory:
+        "Nord et Sud du Lot — couverture combinée des zones de diffusion RFM Saint-Céré et RFM Figeac",
+      hasFigeac,
+      hasSaintCere,
+    };
+  }
+
+  if (hasFigeac) {
+    return {
+      territory:
+        "Sud du Lot — zone de diffusion RFM Figeac",
+      hasFigeac,
+      hasSaintCere,
+    };
+  }
+
+  if (hasSaintCere) {
+    return {
+      territory:
+        "Nord du Lot — zone de diffusion RFM Saint-Céré",
+      hasFigeac,
+      hasSaintCere,
+    };
+  }
+
+  return {
+    territory:
+      "Territoire défini par les prestations du devis",
+    hasFigeac,
+    hasSaintCere,
+  };
+}
+
+async function getCampaignObjective(
+  zohoEstimateId: string
+) {
+  const {
+    data,
+    error,
+  } = await supabaseAdmin
+    .from(
+      "estimate_campaign_contexts"
+    )
+    .select(
+      "campaign_objective"
+    )
+    .eq(
+      "zoho_estimate_id",
+      zohoEstimateId
+    )
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Erreur récupération objectif de campagne :",
+      error
+    );
+
+    return null;
+  }
+
+  const objective =
+    typeof data?.campaign_objective ===
+      "string"
+      ? data.campaign_objective.trim()
+      : "";
+
+  return objective || null;
+}
+
+async function getCampaignContext(
+  estimate: ZohoEstimate
+): Promise<CampaignContext> {
+  const [
+    objective,
+    territory,
+  ] = await Promise.all([
+    getCampaignObjective(
+      estimate.estimate_id
+    ),
+
+    Promise.resolve(
+      detectRadioTerritory(
+        estimate
+      )
+    ),
+  ]);
+
+  return {
+    objective,
+    territory:
+      territory.territory,
+    hasFigeac:
+      territory.hasFigeac,
+    hasSaintCere:
+      territory.hasSaintCere,
+  };
+}
+
 async function getCompanyLogoUrl(
   zohoContactId: string
 ) {
@@ -179,7 +344,8 @@ async function getCompanyLogoUrl(
 
 function buildGammaPrompt(
   estimate: ZohoEstimate,
-  clientLogoUrl: string | null
+  clientLogoUrl: string | null,
+  campaignContext: CampaignContext
 ) {
   const currency =
     estimate.currency_code ||
@@ -268,6 +434,62 @@ RÈGLES :
 - supprimer tout placeholder du type "Logo client" si aucun logo n'est disponible.
 `;
 
+  const campaignObjectiveInstructions =
+    campaignContext.objective
+      ? `
+OBJECTIF DE LA CAMPAGNE :
+${campaignContext.objective}
+
+RÈGLES IMPÉRATIVES :
+- cet objectif a été renseigné manuellement par LBMedia dans Office ;
+- il constitue la référence éditoriale principale pour expliquer les enjeux de la campagne ;
+- le reprendre clairement et explicitement dans la page "Enjeux" ;
+- adapter le paragraphe "Pourquoi ce dispositif ?" à cet objectif précis ;
+- ne pas remplacer cet objectif par un objectif marketing générique ;
+- ne pas transformer automatiquement l'objectif en "développer la notoriété" ;
+- ne pas inventer d'autre objectif ;
+- les bénéfices du dispositif doivent être expliqués en fonction de cet objectif.
+`
+      : `
+OBJECTIF DE LA CAMPAGNE :
+Aucun objectif spécifique n'a été renseigné dans LBMedia Office.
+
+RÈGLE :
+- rester factuel à partir des prestations du devis ;
+- ne pas inventer un objectif commercial précis qui ne figure pas dans les données disponibles.
+`;
+
+  const territoryInstructions = `
+TERRITOIRE DE LA CAMPAGNE :
+${campaignContext.territory}
+
+DÉTECTION DES ANTENNES :
+- RFM Figeac : ${
+    campaignContext.hasFigeac
+      ? "OUI"
+      : "NON"
+  }
+- RFM Saint-Céré : ${
+    campaignContext.hasSaintCere
+      ? "OUI"
+      : "NON"
+  }
+
+RÈGLES TERRITOIRE :
+- utiliser exactement le territoire indiqué ci-dessus comme référence ;
+- RFM Figeac correspond à la zone Sud du Lot ;
+- RFM Saint-Céré correspond à la zone Nord du Lot ;
+- si les deux antennes sont présentes, présenter une couverture combinée Nord + Sud du Lot ;
+- ne pas réduire RFM Figeac à la seule ville ou agglomération de Figeac ;
+- ne pas réduire RFM Saint-Céré à la seule ville ou agglomération de Saint-Céré ;
+- ne pas inventer les expressions "bassin de Figeac", "bassin de Saint-Céré" ou autre territoire non fourni ;
+- la carte des zones de diffusion présente dans le template Gamma doit servir de représentation visuelle du territoire ;
+- conserver cette carte ;
+- ne pas la remplacer par une carte générée ;
+- ne pas inventer de nouvelles limites géographiques ;
+- le texte doit être cohérent avec la ou les zones réellement sélectionnées dans le devis.
+`;
+
   return `
 Créer une proposition commerciale Radio LBMedia à partir du template existant.
 
@@ -300,6 +522,20 @@ Ne pas les résumer, les reformuler, les masquer ou les remplacer par des placeh
 
 ${clientLogoInstructions}
 
+${campaignObjectiveInstructions}
+
+${territoryInstructions}
+
+PAGE "ENJEUX" :
+Cette page doit être personnalisée en priorité à partir de l'objectif de campagne et du territoire fournis ci-dessus.
+
+Elle doit permettre au client de comprendre immédiatement :
+- ce que la campagne cherche concrètement à obtenir ;
+- pourquoi le dispositif radio proposé répond à cet objectif ;
+- sur quel territoire la campagne sera diffusée.
+
+Ne pas utiliser un discours générique de notoriété si l'objectif fourni concerne une opération ponctuelle, un événement, des portes ouvertes, une promotion, une ouverture, un recrutement ou toute autre finalité spécifique.
+
 AUDIENCES RFM :
 - Conserver les informations générales RFM Lot déjà présentes dans le template.
 - Conserver exactement les données d'audience RFM Lot présentes dans le template.
@@ -315,7 +551,9 @@ PERSONNALISATION :
 - La présentation est destinée à accompagner le devis officiel Zoho Books.
 
 ÉLÉMENTS À NE PAS AJOUTER :
-- Ne pas ajouter de compte rendu après diffusion.
+- Ne jamais ajouter de compte rendu après diffusion.
+- Ne jamais ajouter de bilan post-campagne.
+- Ne jamais ajouter de reporting après diffusion.
 - Ne pas ajouter de prestation qui ne figure pas dans le devis.
 - Ne pas ajouter de prix ou de remise qui ne figure pas dans les données du devis.
 - Ne pas ajouter d'engagement contractuel absent du devis.
@@ -376,15 +614,22 @@ Avant de finaliser la présentation, vérifier impérativement que :
       ? "le logo officiel du client fourni par URL est bien présent sur la couverture"
       : "aucun faux logo client n'a été ajouté"
   } ;
-3. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
-4. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
-5. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
-6. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
-7. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
-8. les données d'audience RFM Lot du template sont conservées ;
-9. les montants correspondent exactement au devis ;
-10. aucune prestation absente du devis n'a été ajoutée ;
-11. aucun compte rendu après diffusion n'a été ajouté.
+3. l'objectif de campagne ${
+    campaignContext.objective
+      ? `"${campaignContext.objective}" est clairement identifiable sur la page Enjeux`
+      : "n'a pas été inventé"
+  } ;
+4. le territoire affiché est cohérent avec "${campaignContext.territory}" ;
+5. la carte des zones de diffusion du template est conservée ;
+6. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
+7. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
+8. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
+9. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
+10. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
+11. les données d'audience RFM Lot du template sont conservées ;
+12. les montants correspondent exactement au devis ;
+13. aucune prestation absente du devis n'a été ajoutée ;
+14. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté.
 `.trim();
 }
 
@@ -426,15 +671,25 @@ export async function POST(
         normalizedEstimateId
       );
 
-    const clientLogoUrl =
-      await getCompanyLogoUrl(
-        estimate.customer_id
-      );
+    const [
+      clientLogoUrl,
+      campaignContext,
+    ] =
+      await Promise.all([
+        getCompanyLogoUrl(
+          estimate.customer_id
+        ),
+
+        getCampaignContext(
+          estimate
+        ),
+      ]);
 
     const prompt =
       buildGammaPrompt(
         estimate,
-        clientLogoUrl
+        clientLogoUrl,
+        campaignContext
       );
 
     const generation =
@@ -446,11 +701,21 @@ export async function POST(
       {
         generationId:
           generation.generationId,
+
         status: "pending",
+
         clientLogoFound:
           Boolean(
             clientLogoUrl
           ),
+
+        campaignObjectiveFound:
+          Boolean(
+            campaignContext.objective
+          ),
+
+        territory:
+          campaignContext.territory,
       }
     );
   } catch (error) {
