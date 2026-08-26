@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -10,43 +12,225 @@ type GenerateGammaPresentationButtonProps = {
   customerName: string;
 };
 
+type GammaStatus =
+  | "idle"
+  | "starting"
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed";
+
 type GammaGenerationResponse = {
   generationId?: string;
-  gammaUrl?: string;
-  exportUrl?: string;
-  error?: string;
+  status?: string;
+  gammaUrl?: string | null;
+  exportUrl?: string | null;
+  error?: string | null;
 };
+
+const POLLING_INTERVAL =
+  5000;
 
 export default function GenerateGammaPresentationButton({
   estimateId,
   estimateNumber,
   customerName,
 }: GenerateGammaPresentationButtonProps) {
-  const [isLoading, setIsLoading] =
-    useState(false);
+  const [
+    generationId,
+    setGenerationId,
+  ] = useState<
+    string | null
+  >(null);
 
-  const [error, setError] =
-    useState<string | null>(
-      null
+  const [
+    status,
+    setStatus,
+  ] =
+    useState<GammaStatus>(
+      "idle"
     );
 
-  const [gammaUrl, setGammaUrl] =
-    useState<string | null>(
-      null
-    );
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
+  >(null);
 
-  const [exportUrl, setExportUrl] =
-    useState<string | null>(
-      null
-    );
+  const [
+    gammaUrl,
+    setGammaUrl,
+  ] = useState<
+    string | null
+  >(null);
 
-  async function handleGenerate() {
-    if (isLoading) {
+  const [
+    exportUrl,
+    setExportUrl,
+  ] = useState<
+    string | null
+  >(null);
+
+  const pollingInProgress =
+    useRef(false);
+
+  async function checkGeneration(
+    id: string
+  ) {
+    if (
+      pollingInProgress.current
+    ) {
       return;
     }
 
-    setIsLoading(true);
+    pollingInProgress.current =
+      true;
+
+    try {
+      const response =
+        await fetch(
+          `/api/zoho/estimates/${encodeURIComponent(
+            estimateId
+          )}/gamma?generationId=${encodeURIComponent(
+            id
+          )}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+      const data =
+        (await response.json()) as GammaGenerationResponse;
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Impossible de vérifier la génération."
+        );
+      }
+
+      if (
+        data.status ===
+        "completed"
+      ) {
+        setGammaUrl(
+          data.gammaUrl ??
+            null
+        );
+
+        setExportUrl(
+          data.exportUrl ??
+            null
+        );
+
+        setStatus(
+          "completed"
+        );
+
+        return;
+      }
+
+      if (
+        data.status ===
+        "failed"
+      ) {
+        setStatus(
+          "failed"
+        );
+
+        setError(
+          data.error ||
+            "La génération Gamma a échoué."
+        );
+
+        return;
+      }
+
+      if (
+        data.status ===
+        "processing"
+      ) {
+        setStatus(
+          "processing"
+        );
+      } else {
+        setStatus(
+          "pending"
+        );
+      }
+    } catch (
+      caughtError
+    ) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Impossible de vérifier la génération."
+      );
+
+      setStatus(
+        "failed"
+      );
+    } finally {
+      pollingInProgress.current =
+        false;
+    }
+  }
+
+  useEffect(() => {
+    if (
+      !generationId ||
+      (status !==
+        "pending" &&
+        status !==
+          "processing")
+    ) {
+      return;
+    }
+
+    const timer =
+      window.setInterval(
+        () => {
+          void checkGeneration(
+            generationId
+          );
+        },
+        POLLING_INTERVAL
+      );
+
+    return () => {
+      window.clearInterval(
+        timer
+      );
+    };
+  }, [
+    generationId,
+    status,
+  ]);
+
+  async function handleGenerate() {
+    if (
+      status ===
+        "starting" ||
+      status ===
+        "pending" ||
+      status ===
+        "processing"
+    ) {
+      return;
+    }
+
+    setStatus(
+      "starting"
+    );
+
     setError(null);
+    setGammaUrl(null);
+    setExportUrl(null);
+    setGenerationId(
+      null
+    );
 
     try {
       const response =
@@ -69,44 +253,59 @@ export default function GenerateGammaPresentationButton({
       if (!response.ok) {
         throw new Error(
           data.error ||
-            "Impossible de générer la présentation."
-        );
-      }
-
-      if (data.gammaUrl) {
-        setGammaUrl(
-          data.gammaUrl
-        );
-      }
-
-      if (data.exportUrl) {
-        setExportUrl(
-          data.exportUrl
+            "Impossible de lancer la génération."
         );
       }
 
       if (
-        !data.gammaUrl &&
-        !data.exportUrl
+        !data.generationId
       ) {
         throw new Error(
-          "Gamma a terminé la génération mais aucune présentation n'a été retournée."
+          "Gamma n'a pas retourné d'identifiant de génération."
         );
       }
-    } catch (caughtError) {
+
+      setGenerationId(
+        data.generationId
+      );
+
+      setStatus(
+        "pending"
+      );
+
+      /*
+       * Premier contrôle immédiat.
+       * Les suivants seront effectués
+       * automatiquement toutes les
+       * 5 secondes.
+       */
+      void checkGeneration(
+        data.generationId
+      );
+    } catch (
+      caughtError
+    ) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Une erreur est survenue pendant la génération."
+          : "Une erreur est survenue pendant le lancement."
       );
-    } finally {
-      setIsLoading(false);
+
+      setStatus(
+        "failed"
+      );
     }
   }
 
+  const isGenerating =
+    status === "starting" ||
+    status === "pending" ||
+    status ===
+      "processing";
+
   if (
-    gammaUrl ||
-    exportUrl
+    status ===
+    "completed"
   ) {
     return (
       <div className="space-y-3">
@@ -116,7 +315,9 @@ export default function GenerateGammaPresentationButton({
           </p>
 
           <p className="mt-1 text-xs leading-5 text-emerald-700">
-            {customerName} · Devis{" "}
+            {customerName}
+            {" · "}
+            Devis{" "}
             {estimateNumber}
           </p>
         </div>
@@ -124,7 +325,9 @@ export default function GenerateGammaPresentationButton({
         <div className="flex flex-col gap-2">
           {gammaUrl ? (
             <a
-              href={gammaUrl}
+              href={
+                gammaUrl
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -135,7 +338,9 @@ export default function GenerateGammaPresentationButton({
 
           {exportUrl ? (
             <a
-              href={exportUrl}
+              href={
+                exportUrl
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -149,22 +354,11 @@ export default function GenerateGammaPresentationButton({
             onClick={
               handleGenerate
             }
-            disabled={
-              isLoading
-            }
-            className="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100"
           >
-            {isLoading
-              ? "Régénération..."
-              : "Régénérer"}
+            Régénérer
           </button>
         </div>
-
-        {error ? (
-          <p className="text-sm leading-5 text-red-600">
-            {error}
-          </p>
-        ) : null}
       </div>
     );
   }
@@ -177,13 +371,20 @@ export default function GenerateGammaPresentationButton({
           handleGenerate
         }
         disabled={
-          isLoading
+          isGenerating
         }
         className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
       >
-        {isLoading
-          ? "Génération en cours..."
-          : "Générer la présentation"}
+        {status ===
+        "starting"
+          ? "Lancement..."
+          : status ===
+              "processing"
+            ? "Gamma prépare la présentation..."
+            : status ===
+                "pending"
+              ? "Génération en cours..."
+              : "Générer la présentation"}
       </button>
 
       <p className="mt-3 text-xs leading-5 text-slate-400">
@@ -193,11 +394,37 @@ export default function GenerateGammaPresentationButton({
         {customerName}
       </p>
 
+      {isGenerating ? (
+        <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+          <p className="text-sm font-medium text-blue-700">
+            Génération Gamma en
+            cours…
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-blue-600">
+            Tu peux laisser cette
+            page ouverte. Office
+            vérifie automatiquement
+            l’avancement.
+          </p>
+        </div>
+      ) : null}
+
       {error ? (
         <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
           <p className="text-sm leading-5 text-red-700">
             {error}
           </p>
+
+          <button
+            type="button"
+            onClick={
+              handleGenerate
+            }
+            className="mt-2 text-sm font-semibold text-red-700 underline underline-offset-2"
+          >
+            Réessayer
+          </button>
         </div>
       ) : null}
     </div>

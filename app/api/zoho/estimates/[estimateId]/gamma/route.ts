@@ -1,4 +1,5 @@
 import {
+  NextRequest,
   NextResponse,
 } from "next/server";
 
@@ -14,9 +15,6 @@ import {
 
 export const dynamic =
   "force-dynamic";
-
-export const maxDuration =
-  60;
 
 type RouteContext = {
   params: Promise<{
@@ -83,18 +81,14 @@ function formatDiscount(
   if (
     typeof discount ===
       "number" &&
-    Number.isFinite(
-      discount
-    ) &&
+    Number.isFinite(discount) &&
     discount > 0
   ) {
     return `${discount} %`;
   }
 
   if (
-    Number(
-      discountAmount
-    ) > 0
+    Number(discountAmount) > 0
   ) {
     return formatCurrency(
       discountAmount,
@@ -158,15 +152,11 @@ function buildGammaPrompt(
                   currency
                 )}`,
               ]
-                .filter(
-                  Boolean
-                )
+                .filter(Boolean)
                 .join("\n");
             }
           )
-          .join(
-            "\n\n"
-          )
+          .join("\n\n")
       : "Aucune prestation détaillée.";
 
   return `
@@ -233,21 +223,14 @@ Le document doit pouvoir être envoyé directement au client avec le devis Zoho 
 `.trim();
 }
 
-function wait(
-  milliseconds: number
-) {
-  return new Promise<void>(
-    (resolve) => {
-      setTimeout(
-        resolve,
-        milliseconds
-      );
-    }
-  );
-}
-
+/*
+ * POST
+ *
+ * Lance seulement la génération Gamma.
+ * On n'attend plus ici qu'elle soit terminée.
+ */
 export async function POST(
-  _request: Request,
+  _request: NextRequest,
   context: RouteContext
 ) {
   try {
@@ -287,80 +270,16 @@ export async function POST(
         prompt
       );
 
-    const generationId =
-      generation.generationId;
-
-    /*
-     * Gamma travaille de manière asynchrone.
-     * On attend ici la fin de la génération
-     * pour que le bouton puisse recevoir
-     * directement les liens Gamma et PDF.
-     *
-     * 20 tentatives x 2 secondes =
-     * environ 40 secondes maximum.
-     */
-    for (
-      let attempt = 0;
-      attempt < 20;
-      attempt += 1
-    ) {
-      await wait(2000);
-
-      const status =
-        await getGammaGeneration(
-          generationId
-        );
-
-      if (
-        status.status ===
-        "completed"
-      ) {
-        if (
-          !status.gammaUrl &&
-          !status.exportUrl
-        ) {
-          throw new Error(
-            "Gamma indique que la génération est terminée mais n'a retourné aucun lien."
-          );
-        }
-
-        return NextResponse.json(
-          {
-            generationId,
-            gammaUrl:
-              status.gammaUrl ??
-              null,
-            exportUrl:
-              status.exportUrl ??
-              null,
-          }
-        );
-      }
-
-      if (
-        status.status ===
-        "failed"
-      ) {
-        throw new Error(
-          status.error ||
-            "La génération Gamma a échoué."
-        );
-      }
-    }
-
     return NextResponse.json(
       {
-        error:
-          "La présentation est toujours en cours de génération. Gamma a dépassé le délai d'attente d'Office.",
-        generationId,
-      },
-      {
-        status: 504,
+        generationId:
+          generation.generationId,
+        status: "pending",
       }
     );
   } catch (error) {
     console.error(
-      "Erreur génération Gamma depuis devis Zoho :",
+      "Erreur lancement génération Gamma :",
       error
     );
 
@@ -369,7 +288,74 @@ export async function POST(
         error:
           error instanceof Error
             ? error.message
-            : "Impossible de générer la présentation Gamma.",
+            : "Impossible de lancer la génération Gamma.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+/*
+ * GET
+ *
+ * Interroge Gamma pour connaître
+ * l'état d'une génération déjà lancée.
+ */
+export async function GET(
+  request: NextRequest,
+  _context: RouteContext
+) {
+  try {
+    const generationId =
+      request.nextUrl.searchParams
+        .get("generationId")
+        ?.trim();
+
+    if (!generationId) {
+      return NextResponse.json(
+        {
+          error:
+            "Identifiant de génération Gamma manquant.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const generation =
+      await getGammaGeneration(
+        generationId
+      );
+
+    return NextResponse.json({
+      generationId,
+      status:
+        generation.status,
+      gammaUrl:
+        generation.gammaUrl ??
+        null,
+      exportUrl:
+        generation.exportUrl ??
+        null,
+      error:
+        generation.error ??
+        null,
+    });
+  } catch (error) {
+    console.error(
+      "Erreur suivi génération Gamma :",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Impossible de vérifier la génération Gamma.",
       },
       {
         status: 500,
