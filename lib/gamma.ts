@@ -2,7 +2,7 @@ const GAMMA_API_BASE_URL =
   "https://public-api.gamma.app/v1.0";
 
 export const LBMEDIA_RADIO_GAMMA_TEMPLATE_ID =
-  "g_cmzh4tyc700u20b";
+  "g_nezqpg5uzyz4yg3";
 
 export type GammaExportFormat =
   | "pdf"
