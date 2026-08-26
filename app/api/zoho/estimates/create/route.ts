@@ -14,8 +14,14 @@ import {
   type CreateZohoEstimateLineItemInput,
 } from "@/lib/zoho-books";
 
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
+
 type CreateEstimateRequestBody = {
   company_id: string;
+
+  campaign_objective: string;
 
   date?: string;
   expiry_date?: string;
@@ -43,6 +49,18 @@ function cleanOptionalString(
     : undefined;
 }
 
+function cleanRequiredString(
+  value: unknown
+): string {
+  if (
+    typeof value !== "string"
+  ) {
+    return "";
+  }
+
+  return value.trim();
+}
+
 export async function POST(
   request: NextRequest
 ) {
@@ -59,6 +77,24 @@ export async function POST(
           success: false,
           error:
             "L’entreprise est obligatoire.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const campaignObjective =
+      cleanRequiredString(
+        body.campaign_objective
+      );
+
+    if (!campaignObjective) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "L’objectif de la campagne est obligatoire.",
         },
         {
           status: 400,
@@ -176,6 +212,9 @@ export async function POST(
 
           website:
             company.website,
+
+          logo_url:
+            company.logo_url,
 
           linkedin_url:
             company.linkedin_url,
@@ -340,9 +379,71 @@ export async function POST(
           body.line_items,
       });
 
+    let campaignContextSaved =
+      true;
+
+    let warning:
+      string | undefined;
+
+    const {
+      error:
+        campaignContextError,
+    } = await supabaseAdmin
+      .from(
+        "estimate_campaign_contexts"
+      )
+      .upsert(
+        {
+          zoho_estimate_id:
+            estimate.estimate_id,
+
+          company_id:
+            company.id,
+
+          campaign_objective:
+            campaignObjective,
+
+          updated_at:
+            new Date().toISOString(),
+        },
+        {
+          onConflict:
+            "zoho_estimate_id",
+        }
+      );
+
+    if (
+      campaignContextError
+    ) {
+      campaignContextSaved =
+        false;
+
+      warning =
+        "Le devis a bien été créé dans Zoho Books, mais l’objectif de campagne n’a pas pu être enregistré dans Office.";
+
+      console.error(
+        "Impossible d’enregistrer le contexte de campagne du devis :",
+        {
+          estimateId:
+            estimate.estimate_id,
+
+          companyId:
+            company.id,
+
+          error:
+            campaignContextError,
+        }
+      );
+    }
+
     return NextResponse.json(
       {
         success: true,
+
+        warning,
+
+        campaign_context_saved:
+          campaignContextSaved,
 
         zoho_contact_created:
           zohoContactCreated,
@@ -389,6 +490,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
+
         error:
           error instanceof Error
             ? error.message

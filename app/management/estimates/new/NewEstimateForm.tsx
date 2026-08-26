@@ -282,6 +282,11 @@ export default function NewEstimateForm({
   ] = useState("");
 
   const [
+    campaignObjective,
+    setCampaignObjective,
+  ] = useState("");
+
+  const [
     notes,
     setNotes,
   ] = useState("");
@@ -616,6 +621,16 @@ export default function NewEstimateForm({
       return;
     }
 
+    if (
+      !campaignObjective.trim()
+    ) {
+      setErrorMessage(
+        "Précise l’objectif de la campagne."
+      );
+
+      return;
+    }
+
     const normalizedLines =
       lines.map(
         (line) => {
@@ -748,6 +763,9 @@ export default function NewEstimateForm({
                 company_id:
                   companyId,
 
+                campaign_objective:
+                  campaignObjective.trim(),
+
                 date:
                   date ||
                   undefined,
@@ -778,6 +796,7 @@ export default function NewEstimateForm({
         (await response.json()) as {
           success?: boolean;
           error?: string;
+          warning?: string;
           estimate?: {
             estimate_id: string;
             estimate_number: string;
@@ -1006,6 +1025,42 @@ export default function NewEstimateForm({
               className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
+        </div>
+
+        <div className="mt-5">
+          <label
+            htmlFor="campaign-objective"
+            className="mb-2 block text-sm font-semibold text-slate-700"
+          >
+            Objectif de la campagne
+          </label>
+
+          <textarea
+            id="campaign-objective"
+            rows={3}
+            required
+            value={
+              campaignObjective
+            }
+            onChange={(
+              event
+            ) =>
+              setCampaignObjective(
+                event.target.value
+              )
+            }
+            placeholder="Ex. : Promouvoir les Journées Portes Ouvertes des 12 et 13 septembre et générer du trafic en concession."
+            className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            Cette information reste
+            dans LBMedia Office. Elle
+            servira notamment à
+            personnaliser la
+            présentation commerciale
+            Gamma.
+          </p>
         </div>
       </section>
 
