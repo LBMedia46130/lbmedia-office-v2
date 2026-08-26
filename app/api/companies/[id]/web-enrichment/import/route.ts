@@ -3,7 +3,9 @@ import {
   NextResponse,
 } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
 
 export const dynamic =
   "force-dynamic";
@@ -18,7 +20,6 @@ type WebEnrichmentPayload = {
   website?: string;
   phone?: string;
   email?: string;
-  logo_url?: string;
   business_description?: string;
   linkedin_url?: string;
   facebook_url?: string;
@@ -28,7 +29,8 @@ function normalizeValue(
   value: unknown
 ): string | null {
   if (
-    typeof value !== "string"
+    typeof value !==
+    "string"
   ) {
     return null;
   }
@@ -36,7 +38,8 @@ function normalizeValue(
   const cleaned =
     value.trim();
 
-  return cleaned || null;
+  return cleaned ||
+    null;
 }
 
 function normalizeHttpUrl(
@@ -94,13 +97,15 @@ export async function POST(
           website,
           phone,
           email,
-          logo_url,
           business_description,
           linkedin_url,
           facebook_url
         `
       )
-      .eq("id", id)
+      .eq(
+        "id",
+        id
+      )
       .maybeSingle();
 
     if (companyError) {
@@ -140,11 +145,6 @@ export async function POST(
     const email =
       normalizeValue(
         body.email
-      );
-
-    const logoUrl =
-      normalizeHttpUrl(
-        body.logo_url
       );
 
     const businessDescription =
@@ -187,14 +187,6 @@ export async function POST(
     }
 
     if (
-      !company.logo_url &&
-      logoUrl
-    ) {
-      updates.logo_url =
-        logoUrl;
-    }
-
-    if (
       !company.business_description &&
       businessDescription
     ) {
@@ -221,7 +213,8 @@ export async function POST(
     if (
       Object.keys(
         updates
-      ).length === 0
+      ).length ===
+      0
     ) {
       return NextResponse.json({
         success: true,
@@ -235,8 +228,13 @@ export async function POST(
       error: updateError,
     } = await supabaseAdmin
       .from("companies")
-      .update(updates)
-      .eq("id", id);
+      .update(
+        updates
+      )
+      .eq(
+        "id",
+        id
+      );
 
     if (updateError) {
       throw new Error(
@@ -246,6 +244,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+
       updated:
         Object.keys(
           updates
@@ -260,8 +259,10 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
+
         message:
           "Impossible d’importer les informations publiques.",
+
         error:
           error instanceof Error
             ? error.message
