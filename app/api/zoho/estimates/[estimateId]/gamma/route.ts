@@ -22,6 +22,13 @@ type RouteContext = {
   }>;
 };
 
+const LBMEDIA_CONTACT = {
+  name: "Laurent Barrès",
+  phone: "05 65 33 76 44",
+  email: "laurent@lbmedia.fr",
+  website: "lbmedia.fr",
+} as const;
+
 function formatCurrency(
   value: number | undefined,
   currency = "EUR"
@@ -166,15 +173,28 @@ RÈGLE PRINCIPALE :
 Le template Gamma Radio LBMedia constitue la base graphique et éditoriale de référence.
 Il ne faut pas recréer une présentation différente : il faut personnaliser ce modèle pour le client et le devis ci-dessous.
 
-IDENTITÉ ET ÉLÉMENTS FIXES DU TEMPLATE :
+IDENTITÉ LBMEDIA :
 - Conserver le design, l'identité visuelle et la structure générale du template.
 - Conserver impérativement le logo officiel LBMedia déjà présent dans le template.
-- Conserver impérativement le bloc de coordonnées LBMedia présent dans le template, notamment sur la dernière page.
-- Ne supprimer aucun élément fixe d'identité LBMedia.
-- Conserver le nom de l'agence, le nom du commercial, les coordonnées de contact et les mentions de bas de page présentes dans le template.
-- Les coordonnées LBMedia doivent rester visibles, complètes et lisibles dans la présentation finale.
-- Ne pas remplacer les coordonnées LBMedia par une formule générique du type "Votre contact pour tout renseignement complémentaire".
-- Les éléments permanents LBMedia du template ne doivent pas être résumés, raccourcis ou supprimés lors de la personnalisation.
+- Conserver le bloc de contact LBMedia sur la dernière page.
+- Ne pas supprimer ou remplacer le logo LBMedia.
+- Ne jamais afficher de placeholders tels que [Téléphone], [Email], [E-mail], [Site web LBMedia] ou équivalent.
+- Remplacer systématiquement les éventuels placeholders du template par les coordonnées exactes fournies ci-dessous.
+
+COORDONNÉES OFFICIELLES LBMEDIA À AFFICHER :
+Nom : ${LBMEDIA_CONTACT.name}
+Téléphone : ${LBMEDIA_CONTACT.phone}
+E-mail : ${LBMEDIA_CONTACT.email}
+Web : ${LBMEDIA_CONTACT.website}
+
+Sur la dernière page, afficher impérativement et lisiblement :
+${LBMEDIA_CONTACT.name}
+${LBMEDIA_CONTACT.phone} · ${LBMEDIA_CONTACT.email}
+${LBMEDIA_CONTACT.website}
+
+Ces coordonnées sont des données fixes fournies par LBMedia.
+Elles doivent être reproduites exactement.
+Ne pas les résumer, les reformuler, les masquer ou les remplacer par des placeholders.
 
 AUDIENCES RFM :
 - Conserver les informations générales RFM Lot déjà présentes dans le template.
@@ -213,7 +233,7 @@ Validité : ${formatDate(
   )}
 Commercial : ${
     estimate.salesperson_name ||
-    "Non précisé"
+    LBMEDIA_CONTACT.name
   }
 
 PRESTATIONS
@@ -246,12 +266,16 @@ Créer une présentation commerciale personnalisée pour ${estimate.customer_nam
 Le document doit pouvoir être envoyé directement au client avec le devis Zoho Books.
 
 Avant de finaliser la présentation, vérifier impérativement que :
-1. le logo LBMedia est toujours présent ;
-2. les coordonnées complètes LBMedia du template sont toujours présentes et lisibles ;
-3. les données d'audience RFM Lot du template sont conservées ;
-4. les montants correspondent au devis ;
-5. aucune prestation absente du devis n'a été ajoutée ;
-6. aucun compte rendu après diffusion n'a été ajouté.
+1. le logo officiel LBMedia est toujours présent ;
+2. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
+3. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
+4. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
+5. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
+6. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
+7. les données d'audience RFM Lot du template sont conservées ;
+8. les montants correspondent exactement au devis ;
+9. aucune prestation absente du devis n'a été ajoutée ;
+10. aucun compte rendu après diffusion n'a été ajouté.
 `.trim();
 }
 
