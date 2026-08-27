@@ -207,6 +207,10 @@ function calculateLineDiscount(
       line
     );
 
+  if (gross <= 0) {
+    return 0;
+  }
+
   const value =
     Math.max(
       0,
@@ -238,11 +242,18 @@ function calculateLineDiscount(
 function calculateLineTotal(
   line: InvoiceLine
 ) {
-  return Math.max(
-    0,
+  const gross =
     calculateLineGross(
       line
-    ) -
+    );
+
+  if (gross < 0) {
+    return gross;
+  }
+
+  return Math.max(
+    0,
+    gross -
       calculateLineDiscount(
         line
       )
@@ -851,7 +862,9 @@ export default function NewInvoiceForm({
           if (
             !line.name ||
             line.quantity <= 0 ||
-            line.rate < 0 ||
+            !Number.isFinite(
+              line.rate
+            ) ||
             discountValue < 0
           ) {
             return true;
@@ -868,6 +881,9 @@ export default function NewInvoiceForm({
           if (
             sourceLine.discount_mode ===
               "amount" &&
+            calculateLineGross(
+              sourceLine
+            ) > 0 &&
             discountValue >
               calculateLineGross(
                 sourceLine
@@ -1411,7 +1427,6 @@ export default function NewInvoiceForm({
 
                       <input
                         type="number"
-                        min="0"
                         step="0.01"
                         value={
                           line.rate

@@ -1553,8 +1553,7 @@ function normalizeInvoiceLineItems(
       if (
         !Number.isFinite(
           line.rate
-        ) ||
-        line.rate < 0
+        )
       ) {
         throw new Error(
           `Le prix de la ligne ${
@@ -1584,9 +1583,11 @@ function normalizeInvoiceLineItems(
           line.rate,
 
         discount:
-          normalizeDiscountValue(
-            line.discount
-          ),
+          line.rate < 0
+            ? undefined
+            : normalizeDiscountValue(
+                line.discount
+              ),
 
         tax_id:
           line.tax_id
