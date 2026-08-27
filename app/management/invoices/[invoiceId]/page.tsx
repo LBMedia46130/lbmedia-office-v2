@@ -171,7 +171,16 @@ export default async function InvoiceDetailPage({
             </div>
           </div>
 
-          <div className="pt-0 lg:pt-12">
+          <div className="flex flex-wrap gap-3 pt-0 lg:pt-12">
+            <Link
+              href={`/management/invoices/new?cloneFrom=${encodeURIComponent(
+                invoice.invoice_id
+              )}`}
+              className="inline-flex rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+            >
+              Cloner la facture
+            </Link>
+
             <Link
               href={`/management/invoices/${invoice.invoice_id}/edit`}
               className="inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
