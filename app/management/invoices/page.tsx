@@ -414,14 +414,12 @@ export default async function InvoicesPage({
               Voir les entreprises
             </Link>
 
-            <button
-              type="button"
-              disabled
-              className="cursor-not-allowed rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white opacity-50"
-              title="La création de facture arrive dans l'étape suivante."
+            <Link
+              href="/management/invoices/new"
+              className="rounded-xl bg-blue-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
             >
               Nouvelle facture
-            </button>
+            </Link>
           </div>
         </div>
 

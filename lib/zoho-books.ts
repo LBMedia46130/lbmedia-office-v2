@@ -295,6 +295,26 @@ export type UpdateZohoEstimateInput = {
   line_items: CreateZohoEstimateLineItemInput[];
 };
 
+export type CreateZohoInvoiceLineItemInput = {
+  item_id?: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  rate: number;
+  discount?: string | number;
+  tax_id?: string;
+};
+
+export type CreateZohoInvoiceInput = {
+  customer_id: string;
+  date?: string;
+  due_date?: string;
+  reference_number?: string;
+  notes?: string;
+  terms?: string;
+  line_items: CreateZohoInvoiceLineItemInput[];
+};
+
 export type UpdateZohoInvoiceLineItemInput = {
   item_id?: string;
   name: string;
@@ -1500,7 +1520,10 @@ export async function getZohoInvoice(
 
 function normalizeInvoiceLineItems(
   lineItems:
-    UpdateZohoInvoiceLineItemInput[]
+    (
+      | CreateZohoInvoiceLineItemInput
+      | UpdateZohoInvoiceLineItemInput
+    )[]
 ) {
   return lineItems.map(
     (line, index) => {
@@ -1571,6 +1594,84 @@ function normalizeInvoiceLineItems(
           undefined,
       };
     }
+  );
+}
+
+export async function createZohoInvoice(
+  input: CreateZohoInvoiceInput
+) {
+  if (
+    !input.customer_id.trim()
+  ) {
+    throw new Error(
+      "Le client Zoho est obligatoire pour créer une facture."
+    );
+  }
+
+  if (
+    !input.line_items ||
+    input.line_items.length === 0
+  ) {
+    throw new Error(
+      "La facture doit contenir au moins une ligne."
+    );
+  }
+
+  const payload = {
+    customer_id:
+      input.customer_id.trim(),
+
+    date:
+      input.date?.trim() ||
+      undefined,
+
+    due_date:
+      input.due_date?.trim() ||
+      undefined,
+
+    reference_number:
+      input.reference_number?.trim() ||
+      undefined,
+
+    notes:
+      input.notes?.trim() ||
+      undefined,
+
+    terms:
+      input.terms?.trim() ||
+      undefined,
+
+    line_items:
+      normalizeInvoiceLineItems(
+        input.line_items
+      ),
+  };
+
+  const data =
+    await zohoBooksRequest<{
+      invoice?: ZohoInvoice;
+    }>(
+      "/invoices",
+      {
+        method: "POST",
+        body:
+          JSON.stringify(
+            payload
+          ),
+      }
+    );
+
+  if (
+    !data.invoice
+      ?.invoice_id
+  ) {
+    throw new Error(
+      "Zoho Books a créé la facture sans retourner son identifiant."
+    );
+  }
+
+  return getZohoInvoice(
+    data.invoice.invoice_id
   );
 }
 
