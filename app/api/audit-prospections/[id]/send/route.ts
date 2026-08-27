@@ -74,6 +74,62 @@ function normalizeEmail(
   );
 }
 
+
+function splitRecipientEmails(
+  value:
+    | string
+    | null
+    | undefined
+) {
+  return (
+    value ?? ""
+  )
+    .split(/[,\n;]+/)
+    .map((email) =>
+      normalizeEmail(
+        email
+      )
+    )
+    .filter(Boolean);
+}
+
+function normalizeRecipientEmails(
+  value:
+    | string
+    | null
+    | undefined
+) {
+  return Array.from(
+    new Set(
+      splitRecipientEmails(
+        value
+      )
+    )
+  );
+}
+
+function canonicalRecipientEmails(
+  value:
+    | string
+    | null
+    | undefined
+) {
+  return normalizeRecipientEmails(
+    value
+  )
+    .slice()
+    .sort()
+    .join(",");
+}
+
+function isValidEmail(
+  value: string
+) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    value
+  );
+}
+
 function normalizeProposalType(
   value: unknown
 ): ProposalType {
@@ -461,23 +517,55 @@ export async function POST(
         null;
     }
 
-    const confirmedRecipientEmail =
+    const confirmedRecipientValue =
       typeof body
         ?.confirmedRecipientEmail ===
       "string"
-        ? normalizeEmail(
-            body.confirmedRecipientEmail
-          )
+        ? body.confirmedRecipientEmail
         : "";
 
+    const confirmedRecipientEmails =
+      normalizeRecipientEmails(
+        confirmedRecipientValue
+      );
+
+    const confirmedRecipientsCanonical =
+      canonicalRecipientEmails(
+        confirmedRecipientValue
+      );
+
     if (
-      !confirmedRecipientEmail
+      confirmedRecipientEmails.length ===
+        0
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Confirmation du destinataire manquante. Envoi annulé.",
+            "Confirmation des destinataires manquante. Envoi annulé.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const invalidConfirmedRecipient =
+      confirmedRecipientEmails.find(
+        (email) =>
+          !isValidEmail(
+            email
+          )
+      );
+
+    if (
+      invalidConfirmedRecipient
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            `Adresse e-mail destinataire invalide : ${invalidConfirmedRecipient}`,
         },
         {
           status: 400,
@@ -587,13 +675,19 @@ export async function POST(
         .recipient_email
         ?.trim();
 
-    const normalizedStoredRecipient =
-      normalizeEmail(
+    const recipientEmails =
+      normalizeRecipientEmails(
+        recipientEmail
+      );
+
+    const storedRecipientsCanonical =
+      canonicalRecipientEmails(
         recipientEmail
       );
 
     if (
-      !recipientEmail
+      recipientEmails.length ===
+        0
     ) {
       return NextResponse.json(
         {
@@ -607,16 +701,39 @@ export async function POST(
       );
     }
 
+    const invalidStoredRecipient =
+      recipientEmails.find(
+        (email) =>
+          !isValidEmail(
+            email
+          )
+      );
+
     if (
-      normalizedStoredRecipient !==
-      confirmedRecipientEmail
+      invalidStoredRecipient
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            `Adresse e-mail destinataire invalide : ${invalidStoredRecipient}`,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      storedRecipientsCanonical !==
+      confirmedRecipientsCanonical
     ) {
       return NextResponse.json(
         {
           success: false,
 
           message:
-            "Sécurité : le destinataire confirmé ne correspond pas au destinataire actuellement enregistré. Aucun email n’a été envoyé.",
+            "Sécurité : les destinataires confirmés ne correspondent pas aux destinataires actuellement enregistrés. Aucun email n’a été envoyé.",
 
           storedRecipientEmail:
             recipientEmail,
@@ -790,16 +907,16 @@ export async function POST(
     }
 
     if (
-      normalizeEmail(
+      canonicalRecipientEmails(
         securityCheck.recipient_email
       ) !==
-      confirmedRecipientEmail
+      confirmedRecipientsCanonical
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Sécurité : le destinataire enregistré a changé depuis la confirmation. Aucun email n’a été envoyé.",
+            "Sécurité : les destinataires enregistrés ont changé depuis la confirmation. Aucun email n’a été envoyé.",
         },
         {
           status: 409,
@@ -1064,15 +1181,17 @@ export async function POST(
         },
 
         to:
+          recipientEmails.length ===
+            1 &&
           recipientName
             ? {
                 name:
                   recipientName,
 
                 address:
-                  recipientEmail,
+                  recipientEmails[0],
               }
-            : recipientEmail,
+            : recipientEmails,
 
         replyTo:
           smtpUser,
@@ -1107,30 +1226,37 @@ export async function POST(
 
     const accepted =
       sendResult.accepted.map(
-        String
+        (address) =>
+          normalizeEmail(
+            String(
+              address
+            )
+          )
       );
 
-    const wasAccepted =
-      accepted.some(
-        (acceptedAddress) =>
-          normalizeEmail(
-            acceptedAddress
-          ) ===
-          normalizedStoredRecipient
+    const rejectedRecipients =
+      recipientEmails.filter(
+        (recipient) =>
+          !accepted.includes(
+            recipient
+          )
       );
 
     if (
-      !wasAccepted
+      rejectedRecipients.length >
+      0
     ) {
       console.error(
-        "SMTP n'a pas accepté le destinataire",
+        "SMTP n'a pas accepté tous les destinataires",
         {
           prospectionId:
             prospection.id,
 
           proposalType,
 
-          recipientEmail,
+          recipientEmails,
+
+          rejectedRecipients,
 
           accepted:
             sendResult.accepted,
@@ -1148,7 +1274,9 @@ export async function POST(
           success: false,
 
           message:
-            "Le serveur SMTP n’a pas confirmé l’acceptation du destinataire. Le statut n’a pas été modifié.",
+            `Le serveur SMTP n’a pas confirmé l’acceptation de tous les destinataires (${rejectedRecipients.join(
+              ", "
+            )}). Le statut n’a pas été modifié.`,
 
           messageId:
             sendResult.messageId,
@@ -1235,8 +1363,8 @@ export async function POST(
           messageId:
             sendResult.messageId,
 
-          recipient:
-            recipientEmail,
+          recipients:
+            recipientEmails,
 
           accepted:
             sendResult.accepted,
@@ -1364,7 +1492,12 @@ export async function POST(
 
       sentAt,
 
-      recipientEmail,
+      recipientEmail:
+        recipientEmails.join(
+          ", "
+        ),
+
+      recipientEmails,
 
       proposalType,
 

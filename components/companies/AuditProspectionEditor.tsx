@@ -17,6 +17,33 @@ type AuditProspectionEditorProps = {
   initialEmailContent: string;
 };
 
+function splitRecipientEmails(
+  value: string
+) {
+  return value
+    .split(/[,\n;]+/)
+    .map((email) =>
+      email.trim()
+    )
+    .filter(Boolean);
+}
+
+function normalizeRecipientEmails(
+  value: string
+) {
+  return splitRecipientEmails(
+    value
+  ).join(", ");
+}
+
+function isValidEmail(
+  value: string
+) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    value
+  );
+}
+
 export default function AuditProspectionEditor({
   prospectionId,
   initialRecipientEmail,
@@ -184,7 +211,14 @@ export default function AuditProspectionEditor({
     }
 
     const nextRecipientEmail =
-      recipientEmail.trim();
+      normalizeRecipientEmails(
+        recipientEmail
+      );
+
+    const recipientEmails =
+      splitRecipientEmails(
+        nextRecipientEmail
+      );
 
     const nextSubject =
       subject.trim();
@@ -193,10 +227,29 @@ export default function AuditProspectionEditor({
       emailContent.trim();
 
     if (
-      !nextRecipientEmail
+      recipientEmails.length ===
+        0
     ) {
       setError(
-        "L’adresse email du destinataire est obligatoire."
+        "Au moins une adresse email destinataire est obligatoire."
+      );
+      setMessage(null);
+      return;
+    }
+
+    const invalidRecipient =
+      recipientEmails.find(
+        (email) =>
+          !isValidEmail(
+            email
+          )
+      );
+
+    if (
+      invalidRecipient
+    ) {
+      setError(
+        `Adresse email invalide : ${invalidRecipient}`
       );
       setMessage(null);
       return;
@@ -349,8 +402,8 @@ export default function AuditProspectionEditor({
         </div>
 
         <p className="mt-2 text-sm text-slate-500">
-          Toute modification du
-          destinataire, de l’objet
+          Toute modification des
+          destinataires, de l’objet
           ou du message doit être
           enregistrée avant
           l’envoi.
@@ -379,12 +432,11 @@ export default function AuditProspectionEditor({
           htmlFor="prospection-recipient"
           className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400"
         >
-          Destinataire
+          Destinataires
         </label>
 
-        <input
+        <textarea
           id="prospection-recipient"
-          type="email"
           value={
             recipientEmail
           }
@@ -393,9 +445,17 @@ export default function AuditProspectionEditor({
               event.target.value
             )
           }
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-          placeholder="adresse@entreprise.fr"
+          rows={2}
+          className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+          placeholder="adresse1@entreprise.fr, adresse2@entreprise.fr"
         />
+
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Plusieurs adresses sont
+          possibles. Sépare-les par
+          une virgule, un point-virgule
+          ou un retour à la ligne.
+        </p>
       </div>
 
       <div className="mt-5">
@@ -480,8 +540,9 @@ export default function AuditProspectionEditor({
               </span>
 
               <span className="break-all text-slate-800">
-                {recipientEmail.trim() ||
-                  "—"}
+                {normalizeRecipientEmails(
+                  recipientEmail
+                ) || "—"}
               </span>
 
               <span className="font-semibold text-slate-500">
