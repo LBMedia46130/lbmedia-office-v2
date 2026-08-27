@@ -930,6 +930,65 @@ export async function getCompanyWebsiteAudits(
   ) as WebsiteAuditSummary[];
 }
 
+
+export async function getRecentWebsiteAudits(
+  limit = 50
+): Promise<
+  WebsiteAuditSummary[]
+> {
+  const safeLimit =
+    Math.max(
+      1,
+      Math.min(
+        100,
+        Math.round(limit)
+      )
+    );
+
+  const {
+    data,
+    error,
+  } = await supabaseAdmin
+    .from(
+      "website_audits"
+    )
+    .select(
+      `
+        id,
+        company_id,
+        website_url,
+        scoring_version,
+        pages_analyzed,
+        global_score,
+        positioning_score,
+        conversion_score,
+        seo_score,
+        local_seo_score,
+        geo_score,
+        created_at
+      `
+    )
+    .order(
+      "created_at",
+      {
+        ascending: false,
+      }
+    )
+    .limit(
+      safeLimit
+    );
+
+  if (error) {
+    throw new Error(
+      `Impossible de charger les audits récents : ${error.message}`
+    );
+  }
+
+  return (
+    data ?? []
+  ) as WebsiteAuditSummary[];
+}
+
 export async function getWebsiteAuditById(
   auditId: string
 ): Promise<

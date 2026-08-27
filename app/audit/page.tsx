@@ -76,6 +76,22 @@ type CompanyOption = {
   is_active: boolean;
 };
 
+
+type RecentAudit = {
+  id: string;
+  company_id: string | null;
+  website_url: string;
+  scoring_version: string;
+  pages_analyzed: number;
+  global_score: number;
+  positioning_score: number;
+  conversion_score: number;
+  seo_score: number;
+  local_seo_score: number;
+  geo_score: number;
+  created_at: string;
+};
+
 export default function AuditPage() {
   const [url, setUrl] =
     useState("");
@@ -139,6 +155,69 @@ export default function AuditPage() {
     null
   );
 
+
+  const [
+    recentAudits,
+    setRecentAudits,
+  ] = useState<RecentAudit[]>(
+    []
+  );
+
+  const [
+    auditsLoading,
+    setAuditsLoading,
+  ] = useState(true);
+
+  const [
+    auditsError,
+    setAuditsError,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    openingAuditId,
+    setOpeningAuditId,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    activeSavedAuditId,
+    setActiveSavedAuditId,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    attachAuditId,
+    setAttachAuditId,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
+    attachCompanySearch,
+    setAttachCompanySearch,
+  ] = useState("");
+
+  const [
+    attachCompanyId,
+    setAttachCompanyId,
+  ] = useState("");
+
+  const [
+    attaching,
+    setAttaching,
+  ] = useState(false);
+
+  const [
+    attachError,
+    setAttachError,
+  ] = useState<string | null>(
+    null
+  );
+
   const filteredCompanies =
     useMemo(() => {
       const search =
@@ -191,6 +270,100 @@ export default function AuditPage() {
       companies,
       companySearch,
     ]);
+
+
+  const filteredAttachCompanies =
+    useMemo(() => {
+      const search =
+        attachCompanySearch
+          .trim()
+          .toLocaleLowerCase(
+            "fr-FR"
+          );
+
+      if (!search) {
+        return companies;
+      }
+
+      return companies.filter(
+        (company) => {
+          const name =
+            company.name
+              .toLocaleLowerCase(
+                "fr-FR"
+              );
+
+          const website =
+            (
+              company.website ??
+              ""
+            ).toLocaleLowerCase(
+              "fr-FR"
+            );
+
+          return (
+            name.includes(
+              search
+            ) ||
+            website.includes(
+              search
+            )
+          );
+        }
+      );
+    }, [
+      companies,
+      attachCompanySearch,
+    ]);
+
+  async function loadRecentAudits() {
+    setAuditsError(
+      null
+    );
+
+    try {
+      const response =
+        await fetch(
+          "/api/audit/history?limit=50",
+          {
+            cache:
+              "no-store",
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ??
+            "Impossible de charger les audits enregistrés."
+        );
+      }
+
+      setRecentAudits(
+        Array.isArray(
+          data.audits
+        )
+          ? data.audits
+          : []
+      );
+    } catch (error) {
+      setAuditsError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de charger les audits enregistrés."
+      );
+    } finally {
+      setAuditsLoading(
+        false
+      );
+    }
+  }
+
+  useEffect(() => {
+    void loadRecentAudits();
+  }, []);
 
   useEffect(() => {
     async function loadCompanies() {
@@ -245,6 +418,9 @@ export default function AuditPage() {
     setShowUrls(false);
     setSaveError(null);
     setSavedMessage(null);
+    setActiveSavedAuditId(
+      null
+    );
 
     const trimmedUrl =
       url.trim();
@@ -368,6 +544,9 @@ export default function AuditPage() {
           ? `Audit enregistré et rattaché à ${company.name}.`
           : "Audit enregistré."
       );
+
+
+      await loadRecentAudits();
     } catch (error) {
       setSaveError(
         error instanceof Error
@@ -376,6 +555,163 @@ export default function AuditPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleOpenAudit(
+    auditId: string
+  ) {
+    setOpeningAuditId(
+      auditId
+    );
+    setError(
+      null
+    );
+    setSaveError(
+      null
+    );
+    setSavedMessage(
+      null
+    );
+
+    try {
+      const response =
+        await fetch(
+          `/api/audit/${auditId}`,
+          {
+            cache:
+              "no-store",
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ??
+            "Impossible de charger cet audit."
+        );
+      }
+
+      setResult(
+        data
+      );
+      setActiveSavedAuditId(
+        auditId
+      );
+      setShowUrls(
+        false
+      );
+
+      window.scrollTo({
+        top: 0,
+        behavior:
+          "smooth",
+      });
+    } catch (error) {
+      setAuditsError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de charger cet audit."
+      );
+    } finally {
+      setOpeningAuditId(
+        null
+      );
+    }
+  }
+
+  function startAttachAudit(
+    auditId: string
+  ) {
+    setAttachAuditId(
+      auditId
+    );
+    setAttachCompanyId(
+      ""
+    );
+    setAttachCompanySearch(
+      ""
+    );
+    setAttachError(
+      null
+    );
+  }
+
+  async function handleAttachAudit() {
+    if (
+      !attachAuditId
+    ) {
+      return;
+    }
+
+    if (
+      !attachCompanyId
+    ) {
+      setAttachError(
+        "Sélectionnez une entreprise."
+      );
+      return;
+    }
+
+    setAttaching(
+      true
+    );
+    setAttachError(
+      null
+    );
+
+    try {
+      const response =
+        await fetch(
+          `/api/audit/${attachAuditId}`,
+          {
+            method:
+              "PATCH",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body:
+              JSON.stringify({
+                companyId:
+                  attachCompanyId,
+              }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ??
+            "Impossible de rattacher cet audit."
+        );
+      }
+
+      setAttachAuditId(
+        null
+      );
+      setAttachCompanyId(
+        ""
+      );
+      setAttachCompanySearch(
+        ""
+      );
+
+      await loadRecentAudits();
+    } catch (error) {
+      setAttachError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de rattacher cet audit."
+      );
+    } finally {
+      setAttaching(
+        false
+      );
     }
   }
 
@@ -449,6 +785,336 @@ export default function AuditPage() {
               </button>
             </div>
           </form>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Audits enregistrés
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Les audits restent accessibles ici, même lorsqu’ils ne sont pas encore rattachés à une entreprise.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAuditsLoading(
+                  true
+                );
+                void loadRecentAudits();
+              }}
+              disabled={
+                auditsLoading
+              }
+              className="self-start rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:self-auto"
+            >
+              {auditsLoading
+                ? "Actualisation..."
+                : "Actualiser"}
+            </button>
+          </div>
+
+          {auditsError && (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {auditsError}
+            </div>
+          )}
+
+          {auditsLoading &&
+          recentAudits.length ===
+            0 ? (
+            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+              Chargement des audits...
+            </div>
+          ) : null}
+
+          {!auditsLoading &&
+          recentAudits.length ===
+            0 ? (
+            <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center">
+              <p className="font-medium text-slate-700">
+                Aucun audit enregistré
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Les prochains audits sauvegardés apparaîtront ici.
+              </p>
+            </div>
+          ) : null}
+
+          {recentAudits.length >
+          0 ? (
+            <div className="mt-6 overflow-hidden rounded-xl border border-slate-200">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Date
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Site
+                      </th>
+
+                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Score
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Rattachement
+                      </th>
+
+                      <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {recentAudits.map(
+                      (audit) => {
+                        const company =
+                          audit.company_id
+                            ? companies.find(
+                                (
+                                  item
+                                ) =>
+                                  item.id ===
+                                  audit.company_id
+                              )
+                            : null;
+
+                        const isAttachOpen =
+                          attachAuditId ===
+                          audit.id;
+
+                        return (
+                          <tr
+                            key={
+                              audit.id
+                            }
+                            className="align-top"
+                          >
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
+                              {formatAuditDate(
+                                audit.created_at
+                              )}
+                            </td>
+
+                            <td className="px-4 py-4">
+                              <p className="max-w-md break-all text-sm font-semibold text-slate-900">
+                                {
+                                  audit.website_url
+                                }
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-400">
+                                {
+                                  audit.pages_analyzed
+                                }{" "}
+                                {audit.pages_analyzed >
+                                1
+                                  ? "pages analysées"
+                                  : "page analysée"}
+                              </p>
+                            </td>
+
+                            <td className="px-4 py-4 text-center">
+                              <span className="inline-flex min-w-14 justify-center rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">
+                                {
+                                  audit.global_score
+                                }
+                                /100
+                              </span>
+                            </td>
+
+                            <td className="px-4 py-4">
+                              {audit.company_id ? (
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-800">
+                                    {company
+                                      ? company.name
+                                      : "Entreprise rattachée"}
+                                  </p>
+
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {company?.relationship_status ===
+                                    "client"
+                                      ? "Client"
+                                      : company?.relationship_status ===
+                                          "prospect"
+                                        ? "Prospect"
+                                        : "Rattaché"}
+                                  </p>
+                                </div>
+                              ) : (
+                                <div>
+                                  <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+                                    Non rattaché
+                                  </span>
+
+                                  {isAttachOpen ? (
+                                    <div className="mt-3 w-72 max-w-full space-y-3">
+                                      <input
+                                        type="search"
+                                        value={
+                                          attachCompanySearch
+                                        }
+                                        onChange={(
+                                          event
+                                        ) =>
+                                          setAttachCompanySearch(
+                                            event
+                                              .target
+                                              .value
+                                          )
+                                        }
+                                        placeholder="Rechercher une entreprise..."
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                      />
+
+                                      <select
+                                        value={
+                                          attachCompanyId
+                                        }
+                                        onChange={(
+                                          event
+                                        ) =>
+                                          setAttachCompanyId(
+                                            event
+                                              .target
+                                              .value
+                                          )
+                                        }
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                      >
+                                        <option value="">
+                                          Sélectionner...
+                                        </option>
+
+                                        {filteredAttachCompanies.map(
+                                          (
+                                            companyOption
+                                          ) => (
+                                            <option
+                                              key={
+                                                companyOption.id
+                                              }
+                                              value={
+                                                companyOption.id
+                                              }
+                                            >
+                                              {
+                                                companyOption.name
+                                              }
+                                              {companyOption.relationship_status ===
+                                              "client"
+                                                ? " — Client"
+                                                : " — Prospect"}
+                                            </option>
+                                          )
+                                        )}
+                                      </select>
+
+                                      {attachError && (
+                                        <p className="text-xs text-red-600">
+                                          {
+                                            attachError
+                                          }
+                                        </p>
+                                      )}
+
+                                      <div className="flex gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={
+                                            handleAttachAudit
+                                          }
+                                          disabled={
+                                            attaching
+                                          }
+                                          className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          {attaching
+                                            ? "Rattachement..."
+                                            : "Confirmer"}
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setAttachAuditId(
+                                              null
+                                            );
+                                            setAttachError(
+                                              null
+                                            );
+                                          }}
+                                          disabled={
+                                            attaching
+                                          }
+                                          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                                        >
+                                          Annuler
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-4">
+                              <div className="flex flex-col items-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void handleOpenAudit(
+                                      audit.id
+                                    )
+                                  }
+                                  disabled={
+                                    openingAuditId ===
+                                    audit.id
+                                  }
+                                  className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {openingAuditId ===
+                                  audit.id
+                                    ? "Ouverture..."
+                                    : "Voir l’audit"}
+                                </button>
+
+                                {!audit.company_id &&
+                                !isAttachOpen ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      startAttachAudit(
+                                        audit.id
+                                      )
+                                    }
+                                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                                  >
+                                    Rattacher
+                                  </button>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      }
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         {!result &&
@@ -847,20 +1513,26 @@ export default function AuditPage() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={
-                    handleSaveAudit
-                  }
-                  disabled={
-                    saving
-                  }
-                  className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving
-                    ? "Enregistrement..."
-                    : "Enregistrer l’audit"}
-                </button>
+                {activeSavedAuditId ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700">
+                    Audit déjà enregistré
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={
+                      handleSaveAudit
+                    }
+                    disabled={
+                      saving
+                    }
+                    className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving
+                      ? "Enregistrement..."
+                      : "Enregistrer l’audit"}
+                  </button>
+                )}
               </div>
 
               {savedMessage && (
@@ -881,6 +1553,33 @@ export default function AuditPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function formatAuditDate(
+  value: string
+) {
+  const date =
+    new Date(
+      value
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return value;
+  }
+
+  return date.toLocaleString(
+    "fr-FR",
+    {
+      dateStyle:
+        "short",
+      timeStyle:
+        "short",
+    }
   );
 }
 
