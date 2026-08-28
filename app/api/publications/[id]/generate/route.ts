@@ -89,38 +89,72 @@ Le contenu doit pouvoir être utilisé directement dans Brevo après relecture.
 `,
 
   google_business: `
-Tu prépares une publication Google Business Profile.
+Tu prépares une publication destinée à être PUBLIÉE PUBLIQUEMENT sur la fiche Google Business Profile de LBMedia.
+
+IMPORTANT
+
+Tu écris le message que les clients et prospects de LBMedia vont lire sur Google.
+
+Tu ne rédiges jamais :
+- des consignes internes pour LBMedia ;
+- un mode d'emploi ;
+- un script à utiliser par l'équipe ;
+- des modèles de phrases à copier ;
+- des exemples de réponses à des avis ;
+- une checklist ;
+- une procédure ;
+- plusieurs variantes de publication.
+
+Même si le brief contient des conseils, des étapes, des exemples, des phrases types ou une méthode, transforme cette matière en UNE publication publique cohérente.
 
 OBJECTIF
 
-Le lecteur doit comprendre en quelques secondes :
-- le sujet ;
-- pourquoi cela peut le concerner ;
-- ce qu'il peut faire ensuite.
+Le lecteur doit comprendre rapidement :
+- une idée ou un enjeu concret ;
+- pourquoi cela peut concerner son entreprise ;
+- l'intérêt ou le conseil apporté par LBMedia ;
+- éventuellement ce qu'il peut faire ensuite.
 
-Le texte ne doit PAS être un résumé miniature de tout l'article.
+Choisis UN seul angle fort.
 
-Choisis un seul angle fort issu du contenu source.
+Si le sujet concerne les sites internet, le référencement, le SEO, le GEO/IA, la radio ou la visibilité d'une entreprise, parle directement de l'enjeu pour le dirigeant ou son activité.
+
+Si le sujet concerne les avis Google, parle par exemple de leur importance pour la confiance, la visibilité locale ou la réputation de l'entreprise. Ne fournis pas de scripts pour demander ou répondre aux avis sauf si le brief demande explicitement de publier ces scripts.
 
 STYLE
 
-- très clair ;
-- concis ;
-- local et concret lorsque le sujet le permet ;
-- professionnel ;
-- sans jargon ;
-- sans longue liste ;
-- sans succession d'étapes ;
-- sans hashtags ;
-- sans introduction inutile.
+- publication publique, pas document de travail ;
+- naturel et professionnel ;
+- clair et concret ;
+- environ 300 à 700 caractères lorsque le sujet le permet ;
+- 1 à 3 courts paragraphes ;
+- pas de longue liste ;
+- pas de succession d'étapes ;
+- pas de titres du type "Phrases prêtes à l'emploi", "Conseils", "Modèles" ou "Checklist" ;
+- pas de hashtags ;
+- pas de jargon ;
+- pas de formulation artificiellement commerciale ;
+- pas d'introduction inutile.
 
-Le texte doit rester suffisamment court pour être confortable à lire sur une fiche Google Business.
+PUBLICATION INDÉPENDANTE
+
+Si la publication est indépendante, le contenu fourni est un BRIEF.
+
+Ne le reproduis pas tel quel.
+Identifie son sujet et rédige à partir de celui-ci une vraie publication Google Business destinée au public.
+
+APPEL À L'ACTION
+
+Le champ call_to_action doit contenir uniquement l'un des libellés suivants :
+- "En savoir plus" si un lien pertinent existe déjà dans les données fournies ;
+- "Nous contacter" si le sujet appelle naturellement une prise de contact ;
+- null si aucun appel à l'action n'est réellement utile.
+
+N'invente jamais d'URL.
 
 Retourne :
-- content : publication Google Business concise et directement exploitable ;
-- call_to_action : appel à l'action très court, par exemple "En savoir plus", "Découvrir nos conseils", "Nous contacter".
-
-Ne crée aucun lien : le lien sera géré séparément par LBMedia Office.
+- content : UNE publication Google Business directement publiable ;
+- call_to_action : "En savoir plus", "Nous contacter" ou null.
 `,
 
   linkedin: `
