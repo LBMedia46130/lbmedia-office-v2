@@ -396,6 +396,50 @@ Le visuel doit être suffisamment fort pour attirer l'attention sur le support d
 
 ==================================================
 
+PERTINENCE VISUELLE OBLIGATOIRE
+==================================================
+
+Avant de choisir la scène, formule mentalement UNE phrase très courte :
+
+"En regardant uniquement cette image, on doit comprendre que..."
+
+Cette phrase doit exprimer l'idée précise du post, et non simplement son univers professionnel.
+
+La scène choisie doit matérialiser cette idée.
+
+TEST DE SPÉCIFICITÉ OBLIGATOIRE
+
+Imagine que l'image soit utilisée avec cinq autres publications LBMedia sans rapport direct avec ce sujet.
+
+Si elle pourrait fonctionner presque aussi bien avec ces cinq autres publications, elle est TROP GÉNÉRIQUE.
+
+Dans ce cas, rejette cette scène et conçois-en une autre.
+
+Exemples de scènes trop génériques :
+- un client entrant dans un commerce ;
+- deux professionnels discutant ;
+- une équipe souriante dans un atelier ;
+- une personne devant un ordinateur ;
+- un rendez-vous commercial ;
+- un commerce accueillant sans élément relié au sujet précis.
+
+Ces scènes peuvent être utilisées uniquement si l'action montrée permet de comprendre clairement l'idée du post.
+
+Chaque élément principal de l'image doit avoir une raison directement liée au sujet.
+
+PRINCIPE
+
+Ne représente pas seulement :
+- le secteur ;
+- une entreprise ;
+- un client ;
+- un professionnel ;
+- une ambiance locale.
+
+Représente l'ACTION, la DÉCISION, la VÉRIFICATION, le PROBLÈME ou le COMPORTEMENT qui constitue le cœur du post.
+
+==================================================
+
 RÈGLE DE COMPOSITION PRIORITAIRE
 
 ==================================================
@@ -582,7 +626,7 @@ Choisir cette situation plutôt qu'une représentation générique du travail de
 
 ==================================================
 
-- - une personne seule devant un ordinateur portable sans lien clair avec le sujet ;
+- une personne seule devant un ordinateur portable sans lien clair avec le sujet ;
 
 - une personne regardant simplement un smartphone sans action identifiable ;
 
@@ -657,20 +701,33 @@ Lorsqu'une publication concerne réellement :
 - une recherche en ligne ;
 - un parcours client numérique ;
 
-un ordinateur, un smartphone ou un écran PEUT devenir un élément central de l'image si cela permet d'incarner concrètement le sujet.
+la scène DOIT montrer de façon concrète comment le numérique intervient dans le comportement, la décision ou l'action du client.
 
-Dans ce cas :
+Pour ces sujets, un ordinateur, un smartphone ou un écran PEUT devenir un élément central de l'image.
 
-- montrer une situation réelle d'utilisation ou de consultation ;
-- représenter une interaction crédible avec le site ou le support numérique ;
-- privilégier une scène où l'appareil sert réellement à comprendre l'idée du post ;
-- ne jamais afficher de texte lisible, de vraie interface, de faux site ou de boutons détaillés ;
-- l'écran peut contenir uniquement des formes abstraites non interprétables ;
-- conserver une scène éditoriale naturelle et non une démonstration technologique.
+Exemples d'actions visuellement pertinentes :
+- consulter le site d'une entreprise avant d'entrer ou de prendre contact ;
+- comparer plusieurs informations avant de choisir ;
+- vérifier des coordonnées, horaires, services ou éléments de confiance ;
+- passer de la consultation numérique à une prise de contact ;
+- observer un professionnel améliorer ou contrôler un élément concret de son site ;
+- mettre en relation une entreprise réelle et la manière dont elle est perçue en ligne.
 
-L'objectif n'est donc pas d'éviter les écrans.
+Pour un sujet sur la confiance inspirée par un site internet, montrer simplement un client dans un commerce est insuffisant.
 
-L'objectif est d'éviter les scènes numériques génériques sans rapport avec le sujet.
+Il faut que la consultation du site, la vérification d'informations ou le passage vers la prise de contact fasse partie de la scène.
+
+Dans tous les cas :
+- ne jamais afficher de texte lisible ;
+- ne jamais afficher de vraie interface ;
+- ne jamais créer de faux site internet détaillé ;
+- les écrans peuvent montrer seulement des zones, formes, cartes ou blocs abstraits non interprétables ;
+- conserver une scène éditoriale naturelle et crédible ;
+- éviter les écrans décoratifs utilisés uniquement pour suggérer le numérique.
+
+L'objectif n'est pas d'éviter les écrans.
+
+L'objectif est que leur présence serve directement l'idée du post.
 
 ==================================================
 
@@ -787,6 +844,16 @@ CONTRÔLE FINAL AVANT GÉNÉRATION
 ==================================================
 
 Avant de produire l'image, vérifie mentalement la composition choisie.
+
+TEST FINAL DE PERTINENCE
+
+Demande-toi :
+"Si je ne connaissais pas le texte du post, est-ce que cette image me rapprocherait réellement de son idée centrale ?"
+
+Puis demande-toi :
+"Cette même image pourrait-elle illustrer sans difficulté cinq autres sujets très différents ?"
+
+Si la réponse à la deuxième question est oui, la scène est trop générique : recommence avec une situation plus spécifique.
 
 Si elle contient plusieurs symboles destinés à expliquer différentes idées du post, simplifie-la.
 
@@ -1121,10 +1188,15 @@ function buildImageAlt(
     );
 
   const prefix =
+
   channel === "linkedin"
+
     ? "Illustration éditoriale LBMedia pour une publication LinkedIn"
+
     : channel === "google_business"
+
       ? "Illustration éditoriale LBMedia pour une publication Google Business"
+
       : "Illustration éditoriale LBMedia pour une publication Facebook";
 
   const alt =
