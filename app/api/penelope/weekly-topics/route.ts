@@ -72,13 +72,53 @@ L'angle doit pouvoir être traité de manière concise et donner envie au lecteu
 `,
 
   google_business: `
-Les propositions sont destinées à Google Business Profile.
+Les propositions sont destinées à être PUBLIÉES SUR la fiche Google Business Profile de LBMedia.
 
-Choisis des sujets immédiatement compréhensibles, concrets et utiles.
+POINT ESSENTIEL
 
-Chaque proposition doit pouvoir être traitée en une publication courte.
+Google Business Profile est ici le SUPPORT de publication, pas le SUJET à traiter.
 
-Évite les sujets trop théoriques, les plans d'article complexes et les longues méthodes.
+Ne propose donc pas automatiquement des contenus qui parlent :
+- de Google Business Profile ;
+- de la gestion d'une fiche Google ;
+- des avis Google ;
+- des photos d'une fiche Google ;
+- de la manière de publier sur Google ;
+- de checklists Google Business.
+
+Ces thèmes restent possibles uniquement s'ils sont réellement pertinents au regard de la mémoire éditoriale et de l'activité de LBMedia, mais ils ne doivent bénéficier d'aucune priorité particulière simplement parce que le support demandé est Google Business.
+
+Cherche d'abord des sujets issus des ACTIVITÉS et de l'EXPERTISE de LBMedia, par exemple :
+- sites internet et performance commerciale ;
+- SEO et visibilité dans Google ;
+- GEO / visibilité dans les réponses des IA ;
+- communication et visibilité des TPE/PME ;
+- radio et RFM lorsque le sujet est pertinent ;
+- complémentarité entre différents leviers de communication ;
+- conseils concrets liés aux problématiques réellement rencontrées par les entreprises.
+
+Le choix des sujets doit aussi tenir compte de l'historique éditorial fourni afin d'éviter les répétitions.
+
+FORMAT ATTENDU
+
+Chaque proposition doit pouvoir devenir une publication Google Business courte, publique et immédiatement compréhensible par un dirigeant de TPE ou PME.
+
+Privilégie :
+- un problème concret ;
+- une observation utile ;
+- un conseil simple ;
+- une idée forte ;
+- un angle qui peut donner envie d'en savoir plus ou de contacter LBMedia.
+
+Évite :
+- les sujets trop théoriques ;
+- les plans d'article complexes ;
+- les longues méthodes ;
+- les checklists ;
+- les tutoriels sur l'utilisation du support Google Business lui-même ;
+- les titres construits artificiellement autour de "Google Business".
+
+Les trois propositions doivent porter sur des sujets réellement différents.
 `,
 
   linkedin: `
