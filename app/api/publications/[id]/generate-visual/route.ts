@@ -220,17 +220,21 @@ export async function POST(
 
     }
 
-    if (
+   if (
 
-      publication.channel !==
+  publication.channel !==
 
-        "linkedin" &&
+    "linkedin" &&
 
-      publication.channel !==
+  publication.channel !==
 
-        "facebook"
+    "facebook" &&
 
-    ) {
+  publication.channel !==
+
+    "google_business"
+
+) {
 
       return NextResponse.json(
 
@@ -240,7 +244,7 @@ export async function POST(
 
           message:
 
-            "La génération de visuel est disponible uniquement pour LinkedIn et Facebook.",
+            "La génération de visuel est disponible uniquement pour LinkedIn, Facebook et Google Business.",
 
         },
 
