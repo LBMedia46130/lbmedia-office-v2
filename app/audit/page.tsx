@@ -190,6 +190,13 @@ export default function AuditPage() {
   );
 
   const [
+    deletingAuditId,
+    setDeletingAuditId,
+  ] = useState<string | null>(
+    null
+  );
+
+  const [
     attachAuditId,
     setAttachAuditId,
   ] = useState<string | null>(
@@ -619,6 +626,65 @@ export default function AuditPage() {
       setOpeningAuditId(
         null
       );
+    }
+  }
+
+  async function handleDeleteAudit(
+    audit: RecentAudit
+  ) {
+    const confirmed =
+      window.confirm(
+        `Supprimer définitivement l’audit de ${audit.website_url} ?\n\nCette action est irréversible.`
+      );
+
+    if (!confirmed) return;
+
+    setDeletingAuditId(audit.id);
+    setAuditsError(null);
+
+    try {
+      const response = await fetch(
+        `/api/audit/${audit.id}`,
+        { method: "DELETE" }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ??
+            "Impossible de supprimer cet audit."
+        );
+      }
+
+      setRecentAudits((current) =>
+        current.filter(
+          (item) => item.id !== audit.id
+        )
+      );
+
+      if (activeSavedAuditId === audit.id) {
+        setResult(null);
+        setActiveSavedAuditId(null);
+        setShowUrls(false);
+        setSavedMessage(null);
+        setSaveError(null);
+      }
+
+      if (attachAuditId === audit.id) {
+        setAttachAuditId(null);
+        setAttachCompanyId("");
+        setAttachCompanySearch("");
+        setAttachError(null);
+      }
+    } catch (error) {
+      setAuditsError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de supprimer cet audit."
+      );
+    } finally {
+      setDeletingAuditId(null);
     }
   }
 
@@ -1104,6 +1170,25 @@ export default function AuditPage() {
                                     Rattacher
                                   </button>
                                 ) : null}
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void handleDeleteAudit(
+                                      audit
+                                    )
+                                  }
+                                  disabled={
+                                    deletingAuditId ===
+                                    audit.id
+                                  }
+                                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {deletingAuditId ===
+                                  audit.id
+                                    ? "Suppression..."
+                                    : "Supprimer"}
+                                </button>
                               </div>
                             </td>
                           </tr>
