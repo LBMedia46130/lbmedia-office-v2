@@ -582,11 +582,11 @@ Choisir cette situation plutôt qu'une représentation générique du travail de
 
 ==================================================
 
-- une personne seule devant un ordinateur portable ;
+- - une personne seule devant un ordinateur portable sans lien clair avec le sujet ;
 
-- une personne regardant simplement un smartphone ;
+- une personne regardant simplement un smartphone sans action identifiable ;
 
-- un professionnel pensif devant son écran ;
+- un professionnel pensif devant son écran dans une scène générique ;
 
 - deux personnes regardant ensemble un ordinateur sans action significative ;
 
@@ -594,7 +594,7 @@ Choisir cette situation plutôt qu'une représentation générique du travail de
 
 - la composition classique personnage + laptop + tasse ;
 
-- la composition personnage + smartphone + laptop ;
+- la composition personnage + smartphone + laptop lorsque les appareils ne servent qu'à suggérer artificiellement le numérique ;
 
 - les réunions génériques autour d'un ordinateur ;
 
@@ -644,9 +644,33 @@ Choisir cette situation plutôt qu'une représentation générique du travail de
 
 - les éléments graphiques servant uniquement à expliquer un concept abstrait.
 
-Un ordinateur ou un smartphone peut apparaître comme élément secondaire si la situation l'exige réellement.
+IMPORTANT POUR LES SUJETS NUMÉRIQUES
 
-Il ne doit pas constituer automatiquement le centre de l'image.
+Lorsqu'une publication concerne réellement :
+
+- un site internet ;
+- l'expérience utilisateur ;
+- la conversion ;
+- le référencement SEO ;
+- le GEO / la visibilité dans les IA ;
+- Google ;
+- une recherche en ligne ;
+- un parcours client numérique ;
+
+un ordinateur, un smartphone ou un écran PEUT devenir un élément central de l'image si cela permet d'incarner concrètement le sujet.
+
+Dans ce cas :
+
+- montrer une situation réelle d'utilisation ou de consultation ;
+- représenter une interaction crédible avec le site ou le support numérique ;
+- privilégier une scène où l'appareil sert réellement à comprendre l'idée du post ;
+- ne jamais afficher de texte lisible, de vraie interface, de faux site ou de boutons détaillés ;
+- l'écran peut contenir uniquement des formes abstraites non interprétables ;
+- conserver une scène éditoriale naturelle et non une démonstration technologique.
+
+L'objectif n'est donc pas d'éviter les écrans.
+
+L'objectif est d'éviter les scènes numériques génériques sans rapport avec le sujet.
 
 ==================================================
 
@@ -1097,11 +1121,10 @@ function buildImageAlt(
     );
 
   const prefix =
-
-    channel === "linkedin"
-
-      ? "Illustration éditoriale LBMedia pour une publication LinkedIn"
-
+  channel === "linkedin"
+    ? "Illustration éditoriale LBMedia pour une publication LinkedIn"
+    : channel === "google_business"
+      ? "Illustration éditoriale LBMedia pour une publication Google Business"
       : "Illustration éditoriale LBMedia pour une publication Facebook";
 
   const alt =
