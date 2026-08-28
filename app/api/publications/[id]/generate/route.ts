@@ -562,7 +562,10 @@ IMPORTANT :
 - ne demande pas au lecteur de lire un article complet ;
 - transforme le brief en véritable publication autonome ;
 - respecte strictement les informations disponibles dans le brief ;
-- n'invente aucun fait absent du brief.
+- n'invente aucun fait absent du brief ;
+- le brief peut contenir des formulations comme "phrase à copier", "exemple", "modèle", "checklist", "3 points", "indiquer", "expliquer" ou d'autres consignes de rédaction : ces formulations sont des instructions éditoriales et ne doivent jamais être reprises littéralement dans la publication finale ;
+- n'insère jamais de champs fictifs ou de textes à compléter comme [adresse], [numéro], [ville], [nom], [lien] ou équivalent ;
+- si une information concrète manque, rédige naturellement sans cette information au lieu d'insérer un placeholder.
 `;
 
   try {
@@ -610,8 +613,13 @@ RÈGLES COMMUNES
 PUBLICATION INDÉPENDANTE
 
 Lorsque le contenu source indique qu'il s'agit d'une publication indépendante :
-- considère le titre et le contenu fournis comme un brief éditorial ;
+- considère le titre et le contenu fournis comme un brief éditorial, jamais comme du texte destiné à être recopié ;
 - rédige une véritable publication autonome ;
+- exécute les intentions du brief au lieu de reproduire ses consignes ;
+- si le brief dit "indiquer", "expliquer", "montrer", "proposer", "phrase à copier", "exemple", "modèle", "checklist" ou équivalent, transforme cette consigne en texte public naturel ;
+- ne restitue jamais au lecteur des instructions destinées au rédacteur ;
+- ne produis jamais de placeholder tel que [adresse], [numéro], [ville], [nom], [lien] ou équivalent ;
+- lorsqu'une donnée précise n'est pas disponible, formule le propos sans cette donnée ;
 - ne suppose jamais qu'un article de blog existe ;
 - ne parle pas de "notre article", "cet article", "lire la suite" ou équivalent sauf si le brief le demande explicitement ;
 - n'invente pas de lien vers le site ;
