@@ -248,8 +248,9 @@ export default function PublicationEditor({
     publication.channel as PublicationChannel;
 
   const supportsVisual =
-    channel === "linkedin" ||
-    channel === "facebook";
+     channel === "linkedin" ||
+  channel === "facebook" ||
+  channel === "google_business";
 
   const isLinkedInManualDue =
     channel === "linkedin" &&
