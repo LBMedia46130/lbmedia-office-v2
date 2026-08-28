@@ -221,8 +221,8 @@ export default function PublicationEditor({
   ] = useState(false);
 
   const [
-    isMarkingGoogleBusinessPublished,
-    setIsMarkingGoogleBusinessPublished,
+    isPublishingGoogleBusiness,
+    setIsPublishingGoogleBusiness,
   ] = useState(false);
 
   const [
@@ -1075,7 +1075,7 @@ export default function PublicationEditor({
     }
   }
 
-  async function markGoogleBusinessPublished() {
+  async function publishGoogleBusiness() {
     if (channel !== "google_business") {
       return;
     }
@@ -1092,16 +1092,25 @@ export default function PublicationEditor({
       return;
     }
 
+    if (!content.trim()) {
+      setMessage(null);
+      setError(
+        "Le contenu Google Business est vide."
+      );
+
+      return;
+    }
+
     const confirmed =
       window.confirm(
-        "Confirmer que ce contenu a bien été publié manuellement sur la fiche Google Business LBMedia ?"
+        "Publier maintenant ce contenu sur la fiche Google Business Profile LBMedia ? Cette action le rendra visible publiquement."
       );
 
     if (!confirmed) {
       return;
     }
 
-    setIsMarkingGoogleBusinessPublished(
+    setIsPublishingGoogleBusiness(
       true
     );
 
@@ -1110,12 +1119,54 @@ export default function PublicationEditor({
 
     try {
       await updatePublication(
-        "published",
+        status,
         scheduledAt
       );
 
+      const response =
+        await fetch(
+          `/api/publications/${publication.id}/publish-google-business`,
+          {
+            method: "POST",
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        if (
+          result.sent ===
+          true
+        ) {
+          throw new Error(
+            result.message ??
+              "La publication a été envoyée à Google, mais Office n’a pas pu enregistrer son statut. Ne republie pas le contenu."
+          );
+        }
+
+        throw new Error(
+          result.message ??
+            "Impossible de publier sur Google Business Profile."
+        );
+      }
+
+      if (
+        result.publication
+      ) {
+        syncFields(
+          result.publication
+        );
+      }
+
+      setScheduledAt("");
+
       setMessage(
-        "Publication Google Business marquée comme publiée."
+        result.message ??
+          "Publication Google Business effectuée."
       );
     } catch (
       googleBusinessError
@@ -1126,7 +1177,7 @@ export default function PublicationEditor({
           : "Une erreur est survenue."
       );
     } finally {
-      setIsMarkingGoogleBusinessPublished(
+      setIsPublishingGoogleBusiness(
         false
       );
     }
@@ -1307,7 +1358,7 @@ export default function PublicationEditor({
     isCreatingBrevoDraft ||
     isApprovingBrevoSend ||
     isPublishingFacebook ||
-    isMarkingGoogleBusinessPublished ||
+    isPublishingGoogleBusiness ||
     isMarkingLinkedInPublished;
 
   const canEdit =
@@ -1586,14 +1637,14 @@ export default function PublicationEditor({
                 <button
                   type="button"
                   onClick={
-                    markGoogleBusinessPublished
+                    publishGoogleBusiness
                   }
                   disabled={isBusy}
-                  className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isMarkingGoogleBusinessPublished
-                    ? "Enregistrement..."
-                    : "Marquer comme publié"}
+                  {isPublishingGoogleBusiness
+                    ? "Publication Google..."
+                    : "Publier maintenant"}
                 </button>
               ) : null}
 
