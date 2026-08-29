@@ -344,9 +344,46 @@ Règles éditoriales :
 - évite le remplissage et les répétitions ;
 - l'article doit être directement exploitable comme contenu de référence LBMedia ;
 - structure le contenu avec une introduction claire puis plusieurs sections utiles ;
-- utilise des intertitres explicites dans le texte ;
-- termine par une conclusion ou une ouverture naturelle vers l'accompagnement LBMedia ;
+- le champ content doit utiliser une structure Markdown simple destinée à être convertie ensuite en HTML dans Elementor ;
+- n'insère jamais le titre principal de l'article dans content : il est géré séparément par le champ title ;
+- utilise obligatoirement "## " au début de chaque intertitre principal afin qu'il soit converti en véritable titre H2 dans WordPress ;
+- utilise "### " uniquement lorsqu'un sous-niveau est réellement utile afin qu'il soit converti en H3 ;
+- n'utilise jamais "# " dans content ;
+- laisse une ligne vide avant et après chaque intertitre ;
+- sépare les paragraphes par une ligne vide ;
+- utilise "- " pour une liste à puces lorsqu'une liste améliore réellement la lecture ;
+- utilise "1. ", "2. ", "3. " pour une liste numérotée lorsqu'un ordre est réellement nécessaire ;
+- privilégie le texte rédigé : ne transforme pas l'article en succession de listes ;
+- ne laisse jamais un intertitre sous forme de simple phrase isolée : tout intertitre doit commencer par "## " ou "### " ;
+- n'utilise pas d'intertitres génériques comme "Introduction", "Développement", "Conclusion", "À retenir" ou "Quelques conseils" ;
+- ne produis aucun HTML dans content ;
+- ne produis aucun bloc de code Markdown ;
+- termine naturellement l'article, avec si pertinent une ouverture vers l'accompagnement LBMedia, sans imposer un intertitre "Conclusion" ;
 - n'écris pas pour satisfaire mécaniquement un outil de score SEO.
+
+Exemple de structure attendue dans le champ content :
+
+Paragraphe d'ouverture qui introduit naturellement le sujet.
+
+## Un premier intertitre précis et utile
+
+Un ou plusieurs paragraphes développent cette première idée.
+
+## Un deuxième intertitre précis
+
+Un paragraphe peut introduire une liste lorsque cela apporte réellement quelque chose :
+
+- premier point ;
+- deuxième point ;
+- troisième point.
+
+### Un sous-angle si nécessaire
+
+Un ou plusieurs paragraphes développent cette sous-partie.
+
+## Une dernière partie utile
+
+Le texte se termine naturellement, sans ajouter artificiellement un intertitre "Conclusion".
 
 Règles SEO/GEO :
 
