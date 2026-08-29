@@ -308,6 +308,50 @@ export async function POST(
       linkedPublicationsUpdated =
         linkedPublications?.length ??
         0;
+
+      const {
+        error:
+          googleBusinessCtaError,
+      } = await supabaseAdmin
+        .from("publications")
+        .update({
+          call_to_action:
+            "En savoir plus",
+          updated_at:
+            now,
+        })
+        .eq(
+          "news_id",
+          publication.news_id
+        )
+        .eq(
+          "channel",
+          "google_business"
+        );
+
+      if (
+        googleBusinessCtaError
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            warning: true,
+            message:
+              "Le lien WordPress a bien été synchronisé avec les déclinaisons, mais Office n’a pas pu mettre à jour le CTA Google Business.",
+            error:
+              googleBusinessCtaError.message,
+            wordpress_post_id:
+              wordpressPostId,
+            wordpress_url:
+              wordpressUrlValue,
+            publication:
+              updatedPublication,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
     }
 
     return NextResponse.json({
