@@ -952,6 +952,18 @@ export async function POST(
         ),
     };
 
+    const rankMathMeta = {
+      rank_math_focus_keyword:
+        publication.focus_keyword?.trim() ||
+        "",
+      rank_math_title:
+        publication.seo_title?.trim() ||
+        "",
+      rank_math_description:
+        publication.meta_description?.trim() ||
+        "",
+    };
+
     const payload = {
       title:
         articleTitle,
@@ -964,8 +976,10 @@ export async function POST(
         publication.meta_description ||
         undefined,
       status: "draft",
-      meta:
-        elementorMeta,
+      meta: {
+        ...elementorMeta,
+        ...rankMathMeta,
+      },
     };
 
     const endpoint =
