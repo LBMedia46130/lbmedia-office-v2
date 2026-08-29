@@ -178,6 +178,50 @@ export async function POST(
       );
     }
 
+    const wordpressPostId =
+      typeof wordpressData.id === "number"
+        ? wordpressData.id
+        : Number(wordpressData.id);
+
+    const wordpressUrlValue =
+      typeof wordpressData.link === "string"
+        ? wordpressData.link.trim()
+        : "";
+
+    if (
+      !Number.isFinite(wordpressPostId) ||
+      wordpressPostId <= 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "WordPress a traité le brouillon mais n’a pas retourné d’identifiant exploitable.",
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
+    if (!wordpressUrlValue) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "WordPress a traité le brouillon mais n’a pas retourné son URL.",
+          wordpress_post_id:
+            wordpressPostId,
+        },
+        {
+          status: 502,
+        }
+      );
+    }
+
+    const now =
+      new Date().toISOString();
+
     const {
       data: updatedPublication,
       error: updateError,
@@ -185,12 +229,11 @@ export async function POST(
       .from("publications")
       .update({
         wordpress_post_id:
-          wordpressData.id,
+          wordpressPostId,
         published_url:
-          wordpressData.link ??
-          null,
+          wordpressUrlValue,
         updated_at:
-          new Date().toISOString(),
+          now,
       })
       .eq("id", id)
       .select("*")
@@ -205,15 +248,66 @@ export async function POST(
           error:
             updateError.message,
           wordpress_post_id:
-            wordpressData.id,
+            wordpressPostId,
           wordpress_url:
-            wordpressData.link ??
-            null,
+            wordpressUrlValue,
         },
         {
           status: 500,
         }
       );
+    }
+
+    let linkedPublicationsUpdated =
+      0;
+
+    if (publication.news_id) {
+      const {
+        data: linkedPublications,
+        error: linkedUpdateError,
+      } = await supabaseAdmin
+        .from("publications")
+        .update({
+          link_url:
+            wordpressUrlValue,
+          updated_at:
+            now,
+        })
+        .eq(
+          "news_id",
+          publication.news_id
+        )
+        .neq(
+          "channel",
+          "website"
+        )
+        .select("id");
+
+      if (linkedUpdateError) {
+        return NextResponse.json(
+          {
+            success: false,
+            warning: true,
+            message:
+              "Le brouillon WordPress a bien été créé et son URL enregistrée, mais Office n’a pas pu transmettre ce lien aux déclinaisons.",
+            error:
+              linkedUpdateError.message,
+            wordpress_post_id:
+              wordpressPostId,
+            wordpress_url:
+              wordpressUrlValue,
+            publication:
+              updatedPublication,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      linkedPublicationsUpdated =
+        linkedPublications?.length ??
+        0;
     }
 
     return NextResponse.json({
@@ -224,13 +318,14 @@ export async function POST(
           : "created",
       message:
         hasExistingWordPressPost
-          ? "Brouillon WordPress mis à jour."
-          : "Brouillon WordPress créé.",
+          ? "Brouillon WordPress mis à jour et lien synchronisé avec les déclinaisons."
+          : "Brouillon WordPress créé et lien synchronisé avec les déclinaisons.",
       wordpress_post_id:
-        wordpressData.id,
+        wordpressPostId,
       wordpress_url:
-        wordpressData.link ??
-        null,
+        wordpressUrlValue,
+      linked_publications_updated:
+        linkedPublicationsUpdated,
       publication:
         updatedPublication,
     });
