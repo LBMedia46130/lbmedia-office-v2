@@ -105,7 +105,9 @@ function objectContainsValue(
   expected: string
 ): boolean {
   if (typeof value === "string") {
-    return value.trim() === expected;
+    return value.includes(
+      expected
+    );
   }
 
   if (Array.isArray(value)) {
@@ -250,10 +252,15 @@ function replaceMarkerInSettings(
   ) {
     if (
       typeof value === "string" &&
-      value.trim() === marker
+      value.includes(
+        marker
+      )
     ) {
       settings[key] =
-        replacement;
+        value.replace(
+          marker,
+          replacement
+        );
 
       return true;
     }
