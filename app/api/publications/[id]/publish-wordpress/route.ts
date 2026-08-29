@@ -887,7 +887,9 @@ export async function POST(
       _elementor_template_type:
         "wp-post",
       _elementor_data:
-        finalElementorData,
+        JSON.stringify(
+          finalElementorData
+        ),
     };
 
     const payload = {
