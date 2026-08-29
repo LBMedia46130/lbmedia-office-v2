@@ -400,6 +400,24 @@ function getText(
   return trimmed || null;
 }
 
+function getChannelVisualLabel(
+  channel: PublicationChannel
+) {
+  switch (channel) {
+    case "google_business":
+      return "Google Business";
+
+    case "linkedin":
+      return "LinkedIn";
+
+    case "facebook":
+      return "Facebook";
+
+    default:
+      return "réseau social";
+  }
+}
+
 export async function POST(
   _request: Request,
   context: RouteContext
@@ -429,7 +447,8 @@ export async function POST(
       news (
         title,
         content,
-        source_url
+        source_url,
+        image_url
       )
     `)
     .eq("id", id)
@@ -808,6 +827,45 @@ N'utilise aucun bloc Markdown.
     if (newsRelation?.source_url) {
       updateData.link_url =
         newsRelation.source_url;
+    }
+
+    const inheritedVisualChannels:
+      PublicationChannel[] = [
+        "google_business",
+        "linkedin",
+        "facebook",
+      ];
+
+    const canInheritMainVisual =
+      !isStandalone &&
+      inheritedVisualChannels.includes(
+        channel
+      ) &&
+      !getText(
+        publication.image_url
+      ) &&
+      getText(
+        newsRelation?.image_url
+      );
+
+    if (
+      canInheritMainVisual
+    ) {
+      updateData.image_url =
+        getText(
+          newsRelation?.image_url
+        );
+
+      if (
+        !getText(
+          publication.image_alt
+        )
+      ) {
+        updateData.image_alt =
+          `Illustration éditoriale LBMedia pour une publication ${getChannelVisualLabel(
+            channel
+          )} sur ${newsRelation.title}.`;
+      }
     }
 
     const {
