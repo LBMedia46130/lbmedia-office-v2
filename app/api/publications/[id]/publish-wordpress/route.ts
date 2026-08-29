@@ -359,13 +359,64 @@ function articleContentToHtml(
     listType = null;
   }
 
-  for (const rawLine of lines) {
+  function getNextNonEmptyLine(
+    fromIndex: number
+  ) {
+    for (
+      let index =
+        fromIndex;
+      index <
+        lines.length;
+      index += 1
+    ) {
+      const candidate =
+        lines[index].trim();
+
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  for (
+    let index = 0;
+    index < lines.length;
+    index += 1
+  ) {
     const line =
-      rawLine.trim();
+      lines[index].trim();
 
     if (!line) {
       flushParagraph();
-      closeList();
+
+      if (listType) {
+        const nextLine =
+          getNextNonEmptyLine(
+            index + 1
+          );
+
+        const nextIsSameListType =
+          listType === "ul"
+            ? Boolean(
+                nextLine?.match(
+                  /^[-*]\s+(.+)$/
+                )
+              )
+            : Boolean(
+                nextLine?.match(
+                  /^\d+[.)]\s+(.+)$/
+                )
+              );
+
+        if (
+          !nextIsSameListType
+        ) {
+          closeList();
+        }
+      }
+
       continue;
     }
 
@@ -400,9 +451,13 @@ function articleContentToHtml(
     if (bulletMatch) {
       flushParagraph();
 
-      if (listType !== "ul") {
+      if (
+        listType !== "ul"
+      ) {
         closeList();
+
         listType = "ul";
+
         html.push("<ul>");
       }
 
@@ -425,9 +480,13 @@ function articleContentToHtml(
     if (numberedMatch) {
       flushParagraph();
 
-      if (listType !== "ol") {
+      if (
+        listType !== "ol"
+      ) {
         closeList();
+
         listType = "ol";
+
         html.push("<ol>");
       }
 
@@ -443,6 +502,7 @@ function articleContentToHtml(
     }
 
     closeList();
+
     paragraph.push(line);
   }
 
