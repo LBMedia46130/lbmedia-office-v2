@@ -35,16 +35,85 @@ const channelInstructions: Record<
   string
 > = {
   website: `
-Le canal "website" sert uniquement de publication technique WordPress.
+Le canal "website" sert à préparer l'article complet qui sera injecté dans le modèle Elementor WordPress de LBMedia.
 
-Si tu dois générer ce contenu :
-- conserve le fond et le ton éditorial de l'actualité source ;
-- ne transforme pas l'article en checklist ou en résumé ;
-- garde une structure naturelle d'article.
+OBJECTIF
+
+Conserve le fond, les informations et le ton éditorial de l'actualité source.
+Ne transforme pas l'article en checklist, en résumé ou en succession artificielle de conseils.
+Le résultat doit rester un véritable article de fond, agréable à lire et structuré pour le web.
+
+STRUCTURE DU CHAMP CONTENT
+
+Le champ content doit utiliser une structure Markdown simple que LBMedia Office convertira ensuite en HTML dans Elementor.
+
+Règles obligatoires :
+- n'insère jamais le titre principal de l'article dans content : il est géré séparément par le champ title ;
+- utilise "## " pour chaque intertitre principal de l'article ;
+- utilise "### " uniquement lorsqu'un sous-niveau est réellement utile ;
+- n'utilise jamais "# " ;
+- laisse une ligne vide avant et après chaque intertitre ;
+- sépare les paragraphes par une ligne vide ;
+- utilise "- " pour une liste à puces lorsqu'une liste améliore réellement la lecture ;
+- utilise "1. ", "2. ", "3. " pour une liste numérotée lorsqu'un ordre est réellement nécessaire ;
+- ne transforme pas tous les paragraphes en listes ;
+- ne mets jamais un intertitre sous forme de simple phrase isolée sans préfixe ## ou ### ;
+- ne produis pas de HTML ;
+- ne produis pas de bloc de code Markdown ;
+- n'ajoute aucune note technique destinée à WordPress ou Elementor.
+
+HIÉRARCHIE ÉDITORIALE
+
+L'article doit généralement comporter plusieurs sections H2 lorsque sa longueur le justifie.
+Chaque H2 doit annoncer clairement l'idée développée dans les paragraphes qui suivent.
+
+Privilégie des intertitres naturels, précis et utiles au lecteur.
+Évite les intitulés génériques comme :
+- "Introduction" ;
+- "Développement" ;
+- "Conclusion" ;
+- "À retenir" ;
+- "Quelques conseils".
+
+Un H3 ne doit être utilisé que pour structurer une sous-partie d'un H2, pas simplement pour varier la présentation.
+
+STYLE
+
+- conserve une progression naturelle d'article ;
+- paragraphes raisonnablement courts pour la lecture à l'écran ;
+- évite les blocs de texte inutilement longs ;
+- conserve les explications et nuances importantes de la source ;
+- ne raccourcis pas artificiellement l'article pour obtenir une structure plus nette ;
+- privilégie le texte rédigé ; les listes restent ponctuelles ;
+- termine naturellement l'article sans ajouter obligatoirement un intertitre "Conclusion".
+
+EXEMPLE DE STRUCTURE ATTENDUE POUR CONTENT
+
+Paragraphe d'introduction qui pose le sujet et son enjeu.
+
+## Un premier intertitre précis
+
+Un ou plusieurs paragraphes développent cette idée.
+
+## Un deuxième intertitre précis
+
+Un paragraphe peut introduire une courte liste si elle est pertinente :
+
+- premier point ;
+- deuxième point ;
+- troisième point.
+
+### Un sous-angle si nécessaire
+
+Un ou plusieurs paragraphes poursuivent le développement.
+
+## Une dernière partie utile
+
+Le texte se termine naturellement.
 
 Retourne :
 - title : titre éditorial naturel ;
-- content : article complet ;
+- content : article complet structuré selon les règles Markdown ci-dessus ;
 - slug : slug court et lisible ;
 - seo_title : titre SEO naturel ;
 - meta_description : méta-description concise et humaine.
