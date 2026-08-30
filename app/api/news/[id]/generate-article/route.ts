@@ -189,11 +189,6 @@ export async function POST(
       websitePublication =
         createdWebsitePublication as WebsitePublication | null;
 
-      /*
-       * Avec ignoreDuplicates, une requête concurrente
-       * peut avoir créé la publication entre-temps.
-       * Si Supabase ne nous retourne rien, on la relit.
-       */
       if (!websitePublication) {
         const {
           data: reloadedWebsitePublication,
@@ -411,6 +406,31 @@ Règles SEO :
 - ne bourre jamais le texte ALT de mots-clés ;
 - Rank Math sera utilisé ensuite comme outil de contrôle : ne dégrade jamais la qualité éditoriale dans le seul but d'anticiper son score.
 
+Maillage interne :
+
+- lorsqu'une page LBMedia fournie dans le contexte apporte un prolongement réellement utile au sujet, insère naturellement un ou deux liens internes dans content ;
+- utilise exclusivement les URL LBMedia explicitement fournies dans le contexte permanent ;
+- n'invente jamais une URL ou un slug ;
+- utilise la syntaxe Markdown [ancre descriptive](URL) ;
+- choisis une ancre naturelle et descriptive intégrée à la phrase ;
+- n'utilise jamais des ancres comme "cliquez ici", "voir ici" ou "en savoir plus" ;
+- privilégie les pages métier ou les ressources directement liées au sujet ;
+- ne place pas automatiquement un lien vers la page Contact ;
+- ne place pas plusieurs liens vers la même page dans un même article ;
+- ne force jamais un lien interne si aucune page disponible n'est réellement pertinente ;
+- le maillage doit rester discret et utile au lecteur.
+
+Liens externes :
+
+- un lien externe n'est pas obligatoire dans chaque article ;
+- ajoute un lien externe uniquement lorsqu'une source extérieure apporte une information, une définition, une référence officielle ou un complément réellement utile ;
+- privilégie les sources officielles, institutionnelles ou faisant autorité sur le sujet ;
+- lorsqu'une URL source est fournie avec l'actualité et qu'elle constitue une référence utile et fiable, tu peux l'utiliser ;
+- n'invente jamais l'URL précise d'une source que tu ne peux pas déterminer avec certitude à partir des informations fournies ;
+- ne crée jamais un lien externe uniquement pour améliorer un score SEO ;
+- utilise la syntaxe Markdown [ancre descriptive](URL) ;
+- évite de renvoyer vers un concurrent commercial direct de LBMedia lorsqu'une source neutre ou officielle permet de documenter le même point.
+
 Règles GEO et compréhension par les assistants IA :
 
 Le contenu doit être facilement compris, interprété et exploité par un moteur de recherche ou un assistant IA, sans modifier artificiellement le style éditorial.
@@ -483,6 +503,9 @@ Voici le brouillon actuel :
 
 ${currentDraft}
 
+URL source éventuellement associée à cette actualité :
+${news.source_url?.trim() || "Aucune URL source fournie."}
+
 Voici l'historique éditorial récent de LBMedia, à utiliser uniquement pour éviter les répétitions trop proches :
 
 ${editorialHistory}
@@ -494,7 +517,9 @@ Avant de produire le JSON final, détermine silencieusement :
 - l'intention de recherche principale ;
 - la réponse essentielle que le lecteur doit obtenir ;
 - le mot-clé principal le plus naturel ;
-- les notions qui doivent être explicitées pour que l'article soit compris sans ambiguïté.
+- les notions qui doivent être explicitées pour que l'article soit compris sans ambiguïté ;
+- les éventuelles pages LBMedia qui constituent un prolongement réellement utile ;
+- si l'URL source fournie mérite réellement d'être citée dans l'article.
 
 N'affiche pas cette analyse dans la réponse.
 `,

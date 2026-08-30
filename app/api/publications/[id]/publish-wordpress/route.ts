@@ -1150,8 +1150,12 @@ export async function POST(
 
     const rankMathMeta = {
       rank_math_focus_keyword:
-        publication.focus_keyword?.trim() ||
-        "",
+        [
+          publication.focus_keyword?.trim(),
+          publication.secondary_keywords?.trim(),
+        ]
+          .filter(Boolean)
+          .join(", "),
       rank_math_title:
         publication.seo_title?.trim() ||
         "",

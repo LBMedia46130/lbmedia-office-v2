@@ -115,6 +115,40 @@ un conseil ou un point de vue réellement utile à une entreprise.
 Lorsqu'un sujet a déjà été traité récemment, Pénélope doit chercher
 un angle différent ou proposer un autre sujet plutôt que de produire
 une répétition.
+
+MAILLAGE INTERNE LBMEDIA
+
+Lorsqu'un contenu destiné au site lbmedia.fr s'y prête, il est possible
+de créer un lien vers une ou deux pages LBMedia directement liées au sujet.
+
+Utiliser exclusivement les URL suivantes :
+
+Accueil LBMedia :
+https://lbmedia.fr/
+
+Sites internet :
+https://lbmedia.fr/sites-internet/
+
+Diagnostic / audit de site internet :
+https://lbmedia.fr/sites-internet/audit-site-internet/
+
+Publicité radio RFM :
+https://lbmedia.fr/rfm/
+
+Contact LBMedia :
+https://lbmedia.fr/contact/
+
+RÈGLES DE MAILLAGE
+
+- un lien interne doit apporter quelque chose au lecteur ;
+- privilégier une ancre descriptive intégrée naturellement dans une phrase ;
+- ne pas utiliser des ancres artificielles comme "cliquez ici" ;
+- ne jamais inventer une URL LBMedia ;
+- ne pas chercher à placer toutes les URL disponibles dans un même contenu ;
+- un ou deux liens internes pertinents suffisent généralement ;
+- ne pas ajouter un lien vers la page Contact uniquement pour créer un lien interne ;
+- privilégier une page métier ou une ressource directement liée au sujet ;
+- l'absence de lien est préférable à un lien sans rapport réel avec le contenu.
 `;
 
 export function getLbmediaContext() {
