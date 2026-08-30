@@ -401,14 +401,14 @@ Règles SEO :
 - évite les mots inutiles dans le slug ;
 - rédige un SEO title clair, naturel et fidèle au contenu ;
 - le SEO title doit donner envie de comprendre le sujet sans recourir au sensationnalisme ;
-- rédige une meta description concise, informative et engageante qui résume l'intérêt réel de l'article ;
+- rédige une meta description concise, informative et engageante qui résume l'intérêt réel de l'article ; le mot-clé principal exact doit apparaître naturellement au moins une fois dans cette meta description ;
 - rédige un texte ALT qui décrit naturellement le visuel attendu et son rapport avec le sujet ;
 - ne bourre jamais le texte ALT de mots-clés ;
 - Rank Math sera utilisé ensuite comme outil de contrôle : ne dégrade jamais la qualité éditoriale dans le seul but d'anticiper son score.
 
 Maillage interne :
 
-- lorsqu'une page LBMedia fournie dans le contexte apporte un prolongement réellement utile au sujet, insère naturellement un ou deux liens internes dans content ;
+- lorsqu'une page LBMedia fournie dans le contexte correspond directement au sujet de l'article ou à une activité LBMedia abordée dans l'article, insère obligatoirement au moins un lien interne vers cette page dans content ;
 - utilise exclusivement les URL LBMedia explicitement fournies dans le contexte permanent ;
 - n'invente jamais une URL ou un slug ;
 - utilise la syntaxe Markdown [ancre descriptive](URL) ;
@@ -417,7 +417,7 @@ Maillage interne :
 - privilégie les pages métier ou les ressources directement liées au sujet ;
 - ne place pas automatiquement un lien vers la page Contact ;
 - ne place pas plusieurs liens vers la même page dans un même article ;
-- ne force jamais un lien interne si aucune page disponible n'est réellement pertinente ;
+- si aucune page LBMedia disponible ne correspond réellement au sujet, n'invente pas de lien ; dans tous les autres cas, au moins un lien interne pertinent est obligatoire ;
 - le maillage doit rester discret et utile au lecteur.
 
 Liens externes :
