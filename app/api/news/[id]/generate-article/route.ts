@@ -638,7 +638,7 @@ N'affiche pas cette analyse dans la réponse.
         meta_description:
           generated.meta_description.trim(),
         image_alt:
-          generated.image_alt.trim(),
+          generated.focus_keyword.trim(),
         updated_at: now,
       })
       .eq(
