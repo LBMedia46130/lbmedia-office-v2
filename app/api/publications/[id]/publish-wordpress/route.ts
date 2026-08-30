@@ -14,12 +14,25 @@ type WordPressPost = {
   meta?: Record<string, unknown>;
 };
 
+type WordPressMedia = {
+  id?: number | string;
+  source_url?: string;
+  alt_text?: string;
+  code?: string;
+  message?: string;
+};
+
 type ElementorNode = {
   id?: string;
   elType?: string;
   widgetType?: string;
   settings?: Record<string, unknown>;
   elements?: ElementorNode[];
+};
+
+type WordPressImage = {
+  id: number;
+  url: string;
 };
 
 const ELEMENTOR_TEMPLATE_POST_ID = 2468;
@@ -455,9 +468,7 @@ function articleContentToHtml(
         listType !== "ul"
       ) {
         closeList();
-
         listType = "ul";
-
         html.push("<ul>");
       }
 
@@ -484,9 +495,7 @@ function articleContentToHtml(
         listType !== "ol"
       ) {
         closeList();
-
         listType = "ol";
-
         html.push("<ol>");
       }
 
@@ -522,7 +531,8 @@ function injectArticleIntoElementor(
   values: {
     title: string;
     contentHtml: string;
-    imageUrl: string | null;
+    image:
+      WordPressImage | null;
   }
 ) {
   const nodes =
@@ -614,15 +624,19 @@ function injectArticleIntoElementor(
     typeof currentImage === "object" &&
     !Array.isArray(currentImage)
       ? deepClone(
-          currentImage as Record<string, unknown>
+          currentImage as Record<
+            string,
+            unknown
+          >
         )
       : {};
 
   imageNode.settings.image = {
     ...currentImageObject,
-    id: "",
+    id:
+      values.image?.id ?? "",
     url:
-      values.imageUrl ?? "",
+      values.image?.url ?? "",
   };
 
   return nodes;
@@ -695,6 +709,170 @@ function copyElementorMeta(
   return result;
 }
 
+function sanitizeMediaFileName(
+  value: string
+) {
+  const normalized =
+    value
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]+/g,
+        "-"
+      )
+      .replace(
+        /^-+|-+$/g,
+        ""
+      )
+      .slice(0, 80);
+
+  return normalized ||
+    "illustration-lbmedia";
+}
+
+async function importImageIntoWordPress(
+  wordpressUrl: string,
+  authorization: string,
+  imageUrl: string,
+  title: string,
+  altText: string
+): Promise<WordPressImage> {
+  const imageResponse =
+    await fetch(
+      imageUrl,
+      {
+        method: "GET",
+        cache:
+          "no-store",
+      }
+    );
+
+  if (!imageResponse.ok) {
+    throw new Error(
+      "Impossible de récupérer le visuel depuis le stockage LBMedia."
+    );
+  }
+
+  const contentType =
+    imageResponse.headers.get(
+      "content-type"
+    ) || "image/png";
+
+  const extension =
+    contentType.includes("jpeg") ||
+    contentType.includes("jpg")
+      ? "jpg"
+      : contentType.includes("webp")
+        ? "webp"
+        : "png";
+
+  const imageBuffer =
+    Buffer.from(
+      await imageResponse.arrayBuffer()
+    );
+
+  const fileName =
+    `${sanitizeMediaFileName(
+      title
+    )}.${extension}`;
+
+  const mediaResponse =
+    await fetch(
+      `${wordpressUrl}/wp-json/wp/v2/media`,
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            authorization,
+          "Content-Type":
+            contentType,
+          "Content-Disposition":
+            `attachment; filename="${fileName}"`,
+        },
+        body:
+          imageBuffer,
+        cache:
+          "no-store",
+      }
+    );
+
+  const mediaData =
+    (await mediaResponse.json()) as
+      WordPressMedia;
+
+  if (!mediaResponse.ok) {
+    throw new Error(
+      mediaData.message ||
+        "WordPress a refusé l’import du visuel dans la médiathèque."
+    );
+  }
+
+  const mediaId =
+    typeof mediaData.id === "number"
+      ? mediaData.id
+      : Number(mediaData.id);
+
+  const mediaUrl =
+    typeof mediaData.source_url ===
+      "string"
+      ? mediaData.source_url.trim()
+      : "";
+
+  if (
+    !Number.isFinite(mediaId) ||
+    mediaId <= 0 ||
+    !mediaUrl
+  ) {
+    throw new Error(
+      "WordPress a importé le visuel mais n’a pas retourné un média exploitable."
+    );
+  }
+
+  const metadataResponse =
+    await fetch(
+      `${wordpressUrl}/wp-json/wp/v2/media/${mediaId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            authorization,
+          "Content-Type":
+            "application/json",
+        },
+        body:
+          JSON.stringify({
+            title,
+            alt_text:
+              altText.trim(),
+          }),
+        cache:
+          "no-store",
+      }
+    );
+
+  const metadataData =
+    (await metadataResponse.json()) as
+      WordPressMedia;
+
+  if (!metadataResponse.ok) {
+    throw new Error(
+      metadataData.message ||
+        "Le visuel a été importé dans WordPress mais son texte alternatif n’a pas pu être enregistré."
+    );
+  }
+
+  return {
+    id:
+      mediaId,
+    url:
+      mediaUrl,
+  };
+}
+
 export async function POST(
   _request: Request,
   context: RouteContext
@@ -753,7 +931,8 @@ export async function POST(
     }
 
     if (
-      publication.channel !== "website"
+      publication.channel !==
+      "website"
     ) {
       return NextResponse.json(
         {
@@ -809,6 +988,26 @@ export async function POST(
         null;
     }
 
+    const articleTitle =
+      publication.title?.trim() ||
+      "Actualité LBMedia";
+
+    let wordpressImage:
+      WordPressImage | null =
+      null;
+
+    if (articleImageUrl) {
+      wordpressImage =
+        await importImageIntoWordPress(
+          wordpressUrl,
+          authorization,
+          articleImageUrl,
+          articleTitle,
+          publication.image_alt?.trim() ||
+            articleTitle
+        );
+    }
+
     const templatePost =
       await getWordPressPost(
         wordpressUrl,
@@ -834,7 +1033,8 @@ export async function POST(
     const hasExistingWordPressPost =
       typeof publication.wordpress_post_id ===
         "number" &&
-      publication.wordpress_post_id > 0;
+      publication.wordpress_post_id >
+        0;
 
     let sourceElementorData =
       templateElementorData;
@@ -917,10 +1117,6 @@ export async function POST(
       }
     }
 
-    const articleTitle =
-      publication.title?.trim() ||
-      "Actualité LBMedia";
-
     const articleContentHtml =
       articleContentToHtml(
         publication.content
@@ -935,8 +1131,8 @@ export async function POST(
             articleTitle,
           contentHtml:
             articleContentHtml,
-          imageUrl:
-            articleImageUrl,
+          image:
+            wordpressImage,
         }
       );
 
@@ -975,7 +1171,11 @@ export async function POST(
       excerpt:
         publication.meta_description ||
         undefined,
-      status: "draft",
+      status:
+        "draft",
+      featured_media:
+        wordpressImage?.id ||
+        undefined,
       meta: {
         ...elementorMeta,
         ...rankMathMeta,
@@ -999,7 +1199,9 @@ export async function POST(
               "application/json",
           },
           body:
-            JSON.stringify(payload),
+            JSON.stringify(
+              payload
+            ),
           cache:
             "no-store",
         }
@@ -1033,12 +1235,16 @@ export async function POST(
     }
 
     const wordpressPostId =
-      typeof wordpressData.id === "number"
+      typeof wordpressData.id ===
+        "number"
         ? wordpressData.id
-        : Number(wordpressData.id);
+        : Number(
+            wordpressData.id
+          );
 
     const wordpressUrlValue =
-      typeof wordpressData.link === "string"
+      typeof wordpressData.link ===
+        "string"
         ? wordpressData.link.trim()
         : "";
 
@@ -1219,6 +1425,9 @@ export async function POST(
       elementor: true,
       elementor_template_post_id:
         ELEMENTOR_TEMPLATE_POST_ID,
+      wordpress_media_id:
+        wordpressImage?.id ??
+        null,
       message:
         hasExistingWordPressPost
           ? "Brouillon Elementor mis à jour et lien synchronisé avec les déclinaisons."
