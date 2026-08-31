@@ -62,49 +62,40 @@ export async function createCompany(
     .from("companies")
     .insert({
       name: name.trim(),
-
       legal_name:
         optionalValue(
           formData,
           "legal_name"
         ),
-
       email:
         optionalValue(
           formData,
           "email"
         ),
-
       phone:
         optionalValue(
           formData,
           "phone"
         ),
-
       website:
         optionalValue(
           formData,
           "website"
         ),
-
       postal_code:
         optionalValue(
           formData,
           "postal_code"
         ),
-
       city:
         optionalValue(
           formData,
           "city"
         ),
-
       is_active:
         true,
-
       relationship_status:
         "prospect",
-
       pipeline_stage:
         "new",
     })
@@ -135,23 +126,24 @@ export async function createCompany(
   );
 }
 
-/*
- * Une entreprise n'est jamais
- * supprimée physiquement depuis
- * LBMedia Office.
+/**
+ * Supprime définitivement une entreprise
+ * de LBMedia Office.
  *
- * La suppression depuis l'interface
- * correspond à un archivage :
- * is_active passe à false.
+ * Les relations sont gérées par les
+ * contraintes de la base :
  *
- * Cela permet de conserver :
- * - la fiche CRM ;
- * - le zoho_contact_id ;
- * - les liens avec devis/factures ;
- * - l'historique commercial ;
- * - les données liées à l'entreprise.
+ * CASCADE :
+ * - audit_prospections
+ * - company_contacts
+ * - opportunities
+ *
+ * SET NULL :
+ * - estimate_campaign_contexts
+ * - website_audits
  *
  * Aucun appel Zoho n'est effectué ici.
+ * Les devis et factures Zoho sont conservés.
  */
 export async function deleteCompany(
   id: string
@@ -163,10 +155,7 @@ export async function deleteCompany(
     .from(
       "companies"
     )
-    .update({
-      is_active:
-        false,
-    })
+    .delete()
     .eq(
       "id",
       id
@@ -174,8 +163,7 @@ export async function deleteCompany(
     .select(
       `
         id,
-        name,
-        is_active
+        name
       `
     )
     .maybeSingle();
@@ -184,13 +172,14 @@ export async function deleteCompany(
     error
   ) {
     console.error(
+      "Company deletion failed:",
       error
     );
 
     return {
       success: false,
       message:
-        "Impossible d’archiver l’entreprise.",
+        "Impossible de supprimer l’entreprise.",
     };
   }
 
@@ -206,10 +195,6 @@ export async function deleteCompany(
 
   revalidatePath(
     "/companies"
-  );
-
-  revalidatePath(
-    `/companies/${id}`
   );
 
   redirect(
