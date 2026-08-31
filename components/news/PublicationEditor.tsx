@@ -174,6 +174,13 @@ export default function PublicationEditor({
   ] = useState(false);
 
   const [
+    brevoCampaignId,
+    setBrevoCampaignId,
+  ] = useState(
+    publication.brevo_campaign_id
+  );
+
+  const [
     brevoSendApprovedAt,
     setBrevoSendApprovedAt,
   ] = useState(
@@ -1000,7 +1007,7 @@ export default function PublicationEditor({
     }
 
     if (
-      !publication.brevo_campaign_id
+      !brevoCampaignId
     ) {
       setMessage(null);
       setError(
@@ -1345,6 +1352,10 @@ export default function PublicationEditor({
 
     setIsFollowUpCopied(false);
 
+    setBrevoCampaignId(
+      updatedPublication.brevo_campaign_id
+    );
+
     setBrevoSendApprovedAt(
       updatedPublication.brevo_send_approved_at
     );
@@ -1620,7 +1631,7 @@ export default function PublicationEditor({
                   }
                   disabled={
                     isBusy ||
-                    !publication.brevo_campaign_id
+                    !brevoCampaignId
                   }
                   className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
