@@ -150,6 +150,42 @@ export async function POST(
       );
     }
 
+    let articleImageUrl:
+      string | null = null;
+
+    if (publication.news_id) {
+      const {
+        data: news,
+        error: newsError,
+      } = await supabaseAdmin
+        .from("news")
+        .select("image_url")
+        .eq(
+          "id",
+          publication.news_id
+        )
+        .maybeSingle();
+
+      if (newsError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Impossible de charger le visuel de l'actualité.",
+            error:
+              newsError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      articleImageUrl =
+        news?.image_url?.trim() ||
+        null;
+    }
+
     const campaignName =
       publication.title?.trim() ||
       publication.subject.trim();
@@ -162,8 +198,7 @@ export async function POST(
         content:
           publication.content,
         imageUrl:
-          publication.image_url?.trim() ||
-          null,
+          articleImageUrl,
         linkUrl:
           publication.link_url?.trim() ||
           null,
@@ -363,7 +398,7 @@ function buildNewsletterHtml({
           <td
             align="center"
             style="
-              padding: 0 0 24px;
+              padding: 0 30px 24px;
             "
           >
             <img
@@ -371,11 +406,11 @@ function buildNewsletterHtml({
                 imageUrl
               )}"
               alt="${titleHtml}"
-              width="600"
+              width="540"
               style="
                 display:block;
                 width:100%;
-                max-width:600px;
+                max-width:540px;
                 height:auto;
                 border:0;
                 outline:none;
