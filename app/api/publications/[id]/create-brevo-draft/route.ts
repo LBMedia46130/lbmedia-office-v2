@@ -406,11 +406,11 @@ function buildNewsletterHtml({
                 imageUrl
               )}"
               alt="${titleHtml}"
-              width="540"
+              width="420"
               style="
                 display:block;
                 width:100%;
-                max-width:540px;
+                max-width:420px;
                 height:auto;
                 border:0;
                 outline:none;
