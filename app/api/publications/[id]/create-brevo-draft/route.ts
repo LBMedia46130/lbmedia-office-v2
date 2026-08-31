@@ -10,6 +10,7 @@ type RouteContext = {
 
 const BREVO_LIST_ID = 5;
 const BREVO_SENDER_ID = 2;
+const BREVO_TEMPLATE_ID = 38;
 
 export async function POST(
   _request: Request,
@@ -139,20 +140,19 @@ export async function POST(
       publication.title?.trim() ||
       publication.subject.trim();
 
-    const htmlContent =
-      buildHtmlContent(
-        publication.content,
-        publication.link_url
+    const formattedContent =
+      buildTemplateContent(
+        publication.content
       );
 
     const payload = {
       name: campaignName,
 
       subject:
-        publication.subject,
+        publication.subject.trim(),
 
       previewText:
-        publication.preview_text ||
+        publication.preview_text?.trim() ||
         undefined,
 
       sender: {
@@ -165,7 +165,25 @@ export async function POST(
         ],
       },
 
-      htmlContent,
+      templateId:
+        BREVO_TEMPLATE_ID,
+
+      params: {
+        titre:
+          publication.title?.trim() ||
+          publication.subject.trim(),
+
+        contenu:
+          formattedContent,
+
+        lien:
+          publication.link_url?.trim() ||
+          "https://lbmedia.fr/",
+
+        image_url:
+          publication.image_url?.trim() ||
+          "",
+      },
     };
 
     const response = await fetch(
@@ -285,13 +303,15 @@ export async function POST(
       success: true,
       alreadyExists: false,
       message:
-        "Brouillon de campagne Brevo créé.",
+        "Brouillon de campagne Brevo créé à partir du template LBMedia.",
       brevo_campaign_id:
         campaignId,
       brevo_list_id:
         BREVO_LIST_ID,
       brevo_sender_id:
         BREVO_SENDER_ID,
+      brevo_template_id:
+        BREVO_TEMPLATE_ID,
       publication:
         updatedPublication,
     });
@@ -313,11 +333,10 @@ export async function POST(
   }
 }
 
-function buildHtmlContent(
-  content: string,
-  linkUrl: string | null
+function buildTemplateContent(
+  content: string
 ) {
-  const paragraphs = content
+  return content
     .split("\n")
     .map((paragraph) =>
       paragraph.trim()
@@ -330,47 +349,6 @@ function buildHtmlContent(
         )}</p>`
     )
     .join("");
-
-  const link =
-    linkUrl?.trim()
-      ? `
-        <p style="margin:28px 0 0;">
-          <a
-            href="${escapeHtml(
-              linkUrl
-            )}"
-            style="
-              display:inline-block;
-              padding:12px 20px;
-              background:#111827;
-              color:#ffffff;
-              text-decoration:none;
-              border-radius:8px;
-              font-weight:600;
-            "
-          >
-            En savoir plus
-          </a>
-        </p>
-      `
-      : "";
-
-  return `
-    <div
-      style="
-        max-width:640px;
-        margin:0 auto;
-        padding:24px;
-        font-family:Arial,sans-serif;
-        font-size:16px;
-        line-height:1.6;
-        color:#111827;
-      "
-    >
-      ${paragraphs}
-      ${link}
-    </div>
-  `;
 }
 
 function escapeHtml(
