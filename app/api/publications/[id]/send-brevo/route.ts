@@ -8,21 +8,32 @@ type RouteContext = {
   }>;
 };
 
+async function readBrevoResponse(response: Response) {
+  const rawResponse = await response.text();
+
+  if (!rawResponse) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawResponse) as unknown;
+  } catch {
+    return rawResponse;
+  }
+}
+
 export async function POST(
   _request: Request,
   context: RouteContext
 ) {
   const { id } = await context.params;
-
-  const apiKey =
-    process.env.BREVO_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "La clé API Brevo n'est pas configurée.",
+        message: "La clé API Brevo n'est pas configurée.",
       },
       {
         status: 500,
@@ -44,10 +55,8 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Impossible de charger la newsletter.",
-          error:
-            publicationError.message,
+          message: "Impossible de charger la newsletter.",
+          error: publicationError.message,
         },
         {
           status: 500,
@@ -59,8 +68,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Publication introuvable.",
+          message: "Publication introuvable.",
         },
         {
           status: 404,
@@ -68,14 +76,11 @@ export async function POST(
       );
     }
 
-    if (
-      publication.channel !== "brevo"
-    ) {
+    if (publication.channel !== "brevo") {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Cette publication n'est pas une newsletter Brevo.",
+          message: "Cette publication n'est pas une newsletter Brevo.",
         },
         {
           status: 400,
@@ -83,14 +88,11 @@ export async function POST(
       );
     }
 
-    if (
-      publication.status === "published"
-    ) {
+    if (publication.status === "published") {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Cette campagne Brevo est déjà marquée comme envoyée.",
+          message: "Cette campagne Brevo est déjà marquée comme envoyée.",
         },
         {
           status: 400,
@@ -98,14 +100,11 @@ export async function POST(
       );
     }
 
-    if (
-      !publication.brevo_campaign_id
-    ) {
+    if (!publication.brevo_campaign_id) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Aucun brouillon Brevo n'existe encore pour cette newsletter.",
+          message: "Aucun brouillon Brevo n'existe encore pour cette newsletter.",
         },
         {
           status: 400,
@@ -113,19 +112,105 @@ export async function POST(
       );
     }
 
-    if (
-      !publication.brevo_send_approved_at
-    ) {
+    if (!publication.brevo_send_approved_at) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "L'envoi Brevo n'a pas encore été explicitement autorisé.",
+          message: "L'envoi Brevo n'a pas encore été explicitement autorisé.",
         },
         {
           status: 400,
         }
       );
+    }
+
+    const now = new Date();
+    const scheduledAt = publication.scheduled_at
+      ? new Date(publication.scheduled_at)
+      : null;
+    const hasValidFutureSchedule =
+      scheduledAt !== null &&
+      !Number.isNaN(scheduledAt.getTime()) &&
+      scheduledAt.getTime() > now.getTime();
+
+    if (hasValidFutureSchedule) {
+      const response = await fetch(
+        `https://api.brevo.com/v3/emailCampaigns/${publication.brevo_campaign_id}`,
+        {
+          method: "PUT",
+          headers: {
+            accept: "application/json",
+            "api-key": apiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            scheduledAt: scheduledAt.toISOString(),
+          }),
+          cache: "no-store",
+        }
+      );
+
+      const data = await readBrevoResponse(response);
+
+      if (!response.ok) {
+        console.error("Brevo campaign scheduling failed", {
+          status: response.status,
+          data,
+          campaignId: publication.brevo_campaign_id,
+          scheduledAt: scheduledAt.toISOString(),
+        });
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Brevo a refusé la programmation de la campagne.",
+            status: response.status,
+            details: data,
+          },
+          {
+            status: response.status,
+          }
+        );
+      }
+
+      const updatedAt = new Date().toISOString();
+      const {
+        data: updatedPublication,
+        error: updateError,
+      } = await supabaseAdmin
+        .from("publications")
+        .update({
+          status: "scheduled",
+          published_at: null,
+          updated_at: updatedAt,
+        })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (updateError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "La campagne Brevo a été programmée mais LBMedia Office n'a pas pu enregistrer son statut.",
+            error: updateError.message,
+            brevo_campaign_id: publication.brevo_campaign_id,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        scheduled: true,
+        message: "Campagne Brevo programmée.",
+        brevo_campaign_id: publication.brevo_campaign_id,
+        scheduled_at: scheduledAt.toISOString(),
+        publication: updatedPublication,
+      });
     }
 
     const response = await fetch(
@@ -133,60 +218,36 @@ export async function POST(
       {
         method: "POST",
         headers: {
-          accept:
-            "application/json",
-          "api-key":
-            apiKey,
+          accept: "application/json",
+          "api-key": apiKey,
         },
         cache: "no-store",
       }
     );
 
-    const rawResponse =
-      await response.text();
-
-    let data: unknown = null;
-
-    try {
-      data = rawResponse
-        ? JSON.parse(rawResponse)
-        : null;
-    } catch {
-      data = rawResponse;
-    }
+    const data = await readBrevoResponse(response);
 
     if (!response.ok) {
-      console.error(
-        "Brevo campaign send failed",
-        {
-          status:
-            response.status,
-          data,
-          campaignId:
-            publication.brevo_campaign_id,
-        }
-      );
+      console.error("Brevo campaign send failed", {
+        status: response.status,
+        data,
+        campaignId: publication.brevo_campaign_id,
+      });
 
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Brevo a refusé l'envoi de la campagne.",
-          status:
-            response.status,
-          details:
-            data,
+          message: "Brevo a refusé l'envoi de la campagne.",
+          status: response.status,
+          details: data,
         },
         {
-          status:
-            response.status,
+          status: response.status,
         }
       );
     }
 
-    const publishedAt =
-      new Date().toISOString();
-
+    const publishedAt = new Date().toISOString();
     const {
       data: updatedPublication,
       error: updateError,
@@ -194,10 +255,8 @@ export async function POST(
       .from("publications")
       .update({
         status: "published",
-        published_at:
-          publishedAt,
-        updated_at:
-          publishedAt,
+        published_at: publishedAt,
+        updated_at: publishedAt,
       })
       .eq("id", id)
       .select("*")
@@ -209,10 +268,8 @@ export async function POST(
           success: false,
           message:
             "La campagne Brevo a été envoyée mais LBMedia Office n'a pas pu enregistrer son statut.",
-          error:
-            updateError.message,
-          brevo_campaign_id:
-            publication.brevo_campaign_id,
+          error: updateError.message,
+          brevo_campaign_id: publication.brevo_campaign_id,
         },
         {
           status: 500,
@@ -222,19 +279,16 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message:
-        "Campagne Brevo envoyée.",
-      brevo_campaign_id:
-        publication.brevo_campaign_id,
-      publication:
-        updatedPublication,
+      scheduled: false,
+      message: "Campagne Brevo envoyée.",
+      brevo_campaign_id: publication.brevo_campaign_id,
+      publication: updatedPublication,
     });
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Impossible d'envoyer la campagne Brevo.",
+        message: "Impossible de traiter la campagne Brevo.",
         error:
           error instanceof Error
             ? error.message
