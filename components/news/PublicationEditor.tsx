@@ -233,8 +233,8 @@ export default function PublicationEditor({
   ] = useState(false);
 
   const [
-    isMarkingLinkedInPublished,
-    setIsMarkingLinkedInPublished,
+    isPublishingLinkedIn,
+    setIsPublishingLinkedIn,
   ] = useState(false);
 
   const [
@@ -258,14 +258,6 @@ export default function PublicationEditor({
      channel === "linkedin" ||
   channel === "facebook" ||
   channel === "google_business";
-
-  const isLinkedInManualDue =
-    channel === "linkedin" &&
-    status === "scheduled" &&
-    scheduledAt &&
-    new Date(
-      scheduledAt
-    ).getTime() <= Date.now();
 
   useEffect(() => {
     syncFields(publication);
@@ -550,24 +542,42 @@ export default function PublicationEditor({
     }
   }
 
-  async function markLinkedInPublished() {
+  async function publishLinkedIn() {
+    if (channel !== "linkedin") {
+      return;
+    }
+
     if (
-      channel !== "linkedin" ||
+      status !== "ready" &&
       status !== "scheduled"
     ) {
+      setMessage(null);
+      setError(
+        "Valide d’abord la publication LinkedIn avant de la publier."
+      );
+
+      return;
+    }
+
+    if (!content.trim()) {
+      setMessage(null);
+      setError(
+        "Le contenu LinkedIn est vide."
+      );
+
       return;
     }
 
     const confirmed =
       window.confirm(
-        "Confirmer que ce post a bien été publié manuellement sur LinkedIn ?"
+        "Publier maintenant ce contenu sur la page LinkedIn LBMedia ? Cette action le rendra visible publiquement."
       );
 
     if (!confirmed) {
       return;
     }
 
-    setIsMarkingLinkedInPublished(
+    setIsPublishingLinkedIn(
       true
     );
 
@@ -576,14 +586,44 @@ export default function PublicationEditor({
 
     try {
       await updatePublication(
-        "published",
-        null
+        status,
+        scheduledAt
       );
+
+      const response =
+        await fetch(
+          `/api/publications/${publication.id}/publish-linkedin`,
+          {
+            method: "POST",
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        throw new Error(
+          result.message ??
+            "Impossible de publier sur LinkedIn."
+        );
+      }
+
+      if (
+        result.publication
+      ) {
+        syncFields(
+          result.publication
+        );
+      }
 
       setScheduledAt("");
 
       setMessage(
-        "Publication LinkedIn marquée comme publiée."
+        result.message ??
+          "Publication LinkedIn effectuée."
       );
     } catch (
       linkedInError
@@ -594,7 +634,7 @@ export default function PublicationEditor({
           : "Une erreur est survenue."
       );
     } finally {
-      setIsMarkingLinkedInPublished(
+      setIsPublishingLinkedIn(
         false
       );
     }
@@ -1401,7 +1441,7 @@ export default function PublicationEditor({
     isApprovingBrevoSend ||
     isPublishingFacebook ||
     isPublishingGoogleBusiness ||
-    isMarkingLinkedInPublished;
+    isPublishingLinkedIn;
 
   const canEdit =
     status !== "published";
@@ -1469,8 +1509,7 @@ export default function PublicationEditor({
           />
         ) : null}
 
-        {status === "scheduled" &&
-        !isLinkedInManualDue ? (
+        {status === "scheduled" ? (
           <StatusPanel
             tone="cyan"
             title="Publication planifiée"
@@ -1480,20 +1519,6 @@ export default function PublicationEditor({
                     scheduledAt
                   )}.`
                 : "Une date de publication doit être définie."
-            }
-          />
-        ) : null}
-
-        {isLinkedInManualDue ? (
-          <StatusPanel
-            tone="amber"
-            title="À publier manuellement"
-            description={
-              scheduledAt
-                ? `Ce post LinkedIn était prévu le ${formatDateTime(
-                    scheduledAt
-                  )}. Publie-le sur LinkedIn puis marque-le comme publié dans Office.`
-                : "Ce post LinkedIn doit être publié manuellement."
             }
           />
         ) : null}
@@ -1614,22 +1639,20 @@ export default function PublicationEditor({
 
             <div className="flex flex-wrap justify-end gap-3">
               {channel === "linkedin" &&
-              status === "scheduled" ? (
+              (status === "ready" ||
+                status ===
+                  "scheduled") ? (
                 <button
                   type="button"
                   onClick={
-                    markLinkedInPublished
+                    publishLinkedIn
                   }
                   disabled={isBusy}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                    isLinkedInManualDue
-                      ? "bg-sky-600 hover:bg-sky-700"
-                      : "bg-slate-500 hover:bg-slate-600"
-                  }`}
+                  className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isMarkingLinkedInPublished
-                    ? "Enregistrement..."
-                    : "Marquer comme publiée"}
+                  {isPublishingLinkedIn
+                    ? "Publication LinkedIn..."
+                    : "Publier maintenant"}
                 </button>
               ) : null}
 
