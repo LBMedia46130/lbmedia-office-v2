@@ -317,12 +317,82 @@ export async function GET() {
       )
     );
 
+  const validOrganizations =
+    organizations.filter(
+      (organization) =>
+        !organization.error &&
+        organization.urn &&
+        organization.name
+    );
+
+  let selectedOrganization:
+    | {
+        urn: string;
+        name: string;
+      }
+    | null = null;
+
+  if (
+    validOrganizations.length === 1
+  ) {
+    const organization =
+      validOrganizations[0];
+
+    if (
+      organization.urn &&
+      organization.name
+    ) {
+      const {
+        error: updateError,
+      } = await supabaseAdmin
+        .from(
+          "linkedin_connection"
+        )
+        .update({
+          organization_urn:
+            organization.urn,
+          organization_name:
+            organization.name,
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "id",
+          connection.id
+        );
+
+      if (updateError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "La Page LinkedIn a été trouvée mais Office n'a pas pu l'enregistrer.",
+            error:
+              updateError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      selectedOrganization = {
+        urn:
+          organization.urn,
+        name:
+          organization.name,
+      };
+    }
+  }
+
   return NextResponse.json({
     success: true,
     linkedin_version:
       LINKEDIN_VERSION,
     count:
       organizations.length,
+    selected_organization:
+      selectedOrganization,
     organizations,
   });
 }
