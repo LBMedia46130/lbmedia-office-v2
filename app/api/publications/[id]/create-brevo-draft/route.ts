@@ -1,40 +1,55 @@
 import { NextResponse } from "next/server";
-
 import { supabaseAdmin } from "@/lib/supabase-admin";
-
 type RouteContext = {
   params: Promise<{
     id: string;
   }>;
 };
+type BrevoCampaignState = {
+  id?: number;
+  status?: string;
+  scheduledAt?: string;
+  sentDate?: string;
+};
+
+async function readBrevoResponse(
+  response: Response
+) {
+  const rawResponse =
+    await response.text();
+
+  if (!rawResponse) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(
+      rawResponse
+    ) as unknown;
+  } catch {
+    return rawResponse;
+  }
+}
 
 const BREVO_LIST_ID = 5;
 const BREVO_SENDER_ID = 2;
-
 const LBMEDIA_LOGO_URL =
   "https://img.mailinblue.com/8095474/images/content_library/original/66f6bc4820e29b180f3403c2.png";
-
 const FACEBOOK_URL =
   "https://www.facebook.com/lbmedia46";
-
 const LINKEDIN_URL =
   "https://www.linkedin.com/company/lbmedia46/";
-
 const FACEBOOK_ICON_URL =
   "https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png";
-
 const LINKEDIN_ICON_URL =
   "https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png";
-
 export async function POST(
   _request: Request,
   context: RouteContext
 ) {
   const { id } = await context.params;
-
   const apiKey =
     process.env.BREVO_API_KEY;
-
   if (!apiKey) {
     return NextResponse.json(
       {
@@ -47,7 +62,6 @@ export async function POST(
       }
     );
   }
-
   try {
     const {
       data: publication,
@@ -57,7 +71,6 @@ export async function POST(
       .select("*")
       .eq("id", id)
       .maybeSingle();
-
     if (publicationError) {
       return NextResponse.json(
         {
@@ -72,7 +85,6 @@ export async function POST(
         }
       );
     }
-
     if (!publication) {
       return NextResponse.json(
         {
@@ -85,7 +97,6 @@ export async function POST(
         }
       );
     }
-
     if (
       publication.channel !== "brevo"
     ) {
@@ -100,26 +111,273 @@ export async function POST(
         }
       );
     }
-
     if (
       publication.brevo_campaign_id
     ) {
-      return NextResponse.json(
-        {
-          success: true,
-          alreadyExists: true,
-          message:
-            "Un brouillon Brevo existe déjà pour cette newsletter.",
-          brevo_campaign_id:
-            publication.brevo_campaign_id,
-          publication,
-        },
-        {
-          status: 200,
-        }
-      );
-    }
+      const existingCampaignId =
+        publication.brevo_campaign_id;
 
+      const existingResponse =
+        await fetch(
+          `https://api.brevo.com/v3/emailCampaigns/${existingCampaignId}`,
+          {
+            method: "GET",
+            headers: {
+              accept:
+                "application/json",
+              "api-key":
+                apiKey,
+            },
+            cache: "no-store",
+          }
+        );
+
+      const existingData =
+        await readBrevoResponse(
+          existingResponse
+        );
+
+      if (
+        existingResponse.status === 404
+      ) {
+        const {
+          error:
+            clearExistingCampaignError,
+        } = await supabaseAdmin
+          .from("publications")
+          .update({
+            brevo_campaign_id:
+              null,
+            brevo_send_approved_at:
+              null,
+            updated_at:
+              new Date().toISOString(),
+          })
+          .eq("id", id);
+
+        if (
+          clearExistingCampaignError
+        ) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "La campagne Brevo enregistrée dans Office n'existe plus, mais son identifiant n'a pas pu être réinitialisé.",
+              error:
+                clearExistingCampaignError.message,
+              brevo_campaign_id:
+                existingCampaignId,
+            },
+            {
+              status: 500,
+            }
+          );
+        }
+      } else if (!existingResponse.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Impossible de vérifier l'état de la campagne Brevo existante.",
+            status:
+              existingResponse.status,
+            details:
+              existingData,
+            brevo_campaign_id:
+              existingCampaignId,
+          },
+          {
+            status:
+              existingResponse.status,
+          }
+        );
+      } else {
+        const existingCampaign =
+          existingData as
+            | BrevoCampaignState
+            | null;
+
+        const brevoStatus =
+          existingCampaign?.status
+            ?.toLowerCase()
+            .trim() ?? "";
+
+        if (brevoStatus === "draft") {
+          return NextResponse.json(
+            {
+              success: true,
+              alreadyExists: true,
+              message:
+                "Un brouillon Brevo existe déjà pour cette newsletter.",
+              brevo_campaign_id:
+                existingCampaignId,
+              brevo_status:
+                brevoStatus,
+              publication,
+            },
+            {
+              status: 200,
+            }
+          );
+        }
+
+        if (
+          brevoStatus === "queued" ||
+          brevoStatus === "scheduled"
+        ) {
+          const synchronizedAt =
+            new Date().toISOString();
+
+          const {
+            data:
+              synchronizedPublication,
+            error:
+              synchronizationError,
+          } = await supabaseAdmin
+            .from("publications")
+            .update({
+              status:
+                "scheduled",
+              scheduled_at:
+                existingCampaign
+                  ?.scheduledAt ??
+                publication.scheduled_at,
+              published_at:
+                null,
+              updated_at:
+                synchronizedAt,
+            })
+            .eq("id", id)
+            .select("*")
+            .single();
+
+          if (synchronizationError) {
+            return NextResponse.json(
+              {
+                success: false,
+                message:
+                  "La campagne est programmée dans Brevo, mais Office n'a pas pu synchroniser son statut.",
+                error:
+                  synchronizationError.message,
+                brevo_campaign_id:
+                  existingCampaignId,
+                brevo_status:
+                  brevoStatus,
+              },
+              {
+                status: 500,
+              }
+            );
+          }
+
+          return NextResponse.json(
+            {
+              success: true,
+              alreadyExists: true,
+              synchronized: true,
+              message:
+                "Cette campagne est déjà programmée dans Brevo.",
+              brevo_campaign_id:
+                existingCampaignId,
+              brevo_status:
+                brevoStatus,
+              publication:
+                synchronizedPublication,
+            },
+            {
+              status: 200,
+            }
+          );
+        }
+
+        if (brevoStatus === "sent") {
+          const publishedAt =
+            existingCampaign?.sentDate
+              ? new Date(
+                  existingCampaign.sentDate
+                ).toISOString()
+              : new Date().toISOString();
+
+          const {
+            data:
+              synchronizedPublication,
+            error:
+              synchronizationError,
+          } = await supabaseAdmin
+            .from("publications")
+            .update({
+              status:
+                "published",
+              scheduled_at:
+                null,
+              published_at:
+                publishedAt,
+              brevo_send_approved_at:
+                null,
+              updated_at:
+                new Date().toISOString(),
+            })
+            .eq("id", id)
+            .select("*")
+            .single();
+
+          if (synchronizationError) {
+            return NextResponse.json(
+              {
+                success: false,
+                message:
+                  "La campagne a déjà été envoyée par Brevo, mais Office n'a pas pu synchroniser son statut.",
+                error:
+                  synchronizationError.message,
+                brevo_campaign_id:
+                  existingCampaignId,
+                brevo_status:
+                  brevoStatus,
+              },
+              {
+                status: 500,
+              }
+            );
+          }
+
+          return NextResponse.json(
+            {
+              success: true,
+              alreadyExists: true,
+              synchronized: true,
+              message:
+                "Cette campagne a déjà été envoyée par Brevo. Office a été synchronisé.",
+              brevo_campaign_id:
+                existingCampaignId,
+              brevo_status:
+                brevoStatus,
+              publication:
+                synchronizedPublication,
+            },
+            {
+              status: 200,
+            }
+          );
+        }
+
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "La campagne Brevo existante n'est plus un brouillon réutilisable. Aucun nouveau brouillon n'a été créé par sécurité.",
+            brevo_campaign_id:
+              existingCampaignId,
+            brevo_status:
+              brevoStatus || null,
+            details:
+              existingData,
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+    }
     if (
       !publication.content?.trim()
     ) {
@@ -134,7 +392,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !publication.subject?.trim()
     ) {
@@ -149,10 +406,8 @@ export async function POST(
         }
       );
     }
-
     let articleImageUrl:
       string | null = null;
-
     if (publication.news_id) {
       const {
         data: news,
@@ -165,7 +420,6 @@ export async function POST(
           publication.news_id
         )
         .maybeSingle();
-
       if (newsError) {
         return NextResponse.json(
           {
@@ -180,16 +434,13 @@ export async function POST(
           }
         );
       }
-
       articleImageUrl =
         news?.image_url?.trim() ||
         null;
     }
-
     const campaignName =
       publication.title?.trim() ||
       publication.subject.trim();
-
     const htmlContent =
       buildNewsletterHtml({
         title:
@@ -203,30 +454,23 @@ export async function POST(
           publication.link_url?.trim() ||
           null,
       });
-
     const payload = {
       name: campaignName,
-
       subject:
         publication.subject.trim(),
-
       previewText:
         publication.preview_text?.trim() ||
         undefined,
-
       sender: {
         id: BREVO_SENDER_ID,
       },
-
       recipients: {
         listIds: [
           BREVO_LIST_ID,
         ],
       },
-
       htmlContent,
     };
-
     const response = await fetch(
       "https://api.brevo.com/v3/emailCampaigns",
       {
@@ -245,20 +489,10 @@ export async function POST(
         cache: "no-store",
       }
     );
-
-    const rawResponse =
-      await response.text();
-
-    let data: unknown = null;
-
-    try {
-      data = rawResponse
-        ? JSON.parse(rawResponse)
-        : null;
-    } catch {
-      data = rawResponse;
-    }
-
+    const data =
+      await readBrevoResponse(
+        response
+      );
     if (!response.ok) {
       console.error(
         "Brevo campaign creation failed",
@@ -268,7 +502,6 @@ export async function POST(
           data,
         }
       );
-
       return NextResponse.json(
         {
           success: false,
@@ -284,15 +517,12 @@ export async function POST(
         }
       );
     }
-
     const campaignData =
       data as {
         id?: number;
       } | null;
-
     const campaignId =
       campaignData?.id ?? null;
-
     if (!campaignId) {
       return NextResponse.json(
         {
@@ -305,7 +535,6 @@ export async function POST(
         }
       );
     }
-
     const {
       data: updatedPublication,
       error: updateError,
@@ -322,7 +551,6 @@ export async function POST(
       .eq("id", id)
       .select("*")
       .single();
-
     if (updateError) {
       return NextResponse.json(
         {
@@ -339,7 +567,6 @@ export async function POST(
         }
       );
     }
-
     return NextResponse.json({
       success: true,
       alreadyExists: false,
@@ -371,7 +598,6 @@ export async function POST(
     );
   }
 }
-
 function buildNewsletterHtml({
   title,
   content,
@@ -385,12 +611,10 @@ function buildNewsletterHtml({
 }) {
   const titleHtml =
     escapeHtml(title);
-
   const contentHtml =
     buildContentHtml(
       content
     );
-
   const imageBlock =
     imageUrl
       ? `
@@ -421,7 +645,6 @@ function buildNewsletterHtml({
         </tr>
       `
       : "";
-
   const ctaBlock =
     linkUrl
       ? `
@@ -457,7 +680,6 @@ function buildNewsletterHtml({
         </tr>
       `
       : "";
-
   return `
 <!doctype html>
 <html lang="fr">
@@ -469,7 +691,6 @@ function buildNewsletterHtml({
   >
   <title>${titleHtml}</title>
 </head>
-
 <body
   style="
     margin:0;
@@ -528,7 +749,6 @@ function buildNewsletterHtml({
               />
             </td>
           </tr>
-
           <tr>
             <td
               style="
@@ -550,9 +770,7 @@ function buildNewsletterHtml({
               </h1>
             </td>
           </tr>
-
           ${imageBlock}
-
           <tr>
             <td
               style="
@@ -566,9 +784,7 @@ function buildNewsletterHtml({
               ${contentHtml}
             </td>
           </tr>
-
           ${ctaBlock}
-
           <tr>
             <td
               style="
@@ -612,7 +828,6 @@ function buildNewsletterHtml({
                         "
                       />
                     </a>
-
                     <a
                       href="${LINKEDIN_URL}"
                       style="
@@ -634,7 +849,6 @@ function buildNewsletterHtml({
                     </a>
                   </td>
                 </tr>
-
                 <tr>
                   <td
                     align="center"
@@ -649,7 +863,6 @@ function buildNewsletterHtml({
                     46400 Saint-Céré
                   </td>
                 </tr>
-
                 <tr>
                   <td
                     align="center"
@@ -662,7 +875,6 @@ function buildNewsletterHtml({
                     Vous avez reçu cet email car vous êtes inscrit à notre newsletter.
                   </td>
                 </tr>
-
                 <tr>
                   <td
                     align="center"
@@ -693,7 +905,6 @@ function buildNewsletterHtml({
 </html>
   `.trim();
 }
-
 function buildContentHtml(
   content: string
 ) {
@@ -711,12 +922,10 @@ function buildContentHtml(
             line.trim()
           )
           .filter(Boolean);
-
       const bulletLines =
         lines.filter((line) =>
           /^[-*]\s+/.test(line)
         );
-
       if (
         bulletLines.length ===
           lines.length &&
@@ -750,7 +959,6 @@ function buildContentHtml(
           </ul>
         `;
       }
-
       return `
         <p
           style="
@@ -767,7 +975,6 @@ function buildContentHtml(
     })
     .join("");
 }
-
 function escapeHtml(
   value: string
 ) {
