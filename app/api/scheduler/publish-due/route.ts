@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-
 import { supabaseAdmin } from "@/lib/supabase-admin";
-
 type ScheduledPublication = {
   id: string;
   channel: string;
@@ -17,7 +15,6 @@ type ScheduledPublication = {
   brevo_send_approved_at: string | null;
   scheduled_at: string | null;
 };
-
 type PublicationResult = {
   id: string;
   channel: string;
@@ -25,74 +22,59 @@ type PublicationResult = {
   blocked?: boolean;
   message: string;
 };
-
 function wordpressPublishingIsAllowed() {
   return (
     process.env.ALLOW_WORDPRESS_PUBLISHING ===
     "true"
   );
 }
-
 function facebookPublishingIsAllowed() {
   return (
     process.env.ALLOW_FACEBOOK_PUBLISHING ===
     "true"
   );
 }
-
 function brevoPublishingIsAllowed() {
   return (
     process.env.ALLOW_BREVO_PUBLISHING ===
     "true"
   );
 }
-
 function channelPublishingIsAllowed(
   channel: string
 ) {
   switch (channel) {
     case "website":
       return wordpressPublishingIsAllowed();
-
     case "facebook":
       return facebookPublishingIsAllowed();
-
     case "brevo":
       return brevoPublishingIsAllowed();
-
     default:
       return false;
   }
 }
-
 function getBlockedMessage(
   channel: string
 ) {
   switch (channel) {
     case "website":
       return "Publication WordPress bloquée par sécurité. ALLOW_WORDPRESS_PUBLISHING doit être défini à true.";
-
     case "facebook":
       return "Publication Facebook bloquée par sécurité. ALLOW_FACEBOOK_PUBLISHING doit être défini à true.";
-
     case "brevo":
       return "Envoi Brevo bloqué par sécurité. ALLOW_BREVO_PUBLISHING doit être défini à true.";
-
     default:
       return "Publication externe bloquée par sécurité.";
   }
 }
-
 function getWordPressConfig() {
   const wordpressUrl =
     process.env.WORDPRESS_URL;
-
   const username =
     process.env.WORDPRESS_USERNAME;
-
   const appPassword =
     process.env.WORDPRESS_APP_PASSWORD;
-
   if (
     !wordpressUrl ||
     !username ||
@@ -102,28 +84,24 @@ function getWordPressConfig() {
       "Configuration WordPress incomplète."
     );
   }
-
   return {
     wordpressUrl,
     username,
     appPassword,
   };
 }
-
 function formatExternalError(
   data: unknown
 ) {
   if (typeof data === "string") {
     return data;
   }
-
   try {
     return JSON.stringify(data);
   } catch {
     return "Réponse externe illisible.";
   }
 }
-
 async function publishWordPress(
   publication: ScheduledPublication
 ): Promise<PublicationResult> {
@@ -138,7 +116,6 @@ async function publishWordPress(
         "Canal WordPress invalide.",
     };
   }
-
   if (
     !publication.wordpress_post_id
   ) {
@@ -146,24 +123,20 @@ async function publishWordPress(
       "Aucun brouillon WordPress n’existe pour cette actualité."
     );
   }
-
   if (!publication.content?.trim()) {
     throw new Error(
       "Le contenu WordPress est vide."
     );
   }
-
   const {
     wordpressUrl,
     username,
     appPassword,
   } = getWordPressConfig();
-
   const authorization =
     Buffer.from(
       `${username}:${appPassword}`
     ).toString("base64");
-
   const response = await fetch(
     `${wordpressUrl}/wp-json/wp/v2/posts/${publication.wordpress_post_id}`,
     {
@@ -191,12 +164,9 @@ async function publishWordPress(
       cache: "no-store",
     }
   );
-
   const rawResponse =
     await response.text();
-
   let wordpressData: unknown = null;
-
   try {
     wordpressData = rawResponse
       ? JSON.parse(rawResponse)
@@ -204,7 +174,6 @@ async function publishWordPress(
   } catch {
     wordpressData = rawResponse;
   }
-
   if (!response.ok) {
     throw new Error(
       `WordPress a refusé la publication (${response.status}) : ${formatExternalError(
@@ -212,21 +181,18 @@ async function publishWordPress(
       )}`
     );
   }
-
   const data =
     wordpressData as {
       id?: number;
       link?: string;
       date_gmt?: string;
     } | null;
-
   const publishedAt =
     data?.date_gmt
       ? new Date(
           `${data.date_gmt}Z`
         ).toISOString()
       : new Date().toISOString();
-
   const {
     error: updateError,
   } = await supabaseAdmin
@@ -241,18 +207,15 @@ async function publishWordPress(
         new Date().toISOString(),
     })
     .eq("id", publication.id);
-
   if (updateError) {
     throw new Error(
       `Publication WordPress effectuée, mais statut LBMedia Office non enregistré : ${updateError.message}`
     );
   }
-
   const newsId =
     await getNewsId(
       publication.id
     );
-
   const {
     error: newsUpdateError,
   } = await supabaseAdmin
@@ -263,13 +226,11 @@ async function publishWordPress(
         new Date().toISOString(),
     })
     .eq("id", newsId);
-
   if (newsUpdateError) {
     throw new Error(
       `Article publié, mais statut de l’actualité non synchronisé : ${newsUpdateError.message}`
     );
   }
-
   return {
     id: publication.id,
     channel: "website",
@@ -278,7 +239,6 @@ async function publishWordPress(
       "Actualité publiée sur WordPress.",
   };
 }
-
 async function publishFacebook(
   publication: ScheduledPublication
 ): Promise<PublicationResult> {
@@ -287,42 +247,33 @@ async function publishFacebook(
       "Le contenu Facebook est vide."
     );
   }
-
   const pageId =
     process.env.META_PAGE_ID;
-
   const accessToken =
     process.env.META_PAGE_ACCESS_TOKEN;
-
   if (!pageId || !accessToken) {
     throw new Error(
       "Configuration Meta incomplète."
     );
   }
-
   const messageParts = [
     publication.content.trim(),
   ];
-
   if (publication.link_url?.trim()) {
     messageParts.push(
       publication.link_url.trim()
     );
   }
-
   const body =
     new URLSearchParams();
-
   body.set(
     "message",
     messageParts.join("\n\n")
   );
-
   body.set(
     "access_token",
     accessToken
   );
-
   const response = await fetch(
     `https://graph.facebook.com/v26.0/${pageId}/feed`,
     {
@@ -335,12 +286,9 @@ async function publishFacebook(
       cache: "no-store",
     }
   );
-
   const rawResponse =
     await response.text();
-
   let metaData: unknown = null;
-
   try {
     metaData = rawResponse
       ? JSON.parse(rawResponse)
@@ -348,7 +296,6 @@ async function publishFacebook(
   } catch {
     metaData = rawResponse;
   }
-
   if (!response.ok) {
     throw new Error(
       `Meta a refusé la publication Facebook (${response.status}) : ${formatExternalError(
@@ -356,17 +303,14 @@ async function publishFacebook(
       )}`
     );
   }
-
   const data =
     metaData as {
       id?: string;
     } | null;
-
   const facebookPostId =
     typeof data?.id === "string"
       ? data.id
       : null;
-
   const publishedUrl =
     facebookPostId
       ? `https://www.facebook.com/${facebookPostId.replace(
@@ -374,10 +318,8 @@ async function publishFacebook(
           "/posts/"
         )}`
       : null;
-
   const publishedAt =
     new Date().toISOString();
-
   const {
     error: updateError,
   } = await supabaseAdmin
@@ -392,13 +334,11 @@ async function publishFacebook(
         publishedAt,
     })
     .eq("id", publication.id);
-
   if (updateError) {
     throw new Error(
       `Facebook publié, mais statut LBMedia Office non enregistré : ${updateError.message}`
     );
   }
-
   return {
     id: publication.id,
     channel: "facebook",
@@ -407,7 +347,6 @@ async function publishFacebook(
       "Publication Facebook effectuée.",
   };
 }
-
 async function sendBrevo(
   publication: ScheduledPublication
 ): Promise<PublicationResult> {
@@ -422,7 +361,6 @@ async function sendBrevo(
         "Canal Brevo invalide.",
     };
   }
-
   if (
     !publication.brevo_send_approved_at
   ) {
@@ -435,16 +373,13 @@ async function sendBrevo(
         "Envoi Brevo bloqué : cette newsletter n’a pas reçu d’autorisation explicite d’envoi.",
     };
   }
-
   const apiKey =
     process.env.BREVO_API_KEY;
-
   if (!apiKey) {
     throw new Error(
       "La clé API Brevo n'est pas configurée."
     );
   }
-
   if (
     !publication.brevo_campaign_id
   ) {
@@ -452,7 +387,6 @@ async function sendBrevo(
       "Aucun brouillon Brevo n'existe encore pour cette newsletter."
     );
   }
-
   const response = await fetch(
     `https://api.brevo.com/v3/emailCampaigns/${publication.brevo_campaign_id}/sendNow`,
     {
@@ -466,12 +400,9 @@ async function sendBrevo(
       cache: "no-store",
     }
   );
-
   const rawResponse =
     await response.text();
-
   let data: unknown = null;
-
   try {
     data = rawResponse
       ? JSON.parse(rawResponse)
@@ -479,7 +410,6 @@ async function sendBrevo(
   } catch {
     data = rawResponse;
   }
-
   if (!response.ok) {
     throw new Error(
       `Brevo a refusé l'envoi (${response.status}) : ${formatExternalError(
@@ -487,10 +417,8 @@ async function sendBrevo(
       )}`
     );
   }
-
   const publishedAt =
     new Date().toISOString();
-
   const {
     error: updateError,
   } = await supabaseAdmin
@@ -503,13 +431,11 @@ async function sendBrevo(
         publishedAt,
     })
     .eq("id", publication.id);
-
   if (updateError) {
     throw new Error(
       `Campagne Brevo envoyée, mais statut LBMedia Office non enregistré : ${updateError.message}`
     );
   }
-
   return {
     id: publication.id,
     channel: "brevo",
@@ -518,7 +444,6 @@ async function sendBrevo(
       "Campagne Brevo envoyée.",
   };
 }
-
 async function getNewsId(
   publicationId: string
 ) {
@@ -530,23 +455,19 @@ async function getNewsId(
     .select("news_id")
     .eq("id", publicationId)
     .single();
-
   if (error || !data) {
     throw new Error(
       "Impossible de retrouver l’actualité associée."
     );
   }
-
   return data.news_id;
 }
-
 async function markFailed(
   publicationId: string,
   errorMessage: string
 ) {
   const now =
     new Date().toISOString();
-
   const {
     error,
   } = await supabaseAdmin
@@ -556,7 +477,6 @@ async function markFailed(
       updated_at: now,
     })
     .eq("id", publicationId);
-
   if (error) {
     console.error(
       "Unable to mark scheduled publication as failed",
@@ -567,7 +487,6 @@ async function markFailed(
       }
     );
   }
-
   console.error(
     "Scheduled publication failed",
     {
@@ -576,34 +495,30 @@ async function markFailed(
     }
   );
 }
-
-export async function POST(
+async function handleScheduler(
   request: Request
 ) {
-  const schedulerSecret =
-    process.env.SCHEDULER_SECRET;
-
-  if (!schedulerSecret) {
+  const cronSecret =
+    process.env.CRON_SECRET;
+  if (!cronSecret) {
     return NextResponse.json(
       {
         success: false,
         message:
-          "SCHEDULER_SECRET n'est pas configuré.",
+          "CRON_SECRET n'est pas configuré.",
       },
       {
         status: 500,
       }
     );
   }
-
   const authorization =
     request.headers.get(
       "authorization"
     );
-
   if (
     authorization !==
-    `Bearer ${schedulerSecret}`
+    `Bearer ${cronSecret}`
   ) {
     return NextResponse.json(
       {
@@ -616,10 +531,8 @@ export async function POST(
       }
     );
   }
-
   const now =
     new Date().toISOString();
-
   const {
     data,
     error,
@@ -662,7 +575,6 @@ export async function POST(
         ascending: true,
       }
     );
-
   if (error) {
     return NextResponse.json(
       {
@@ -677,14 +589,11 @@ export async function POST(
       }
     );
   }
-
   const publications =
     (data ??
       []) as ScheduledPublication[];
-
   const results:
     PublicationResult[] = [];
-
   for (
     const publication
     of publications
@@ -705,10 +614,8 @@ export async function POST(
             publication.channel
           ),
       });
-
       continue;
     }
-
     try {
       if (
         publication.channel ===
@@ -719,10 +626,8 @@ export async function POST(
             publication
           )
         );
-
         continue;
       }
-
       if (
         publication.channel ===
         "facebook"
@@ -732,10 +637,8 @@ export async function POST(
             publication
           )
         );
-
         continue;
       }
-
       if (
         publication.channel ===
         "brevo"
@@ -752,12 +655,10 @@ export async function POST(
         Error
           ? publicationError.message
           : "Erreur inconnue";
-
       await markFailed(
         publication.id,
         message
       );
-
       results.push({
         id: publication.id,
         channel:
@@ -767,26 +668,22 @@ export async function POST(
       });
     }
   }
-
   const published =
     results.filter(
       (result) =>
         result.success
     ).length;
-
   const blocked =
     results.filter(
       (result) =>
         result.blocked
     ).length;
-
   const failed =
     results.filter(
       (result) =>
         !result.success &&
         !result.blocked
     ).length;
-
   return NextResponse.json({
     success: true,
     checked_at: now,
@@ -797,4 +694,10 @@ export async function POST(
     failed,
     results,
   });
+}
+export async function GET(request: Request) {
+  return handleScheduler(request);
+}
+export async function POST(request: Request) {
+  return handleScheduler(request);
 }
