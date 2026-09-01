@@ -1067,8 +1067,38 @@ export default function PublicationEditor({
         result.publication
       );
 
+      const sendResponse =
+        await fetch(
+          `/api/publications/${publication.id}/send-brevo`,
+          {
+            method: "POST",
+          }
+        );
+
+      const sendResult =
+        await sendResponse.json();
+
+      if (
+        !sendResponse.ok ||
+        !sendResult.success
+      ) {
+        throw new Error(
+          sendResult.message ??
+            "L’envoi Brevo a été autorisé, mais la programmation dans Brevo a échoué."
+        );
+      }
+
+      if (
+        sendResult.publication
+      ) {
+        syncFields(
+          sendResult.publication
+        );
+      }
+
       setMessage(
-        "Envoi Brevo explicitement autorisé."
+        sendResult.message ??
+          "Envoi Brevo autorisé et programmation transmise à Brevo."
       );
     } catch (approvalError) {
       setError(
@@ -1474,13 +1504,13 @@ export default function PublicationEditor({
             <StatusPanel
               tone="emerald"
               title="Envoi Brevo autorisé"
-              description="Cette campagne peut être envoyée par le scheduler à l’heure prévue."
+              description="Cette campagne a été transmise à Brevo pour envoi à l’heure prévue."
             />
           ) : (
             <StatusPanel
               tone="amber"
               title="Envoi Brevo non autorisé"
-              description="La campagne est planifiée, mais le scheduler ne doit pas l’envoyer tant que tu ne l’as pas autorisée explicitement."
+              description="La campagne est planifiée dans Office, mais elle ne sera transmise à Brevo qu’après ton autorisation explicite."
             />
           )
         ) : null}
@@ -1636,7 +1666,7 @@ export default function PublicationEditor({
                   className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isApprovingBrevoSend
-                    ? "Autorisation..."
+                    ? "Transmission à Brevo..."
                     : "Autoriser l’envoi Brevo"}
                 </button>
               ) : null}
