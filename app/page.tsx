@@ -268,30 +268,59 @@ export default async function HomePage() {
           />
         </section>
 
-        {failed.length > 0 ? (
-          <section className="mt-8 rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-rose-50 p-6 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+        {attentionCount > 0 ? (
+          <section className="mt-8 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-700">
-                  Attention
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
 
-                <h2 className="mt-2 text-xl font-bold text-red-950">
-                  Publications à corriger
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+                    À traiter
+                  </p>
+                </div>
+
+                <h2 className="mt-2 text-xl font-bold text-slate-950">
+                  Actions en attente
                 </h2>
 
-                <p className="mt-1 text-sm text-red-800">
-                  {failed.length}{" "}
-                  publication
-                  {failed.length > 1
-                    ? "s ont"
-                    : " a"}{" "}
-                  rencontré un problème.
+                <p className="mt-1 text-sm text-slate-600">
+                  Voici ce qui demande ton
+                  attention.
                 </p>
               </div>
+
+              <span className="rounded-full border border-amber-200 bg-white px-3 py-1.5 text-sm font-semibold text-amber-800 shadow-sm">
+                {attentionCount}{" "}
+                élément
+                {attentionCount > 1
+                  ? "s"
+                  : ""}
+              </span>
             </div>
 
             <div className="mt-5 grid gap-3">
+              {toPrepare.map(
+                (item) => (
+                  <NewsAction
+                    key={item.id}
+                    news={item}
+                  />
+                )
+              )}
+
+              {readyToSchedule.map(
+                (publication) => (
+                  <PublicationAction
+                    key={publication.id}
+                    publication={
+                      publication
+                    }
+                    actionLabel="Prête à planifier"
+                  />
+                )
+              )}
+
               {failed.map(
                 (publication) => (
                   <PublicationAction
@@ -299,6 +328,7 @@ export default async function HomePage() {
                     publication={
                       publication
                     }
+                    actionLabel="À corriger"
                     tone="error"
                   />
                 )
@@ -458,14 +488,53 @@ function DashboardCard({
   );
 }
 
+function NewsAction({
+  news,
+}: {
+  news: DashboardNews;
+}) {
+  return (
+    <Link
+      href={`/news/${news.id}`}
+      className="block rounded-2xl border border-amber-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-wide text-amber-700">
+            Actualité à préparer
+          </p>
+
+          <h3 className="mt-2 font-semibold text-slate-950">
+            {news.title ||
+              "Actualité sans titre"}
+          </h3>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Le brouillon ne contient
+            encore aucun contenu.
+          </p>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <p className="text-xs font-semibold text-amber-700">
+            Ouvrir →
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function PublicationAction({
   publication,
   showTime = false,
   tone = "default",
+  actionLabel,
 }: {
   publication: DashboardPublication;
   showTime?: boolean;
   tone?: "default" | "error";
+  actionLabel?: string;
 }) {
   const newsTitle =
     getNewsTitle(
@@ -492,17 +561,31 @@ function PublicationAction({
       className={`block rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         tone === "error"
           ? "border-red-200 bg-white hover:border-red-300"
-          : "border-slate-200 bg-white hover:border-cyan-300"
+          : actionLabel
+            ? "border-amber-200 bg-white hover:border-amber-300"
+            : "border-slate-200 bg-white hover:border-cyan-300"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-            {
-              channelLabels[
-                publication.channel
-              ]
-            }
+          <p
+            className={`text-xs font-bold uppercase tracking-wide ${
+              tone === "error"
+                ? "text-red-700"
+                : actionLabel
+                  ? "text-amber-700"
+                  : "text-blue-700"
+            }`}
+          >
+            {actionLabel
+              ? `${actionLabel} · ${
+                  channelLabels[
+                    publication.channel
+                  ]
+                }`
+              : channelLabels[
+                  publication.channel
+                ]}
           </p>
 
           <h3 className="mt-2 font-semibold text-slate-950">
@@ -534,7 +617,15 @@ function PublicationAction({
             </p>
           ) : null}
 
-          <p className="mt-1 text-xs font-semibold text-blue-700">
+          <p
+            className={`mt-1 text-xs font-semibold ${
+              tone === "error"
+                ? "text-red-700"
+                : actionLabel
+                  ? "text-amber-700"
+                  : "text-blue-700"
+            }`}
+          >
             Ouvrir →
           </p>
         </div>
