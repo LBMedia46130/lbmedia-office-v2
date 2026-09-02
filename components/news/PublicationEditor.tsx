@@ -238,6 +238,11 @@ export default function PublicationEditor({
   ] = useState(false);
 
   const [
+    isMarkingPublished,
+    setIsMarkingPublished,
+  ] = useState(false);
+
+  const [
     message,
     setMessage,
   ] = useState<
@@ -539,6 +544,64 @@ export default function PublicationEditor({
       );
     } finally {
       setIsChangingStatus(false);
+    }
+  }
+
+  async function markAsPublished() {
+    if (
+      channel !== "linkedin" &&
+      channel !== "facebook" &&
+      channel !== "google_business"
+    ) {
+      return;
+    }
+
+    if (
+      status !== "ready" &&
+      status !== "scheduled"
+    ) {
+      setMessage(null);
+      setError(
+        "La publication doit être validée avant d’être marquée comme publiée."
+      );
+
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        "Confirmer que cette publication a déjà été publiée manuellement ? Office la marquera comme publiée sans rien envoyer à la plateforme."
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsMarkingPublished(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      await updatePublication(
+        "published",
+        null
+      );
+
+      setScheduledAt("");
+
+      setMessage(
+        `${label} marqué comme publié manuellement.`
+      );
+    } catch (
+      publicationError
+    ) {
+      setError(
+        publicationError instanceof Error
+          ? publicationError.message
+          : "Une erreur est survenue."
+      );
+    } finally {
+      setIsMarkingPublished(false);
     }
   }
 
@@ -1441,7 +1504,8 @@ export default function PublicationEditor({
     isApprovingBrevoSend ||
     isPublishingFacebook ||
     isPublishingGoogleBusiness ||
-    isPublishingLinkedIn;
+    isPublishingLinkedIn ||
+    isMarkingPublished;
 
   const canEdit =
     status !== "published";
@@ -1638,6 +1702,27 @@ export default function PublicationEditor({
             </div>
 
             <div className="flex flex-wrap justify-end gap-3">
+              {(channel === "linkedin" ||
+                channel === "facebook" ||
+                channel ===
+                  "google_business") &&
+              (status === "ready" ||
+                status ===
+                  "scheduled") ? (
+                <button
+                  type="button"
+                  onClick={
+                    markAsPublished
+                  }
+                  disabled={isBusy}
+                  className="rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isMarkingPublished
+                    ? "Mise à jour..."
+                    : "Marquer comme publié"}
+                </button>
+              ) : null}
+
               {channel === "linkedin" &&
               (status === "ready" ||
                 status ===
