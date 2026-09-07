@@ -560,6 +560,41 @@ PERSONNALISATION :
 - La présentation doit valoriser la proposition commerciale sans devenir une simple reproduction du devis.
 - La présentation est destinée à accompagner le devis officiel Zoho Books.
 
+PAGE FINALE "LBMEDIA" :
+
+La dernière page de la présentation doit présenter brièvement les différentes expertises de LBMedia tout en conservant le bloc de contact final.
+
+Cette page doit rester élégante, visuelle et concise. Elle ne doit pas ressembler à un catalogue commercial.
+
+Titre recommandé :
+"LBMedia, votre communication sur plusieurs terrains"
+
+Présenter les trois activités suivantes :
+
+RADIO
+Campagnes publicitaires sur RFM Lot.
+Conseil, conception et accompagnement.
+
+SITES INTERNET
+Création et refonte de sites internet.
+Des sites pensés pour être clairs, visibles et générer des contacts.
+
+SEO & GEO
+Référencement sur Google et visibilité dans les réponses des intelligences artificielles.
+Diagnostic et optimisation de sites existants.
+
+RÈGLES IMPÉRATIVES POUR CETTE PAGE :
+
+- ces éléments présentent les activités générales de LBMedia ;
+- ils ne constituent pas des prestations incluses dans le présent devis ;
+- ne pas leur attribuer de prix ;
+- ne pas les intégrer au dispositif radio proposé au client ;
+- conserver le design et l'identité visuelle du template Gamma ;
+- privilégier une mise en page graphique avec trois blocs ou trois univers clairement identifiables ;
+- ne pas surcharger la page de texte ;
+- conserver impérativement sur cette même page le bloc de contact LBMedia avec les coordonnées officielles fournies plus haut ;
+- cette page doit être la dernière page de la présentation.
+
 ÉLÉMENTS À NE PAS AJOUTER :
 - Ne jamais ajouter de compte rendu après diffusion.
 - Ne jamais ajouter de bilan post-campagne.
@@ -641,6 +676,9 @@ Avant de finaliser la présentation, vérifier impérativement que :
 13. les montants correspondent exactement au devis ;
 14. aucune prestation absente du devis n'a été ajoutée ;
 15. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté.
+16. la dernière page présente clairement les trois activités LBMedia : Radio, Sites internet et SEO & GEO ;
+17. ces activités sont présentées comme les expertises générales de LBMedia et non comme des prestations incluses dans le devis ;
+18. le bloc de contact LBMedia est conservé sur cette dernière page.
 `.trim();
 }
 
