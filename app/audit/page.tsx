@@ -1621,13 +1621,23 @@ export default function AuditPage() {
               </div>
 
               {savedMessage && (
-                <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                  {
-                    savedMessage
-                  }
+                <div className="mt-5 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-medium text-emerald-700">
+                    {
+                      savedMessage
+                    }
+                  </p>
+
+                  {selectedCompanyId ? (
+                    <a
+                      href={`/companies/${selectedCompanyId}`}
+                      className="inline-flex shrink-0 items-center justify-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                    >
+                      Voir la fiche entreprise →
+                    </a>
+                  ) : null}
                 </div>
               )}
-
               {saveError && (
                 <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {saveError}
