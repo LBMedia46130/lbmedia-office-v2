@@ -321,6 +321,8 @@ function getTextSignature() {
     "06.80.06.10.19",
     "laurent@lbmedia.fr",
     "www.lbmedia.fr",
+    "19 rue de l'Hôtel de Ville",
+    "46400 Saint-Céré",
   ].join("\n");
 }
 
