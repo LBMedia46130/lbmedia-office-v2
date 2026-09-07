@@ -604,6 +604,12 @@ export default function AuditProspectionEditor({
                     >
                       www.lbmedia.fr
                     </a>
+
+                    <div className="mt-1 text-[#4b5d70]">
+                      19 rue de l'Hôtel de Ville
+                      <br />
+                      46400 Saint-Céré
+                    </div>
                   </div>
                 </div>
               </div>
