@@ -907,15 +907,9 @@ export async function getZohoEstimate(
   return data.estimate;
 }
 
-export type ZohoEstimateEmailTracking = {
-  isEmailed: boolean;
-  isViewedByClient: boolean;
-  viewedAt: string | null;
-};
-
-export async function getZohoEstimateEmailTracking(
+export async function getZohoEstimateCommentsAndHistory(
   estimateId: string
-): Promise<ZohoEstimateEmailTracking> {
+) {
   const normalizedEstimateId =
     estimateId.trim();
 
@@ -925,69 +919,16 @@ export async function getZohoEstimateEmailTracking(
     );
   }
 
-  const response =
-    await zohoBooksRequest<{
-      comments?: Array<{
-        description?: string;
-        date?: string;
-        time?: string;
-        transaction_type?: string;
-      }>;
-    }>(
-      `/estimates/${encodeURIComponent(
-        normalizedEstimateId
-      )}/comments`,
-      {
-        method: "GET",
-      }
-    );
-
-  const emailHistory =
-    (response.comments ?? []).filter(
-      (comment) =>
-        comment.transaction_type ===
-        "email"
-    );
-
-  const sentEntry =
-    emailHistory.find((comment) =>
-      (comment.description ?? "")
-        .toLocaleLowerCase("fr-FR")
-        .includes("envoyé par e-mail")
-    );
-
-  const viewedEntry =
-    emailHistory.find((comment) => {
-      const description =
-        (comment.description ?? "")
-          .toLocaleLowerCase("fr-FR");
-
-      return (
-        description.includes(
-          "consulté le devis"
-        ) ||
-        description.includes(
-          "consulte le devis"
-        )
-      );
-    });
-
-  const viewedAt =
-    viewedEntry?.date
-      ? [
-          viewedEntry.date,
-          viewedEntry.time,
-        ]
-          .filter(Boolean)
-          .join(" ")
-      : null;
-
-  return {
-    isEmailed: Boolean(sentEntry),
-    isViewedByClient:
-      Boolean(viewedEntry),
-    viewedAt,
-  };
+  return zohoBooksRequest<{
+    comments?: Array<Record<string, unknown>>;
+  }>(
+    `/estimates/${encodeURIComponent(
+      normalizedEstimateId
+    )}/comments`,
+    {
+      method: "GET",
+    }
+  );
 }
 export async function getZohoEstimateEmailContent(
   estimateId: string
@@ -2167,6 +2108,5 @@ export async function createZohoInvoiceFromEstimate(
     data.invoice.invoice_id
   );
 }
-
 
 

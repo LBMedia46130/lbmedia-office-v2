@@ -180,11 +180,6 @@ export default async function EstimateDetailPage({
     notFound();
   }
 
-  const emailTracking =
-    await getZohoEstimateEmailTracking(
-      estimateId
-    );
-
   const [
     contactResult,
     campaignContextResult,
@@ -795,7 +790,7 @@ export default async function EstimateDetailPage({
                   </dt>
 
                   <dd className="mt-1 text-sm text-slate-700">
-                    {emailTracking.isEmailed
+                    {estimate.is_emailed
                       ? "Oui"
                       : "Non"}
                   </dd>
@@ -807,7 +802,7 @@ export default async function EstimateDetailPage({
                   </dt>
 
                   <dd className="mt-1 text-sm text-slate-700">
-                    {emailTracking.isViewedByClient
+                    {estimate.is_viewed_by_client
                       ? "Oui"
                       : "Non"}
                   </dd>
@@ -858,6 +853,3 @@ export default async function EstimateDetailPage({
     </main>
   );
 }
-
-
-
