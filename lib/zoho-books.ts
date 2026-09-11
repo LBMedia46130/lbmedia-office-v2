@@ -157,6 +157,7 @@ export type ZohoEstimateEmailContent = {
   from_name?: string;
   emailtemplate_id?: string;
   file_name?: string;
+  mail_documents?: string[];
 };
 
 export type SendZohoEstimateEmailInput = {
@@ -918,16 +919,31 @@ export async function getZohoEstimateEmailContent(
     );
   }
 
+  type ZohoEmailContact = {
+    contact_id?: string;
+    contact_name?: string;
+    email?: string;
+    selected?: boolean;
+  };
+
+  type ZohoMailDocument =
+    | string
+    | {
+        document_id?: string;
+        selected?: boolean;
+      };
+
   type ZohoEstimateEmailApiData = {
     from_email?: string;
     subject?: string;
     body?: string;
     to_mails_str?: string;
+    to_contacts?: ZohoEmailContact[];
     cc_mails?: string[];
     bcc_mails?: string[];
-    attach_pdf?: boolean;
     file_name_without_extension?: string;
-
+    emailtemplate_id?: string;
+    mail_documents?: ZohoMailDocument[];
     from_emails?: Array<{
       user_name?: string;
       email?: string;
@@ -980,7 +996,7 @@ export async function getZohoEstimateEmailContent(
     firstFrom?.user_name?.trim() ||
     undefined;
 
-  const toMailIds =
+  const legacyToMailIds =
     (data.to_mails_str ?? "")
       .split(/[;,]/)
       .map((email) =>
@@ -988,9 +1004,65 @@ export async function getZohoEstimateEmailContent(
       )
       .filter(Boolean);
 
+  const selectedContactEmails =
+    (data.to_contacts ?? [])
+      .filter(
+        (contact) =>
+          contact.selected &&
+          contact.email?.trim()
+      )
+      .map(
+        (contact) =>
+          contact.email!.trim()
+      );
+
+  const allContactEmails =
+    (data.to_contacts ?? [])
+      .filter(
+        (contact) =>
+          contact.email?.trim()
+      )
+      .map(
+        (contact) =>
+          contact.email!.trim()
+      );
+
+  const toMailIds =
+    Array.from(
+      new Set(
+        selectedContactEmails.length > 0
+          ? selectedContactEmails
+          : legacyToMailIds.length > 0
+            ? legacyToMailIds
+            : allContactEmails
+      )
+    );
+
   const fileName =
     data.file_name_without_extension
       ?.trim();
+
+  const mailDocuments =
+    (data.mail_documents ?? [])
+      .map((document) => {
+        if (
+          typeof document === "string"
+        ) {
+          return document.trim();
+        }
+
+        if (
+          document.selected === false
+        ) {
+          return "";
+        }
+
+        return (
+          document.document_id
+            ?.trim() ?? ""
+        );
+      })
+      .filter(Boolean);
 
   return {
     body:
@@ -1007,10 +1079,14 @@ export async function getZohoEstimateEmailContent(
       fromEmail,
     from_name:
       fromName,
+    emailtemplate_id:
+      data.emailtemplate_id,
     file_name:
       fileName
         ? `${fileName}.pdf`
         : undefined,
+    mail_documents:
+      mailDocuments,
   } satisfies ZohoEstimateEmailContent;
 }
 
@@ -1052,29 +1128,32 @@ export async function sendZohoEstimateEmail(
     );
   }
 
+  const preparedEmail =
+    await getZohoEstimateEmailContent(
+      normalizedEstimateId
+    );
+
   const payload = {
     to_mail_ids:
       toMailIds,
-
     cc_mail_ids:
       (input.cc_mail_ids ?? [])
         .map((email) =>
           email.trim()
         )
         .filter(Boolean),
-
     bcc_mail_ids:
       (input.bcc_mail_ids ?? [])
         .map((email) =>
           email.trim()
         )
         .filter(Boolean),
-
     subject:
       input.subject.trim(),
-
     body:
       input.body,
+    mail_documents:
+      preparedEmail.mail_documents ?? [],
   };
 
   await zohoBooksRequest<Record<string, never>>(
@@ -1086,6 +1165,15 @@ export async function sendZohoEstimateEmail(
       body: JSON.stringify(
         payload
       ),
+    }
+  );
+
+  await zohoBooksRequest<Record<string, never>>(
+    `/estimates/${encodeURIComponent(
+      normalizedEstimateId
+    )}/status/sent`,
+    {
+      method: "POST",
     }
   );
 }
