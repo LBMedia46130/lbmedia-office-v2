@@ -1152,8 +1152,6 @@ export async function sendZohoEstimateEmail(
       input.subject.trim(),
     body:
       input.body,
-    mail_documents:
-      preparedEmail.mail_documents ?? [],
   };
 
   await zohoBooksRequest<Record<string, never>>(
@@ -2087,3 +2085,4 @@ export async function createZohoInvoiceFromEstimate(
     data.invoice.invoice_id
   );
 }
+
