@@ -1,49 +1,37 @@
 import {
   readFile,
 } from "node:fs/promises";
-
 import {
   join,
 } from "node:path";
-
 import {
   NextResponse,
 } from "next/server";
-
 import nodemailer from "nodemailer";
-
 import {
   createFollowUpAuditProspectionMessage,
   getLatestAuditProspectionMessage,
 } from "@/lib/audit-prospection-messages";
-
 import {
   supabaseAdmin,
 } from "@/lib/supabase-admin";
-
 export const dynamic =
   "force-dynamic";
-
 export const runtime =
   "nodejs";
-
 export const maxDuration = 60;
-
 type RouteContext = {
   params: Promise<{
     id: string;
   }>;
 };
-
 type SendRequestBody = {
   confirmedRecipientEmail?: unknown;
   subject?: unknown;
   emailContent?: unknown;
 };
-
 const SIGNATURE_LOGO_CID =
   "lbmedia-signature-logo";
-
 function getBooleanEnv(
   value:
     | string
@@ -56,7 +44,6 @@ function getBooleanEnv(
     "true"
   );
 }
-
 function normalizeEmail(
   value:
     | string
@@ -70,8 +57,6 @@ function normalizeEmail(
     ""
   );
 }
-
-
 function splitRecipientEmails(
   value:
     | string
@@ -89,7 +74,6 @@ function splitRecipientEmails(
     )
     .filter(Boolean);
 }
-
 function normalizeRecipientEmails(
   value:
     | string
@@ -104,7 +88,6 @@ function normalizeRecipientEmails(
     )
   );
 }
-
 function canonicalRecipientEmails(
   value:
     | string
@@ -118,7 +101,6 @@ function canonicalRecipientEmails(
     .sort()
     .join(",");
 }
-
 function isValidEmail(
   value: string
 ) {
@@ -126,7 +108,6 @@ function isValidEmail(
     value
   );
 }
-
 function escapeHtml(
   value: string
 ) {
@@ -152,7 +133,6 @@ function escapeHtml(
       "&#039;"
     );
 }
-
 function textToHtml(
   value: string
 ) {
@@ -161,11 +141,9 @@ function textToHtml(
     .map((line) => {
       const trimmed =
         line.trim();
-
       if (!trimmed) {
         return `<div style="height:12px;"></div>`;
       }
-
       return `
         <div
           style="
@@ -180,7 +158,6 @@ function textToHtml(
     })
     .join("");
 }
-
 function getSignatureHtml() {
   return `
 <table
@@ -220,7 +197,6 @@ function getSignatureHtml() {
           "
         />
       </td>
-
       <td
         valign="middle"
         style="
@@ -239,7 +215,6 @@ function getSignatureHtml() {
         >
           Laurent BARRES
         </div>
-
         <div
           style="
             margin:2px 0 9px 0;
@@ -252,7 +227,6 @@ function getSignatureHtml() {
         >
           DIRECTEUR
         </div>
-
         <div
           style="
             margin:0;
@@ -271,7 +245,6 @@ function getSignatureHtml() {
             06.80.06.10.19
           </a>
         </div>
-
         <div
           style="
             margin:0;
@@ -289,7 +262,6 @@ function getSignatureHtml() {
             laurent@lbmedia.fr
           </a>
         </div>
-
         <div
           style="
             margin:0;
@@ -313,7 +285,6 @@ function getSignatureHtml() {
 </table>
 `.trim();
 }
-
 function getTextSignature() {
   return [
     "Laurent BARRES",
@@ -325,7 +296,6 @@ function getTextSignature() {
     "46400 Saint-Céré",
   ].join("\n");
 }
-
 function buildHtmlContent(
   emailContent: string
 ) {
@@ -339,7 +309,6 @@ function buildHtmlContent(
       content="width=device-width, initial-scale=1"
     />
   </head>
-
   <body
     style="
       margin:0;
@@ -364,14 +333,12 @@ function buildHtmlContent(
       ${textToHtml(
         emailContent
       )}
-
       ${getSignatureHtml()}
     </div>
   </body>
 </html>
 `.trim();
 }
-
 export async function POST(
   request: Request,
   context: RouteContext
@@ -381,35 +348,29 @@ export async function POST(
       process.env
         .OVH_SMTP_HOST
         ?.trim();
-
     const smtpPort =
       Number(
         process.env
           .OVH_SMTP_PORT ??
           "587"
       );
-
     const smtpSecure =
       getBooleanEnv(
         process.env
           .OVH_SMTP_SECURE
       );
-
     const smtpUser =
       process.env
         .OVH_SMTP_USER
         ?.trim();
-
     const smtpPassword =
       process.env
         .OVH_SMTP_PASSWORD;
-
     const smtpFromName =
       process.env
         .OVH_SMTP_FROM_NAME
         ?.trim() ||
       "Laurent Barrès - LBMedia";
-
     if (
       !smtpHost ||
       !smtpUser ||
@@ -426,7 +387,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !Number.isFinite(
         smtpPort
@@ -443,11 +403,9 @@ export async function POST(
         }
       );
     }
-
     let body:
       | SendRequestBody
       | null = null;
-
     try {
       body =
         (await request.json()) as SendRequestBody;
@@ -455,36 +413,30 @@ export async function POST(
       body =
         null;
     }
-
     const confirmedRecipientValue =
       typeof body
         ?.confirmedRecipientEmail ===
       "string"
         ? body.confirmedRecipientEmail
         : "";
-
     const confirmedRecipientEmails =
       normalizeRecipientEmails(
         confirmedRecipientValue
       );
-
     const confirmedRecipientsCanonical =
       canonicalRecipientEmails(
         confirmedRecipientValue
       );
-
     const subject =
       typeof body?.subject ===
       "string"
         ? body.subject.trim()
         : "";
-
     const emailContent =
       typeof body?.emailContent ===
       "string"
         ? body.emailContent.trim()
         : "";
-
     if (
       confirmedRecipientEmails.length ===
         0
@@ -500,7 +452,6 @@ export async function POST(
         }
       );
     }
-
     const invalidConfirmedRecipient =
       confirmedRecipientEmails.find(
         (email) =>
@@ -508,7 +459,6 @@ export async function POST(
             email
           )
       );
-
     if (
       invalidConfirmedRecipient
     ) {
@@ -523,7 +473,6 @@ export async function POST(
         }
       );
     }
-
     if (!subject) {
       return NextResponse.json(
         {
@@ -536,7 +485,6 @@ export async function POST(
         }
       );
     }
-
     if (!emailContent) {
       return NextResponse.json(
         {
@@ -549,11 +497,9 @@ export async function POST(
         }
       );
     }
-
     const {
       id,
     } = await context.params;
-
     const {
       data:
         prospection,
@@ -582,7 +528,6 @@ export async function POST(
         id
       )
       .maybeSingle();
-
     if (
       prospectionError
     ) {
@@ -590,7 +535,6 @@ export async function POST(
         `Impossible de charger la prospection : ${prospectionError.message}`
       );
     }
-
     if (!prospection) {
       return NextResponse.json(
         {
@@ -603,7 +547,6 @@ export async function POST(
         }
       );
     }
-
     if (
       prospection.status ===
       "replied"
@@ -619,7 +562,6 @@ export async function POST(
         }
       );
     }
-
     if (
       prospection.status !==
       "follow_up"
@@ -635,7 +577,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !prospection.sent_at
     ) {
@@ -650,7 +591,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !prospection.follow_up_at
     ) {
@@ -665,12 +605,10 @@ export async function POST(
         }
       );
     }
-
     const followUpTime =
       new Date(
         prospection.follow_up_at
       ).getTime();
-
     if (
       Number.isNaN(
         followUpTime
@@ -687,7 +625,6 @@ export async function POST(
         }
       );
     }
-
     if (
       followUpTime >
       Date.now()
@@ -703,12 +640,10 @@ export async function POST(
         }
       );
     }
-
     const recipientEmail =
       prospection
         .recipient_email
         ?.trim();
-
     if (!recipientEmail) {
       return NextResponse.json(
         {
@@ -721,17 +656,14 @@ export async function POST(
         }
       );
     }
-
     const recipientEmails =
       normalizeRecipientEmails(
         recipientEmail
       );
-
     const storedRecipientsCanonical =
       canonicalRecipientEmails(
         recipientEmail
       );
-
     const invalidStoredRecipient =
       recipientEmails.find(
         (email) =>
@@ -739,7 +671,6 @@ export async function POST(
             email
           )
       );
-
     if (
       invalidStoredRecipient
     ) {
@@ -754,7 +685,6 @@ export async function POST(
         }
       );
     }
-
     if (
       storedRecipientsCanonical !==
       confirmedRecipientsCanonical
@@ -770,18 +700,16 @@ export async function POST(
         }
       );
     }
-
-    /*
-     * Historique existant :
-     * on l'utilise aussi pour empêcher un double envoi
-     * si la relance a déjà été envoyée mais que la fiche
-     * n'a pas encore été rafraîchie.
-     */
+    /**
+ * Historique existant :*
+ * on l'utilise aussi pour empêcher un double envoi*
+ * si la relance a déjà été envoyée mais que la fiche*
+ * n'a pas encore été rafraîchie.*
+ */
     const latestMessage =
       await getLatestAuditProspectionMessage(
         prospection.id
       );
-
     if (
       latestMessage &&
       latestMessage.message_type ===
@@ -791,7 +719,6 @@ export async function POST(
         new Date(
           latestMessage.sent_at
         ).getTime();
-
       if (
         Number.isFinite(
           latestMessageTime
@@ -811,10 +738,9 @@ export async function POST(
         );
       }
     }
-
-    /*
-     * Nouvelle lecture juste avant SMTP.
-     */
+    /**
+ * Nouvelle lecture juste avant SMTP.*
+ */
     const {
       data:
         securityCheck,
@@ -838,7 +764,6 @@ export async function POST(
         prospection.id
       )
       .maybeSingle();
-
     if (
       securityCheckError ||
       !securityCheck
@@ -854,7 +779,6 @@ export async function POST(
         }
       );
     }
-
     if (
       securityCheck.status !==
       "follow_up" ||
@@ -871,7 +795,6 @@ export async function POST(
         }
       );
     }
-
     if (
       canonicalRecipientEmails(
         securityCheck.recipient_email
@@ -889,7 +812,6 @@ export async function POST(
         }
       );
     }
-
     if (
       securityCheck.follow_up_at !==
       prospection.follow_up_at
@@ -905,12 +827,10 @@ export async function POST(
         }
       );
     }
-
     const recipientName =
       prospection
         .recipient_name
         ?.trim();
-
     const signatureLogoPath =
       join(
         process.cwd(),
@@ -918,11 +838,9 @@ export async function POST(
         "brand",
         "lbmedia-logo.png"
       );
-
     let signatureLogoBuffer:
       | Buffer
       | null = null;
-
     try {
       signatureLogoBuffer =
         await readFile(
@@ -933,7 +851,6 @@ export async function POST(
         "Impossible de charger le logo de signature LBMedia",
         logoError
       );
-
       return NextResponse.json(
         {
           success: false,
@@ -945,42 +862,32 @@ export async function POST(
         }
       );
     }
-
     const transporter =
       nodemailer.createTransport({
         host:
           smtpHost,
-
         port:
           smtpPort,
-
         secure:
           smtpSecure,
-
         auth: {
           user:
             smtpUser,
-
           pass:
             smtpPassword,
         },
-
         tls: {
           minVersion:
             "TLSv1.2",
         },
       });
-
     await transporter.verify();
-
     const htmlContent =
       buildHtmlContent(
         emailContent
       );
-
     const textContent =
       `${emailContent}\n\n${getTextSignature()}`;
-
     const threadMessageId =
       latestMessage
         ?.smtp_message_id
@@ -989,17 +896,14 @@ export async function POST(
         .smtp_message_id
         ?.trim() ||
       null;
-
     const sendResult =
       await transporter.sendMail({
         from: {
           name:
             smtpFromName,
-
           address:
             smtpUser,
         },
-
         to:
           recipientEmails.length ===
             1 &&
@@ -1007,75 +911,57 @@ export async function POST(
             ? {
                 name:
                   recipientName,
-
                 address:
                   recipientEmails[0],
               }
             : recipientEmails,
-
         replyTo:
           smtpUser,
-
         subject,
-
         text:
           textContent,
-
         html:
           htmlContent,
-
-        /*
-         * La relance est rattachée au fil du précédent
-         * message lorsque l'identifiant SMTP est disponible.
-         */
+        /**
+*         \* La relance est rattachée au fil du précédent*
+*         \* message lorsque l'identifiant SMTP est disponible.*
+*         \*/
         inReplyTo:
           threadMessageId ??
           undefined,
-
         references:
           threadMessageId
             ? [
                 threadMessageId,
               ]
             : undefined,
-
         attachments: [
           {
             filename:
               "lbmedia-logo.png",
-
             content:
               signatureLogoBuffer,
-
             contentType:
               "image/png",
-
             cid:
               SIGNATURE_LOGO_CID,
-
             contentDisposition:
               "inline",
           },
         ],
-
         headers: {
           "X-LBMedia-Office":
             "audit-prospection-follow-up",
-
           "X-LBMedia-Prospection-ID":
             prospection.id,
-
           "X-LBMedia-Company-ID":
             prospection.company_id,
-
           "X-LBMedia-Audit-ID":
             prospection.website_audit_id,
-
           "X-LBMedia-Message-Type":
             "follow-up",
         },
       });
-
     const accepted =
       sendResult.accepted.map(
         (address) =>
@@ -1085,7 +971,6 @@ export async function POST(
             )
           )
       );
-
     const rejectedRecipients =
       recipientEmails.filter(
         (recipient) =>
@@ -1093,7 +978,6 @@ export async function POST(
             recipient
           )
       );
-
     if (
       rejectedRecipients.length >
       0
@@ -1103,31 +987,23 @@ export async function POST(
         {
           prospectionId:
             prospection.id,
-
           recipientEmails,
-
           rejectedRecipients,
-
           accepted:
             sendResult.accepted,
-
           rejected:
             sendResult.rejected,
-
           response:
             sendResult.response,
         }
       );
-
       return NextResponse.json(
         {
           success: false,
-
           message:
             `Le serveur SMTP n’a pas confirmé l’acceptation de tous les destinataires (${rejectedRecipients.join(
               ", "
             )}). La relance n’a pas été archivée.`,
-
           messageId:
             sendResult.messageId,
         },
@@ -1136,11 +1012,39 @@ export async function POST(
         }
       );
     }
-
     const sentAt =
       new Date()
         .toISOString();
-
+    const {
+      error: auditStatusError,
+    } = await supabaseAdmin
+      .from(
+        "website_audits"
+      )
+      .update({
+        status: "followed_up",
+      })
+      .eq(
+        "id",
+        prospection.website_audit_id
+      )
+      .neq(
+        "status",
+        "completed"
+      );
+    if (auditStatusError) {
+      console.error(
+        "Relance envoyée mais statut de l’audit non mis à jour",
+        {
+          prospectionId:
+            prospection.id,
+          auditId:
+            prospection.website_audit_id,
+          error:
+            auditStatusError.message,
+        }
+      );
+    }
     let archivedMessage:
       | Awaited<
           ReturnType<
@@ -1148,31 +1052,23 @@ export async function POST(
           >
         >
       | null = null;
-
     try {
       archivedMessage =
         await createFollowUpAuditProspectionMessage({
           auditProspectionId:
             prospection.id,
-
           recipientEmail:
             recipientEmails.join(
               ", "
             ),
-
           subject,
-
           emailContent,
-
           htmlContent,
-
           attachmentUrl:
             null,
-
           smtpMessageId:
             sendResult.messageId ??
             null,
-
           sentAt,
         });
     } catch (
@@ -1183,12 +1079,9 @@ export async function POST(
         {
           prospectionId:
             prospection.id,
-
           messageId:
             sendResult.messageId,
-
           sentAt,
-
           error:
             historyError instanceof Error
               ? historyError.message
@@ -1196,25 +1089,21 @@ export async function POST(
         }
       );
     }
-
-    /*
-     * Après l'envoi d'une relance, on prépare automatiquement
-     * le prochain point de suivi à J+7.
-     *
-     * Laurent pourra modifier cette date directement dans
-     * le bloc Suivi commercial.
-     */
+    /**
+ * Après l'envoi d'une relance, on prépare automatiquement*
+ * le prochain point de suivi à J+7.*
+ *
+ * Laurent pourra modifier cette date directement dans*
+ * le bloc Suivi commercial.*
+ */
     const nextFollowUpDate =
       new Date(sentAt);
-
     nextFollowUpDate.setDate(
       nextFollowUpDate.getDate() +
         7
     );
-
     const nextFollowUpAt =
       nextFollowUpDate.toISOString();
-
     const {
       data:
         updated,
@@ -1227,10 +1116,8 @@ export async function POST(
       .update({
         status:
           "follow_up",
-
         follow_up_at:
           nextFollowUpAt,
-
         updated_at:
           sentAt,
       })
@@ -1246,9 +1133,8 @@ export async function POST(
         "follow_up_at",
         prospection.follow_up_at
       )
-      .select("*")
+      .select("\*")
       .maybeSingle();
-
     if (
       updateError ||
       !updated
@@ -1258,36 +1144,27 @@ export async function POST(
         {
           prospectionId:
             prospection.id,
-
           messageId:
             sendResult.messageId,
-
           sentAt,
-
           error:
             updateError
               ?.message ??
             "Mise à jour refusée.",
         }
       );
-
       return NextResponse.json(
         {
           success: false,
-
           sent: true,
-
           archived:
             Boolean(
               archivedMessage
             ),
-
           message:
             "La relance a été acceptée par le serveur SMTP, mais LBMedia Office n’a pas réussi à enregistrer la prochaine date de suivi. Ne renvoyez pas l’email.",
-
           messageId:
             sendResult.messageId,
-
           sentAt,
         },
         {
@@ -1295,25 +1172,18 @@ export async function POST(
         }
       );
     }
-
     if (!archivedMessage) {
       return NextResponse.json(
         {
           success: false,
-
           sent: true,
-
           archived:
             false,
-
           message:
             "La relance a été envoyée et le suivi a été reprogrammé, mais son archivage détaillé a échoué. Ne renvoyez pas l’email.",
-
           messageId:
             sendResult.messageId,
-
           sentAt,
-
           nextFollowUpAt,
         },
         {
@@ -1321,66 +1191,46 @@ export async function POST(
         }
       );
     }
-
     console.info(
       "Relance prospection envoyée",
       {
         prospectionId:
           prospection.id,
-
         companyId:
           prospection.company_id,
-
         auditId:
           prospection.website_audit_id,
-
         recipient:
           recipientEmail,
-
         sentAt,
-
         nextFollowUpAt,
-
         messageId:
           sendResult.messageId,
-
         sequenceNumber:
           archivedMessage.sequence_number,
-
         accepted:
           sendResult.accepted,
-
         rejected:
           sendResult.rejected,
-
         response:
           sendResult.response,
       }
     );
-
     return NextResponse.json({
       success: true,
-
       message:
         "Relance envoyée avec succès.",
-
       sentAt,
-
       nextFollowUpAt,
-
       messageId:
         sendResult.messageId,
-
       sequenceNumber:
         archivedMessage.sequence_number,
-
       recipientEmail:
         recipientEmails.join(
           ", "
         ),
-
       recipientEmails,
-
       prospection:
         updated,
     });
@@ -1389,11 +1239,9 @@ export async function POST(
       "Erreur envoi relance prospection",
       error
     );
-
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message

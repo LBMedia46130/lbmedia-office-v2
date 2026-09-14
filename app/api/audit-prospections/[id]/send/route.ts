@@ -1,52 +1,39 @@
 import {
   readFile,
 } from "node:fs/promises";
-
 import {
   join,
 } from "node:path";
-
 import {
   NextResponse,
 } from "next/server";
-
 import nodemailer from "nodemailer";
-
 import {
   createInitialAuditProspectionMessage,
 } from "@/lib/audit-prospection-messages";
-
 import {
   supabaseAdmin,
 } from "@/lib/supabase-admin";
-
 export const dynamic =
   "force-dynamic";
-
 export const runtime =
   "nodejs";
-
 export const maxDuration = 60;
-
 type RouteContext = {
   params: Promise<{
     id: string;
   }>;
 };
-
 type SendRequestBody = {
   confirmedRecipientEmail?: unknown;
 };
-
 type ProposalType =
   | "optimization"
   | "optimization_redesign"
   | "redesign"
   | "new_website";
-
 const SIGNATURE_LOGO_CID =
   "lbmedia-signature-logo";
-
 function getBooleanEnv(
   value:
     | string
@@ -59,7 +46,6 @@ function getBooleanEnv(
     "true"
   );
 }
-
 function normalizeEmail(
   value:
     | string
@@ -73,8 +59,6 @@ function normalizeEmail(
     ""
   );
 }
-
-
 function splitRecipientEmails(
   value:
     | string
@@ -92,7 +76,6 @@ function splitRecipientEmails(
     )
     .filter(Boolean);
 }
-
 function normalizeRecipientEmails(
   value:
     | string
@@ -107,7 +90,6 @@ function normalizeRecipientEmails(
     )
   );
 }
-
 function canonicalRecipientEmails(
   value:
     | string
@@ -121,7 +103,6 @@ function canonicalRecipientEmails(
     .sort()
     .join(",");
 }
-
 function isValidEmail(
   value: string
 ) {
@@ -129,7 +110,6 @@ function isValidEmail(
     value
   );
 }
-
 function normalizeProposalType(
   value: unknown
 ): ProposalType {
@@ -145,10 +125,8 @@ function normalizeProposalType(
   ) {
     return value;
   }
-
   return "optimization";
 }
-
 function proposalRequiresPdf(
   proposalType: ProposalType
 ) {
@@ -157,7 +135,6 @@ function proposalRequiresPdf(
     "optimization"
   );
 }
-
 function escapeHtml(
   value: string
 ) {
@@ -183,7 +160,6 @@ function escapeHtml(
       "&#039;"
     );
 }
-
 function textToHtml(
   value: string
 ) {
@@ -192,11 +168,9 @@ function textToHtml(
     .map((line) => {
       const trimmed =
         line.trim();
-
       if (!trimmed) {
         return `<div style="height:12px;"></div>`;
       }
-
       return `
         <div
           style="
@@ -211,7 +185,6 @@ function textToHtml(
     })
     .join("");
 }
-
 function getPdfFilename(
   attachmentUrl: string
 ) {
@@ -220,13 +193,11 @@ function getPdfFilename(
       new URL(
         attachmentUrl
       );
-
     const filename =
       url.pathname
         .split("/")
         .filter(Boolean)
         .pop();
-
     if (
       filename &&
       filename
@@ -240,10 +211,8 @@ function getPdfFilename(
   } catch {
     // Nom de secours ci-dessous.
   }
-
   return "proposition-lbmedia.pdf";
 }
-
 function getSignatureHtml() {
   return `
 <table
@@ -283,7 +252,6 @@ function getSignatureHtml() {
           "
         />
       </td>
-
       <td
         valign="middle"
         style="
@@ -302,7 +270,6 @@ function getSignatureHtml() {
         >
           Laurent BARRES
         </div>
-
         <div
           style="
             margin:2px 0 9px 0;
@@ -315,7 +282,6 @@ function getSignatureHtml() {
         >
           DIRECTEUR
         </div>
-
         <div
           style="
             margin:0;
@@ -334,7 +300,6 @@ function getSignatureHtml() {
             06.80.06.10.19
           </a>
         </div>
-
         <div
           style="
             margin:0;
@@ -352,7 +317,6 @@ function getSignatureHtml() {
             laurent@lbmedia.fr
           </a>
         </div>
-
         <div
           style="
             margin:0;
@@ -376,7 +340,6 @@ function getSignatureHtml() {
 </table>
 `.trim();
 }
-
 function getTextSignature() {
   return [
     "Laurent BARRES",
@@ -386,7 +349,6 @@ function getTextSignature() {
     "www.lbmedia.fr",
   ].join("\n");
 }
-
 function buildHtmlContent(
   emailContent: string
 ) {
@@ -400,7 +362,6 @@ function buildHtmlContent(
       content="width=device-width, initial-scale=1"
     />
   </head>
-
   <body
     style="
       margin:0;
@@ -425,14 +386,12 @@ function buildHtmlContent(
       ${textToHtml(
         emailContent
       )}
-
       ${getSignatureHtml()}
     </div>
   </body>
 </html>
 `.trim();
 }
-
 export async function POST(
   request: Request,
   context: RouteContext
@@ -442,35 +401,29 @@ export async function POST(
       process.env
         .OVH_SMTP_HOST
         ?.trim();
-
     const smtpPort =
       Number(
         process.env
           .OVH_SMTP_PORT ??
           "587"
       );
-
     const smtpSecure =
       getBooleanEnv(
         process.env
           .OVH_SMTP_SECURE
       );
-
     const smtpUser =
       process.env
         .OVH_SMTP_USER
         ?.trim();
-
     const smtpPassword =
       process.env
         .OVH_SMTP_PASSWORD;
-
     const smtpFromName =
       process.env
         .OVH_SMTP_FROM_NAME
         ?.trim() ||
       "Laurent Barrès - LBMedia";
-
     if (
       !smtpHost ||
       !smtpUser ||
@@ -487,7 +440,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !Number.isFinite(
         smtpPort
@@ -504,11 +456,9 @@ export async function POST(
         }
       );
     }
-
     let body:
       | SendRequestBody
       | null = null;
-
     try {
       body =
         (await request.json()) as SendRequestBody;
@@ -516,24 +466,20 @@ export async function POST(
       body =
         null;
     }
-
     const confirmedRecipientValue =
       typeof body
         ?.confirmedRecipientEmail ===
       "string"
         ? body.confirmedRecipientEmail
         : "";
-
     const confirmedRecipientEmails =
       normalizeRecipientEmails(
         confirmedRecipientValue
       );
-
     const confirmedRecipientsCanonical =
       canonicalRecipientEmails(
         confirmedRecipientValue
       );
-
     if (
       confirmedRecipientEmails.length ===
         0
@@ -549,7 +495,6 @@ export async function POST(
         }
       );
     }
-
     const invalidConfirmedRecipient =
       confirmedRecipientEmails.find(
         (email) =>
@@ -557,7 +502,6 @@ export async function POST(
             email
           )
       );
-
     if (
       invalidConfirmedRecipient
     ) {
@@ -572,11 +516,9 @@ export async function POST(
         }
       );
     }
-
     const {
       id,
     } = await context.params;
-
     const {
       data:
         prospection,
@@ -606,7 +548,6 @@ export async function POST(
         id
       )
       .maybeSingle();
-
     if (
       prospectionError
     ) {
@@ -614,7 +555,6 @@ export async function POST(
         `Impossible de charger la prospection : ${prospectionError.message}`
       );
     }
-
     if (!prospection) {
       return NextResponse.json(
         {
@@ -627,7 +567,6 @@ export async function POST(
         }
       );
     }
-
     if (
       prospection.status ===
       "sent"
@@ -643,7 +582,6 @@ export async function POST(
         }
       );
     }
-
     if (
       prospection.status !==
       "ready"
@@ -659,32 +597,26 @@ export async function POST(
         }
       );
     }
-
     const proposalType =
       normalizeProposalType(
         prospection.proposal_type
       );
-
     const requiresPdf =
       proposalRequiresPdf(
         proposalType
       );
-
     const recipientEmail =
       prospection
         .recipient_email
         ?.trim();
-
     const recipientEmails =
       normalizeRecipientEmails(
         recipientEmail
       );
-
     const storedRecipientsCanonical =
       canonicalRecipientEmails(
         recipientEmail
       );
-
     if (
       recipientEmails.length ===
         0
@@ -700,7 +632,6 @@ export async function POST(
         }
       );
     }
-
     const invalidStoredRecipient =
       recipientEmails.find(
         (email) =>
@@ -708,7 +639,6 @@ export async function POST(
             email
           )
       );
-
     if (
       invalidStoredRecipient
     ) {
@@ -723,7 +653,6 @@ export async function POST(
         }
       );
     }
-
     if (
       storedRecipientsCanonical !==
       confirmedRecipientsCanonical
@@ -731,10 +660,8 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-
           message:
             "Sécurité : les destinataires confirmés ne correspondent pas aux destinataires actuellement enregistrés. Aucun email n’a été envoyé.",
-
           storedRecipientEmail:
             recipientEmail,
         },
@@ -743,44 +670,38 @@ export async function POST(
         }
       );
     }
-
     const recipientName =
       prospection
         .recipient_name
         ?.trim();
-
     const subject =
       prospection
         .subject
         ?.trim();
-
     const emailContent =
       prospection
         .email_content
         ?.trim();
-
-    /*
-     * Règle métier définitive :
-     *
-     * - optimisation seule :
-     *   aucune pièce jointe,
-     *   même si une ancienne URL
-     *   existe encore en base ;
-     *
-     * - tous les autres angles :
-     *   le PDF est obligatoire.
-     */
+    /**
+ * Règle métier définitive :*
+ *
+ * - optimisation seule :*
+ *   aucune pièce jointe,*
+ *   même si une ancienne URL*
+ *   existe encore en base ;*
+ *
+ * - tous les autres angles :*
+ *   le PDF est obligatoire.*
+ */
     const storedAttachmentUrl =
       prospection
         .attachment_url
         ?.trim() ||
       null;
-
     const attachmentUrl =
       requiresPdf
         ? storedAttachmentUrl
         : null;
-
     if (
       !subject
     ) {
@@ -795,7 +716,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !emailContent
     ) {
@@ -810,7 +730,6 @@ export async function POST(
         }
       );
     }
-
     if (
       requiresPdf &&
       !attachmentUrl
@@ -826,10 +745,9 @@ export async function POST(
         }
       );
     }
-
-    /*
-     * Nouvelle lecture de sécurité juste avant l'envoi.
-     */
+    /**
+ * Nouvelle lecture de sécurité juste avant l'envoi.*
+ */
     const {
       data:
         securityCheck,
@@ -856,7 +774,6 @@ export async function POST(
         prospection.id
       )
       .maybeSingle();
-
     if (
       securityCheckError ||
       !securityCheck
@@ -872,7 +789,6 @@ export async function POST(
         }
       );
     }
-
     if (
       securityCheck.status ===
         "sent" ||
@@ -889,7 +805,6 @@ export async function POST(
         }
       );
     }
-
     if (
       securityCheck.status !==
       "ready"
@@ -905,7 +820,6 @@ export async function POST(
         }
       );
     }
-
     if (
       canonicalRecipientEmails(
         securityCheck.recipient_email
@@ -923,12 +837,10 @@ export async function POST(
         }
       );
     }
-
     const securityProposalType =
       normalizeProposalType(
         securityCheck.proposal_type
       );
-
     if (
       securityProposalType !==
       proposalType
@@ -944,13 +856,11 @@ export async function POST(
         }
       );
     }
-
     const securityAttachmentUrl =
       securityCheck
         .attachment_url
         ?.trim() ||
       null;
-
     if (
       securityCheck.subject
         ?.trim() !==
@@ -970,16 +880,15 @@ export async function POST(
         }
       );
     }
-
-    /*
-     * On ne compare la pièce jointe
-     * que lorsqu'elle est réellement
-     * nécessaire.
-     *
-     * En optimisation seule, une
-     * ancienne attachment_url n'a
-     * aucune incidence sur l'envoi.
-     */
+    /**
+ * On ne compare la pièce jointe*
+ * que lorsqu'elle est réellement*
+ * nécessaire.*
+ *
+ * En optimisation seule, une*
+ * ancienne attachment_url n'a*
+ * aucune incidence sur l'envoi.*
+ */
     if (
       requiresPdf &&
       securityAttachmentUrl !==
@@ -996,11 +905,9 @@ export async function POST(
         }
       );
     }
-
     let attachmentBuffer:
       | Buffer
       | null = null;
-
     if (
       requiresPdf &&
       attachmentUrl
@@ -1013,7 +920,6 @@ export async function POST(
               "no-store",
           }
         );
-
       if (
         !attachmentResponse.ok
       ) {
@@ -1028,12 +934,10 @@ export async function POST(
           }
         );
       }
-
       attachmentBuffer =
         Buffer.from(
           await attachmentResponse.arrayBuffer()
         );
-
       if (
         attachmentBuffer.length ===
         0
@@ -1050,7 +954,6 @@ export async function POST(
         );
       }
     }
-
     const signatureLogoPath =
       join(
         process.cwd(),
@@ -1058,11 +961,9 @@ export async function POST(
         "brand",
         "lbmedia-logo.png"
       );
-
     let signatureLogoBuffer:
       | Buffer
       | null = null;
-
     try {
       signatureLogoBuffer =
         await readFile(
@@ -1073,7 +974,6 @@ export async function POST(
         "Impossible de charger le logo de signature LBMedia",
         logoError
       );
-
       return NextResponse.json(
         {
           success: false,
@@ -1085,55 +985,44 @@ export async function POST(
         }
       );
     }
-
     const transporter =
       nodemailer.createTransport({
         host:
           smtpHost,
-
         port:
           smtpPort,
-
         secure:
           smtpSecure,
-
         auth: {
           user:
             smtpUser,
-
           pass:
             smtpPassword,
         },
-
         tls: {
           minVersion:
             "TLSv1.2",
         },
       });
-
     await transporter.verify();
-
     const htmlContent =
       buildHtmlContent(
         emailContent
       );
-
     const textContent =
       `${emailContent}\n\n${getTextSignature()}`;
-
-    /*
-     * Le logo de signature est toujours
-     * présent.
-     *
-     * Le PDF n'est ajouté que lorsque
-     * l'angle commercial l'exige.
-     */
+    /**
+ * Le logo de signature est toujours*
+ * présent.*
+ *
+ * Le PDF n'est ajouté que lorsque*
+ * l'angle commercial l'exige.*
+ */
     const attachments:
       Parameters<
         typeof transporter.sendMail
       >[0]["attachments"] =
       [];
-
     if (
       requiresPdf &&
       attachmentUrl &&
@@ -1144,42 +1033,32 @@ export async function POST(
           getPdfFilename(
             attachmentUrl
           ),
-
         content:
           attachmentBuffer,
-
         contentType:
           "application/pdf",
       });
     }
-
     attachments.push({
       filename:
         "lbmedia-logo.png",
-
       content:
         signatureLogoBuffer,
-
       contentType:
         "image/png",
-
       cid:
         SIGNATURE_LOGO_CID,
-
       contentDisposition:
         "inline",
     });
-
     const sendResult =
       await transporter.sendMail({
         from: {
           name:
             smtpFromName,
-
           address:
             smtpUser,
         },
-
         to:
           recipientEmails.length ===
             1 &&
@@ -1187,43 +1066,31 @@ export async function POST(
             ? {
                 name:
                   recipientName,
-
                 address:
                   recipientEmails[0],
               }
             : recipientEmails,
-
         replyTo:
           smtpUser,
-
         subject,
-
         text:
           textContent,
-
         html:
           htmlContent,
-
         attachments,
-
         headers: {
           "X-LBMedia-Office":
             "audit-prospection",
-
           "X-LBMedia-Prospection-ID":
             prospection.id,
-
           "X-LBMedia-Company-ID":
             prospection.company_id,
-
           "X-LBMedia-Audit-ID":
             prospection.website_audit_id,
-
           "X-LBMedia-Proposal-Type":
             proposalType,
         },
       });
-
     const accepted =
       sendResult.accepted.map(
         (address) =>
@@ -1233,7 +1100,6 @@ export async function POST(
             )
           )
       );
-
     const rejectedRecipients =
       recipientEmails.filter(
         (recipient) =>
@@ -1241,7 +1107,6 @@ export async function POST(
             recipient
           )
       );
-
     if (
       rejectedRecipients.length >
       0
@@ -1251,33 +1116,24 @@ export async function POST(
         {
           prospectionId:
             prospection.id,
-
           proposalType,
-
           recipientEmails,
-
           rejectedRecipients,
-
           accepted:
             sendResult.accepted,
-
           rejected:
             sendResult.rejected,
-
           response:
             sendResult.response,
         }
       );
-
       return NextResponse.json(
         {
           success: false,
-
           message:
             `Le serveur SMTP n’a pas confirmé l’acceptation de tous les destinataires (${rejectedRecipients.join(
               ", "
             )}). Le statut n’a pas été modifié.`,
-
           messageId:
             sendResult.messageId,
         },
@@ -1286,18 +1142,46 @@ export async function POST(
         }
       );
     }
-
     const sentAt =
       new Date()
         .toISOString();
-
-    /*
-     * Photographie exacte de l'envoi.
-     *
-     * En optimisation seule,
-     * sent_attachment_url est
-     * explicitement null.
-     */
+    const {
+      error: auditStatusError,
+    } = await supabaseAdmin
+      .from(
+        "website_audits"
+      )
+      .update({
+        status: "sent",
+      })
+      .eq(
+        "id",
+        prospection.website_audit_id
+      )
+      .neq(
+        "status",
+        "completed"
+      );
+    if (auditStatusError) {
+      console.error(
+        "Prospection envoyée mais statut de l’audit non mis à jour",
+        {
+          prospectionId:
+            prospection.id,
+          auditId:
+            prospection.website_audit_id,
+          error:
+            auditStatusError.message,
+        }
+      );
+    }
+    /**
+ * Photographie exacte de l'envoi.*
+ *
+ * En optimisation seule,*
+ * sent_attachment_url est*
+ * explicitement null.*
+ */
     const {
       data:
         updated,
@@ -1310,26 +1194,19 @@ export async function POST(
       .update({
         status:
           "sent",
-
         sent_at:
           sentAt,
-
         sent_subject:
           subject,
-
         sent_email_content:
           emailContent,
-
         sent_html_content:
           htmlContent,
-
         sent_attachment_url:
           attachmentUrl,
-
         smtp_message_id:
           sendResult.messageId ??
           null,
-
         updated_at:
           sentAt,
       })
@@ -1345,9 +1222,8 @@ export async function POST(
         "recipient_email",
         recipientEmail
       )
-      .select("*")
+      .select("\*")
       .maybeSingle();
-
     if (
       updateError ||
       !updated
@@ -1357,40 +1233,29 @@ export async function POST(
         {
           prospectionId:
             prospection.id,
-
           proposalType,
-
           messageId:
             sendResult.messageId,
-
           recipients:
             recipientEmails,
-
           accepted:
             sendResult.accepted,
-
           rejected:
             sendResult.rejected,
-
           response:
             sendResult.response,
-
           error:
             updateError
               ?.message ??
             "Mise à jour refusée par la vérification de sécurité.",
         }
       );
-
       return NextResponse.json(
         {
           success: false,
-
           sent: true,
-
           message:
             "L'e-mail a été accepté par le serveur SMTP, mais LBMedia Office n'a pas réussi à enregistrer le statut Envoyée. Ne renvoyez pas l'e-mail.",
-
           messageId:
             sendResult.messageId,
         },
@@ -1399,26 +1264,18 @@ export async function POST(
         }
       );
     }
-
     try {
       await createInitialAuditProspectionMessage({
         auditProspectionId:
           prospection.id,
-
         recipientEmail,
-
         subject,
-
         emailContent,
-
         htmlContent,
-
         attachmentUrl,
-
         smtpMessageId:
           sendResult.messageId ??
           null,
-
         sentAt,
       });
     } catch (
@@ -1429,14 +1286,10 @@ export async function POST(
         {
           prospectionId:
             prospection.id,
-
           proposalType,
-
           messageId:
             sendResult.messageId,
-
           sentAt,
-
           error:
             historyError instanceof Error
               ? historyError.message
@@ -1444,66 +1297,46 @@ export async function POST(
         }
       );
     }
-
     console.info(
       "Prospection audit envoyée",
       {
         prospectionId:
           prospection.id,
-
         companyId:
           prospection.company_id,
-
         auditId:
           prospection.website_audit_id,
-
         proposalType,
-
         pdfAttached:
           requiresPdf,
-
         recipient:
           recipientEmail,
-
         sentAt,
-
         messageId:
           sendResult.messageId,
-
         accepted:
           sendResult.accepted,
-
         rejected:
           sendResult.rejected,
-
         response:
           sendResult.response,
       }
     );
-
     return NextResponse.json({
       success: true,
-
       message:
         "E-mail envoyé avec succès.",
-
       messageId:
         sendResult.messageId,
-
       sentAt,
-
       recipientEmail:
         recipientEmails.join(
           ", "
         ),
-
       recipientEmails,
-
       proposalType,
-
       pdfAttached:
         requiresPdf,
-
       prospection:
         updated,
     });
@@ -1512,11 +1345,9 @@ export async function POST(
       "Erreur envoi prospection audit",
       error
     );
-
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message
