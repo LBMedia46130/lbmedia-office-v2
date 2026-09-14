@@ -9,6 +9,7 @@ import {
 
 import {
   getWebsiteAuditById,
+  type WebsiteAuditStatus,
 } from "@/lib/website-audits";
 
 export const dynamic =
@@ -19,6 +20,17 @@ type RouteContext = {
     auditId: string;
   }>;
 };
+
+function isWebsiteAuditStatus(
+  value: unknown
+): value is WebsiteAuditStatus {
+  return (
+    value === "to_process" ||
+    value === "sent" ||
+    value === "followed_up" ||
+    value === "completed"
+  );
+}
 
 function buildAuditResponse(
   audit: NonNullable<
@@ -45,33 +57,25 @@ function buildAuditResponse(
           platform:
             audit.technical_platform ??
             "unknown",
-
           platformLabel:
             audit.technical_platform_label ??
             "À vérifier",
-
           confidence:
             audit.technical_confidence ??
             "low",
-
           evidence:
             audit.technical_evidence,
-
           optimizationFeasibility:
             audit.optimization_feasibility ??
             "verify",
-
           redesignFeasibility:
             audit.redesign_feasibility ??
             "verify",
-
           newWebsiteFeasibility:
             audit.new_website_feasibility ??
             "verify",
-
           migrationLikely:
             audit.migration_likely,
-
           note:
             audit.technical_note ??
             "La technologie du site doit être vérifiée avant chiffrage.",
@@ -80,58 +84,42 @@ function buildAuditResponse(
 
   return {
     success: true,
-
     savedAuditId:
       audit.id,
-
     companyId:
       audit.company_id,
-
+    status:
+      audit.status,
     url:
       audit.website_url,
-
     pagesAnalyzed:
       audit.pages_analyzed,
-
     analyzedUrls:
       audit.analyzed_urls,
-
     scoringVersion:
       audit.scoring_version,
-
     technicalProfile,
-
     audit: {
       globalScore:
         audit.global_score,
-
       positioningScore:
         audit.positioning_score,
-
       conversionScore:
         audit.conversion_score,
-
       seoScore:
         audit.seo_score,
-
       localSeoScore:
         audit.local_seo_score,
-
       geoScore:
         audit.geo_score,
-
       summary:
         audit.summary,
-
       strengths:
         audit.strengths,
-
       weaknesses:
         audit.weaknesses,
-
       limitations:
         audit.limitations,
-
       priorities:
         audit.priorities,
     },
@@ -195,7 +183,6 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message
@@ -236,6 +223,34 @@ export async function PATCH(
     const body =
       await request.json();
 
+    const hasCompanyId =
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "companyId"
+      );
+
+    const hasStatus =
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "status"
+      );
+
+    if (
+      !hasCompanyId &&
+      !hasStatus
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Aucune modification demandée.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const companyId =
       typeof body.companyId ===
         "string" &&
@@ -243,12 +258,33 @@ export async function PATCH(
         ? body.companyId.trim()
         : "";
 
-    if (!companyId) {
+    if (
+      hasCompanyId &&
+      !companyId
+    ) {
       return NextResponse.json(
         {
           success: false,
           message:
             "Sélectionnez une entreprise.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      hasStatus &&
+      !isWebsiteAuditStatus(
+        body.status
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Statut d’audit invalide.",
         },
         {
           status: 400,
@@ -266,7 +302,8 @@ export async function PATCH(
       .select(
         `
           id,
-          company_id
+          company_id,
+          status
         `
       )
       .eq(
@@ -294,42 +331,66 @@ export async function PATCH(
       );
     }
 
-    const {
-      data: company,
-      error: companyError,
-    } = await supabaseAdmin
-      .from(
-        "companies"
-      )
-      .select(
-        `
-          id,
-          name
-        `
-      )
-      .eq(
-        "id",
-        companyId
-      )
-      .maybeSingle();
+    let companyName:
+      | string
+      | null = null;
 
-    if (companyError) {
-      throw new Error(
-        companyError.message
-      );
+    if (hasCompanyId) {
+      const {
+        data: company,
+        error: companyError,
+      } = await supabaseAdmin
+        .from(
+          "companies"
+        )
+        .select(
+          `
+            id,
+            name
+          `
+        )
+        .eq(
+          "id",
+          companyId
+        )
+        .maybeSingle();
+
+      if (companyError) {
+        throw new Error(
+          companyError.message
+        );
+      }
+
+      if (!company) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Entreprise introuvable.",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      companyName =
+        company.name;
     }
 
-    if (!company) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Entreprise introuvable.",
-        },
-        {
-          status: 404,
-        }
-      );
+    const updates: {
+      company_id?: string;
+      status?: WebsiteAuditStatus;
+    } = {};
+
+    if (hasCompanyId) {
+      updates.company_id =
+        companyId;
+    }
+
+    if (hasStatus) {
+      updates.status =
+        body.status;
     }
 
     const {
@@ -338,10 +399,7 @@ export async function PATCH(
       .from(
         "website_audits"
       )
-      .update({
-        company_id:
-          companyId,
-      })
+      .update(updates)
       .eq(
         "id",
         auditId
@@ -353,36 +411,55 @@ export async function PATCH(
       );
     }
 
+    const messages: string[] = [];
+
+    if (
+      hasCompanyId &&
+      companyName
+    ) {
+      messages.push(
+        `Audit rattaché à ${companyName}.`
+      );
+    }
+
+    if (hasStatus) {
+      messages.push(
+        "Statut de l’audit mis à jour."
+      );
+    }
+
     return NextResponse.json({
       success: true,
-
       auditId,
-
-      companyId,
-
-      companyName:
-        company.name,
-
+      companyId:
+        hasCompanyId
+          ? companyId
+          : audit.company_id,
+      companyName,
       previousCompanyId:
         audit.company_id,
-
+      status:
+        hasStatus
+          ? body.status
+          : audit.status,
+      previousStatus:
+        audit.status,
       message:
-        `Audit rattaché à ${company.name}.`,
+        messages.join(" "),
     });
   } catch (error) {
     console.error(
-      "Attach website audit error:",
+      "Update website audit error:",
       error
     );
 
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message
-            : "Impossible de rattacher l’audit.",
+            : "Impossible de modifier l’audit.",
       },
       {
         status: 500,
@@ -454,7 +531,7 @@ export async function DELETE(
       );
     }
 
-    /*
+    /**
      * Sécurité :
      * on ne supprime pas silencieusement
      * une prospection commerciale liée
@@ -495,7 +572,6 @@ export async function DELETE(
       return NextResponse.json(
         {
           success: false,
-
           message:
             "Cet audit possède une prospection associée. Supprimez d’abord la prospection avant de supprimer l’audit.",
         },
@@ -525,10 +601,8 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-
       companyId:
         audit.company_id,
-
       message:
         "Audit supprimé.",
     });
@@ -541,7 +615,6 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message

@@ -1,12 +1,10 @@
 "use client";
-
 import {
   FormEvent,
   useEffect,
   useMemo,
   useState,
 } from "react";
-
 type AuditResult = {
   globalScore: number;
   positioningScore: number;
@@ -20,7 +18,6 @@ type AuditResult = {
   limitations: string[];
   priorities: string[];
 };
-
 type TechnicalPlatform =
   | "wordpress"
   | "eatbu"
@@ -32,18 +29,15 @@ type TechnicalPlatform =
   | "prestashop"
   | "custom"
   | "unknown";
-
 type TechnicalConfidence =
   | "high"
   | "medium"
   | "low";
-
 type TechnicalFeasibility =
   | "good"
   | "limited"
   | "verify"
   | "migration_recommended";
-
 type TechnicalProfile = {
   platform: TechnicalPlatform;
   platformLabel: string;
@@ -55,7 +49,6 @@ type TechnicalProfile = {
   migrationLikely: boolean | null;
   note: string;
 };
-
 type AuditResponse = {
   success: boolean;
   url: string;
@@ -65,7 +58,6 @@ type AuditResponse = {
   technicalProfile?: TechnicalProfile;
   audit: AuditResult;
 };
-
 type CompanyOption = {
   id: string;
   name: string;
@@ -75,11 +67,15 @@ type CompanyOption = {
     | "client";
   is_active: boolean;
 };
-
-
+type AuditStatus =
+  | "to_process"
+  | "sent"
+  | "followed_up"
+  | "completed";
 type RecentAudit = {
   id: string;
   company_id: string | null;
+  status: AuditStatus;
   website_url: string;
   scoring_version: string;
   pages_analyzed: number;
@@ -91,140 +87,121 @@ type RecentAudit = {
   geo_score: number;
   created_at: string;
 };
-
 export default function AuditPage() {
   const [url, setUrl] =
     useState("");
-
   const [loading, setLoading] =
     useState(false);
-
   const [error, setError] =
     useState<string | null>(
       null
     );
-
   const [result, setResult] =
     useState<AuditResponse | null>(
       null
     );
-
   const [
     showUrls,
     setShowUrls,
   ] = useState(false);
-
   const [
     companies,
     setCompanies,
   ] = useState<CompanyOption[]>(
     []
   );
-
   const [
     companiesLoading,
     setCompaniesLoading,
   ] = useState(true);
-
   const [
     companySearch,
     setCompanySearch,
   ] = useState("");
-
   const [
     selectedCompanyId,
     setSelectedCompanyId,
   ] = useState("");
-
   const [
     saving,
     setSaving,
   ] = useState(false);
-
   const [
     saveError,
     setSaveError,
   ] = useState<string | null>(
     null
   );
-
   const [
     savedMessage,
     setSavedMessage,
   ] = useState<string | null>(
     null
   );
-
-
   const [
     recentAudits,
     setRecentAudits,
   ] = useState<RecentAudit[]>(
     []
   );
-
   const [
     auditsLoading,
     setAuditsLoading,
   ] = useState(true);
-
   const [
     auditsError,
     setAuditsError,
   ] = useState<string | null>(
     null
   );
-
   const [
     openingAuditId,
     setOpeningAuditId,
   ] = useState<string | null>(
     null
   );
-
   const [
     activeSavedAuditId,
     setActiveSavedAuditId,
   ] = useState<string | null>(
     null
   );
-
   const [
     deletingAuditId,
     setDeletingAuditId,
   ] = useState<string | null>(
     null
   );
-
+  const [
+    updatingStatusAuditId,
+    setUpdatingStatusAuditId,
+  ] = useState<string | null>(
+    null
+  );
   const [
     attachAuditId,
     setAttachAuditId,
   ] = useState<string | null>(
     null
   );
-
   const [
     attachCompanySearch,
     setAttachCompanySearch,
   ] = useState("");
-
   const [
     attachCompanyId,
     setAttachCompanyId,
   ] = useState("");
-
   const [
     attaching,
     setAttaching,
   ] = useState(false);
-
   const [
     attachError,
     setAttachError,
   ] = useState<string | null>(
     null
   );
-
   const filteredCompanies =
     useMemo(() => {
       const search =
@@ -233,11 +210,9 @@ export default function AuditPage() {
           .toLocaleLowerCase(
             "fr-FR"
           );
-
       if (!search) {
         return companies;
       }
-
       return companies.filter(
         (company) => {
           const name =
@@ -245,7 +220,6 @@ export default function AuditPage() {
               .toLocaleLowerCase(
                 "fr-FR"
               );
-
           const website =
             (
               company.website ??
@@ -253,13 +227,11 @@ export default function AuditPage() {
             ).toLocaleLowerCase(
               "fr-FR"
             );
-
           const relationship =
             company.relationship_status ===
             "client"
               ? "client"
               : "prospect";
-
           return (
             name.includes(
               search
@@ -277,8 +249,6 @@ export default function AuditPage() {
       companies,
       companySearch,
     ]);
-
-
   const filteredAttachCompanies =
     useMemo(() => {
       const search =
@@ -287,11 +257,9 @@ export default function AuditPage() {
           .toLocaleLowerCase(
             "fr-FR"
           );
-
       if (!search) {
         return companies;
       }
-
       return companies.filter(
         (company) => {
           const name =
@@ -299,7 +267,6 @@ export default function AuditPage() {
               .toLocaleLowerCase(
                 "fr-FR"
               );
-
           const website =
             (
               company.website ??
@@ -307,7 +274,6 @@ export default function AuditPage() {
             ).toLocaleLowerCase(
               "fr-FR"
             );
-
           return (
             name.includes(
               search
@@ -322,12 +288,10 @@ export default function AuditPage() {
       companies,
       attachCompanySearch,
     ]);
-
   async function loadRecentAudits() {
     setAuditsError(
       null
     );
-
     try {
       const response =
         await fetch(
@@ -337,17 +301,14 @@ export default function AuditPage() {
               "no-store",
           }
         );
-
       const data =
         await response.json();
-
       if (!response.ok) {
         throw new Error(
           data.message ??
             "Impossible de charger les audits enregistrés."
         );
       }
-
       setRecentAudits(
         Array.isArray(
           data.audits
@@ -367,11 +328,9 @@ export default function AuditPage() {
       );
     }
   }
-
   useEffect(() => {
     void loadRecentAudits();
   }, []);
-
   useEffect(() => {
     async function loadCompanies() {
       try {
@@ -379,24 +338,20 @@ export default function AuditPage() {
           await fetch(
             "/api/companies"
           );
-
         const data =
           await response.json();
-
         if (!response.ok) {
           throw new Error(
             data.message ??
               "Impossible de charger les entreprises."
           );
         }
-
         const loadedCompanies =
           Array.isArray(
             data.companies
           )
             ? data.companies
             : [];
-
         setCompanies(
           loadedCompanies
         );
@@ -411,15 +366,12 @@ export default function AuditPage() {
         );
       }
     }
-
     loadCompanies();
   }, []);
-
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
-
     setError(null);
     setResult(null);
     setShowUrls(false);
@@ -428,19 +380,15 @@ export default function AuditPage() {
     setActiveSavedAuditId(
       null
     );
-
     const trimmedUrl =
       url.trim();
-
     if (!trimmedUrl) {
       setError(
         "Veuillez renseigner l’URL du site à analyser."
       );
       return;
     }
-
     setLoading(true);
-
     try {
       const response =
         await fetch(
@@ -457,17 +405,14 @@ export default function AuditPage() {
               }),
           }
         );
-
       const data =
         await response.json();
-
       if (!response.ok) {
         throw new Error(
           data.message ??
             "Impossible d’analyser ce site."
         );
       }
-
       setResult(data);
     } catch (error) {
       setError(
@@ -479,16 +424,13 @@ export default function AuditPage() {
       setLoading(false);
     }
   }
-
   async function handleSaveAudit() {
     if (!result) {
       return;
     }
-
     setSaveError(null);
     setSavedMessage(null);
     setSaving(true);
-
     try {
       const response =
         await fetch(
@@ -504,33 +446,25 @@ export default function AuditPage() {
                 companyId:
                   selectedCompanyId ||
                   null,
-
                 websiteUrl:
                   result.url,
-
                 scoringVersion:
                   result.scoringVersion ??
                   "1.1",
-
                 pagesAnalyzed:
                   result.pagesAnalyzed,
-
                 analyzedUrls:
                   result.analyzedUrls,
-
                 technicalProfile:
                   result.technicalProfile ??
                   null,
-
                 audit:
                   result.audit,
               }),
           }
         );
-
       const data =
         await response.json();
-
       if (!response.ok) {
         throw new Error(
           data.detail ??
@@ -538,21 +472,17 @@ export default function AuditPage() {
             "Impossible d’enregistrer l’audit."
         );
       }
-
       const company =
         companies.find(
           (item) =>
             item.id ===
             selectedCompanyId
         );
-
       setSavedMessage(
         company
           ? `Audit enregistré et rattaché à ${company.name}.`
           : "Audit enregistré."
       );
-
-
       await loadRecentAudits();
     } catch (error) {
       setSaveError(
@@ -564,7 +494,6 @@ export default function AuditPage() {
       setSaving(false);
     }
   }
-
   async function handleOpenAudit(
     auditId: string
   ) {
@@ -580,7 +509,6 @@ export default function AuditPage() {
     setSavedMessage(
       null
     );
-
     try {
       const response =
         await fetch(
@@ -590,17 +518,14 @@ export default function AuditPage() {
               "no-store",
           }
         );
-
       const data =
         await response.json();
-
       if (!response.ok) {
         throw new Error(
           data.message ??
             "Impossible de charger cet audit."
         );
       }
-
       setResult(
         data
       );
@@ -610,7 +535,6 @@ export default function AuditPage() {
       setShowUrls(
         false
       );
-
       window.scrollTo({
         top: 0,
         behavior:
@@ -628,7 +552,6 @@ export default function AuditPage() {
       );
     }
   }
-
   async function handleDeleteAudit(
     audit: RecentAudit
   ) {
@@ -636,33 +559,26 @@ export default function AuditPage() {
       window.confirm(
         `Supprimer définitivement l’audit de ${audit.website_url} ?\n\nCette action est irréversible.`
       );
-
     if (!confirmed) return;
-
     setDeletingAuditId(audit.id);
     setAuditsError(null);
-
     try {
       const response = await fetch(
         `/api/audit/${audit.id}`,
         { method: "DELETE" }
       );
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(
           data.message ??
             "Impossible de supprimer cet audit."
         );
       }
-
       setRecentAudits((current) =>
         current.filter(
           (item) => item.id !== audit.id
         )
       );
-
       if (activeSavedAuditId === audit.id) {
         setResult(null);
         setActiveSavedAuditId(null);
@@ -670,7 +586,6 @@ export default function AuditPage() {
         setSavedMessage(null);
         setSaveError(null);
       }
-
       if (attachAuditId === audit.id) {
         setAttachAuditId(null);
         setAttachCompanyId("");
@@ -687,7 +602,53 @@ export default function AuditPage() {
       setDeletingAuditId(null);
     }
   }
-
+  async function handleAuditStatusChange(
+    auditId: string,
+    status: AuditStatus
+  ) {
+    setUpdatingStatusAuditId(auditId);
+    setAuditsError(null);
+    try {
+      const response = await fetch(
+        `/api/audit/${auditId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            status,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.message ??
+            "Impossible de modifier le statut de l’audit."
+        );
+      }
+      setRecentAudits((current) =>
+        current.map((audit) =>
+          audit.id === auditId
+            ? {
+                ...audit,
+                status,
+              }
+            : audit
+        )
+      );
+    } catch (error) {
+      setAuditsError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de modifier le statut de l’audit."
+      );
+    } finally {
+      setUpdatingStatusAuditId(null);
+    }
+  }
   function startAttachAudit(
     auditId: string
   ) {
@@ -704,14 +665,12 @@ export default function AuditPage() {
       null
     );
   }
-
   async function handleAttachAudit() {
     if (
       !attachAuditId
     ) {
       return;
     }
-
     if (
       !attachCompanyId
     ) {
@@ -720,14 +679,12 @@ export default function AuditPage() {
       );
       return;
     }
-
     setAttaching(
       true
     );
     setAttachError(
       null
     );
-
     try {
       const response =
         await fetch(
@@ -746,17 +703,14 @@ export default function AuditPage() {
               }),
           }
         );
-
       const data =
         await response.json();
-
       if (!response.ok) {
         throw new Error(
           data.message ??
             "Impossible de rattacher cet audit."
         );
       }
-
       setAttachAuditId(
         null
       );
@@ -766,7 +720,6 @@ export default function AuditPage() {
       setAttachCompanySearch(
         ""
       );
-
       await loadRecentAudits();
     } catch (error) {
       setAttachError(
@@ -780,7 +733,6 @@ export default function AuditPage() {
       );
     }
   }
-
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="border-b border-slate-200 bg-white">
@@ -788,11 +740,9 @@ export default function AuditPage() {
           <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-600">
             LBMedia Office
           </p>
-
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Audit de site
           </h1>
-
           <p className="mt-2 max-w-3xl text-slate-600">
             Analysez rapidement la
             présence web d’une entreprise
@@ -801,7 +751,6 @@ export default function AuditPage() {
           </p>
         </div>
       </div>
-
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <form
@@ -815,7 +764,6 @@ export default function AuditPage() {
               >
                 URL du site
               </label>
-
               <input
                 id="website-url"
                 type="url"
@@ -832,13 +780,11 @@ export default function AuditPage() {
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
-
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}
-
             <div className="flex justify-end">
               <button
                 type="submit"
@@ -852,19 +798,16 @@ export default function AuditPage() {
             </div>
           </form>
         </section>
-
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
                 Audits enregistrés
               </h2>
-
               <p className="mt-1 text-sm text-slate-500">
                 Les audits restent accessibles ici, même lorsqu’ils ne sont pas encore rattachés à une entreprise.
               </p>
             </div>
-
             <button
               type="button"
               onClick={() => {
@@ -883,13 +826,11 @@ export default function AuditPage() {
                 : "Actualiser"}
             </button>
           </div>
-
           {auditsError && (
             <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {auditsError}
             </div>
           )}
-
           {auditsLoading &&
           recentAudits.length ===
             0 ? (
@@ -897,7 +838,6 @@ export default function AuditPage() {
               Chargement des audits...
             </div>
           ) : null}
-
           {!auditsLoading &&
           recentAudits.length ===
             0 ? (
@@ -905,13 +845,11 @@ export default function AuditPage() {
               <p className="font-medium text-slate-700">
                 Aucun audit enregistré
               </p>
-
               <p className="mt-1 text-sm text-slate-500">
                 Les prochains audits sauvegardés apparaîtront ici.
               </p>
             </div>
           ) : null}
-
           {recentAudits.length >
           0 ? (
             <div className="mt-6 overflow-hidden rounded-xl border border-slate-200">
@@ -922,25 +860,23 @@ export default function AuditPage() {
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                         Date
                       </th>
-
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                         Site
                       </th>
-
                       <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
                         Score
                       </th>
-
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                         Rattachement
                       </th>
-
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Statut
+                      </th>
                       <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
                         Actions
                       </th>
                     </tr>
                   </thead>
-
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {recentAudits.map(
                       (audit) => {
@@ -954,11 +890,9 @@ export default function AuditPage() {
                                   audit.company_id
                               )
                             : null;
-
                         const isAttachOpen =
                           attachAuditId ===
                           audit.id;
-
                         return (
                           <tr
                             key={
@@ -971,14 +905,12 @@ export default function AuditPage() {
                                 audit.created_at
                               )}
                             </td>
-
                             <td className="px-4 py-4">
                               <p className="max-w-md break-all text-sm font-semibold text-slate-900">
                                 {
                                   audit.website_url
                                 }
                               </p>
-
                               <p className="mt-1 text-xs text-slate-400">
                                 {
                                   audit.pages_analyzed
@@ -989,7 +921,6 @@ export default function AuditPage() {
                                   : "page analysée"}
                               </p>
                             </td>
-
                             <td className="px-4 py-4 text-center">
                               <span className="inline-flex min-w-14 justify-center rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">
                                 {
@@ -998,7 +929,6 @@ export default function AuditPage() {
                                 /100
                               </span>
                             </td>
-
                             <td className="px-4 py-4">
                               {audit.company_id ? (
                                 <div>
@@ -1007,7 +937,6 @@ export default function AuditPage() {
                                       ? company.name
                                       : "Entreprise rattachée"}
                                   </p>
-
                                   <p className="mt-1 text-xs text-slate-500">
                                     {company?.relationship_status ===
                                     "client"
@@ -1023,7 +952,6 @@ export default function AuditPage() {
                                   <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
                                     Non rattaché
                                   </span>
-
                                   {isAttachOpen ? (
                                     <div className="mt-3 w-72 max-w-full space-y-3">
                                       <input
@@ -1043,7 +971,6 @@ export default function AuditPage() {
                                         placeholder="Rechercher une entreprise..."
                                         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                       />
-
                                       <select
                                         value={
                                           attachCompanyId
@@ -1062,7 +989,6 @@ export default function AuditPage() {
                                         <option value="">
                                           Sélectionner...
                                         </option>
-
                                         {filteredAttachCompanies.map(
                                           (
                                             companyOption
@@ -1086,7 +1012,6 @@ export default function AuditPage() {
                                           )
                                         )}
                                       </select>
-
                                       {attachError && (
                                         <p className="text-xs text-red-600">
                                           {
@@ -1094,7 +1019,6 @@ export default function AuditPage() {
                                           }
                                         </p>
                                       )}
-
                                       <div className="flex gap-2">
                                         <button
                                           type="button"
@@ -1110,7 +1034,6 @@ export default function AuditPage() {
                                             ? "Rattachement..."
                                             : "Confirmer"}
                                         </button>
-
                                         <button
                                           type="button"
                                           onClick={() => {
@@ -1134,7 +1057,37 @@ export default function AuditPage() {
                                 </div>
                               )}
                             </td>
-
+                            <td className="px-4 py-4">
+                              <select
+                                value={audit.status}
+                                onChange={(event) =>
+                                  void handleAuditStatusChange(
+                                    audit.id,
+                                    event.target.value as AuditStatus
+                                  )
+                                }
+                                disabled={
+                                  updatingStatusAuditId === audit.id
+                                }
+                                className={`rounded-lg border px-3 py-2 text-xs font-bold outline-none transition focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60 ${getAuditStatusClassName(
+                                  audit.status
+                                )}`}
+                                aria-label={`Statut de l’audit ${audit.website_url}`}
+                              >
+                                <option value="to_process">
+                                  À traiter
+                                </option>
+                                <option value="sent">
+                                  Envoyé
+                                </option>
+                                <option value="followed_up">
+                                  Relancé
+                                </option>
+                                <option value="completed">
+                                  Terminé
+                                </option>
+                              </select>
+                            </td>
                             <td className="px-4 py-4">
                               <div className="flex flex-col items-end gap-2">
                                 <button
@@ -1155,7 +1108,6 @@ export default function AuditPage() {
                                     ? "Ouverture..."
                                     : "Voir l’audit"}
                                 </button>
-
                                 {!audit.company_id &&
                                 !isAttachOpen ? (
                                   <button
@@ -1170,7 +1122,6 @@ export default function AuditPage() {
                                     Rattacher
                                   </button>
                                 ) : null}
-
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -1201,14 +1152,12 @@ export default function AuditPage() {
             </div>
           ) : null}
         </section>
-
         {!result &&
           !loading && (
             <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
               <h2 className="text-lg font-semibold text-slate-900">
                 Aucun audit lancé
               </h2>
-
               <p className="mt-2 text-sm text-slate-500">
                 Saisissez l’adresse
                 d’un site pour lancer
@@ -1216,16 +1165,13 @@ export default function AuditPage() {
               </p>
             </section>
           )}
-
         {loading && (
           <section className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-
             <p className="font-medium text-slate-700">
               Analyse du site en
               cours...
             </p>
-
             <p className="mt-2 text-sm text-slate-500">
               Plusieurs pages sont
               parcourues avant la
@@ -1234,7 +1180,6 @@ export default function AuditPage() {
             </p>
           </section>
         )}
-
         {result && (
           <>
             <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
@@ -1251,13 +1196,11 @@ export default function AuditPage() {
                       ? "pages"
                       : "page"}
                   </p>
-
                   <p className="mt-1 text-sm text-blue-700">
                     Site analysé :{" "}
                     {result.url}
                   </p>
                 </div>
-
                 <button
                   type="button"
                   onClick={() =>
@@ -1275,7 +1218,6 @@ export default function AuditPage() {
                     : "Voir les pages analysées"}
                 </button>
               </div>
-
               {showUrls && (
                 <div className="mt-4 rounded-xl border border-blue-200 bg-white p-4">
                   <ul className="space-y-2">
@@ -1299,7 +1241,6 @@ export default function AuditPage() {
                 </div>
               )}
             </section>
-
             {result.technicalProfile ? (
               <TechnicalProfileCard
                 profile={
@@ -1307,7 +1248,6 @@ export default function AuditPage() {
                 }
               />
             ) : null}
-
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <ScoreCard
                 label="Score global"
@@ -1317,7 +1257,6 @@ export default function AuditPage() {
                 }
                 highlighted
               />
-
               <ScoreCard
                 label="Positionnement"
                 score={
@@ -1325,7 +1264,6 @@ export default function AuditPage() {
                     .positioningScore
                 }
               />
-
               <ScoreCard
                 label="Conversion"
                 score={
@@ -1333,7 +1271,6 @@ export default function AuditPage() {
                     .conversionScore
                 }
               />
-
               <ScoreCard
                 label="SEO"
                 score={
@@ -1341,7 +1278,6 @@ export default function AuditPage() {
                     .seoScore
                 }
               />
-
               <ScoreCard
                 label="SEO local"
                 score={
@@ -1349,7 +1285,6 @@ export default function AuditPage() {
                     .localSeoScore
                 }
               />
-
               <ScoreCard
                 label="GEO / IA"
                 score={
@@ -1358,12 +1293,10 @@ export default function AuditPage() {
                 }
               />
             </section>
-
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900">
                 Synthèse
               </h2>
-
               <p className="mt-4 whitespace-pre-line leading-7 text-slate-700">
                 {
                   result.audit
@@ -1371,7 +1304,6 @@ export default function AuditPage() {
                 }
               </p>
             </section>
-
             <div className="grid gap-6 lg:grid-cols-2">
               <AuditList
                 title="Points forts"
@@ -1380,7 +1312,6 @@ export default function AuditPage() {
                     .strengths
                 }
               />
-
               <AuditList
                 title="Points à améliorer"
                 items={
@@ -1389,7 +1320,6 @@ export default function AuditPage() {
                 }
               />
             </div>
-
             {result.audit
               .limitations.length >
               0 && (
@@ -1398,7 +1328,6 @@ export default function AuditPage() {
                   Vérifications
                   complémentaires
                 </h2>
-
                 <p className="mt-2 text-sm text-slate-600">
                   Ces éléments ne
                   peuvent pas être
@@ -1408,7 +1337,6 @@ export default function AuditPage() {
                   données ou outils
                   complémentaires.
                 </p>
-
                 <ul className="mt-5 space-y-3">
                   {result.audit.limitations.map(
                     (
@@ -1422,7 +1350,6 @@ export default function AuditPage() {
                         <span className="mt-1 text-amber-600">
                           •
                         </span>
-
                         <span>
                           {
                             limitation
@@ -1434,12 +1361,10 @@ export default function AuditPage() {
                 </ul>
               </section>
             )}
-
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900">
                 Priorités LBMedia
               </h2>
-
               <ol className="mt-5 space-y-4">
                 {result.audit.priorities.map(
                   (
@@ -1453,7 +1378,6 @@ export default function AuditPage() {
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
                         {index + 1}
                       </div>
-
                       <p className="pt-1 text-slate-700">
                         {priority}
                       </p>
@@ -1462,7 +1386,6 @@ export default function AuditPage() {
                 )}
               </ol>
             </section>
-
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex-1">
@@ -1470,7 +1393,6 @@ export default function AuditPage() {
                     Enregistrer
                     l’audit
                   </h2>
-
                   <p className="mt-2 text-sm text-slate-500">
                     Vous pouvez
                     conserver cet
@@ -1478,7 +1400,6 @@ export default function AuditPage() {
                     rattacher à une
                     entreprise du CRM.
                   </p>
-
                   <div className="mt-5 max-w-xl">
                     <label
                       htmlFor="company-search"
@@ -1487,7 +1408,6 @@ export default function AuditPage() {
                       Rechercher une
                       entreprise
                     </label>
-
                     <input
                       id="company-search"
                       type="search"
@@ -1509,7 +1429,6 @@ export default function AuditPage() {
                       autoComplete="off"
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
                     />
-
                     <div className="mt-4">
                       <label
                         htmlFor="company"
@@ -1517,7 +1436,6 @@ export default function AuditPage() {
                       >
                         Entreprise
                       </label>
-
                       <select
                         id="company"
                         value={
@@ -1542,7 +1460,6 @@ export default function AuditPage() {
                             ? "Chargement..."
                             : "Aucune entreprise sélectionnée"}
                         </option>
-
                         {filteredCompanies.map(
                           (
                             company
@@ -1566,7 +1483,6 @@ export default function AuditPage() {
                           )
                         )}
                       </select>
-
                       {!companiesLoading &&
                       companySearch.trim() &&
                       filteredCompanies.length ===
@@ -1579,7 +1495,6 @@ export default function AuditPage() {
                           recherche.
                         </p>
                       ) : null}
-
                       {!companiesLoading &&
                       companySearch.trim() &&
                       filteredCompanies.length >
@@ -1597,7 +1512,6 @@ export default function AuditPage() {
                     </div>
                   </div>
                 </div>
-
                 {activeSavedAuditId ? (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700">
                     Audit déjà enregistré
@@ -1619,7 +1533,6 @@ export default function AuditPage() {
                   </button>
                 )}
               </div>
-
               {savedMessage && (
                 <div className="mt-5 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm font-medium text-emerald-700">
@@ -1627,7 +1540,6 @@ export default function AuditPage() {
                       savedMessage
                     }
                   </p>
-
                   {selectedCompanyId ? (
                     <a
                       href={`/companies/${selectedCompanyId}`}
@@ -1650,7 +1562,21 @@ export default function AuditPage() {
     </main>
   );
 }
-
+function getAuditStatusClassName(
+  status: AuditStatus
+) {
+  switch (status) {
+    case "sent":
+      return "border-blue-200 bg-blue-50 text-blue-700";
+    case "followed_up":
+      return "border-amber-200 bg-amber-50 text-amber-800";
+    case "completed":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "to_process":
+    default:
+      return "border-slate-300 bg-white text-slate-700";
+  }
+}
 function formatAuditDate(
   value: string
 ) {
@@ -1658,7 +1584,6 @@ function formatAuditDate(
     new Date(
       value
     );
-
   if (
     Number.isNaN(
       date.getTime()
@@ -1666,7 +1591,6 @@ function formatAuditDate(
   ) {
     return value;
   }
-
   return date.toLocaleString(
     "fr-FR",
     {
@@ -1677,7 +1601,6 @@ function formatAuditDate(
     }
   );
 }
-
 function TechnicalProfileCard({
   profile,
 }: {
@@ -1687,7 +1610,6 @@ function TechnicalProfileCard({
     getConfidenceLabel(
       profile.confidence
     );
-
   return (
     <section className="rounded-2xl border border-violet-200 bg-violet-50 p-6 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1695,7 +1617,6 @@ function TechnicalProfileCard({
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-600">
             Faisabilité technique
           </p>
-
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <h2 className="text-xl font-bold text-slate-900">
               Plateforme :{" "}
@@ -1703,7 +1624,6 @@ function TechnicalProfileCard({
                 profile.platformLabel
               }
             </h2>
-
             <span className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-bold text-violet-700">
               Confiance :{" "}
               {
@@ -1712,7 +1632,6 @@ function TechnicalProfileCard({
             </span>
           </div>
         </div>
-
         {profile.migrationLikely ===
         true ? (
           <span className="self-start rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
@@ -1721,11 +1640,9 @@ function TechnicalProfileCard({
           </span>
         ) : null}
       </div>
-
       <p className="mt-4 max-w-5xl text-sm leading-6 text-slate-700">
         {profile.note}
       </p>
-
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         <FeasibilityCard
           label="Optimisation"
@@ -1733,14 +1650,12 @@ function TechnicalProfileCard({
             profile.optimizationFeasibility
           }
         />
-
         <FeasibilityCard
           label="Refonte"
           value={
             profile.redesignFeasibility
           }
         />
-
         <FeasibilityCard
           label="Nouveau site"
           value={
@@ -1748,14 +1663,12 @@ function TechnicalProfileCard({
           }
         />
       </div>
-
       {profile.evidence.length >
       0 ? (
         <div className="mt-5 border-t border-violet-200 pt-4">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
             Indices détectés
           </p>
-
           <ul className="mt-3 space-y-2">
             {profile.evidence.map(
               (
@@ -1769,7 +1682,6 @@ function TechnicalProfileCard({
                   <span className="text-violet-500">
                     •
                   </span>
-
                   <span>
                     {evidence}
                   </span>
@@ -1782,7 +1694,6 @@ function TechnicalProfileCard({
     </section>
   );
 }
-
 function FeasibilityCard({
   label,
   value,
@@ -1794,13 +1705,11 @@ function FeasibilityCard({
     getFeasibilityPresentation(
       value
     );
-
   return (
     <div className="rounded-xl border border-violet-200 bg-white p-4">
       <p className="text-sm font-semibold text-slate-600">
         {label}
       </p>
-
       <div className="mt-3">
         <span
           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${presentation.className}`}
@@ -1810,7 +1719,6 @@ function FeasibilityCard({
           }
         </span>
       </div>
-
       <p className="mt-3 text-sm leading-5 text-slate-500">
         {
           presentation.description
@@ -1819,7 +1727,6 @@ function FeasibilityCard({
     </div>
   );
 }
-
 function getConfidenceLabel(
   confidence:
     TechnicalConfidence
@@ -1829,15 +1736,12 @@ function getConfidenceLabel(
   ) {
     case "high":
       return "élevée";
-
     case "medium":
       return "moyenne";
-
     case "low":
       return "faible";
   }
 }
-
 function getFeasibilityPresentation(
   feasibility:
     TechnicalFeasibility
@@ -1854,7 +1758,6 @@ function getFeasibilityPresentation(
         className:
           "bg-emerald-100 text-emerald-700",
       };
-
     case "limited":
       return {
         label:
@@ -1864,7 +1767,6 @@ function getFeasibilityPresentation(
         className:
           "bg-amber-100 text-amber-800",
       };
-
     case "migration_recommended":
       return {
         label:
@@ -1874,7 +1776,6 @@ function getFeasibilityPresentation(
         className:
           "bg-orange-100 text-orange-800",
       };
-
     case "verify":
       return {
         label:
@@ -1886,7 +1787,6 @@ function getFeasibilityPresentation(
       };
   }
 }
-
 function ScoreCard({
   label,
   score,
@@ -1904,7 +1804,6 @@ function ScoreCard({
         score
       )
     );
-
   return (
     <div
       className={`rounded-2xl border p-5 shadow-sm ${
@@ -1916,7 +1815,6 @@ function ScoreCard({
       <p className="text-sm font-semibold text-slate-600">
         {label}
       </p>
-
       <p className="mt-2 text-3xl font-bold text-slate-900">
         {safeScore}
         <span className="text-base font-medium text-slate-400">
@@ -1924,7 +1822,6 @@ function ScoreCard({
           / 100
         </span>
       </p>
-
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
         <div
           className="h-full rounded-full bg-blue-600 transition-all"
@@ -1936,7 +1833,6 @@ function ScoreCard({
     </div>
   );
 }
-
 function AuditList({
   title,
   items,
@@ -1949,7 +1845,6 @@ function AuditList({
       <h2 className="text-xl font-bold text-slate-900">
         {title}
       </h2>
-
       <ul className="mt-5 space-y-3">
         {items.map(
           (
@@ -1963,7 +1858,6 @@ function AuditList({
               <span className="mt-1 text-blue-600">
                 •
               </span>
-
               <span>
                 {item}
               </span>
