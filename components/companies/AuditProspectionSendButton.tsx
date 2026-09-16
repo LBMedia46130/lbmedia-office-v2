@@ -166,8 +166,8 @@ export default function AuditProspectionSendButton({
   }, [prospectionId]);
   useEffect(() => {
     if (
-      status !==
-      "sent"
+      status !== "sent" &&
+      status !== "follow_up"
     ) {
       return;
     }
