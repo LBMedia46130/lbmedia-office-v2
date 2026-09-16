@@ -1,58 +1,32 @@
-import {
-  supabaseAdmin,
-} from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export type AuditProspectionMessageType =
-  | "initial"
-  | "follow_up";
+export type AuditProspectionMessageType = "initial" | "follow_up";
 
 export type AuditProspectionMessage = {
   id: string;
-
   audit_prospection_id: string;
-
-  message_type:
-    AuditProspectionMessageType;
-
+  message_type: AuditProspectionMessageType;
   sequence_number: number;
-
   recipient_email: string;
-
   subject: string;
-
   email_content: string;
-
   html_content: string | null;
-
   attachment_url: string | null;
-
   smtp_message_id: string | null;
-
   sent_at: string;
-
   created_at: string;
 };
 
 type CreateAuditProspectionMessageInput = {
   auditProspectionId: string;
-
-  messageType:
-    AuditProspectionMessageType;
-
+  messageType: AuditProspectionMessageType;
   sequenceNumber?: number;
-
   recipientEmail: string;
-
   subject: string;
-
   emailContent: string;
-
   htmlContent?: string | null;
-
   attachmentUrl?: string | null;
-
   smtpMessageId?: string | null;
-
   sentAt?: string;
 };
 
@@ -73,29 +47,12 @@ const auditProspectionMessageSelect = `
 
 export async function getAuditProspectionMessages(
   auditProspectionId: string
-): Promise<
-  AuditProspectionMessage[]
-> {
-  const {
-    data,
-    error,
-  } = await supabaseAdmin
-    .from(
-      "audit_prospection_messages"
-    )
-    .select(
-      auditProspectionMessageSelect
-    )
-    .eq(
-      "audit_prospection_id",
-      auditProspectionId
-    )
-    .order(
-      "sent_at",
-      {
-        ascending: true,
-      }
-    );
+): Promise<AuditProspectionMessage[]> {
+  const { data, error } = await supabaseAdmin
+    .from("audit_prospection_messages")
+    .select(auditProspectionMessageSelect)
+    .eq("audit_prospection_id", auditProspectionId)
+    .order("sent_at", { ascending: true });
 
   if (error) {
     throw new Error(
@@ -103,36 +60,17 @@ export async function getAuditProspectionMessages(
     );
   }
 
-  return (
-    data ?? []
-  ) as AuditProspectionMessage[];
+  return (data ?? []) as AuditProspectionMessage[];
 }
 
 export async function getLatestAuditProspectionMessage(
   auditProspectionId: string
-): Promise<
-  AuditProspectionMessage | null
-> {
-  const {
-    data,
-    error,
-  } = await supabaseAdmin
-    .from(
-      "audit_prospection_messages"
-    )
-    .select(
-      auditProspectionMessageSelect
-    )
-    .eq(
-      "audit_prospection_id",
-      auditProspectionId
-    )
-    .order(
-      "sent_at",
-      {
-        ascending: false,
-      }
-    )
+): Promise<AuditProspectionMessage | null> {
+  const { data, error } = await supabaseAdmin
+    .from("audit_prospection_messages")
+    .select(auditProspectionMessageSelect)
+    .eq("audit_prospection_id", auditProspectionId)
+    .order("sent_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -151,23 +89,11 @@ export async function getLatestAuditProspectionMessage(
 
 export async function getAuditProspectionMessageById(
   messageId: string
-): Promise<
-  AuditProspectionMessage | null
-> {
-  const {
-    data,
-    error,
-  } = await supabaseAdmin
-    .from(
-      "audit_prospection_messages"
-    )
-    .select(
-      auditProspectionMessageSelect
-    )
-    .eq(
-      "id",
-      messageId
-    )
+): Promise<AuditProspectionMessage | null> {
+  const { data, error } = await supabaseAdmin
+    .from("audit_prospection_messages")
+    .select(auditProspectionMessageSelect)
+    .eq("id", messageId)
     .maybeSingle();
 
   if (error) {
@@ -183,41 +109,22 @@ export async function getAuditProspectionMessageById(
   return data as AuditProspectionMessage;
 }
 
-export async function getNextFollowUpSequenceNumber(
-  auditProspectionId: string
+async function getNextSequenceNumberForType(
+  auditProspectionId: string,
+  messageType: AuditProspectionMessageType
 ): Promise<number> {
-  const {
-    data,
-    error,
-  } = await supabaseAdmin
-    .from(
-      "audit_prospection_messages"
-    )
-    .select(
-      `
-        sequence_number
-      `
-    )
-    .eq(
-      "audit_prospection_id",
-      auditProspectionId
-    )
-    .eq(
-      "message_type",
-      "follow_up"
-    )
-    .order(
-      "sequence_number",
-      {
-        ascending: false,
-      }
-    )
+  const { data, error } = await supabaseAdmin
+    .from("audit_prospection_messages")
+    .select("sequence_number")
+    .eq("audit_prospection_id", auditProspectionId)
+    .eq("message_type", messageType)
+    .order("sequence_number", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (error) {
     throw new Error(
-      `Impossible de déterminer le numéro de la prochaine relance : ${error.message}`
+      `Impossible de déterminer le numéro du prochain message de prospection : ${error.message}`
     );
   }
 
@@ -225,101 +132,64 @@ export async function getNextFollowUpSequenceNumber(
     return 1;
   }
 
-  return (
-    Number(
-      data.sequence_number
-    ) + 1
-  );
+  return Number(data.sequence_number) + 1;
+}
+
+export async function getNextInitialSequenceNumber(
+  auditProspectionId: string
+): Promise<number> {
+  return getNextSequenceNumberForType(auditProspectionId, "initial");
+}
+
+export async function getNextFollowUpSequenceNumber(
+  auditProspectionId: string
+): Promise<number> {
+  return getNextSequenceNumberForType(auditProspectionId, "follow_up");
 }
 
 export async function createAuditProspectionMessage(
   input: CreateAuditProspectionMessageInput
-): Promise<
-  AuditProspectionMessage
-> {
-  const recipientEmail =
-    input.recipientEmail.trim();
-
-  const subject =
-    input.subject.trim();
-
-  const emailContent =
-    input.emailContent.trim();
+): Promise<AuditProspectionMessage> {
+  const recipientEmail = input.recipientEmail.trim();
+  const subject = input.subject.trim();
+  const emailContent = input.emailContent.trim();
 
   if (!recipientEmail) {
-    throw new Error(
-      "Le destinataire du message de prospection est obligatoire."
-    );
+    throw new Error("Le destinataire du message de prospection est obligatoire.");
   }
 
   if (!subject) {
-    throw new Error(
-      "L’objet du message de prospection est obligatoire."
-    );
+    throw new Error("L’objet du message de prospection est obligatoire.");
   }
 
   if (!emailContent) {
-    throw new Error(
-      "Le contenu du message de prospection est obligatoire."
-    );
+    throw new Error("Le contenu du message de prospection est obligatoire.");
   }
 
   const sequenceNumber =
     input.sequenceNumber ??
-    (input.messageType ===
-    "initial"
-      ? 1
-      : await getNextFollowUpSequenceNumber(
-          input.auditProspectionId
-        ));
+    (await getNextSequenceNumberForType(
+      input.auditProspectionId,
+      input.messageType
+    ));
 
-  const sentAt =
-    input.sentAt ??
-    new Date().toISOString();
+  const sentAt = input.sentAt ?? new Date().toISOString();
 
-  const {
-    data,
-    error,
-  } = await supabaseAdmin
-    .from(
-      "audit_prospection_messages"
-    )
+  const { data, error } = await supabaseAdmin
+    .from("audit_prospection_messages")
     .insert({
-      audit_prospection_id:
-        input.auditProspectionId,
-
-      message_type:
-        input.messageType,
-
-      sequence_number:
-        sequenceNumber,
-
-      recipient_email:
-        recipientEmail,
-
+      audit_prospection_id: input.auditProspectionId,
+      message_type: input.messageType,
+      sequence_number: sequenceNumber,
+      recipient_email: recipientEmail,
       subject,
-
-      email_content:
-        emailContent,
-
-      html_content:
-        input.htmlContent ??
-        null,
-
-      attachment_url:
-        input.attachmentUrl ??
-        null,
-
-      smtp_message_id:
-        input.smtpMessageId ??
-        null,
-
-      sent_at:
-        sentAt,
+      email_content: emailContent,
+      html_content: input.htmlContent ?? null,
+      attachment_url: input.attachmentUrl ?? null,
+      smtp_message_id: input.smtpMessageId ?? null,
+      sent_at: sentAt,
     })
-    .select(
-      auditProspectionMessageSelect
-    )
+    .select(auditProspectionMessageSelect)
     .single();
 
   if (error) {
@@ -334,65 +204,57 @@ export async function createAuditProspectionMessage(
 export async function createInitialAuditProspectionMessage(
   input: Omit<
     CreateAuditProspectionMessageInput,
-    | "messageType"
-    | "sequenceNumber"
+    "messageType" | "sequenceNumber"
   >
-): Promise<
-  AuditProspectionMessage
-> {
-  return createAuditProspectionMessage(
-    {
-      ...input,
+): Promise<AuditProspectionMessage> {
+  return createAuditProspectionMessage({
+    ...input,
+    messageType: "initial",
+    sequenceNumber: 1,
+  });
+}
 
-      messageType:
-        "initial",
-
-      sequenceNumber:
-        1,
-    }
+export async function createResentInitialAuditProspectionMessage(
+  input: Omit<
+    CreateAuditProspectionMessageInput,
+    "messageType" | "sequenceNumber"
+  >
+): Promise<AuditProspectionMessage> {
+  const sequenceNumber = await getNextInitialSequenceNumber(
+    input.auditProspectionId
   );
+
+  return createAuditProspectionMessage({
+    ...input,
+    messageType: "initial",
+    sequenceNumber,
+  });
 }
 
 export async function createFollowUpAuditProspectionMessage(
   input: Omit<
     CreateAuditProspectionMessageInput,
-    | "messageType"
-    | "sequenceNumber"
+    "messageType" | "sequenceNumber"
   >
-): Promise<
-  AuditProspectionMessage
-> {
-  const sequenceNumber =
-    await getNextFollowUpSequenceNumber(
-      input.auditProspectionId
-    );
-
-  return createAuditProspectionMessage(
-    {
-      ...input,
-
-      messageType:
-        "follow_up",
-
-      sequenceNumber,
-    }
+): Promise<AuditProspectionMessage> {
+  const sequenceNumber = await getNextFollowUpSequenceNumber(
+    input.auditProspectionId
   );
+
+  return createAuditProspectionMessage({
+    ...input,
+    messageType: "follow_up",
+    sequenceNumber,
+  });
 }
 
 export async function deleteAuditProspectionMessages(
   auditProspectionId: string
 ): Promise<void> {
-  const {
-    error,
-  } = await supabaseAdmin
-    .from(
-      "audit_prospection_messages"
-    )
+  const { error } = await supabaseAdmin
+    .from("audit_prospection_messages")
     .delete()
-    .eq(
-      "audit_prospection_id",
-      auditProspectionId
-    );
+    .eq("audit_prospection_id", auditProspectionId);
 
   if (error) {
     throw new Error(

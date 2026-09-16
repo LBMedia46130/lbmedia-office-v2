@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
 import PageBanner from "@/components/dashboard/PageBanner";
 import CompanyContacts from "@/components/companies/CompanyContacts";
 import CompanyOpportunities from "@/components/companies/CompanyOpportunities";
@@ -14,55 +13,44 @@ import AuditProspectionAssets from "@/components/companies/AuditProspectionAsset
 import AuditProspectionSendButton from "@/components/companies/AuditProspectionSendButton";
 import AuditProspectionFollowUp from "@/components/companies/AuditProspectionFollowUp";
 import PipelineBadge from "@/components/ui/PipelineBadge";
-
 import {
   getCompanyById,
 } from "@/lib/companies";
-
 import {
   getCompanyContacts,
 } from "@/lib/company-contacts";
-
 import {
   getCompanyOpportunities,
 } from "@/lib/opportunities";
-
 import {
   getCompanyWebsiteAudits,
   getWebsiteAuditById,
   getWebsiteAuditCommercialDiagnosis,
 } from "@/lib/website-audits";
-
 import {
   getAuditProspectionByAuditId,
 } from "@/lib/audit-prospections";
-
+import { getLatestAuditProspectionMessage } from "@/lib/audit-prospection-messages";
 import {
   prepareAuditProspection,
 } from "./auditProspectionActions";
-
 export const dynamic =
   "force-dynamic";
-
 type CompanyPageProps = {
   params: Promise<{
     id: string;
   }>;
 };
-
 export default async function CompanyPage({
   params,
 }: CompanyPageProps) {
   const { id } =
     await params;
-
   const company =
     await getCompanyById(id);
-
   if (!company) {
     notFound();
   }
-
   const [
     contacts,
     opportunities,
@@ -76,11 +64,9 @@ export default async function CompanyPage({
       id
     ),
   ]);
-
   const latestAudit =
     websiteAudits[0] ??
     null;
-
   const [
     latestProspection,
     latestFullAudit,
@@ -97,20 +83,26 @@ export default async function CompanyPage({
         null,
         null,
       ];
-
+  const latestProspectionMessage =
+    latestProspection
+      ? await getLatestAuditProspectionMessage(
+          latestProspection.id
+        )
+      : null;
+  const hasSentFollowUp =
+    latestProspectionMessage?.message_type ===
+    "follow_up";
   const commercialDiagnosis =
     latestFullAudit
       ? getWebsiteAuditCommercialDiagnosis(
           latestFullAudit
         )
       : null;
-
   const recommendedProposalType =
     commercialDiagnosis
       ?.recommendation
       .type ??
     "optimization";
-
   const fullAddress = [
     company.address,
     company.address_line_2,
@@ -125,7 +117,6 @@ export default async function CompanyPage({
   ]
     .filter(Boolean)
     .join("\n");
-
   const hasAdministrativeInfo =
     Boolean(
       company.customer_number ||
@@ -137,12 +128,10 @@ export default async function CompanyPage({
         company.ape_label ||
         company.creation_date
     );
-
   const hasNotes =
     Boolean(
       company.notes?.trim()
     );
-
   const auditUrl =
     company.website
       ? `/audit?companyId=${encodeURIComponent(
@@ -153,7 +142,6 @@ export default async function CompanyPage({
       : `/audit?companyId=${encodeURIComponent(
           company.id
         )}`;
-
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-6 py-10">
@@ -162,7 +150,6 @@ export default async function CompanyPage({
           title={company.name}
           description="Coordonnées, contacts et suivi commercial de l’entreprise."
         />
-
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/companies"
@@ -170,14 +157,12 @@ export default async function CompanyPage({
           >
             ← Retour aux entreprises
           </Link>
-
           <div className="flex flex-wrap items-center gap-3">
             <PipelineBadge
               stage={
                 company.pipeline_stage
               }
             />
-
             <span
               className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                 company.is_active
@@ -189,14 +174,12 @@ export default async function CompanyPage({
                 ? "Active"
                 : "Inactive"}
             </span>
-
             <Link
               href={`/companies/${company.id}/edit`}
               className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
             >
               Modifier
             </Link>
-
             <DeleteCompanyButton
               companyId={
                 company.id
@@ -207,17 +190,14 @@ export default async function CompanyPage({
             />
           </div>
         </div>
-
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-slate-900 shadow-sm">
           <div className="border-b border-slate-200 pb-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
               Fiche entreprise
             </p>
-
             <h2 className="mt-2 text-3xl font-bold">
               {company.name}
             </h2>
-
             {company.legal_name ? (
               <p className="mt-2 text-slate-500">
                 {
@@ -226,7 +206,6 @@ export default async function CompanyPage({
               </p>
             ) : null}
           </div>
-
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <InfoBlock
               label="Adresse"
@@ -236,7 +215,6 @@ export default async function CompanyPage({
               }
               multiline
             />
-
             <InfoBlock
               label="Téléphone"
               value={
@@ -249,7 +227,6 @@ export default async function CompanyPage({
                   : undefined
               }
             />
-
             <InfoBlock
               label="E-mail"
               value={
@@ -262,7 +239,6 @@ export default async function CompanyPage({
                   : undefined
               }
             />
-
             <InfoBlock
               label="Site internet"
               value={
@@ -276,7 +252,6 @@ export default async function CompanyPage({
               external
             />
           </div>
-
           <div className="mt-8 border-t border-slate-200 pt-8">
             <CompanyLegalSearch
               companyId={
@@ -295,7 +270,6 @@ export default async function CompanyPage({
                 company.postal_code
               }
             />
-
             <div className="mt-6">
               <CompanyWebEnrichment
                 companyId={
@@ -316,7 +290,6 @@ export default async function CompanyPage({
               />
             </div>
           </div>
-
           <div className="mt-8 border-t border-slate-200 pt-8">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -325,7 +298,6 @@ export default async function CompanyPage({
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
                       Audits de site
                     </p>
-
                     {websiteAudits.length >
                     0 ? (
                       <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
@@ -339,7 +311,6 @@ export default async function CompanyPage({
                       </span>
                     ) : null}
                   </div>
-
                   <p className="mt-1 text-sm text-slate-500">
                     Historique des
                     analyses du site
@@ -347,7 +318,6 @@ export default async function CompanyPage({
                     l’entreprise.
                   </p>
                 </div>
-
                 <Link
                   href={auditUrl}
                   className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
@@ -355,7 +325,6 @@ export default async function CompanyPage({
                   + Nouvel audit
                 </Link>
               </div>
-
               {latestAudit ? (
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -364,14 +333,12 @@ export default async function CompanyPage({
                         <p className="text-sm font-semibold text-slate-900">
                           Dernier audit
                         </p>
-
                         <span className="text-xs text-slate-400">
                           {formatDateTime(
                             latestAudit.created_at
                           )}
                         </span>
                       </div>
-
                       <a
                         href={
                           latestAudit.website_url
@@ -384,7 +351,6 @@ export default async function CompanyPage({
                           latestAudit.website_url
                         }
                       </a>
-
                       <p className="mt-2 text-xs text-slate-400">
                         {
                           latestAudit.pages_analyzed
@@ -399,24 +365,20 @@ export default async function CompanyPage({
                         }
                       </p>
                     </div>
-
                     <div className="flex shrink-0 flex-wrap items-center gap-4">
                       <div className="text-right">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                           Score global
                         </p>
-
                         <p className="mt-1 text-3xl font-bold text-slate-900">
                           {
                             latestAudit.global_score
                           }
-
                           <span className="ml-1 text-sm font-medium text-slate-400">
                             / 100
                           </span>
                         </p>
                       </div>
-
                       <Link
                         href={`/companies/${company.id}/audits/${latestAudit.id}`}
                         className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
@@ -425,7 +387,6 @@ export default async function CompanyPage({
                       </Link>
                     </div>
                   </div>
-
                   <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     <MiniScore
                       label="Positionnement"
@@ -433,28 +394,24 @@ export default async function CompanyPage({
                         latestAudit.positioning_score
                       }
                     />
-
                     <MiniScore
                       label="Conversion"
                       score={
                         latestAudit.conversion_score
                       }
                     />
-
                     <MiniScore
                       label="SEO"
                       score={
                         latestAudit.seo_score
                       }
                     />
-
                     <MiniScore
                       label="SEO local"
                       score={
                         latestAudit.local_seo_score
                       }
                     />
-
                     <MiniScore
                       label="GEO / IA"
                       score={
@@ -462,7 +419,6 @@ export default async function CompanyPage({
                       }
                     />
                   </div>
-
                   {websiteAudits.length >
                   1 ? (
                     <p className="mt-4 text-xs text-slate-400">
@@ -496,7 +452,6 @@ export default async function CompanyPage({
                     Aucun audit
                     enregistré
                   </p>
-
                   <p className="mt-1 text-xs text-slate-400">
                     Lancez le premier
                     audit du site de
@@ -506,7 +461,6 @@ export default async function CompanyPage({
               )}
             </div>
           </div>
-
           {latestAudit ? (
             <div className="mt-8 border-t border-slate-200 pt-8">
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-6">
@@ -516,7 +470,6 @@ export default async function CompanyPage({
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
                         Prospection après audit
                       </p>
-
                       {latestProspection ? (
                         <ProspectionStatusBadge
                           status={
@@ -525,12 +478,10 @@ export default async function CompanyPage({
                         />
                       ) : null}
                     </div>
-
                     <h3 className="mt-2 text-xl font-bold text-slate-900">
                       Transformer l’audit
                       en prise de contact
                     </h3>
-
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                       Préparer une approche
                       commerciale personnalisée
@@ -538,21 +489,18 @@ export default async function CompanyPage({
                       dans le dernier audit.
                     </p>
                   </div>
-
                   {latestProspection ? (
                     <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
                       <div className="text-left lg:text-right">
                         <p className="text-sm font-semibold text-slate-800">
                           Prospection créée
                         </p>
-
                         <p className="mt-1 text-xs text-slate-500">
                           {formatDateTime(
                             latestProspection.created_at
                           )}
                         </p>
                       </div>
-
                       <DeleteAuditProspectionButton
                         prospectionId={
                           latestProspection.id
@@ -577,7 +525,6 @@ export default async function CompanyPage({
                     </form>
                   )}
                 </div>
-
                 {latestProspection ? (
                   <>
                     <div className="mt-6 grid gap-4 border-t border-indigo-200 pt-5 sm:grid-cols-2">
@@ -589,7 +536,6 @@ export default async function CompanyPage({
                           )
                         }
                       />
-
                       <ProspectionInfo
                         label="Angle commercial interne"
                         value={
@@ -598,7 +544,6 @@ export default async function CompanyPage({
                         }
                       />
                     </div>
-
                     {latestProspection.email_content ? (
                       <AuditProspectionEditor
                         prospectionId={
@@ -623,7 +568,6 @@ export default async function CompanyPage({
                           La prospection est
                           prête à être rédigée.
                         </p>
-
                         <p className="mt-1 text-xs leading-5 text-slate-500">
                           Pénélope utilisera
                           directement les
@@ -633,7 +577,6 @@ export default async function CompanyPage({
                         </p>
                       </div>
                     )}
-
                     <AuditProspectionAssets
                       prospectionId={
                         latestProspection.id
@@ -652,7 +595,6 @@ export default async function CompanyPage({
                         latestProspection.attachment_url
                       }
                     />
-
                     <AuditProspectionSendButton
                       prospectionId={
                         latestProspection.id
@@ -671,8 +613,14 @@ export default async function CompanyPage({
                       sentAt={
                         latestProspection.sent_at
                       }
+                    followUpAt={
+                        latestProspection.follow_up_at
+                      }
+                      proposalType={
+                        latestProspection.proposal_type ??
+                        recommendedProposalType
+                      }
                     />
-
                     <AuditProspectionFollowUp
                       prospectionId={
                         latestProspection.id
@@ -687,7 +635,6 @@ export default async function CompanyPage({
                         latestProspection.follow_up_at
                       }
                     />
-
                     <div className="mt-5 rounded-xl border border-indigo-100 bg-white p-5">
                       <div>
                         <p className="text-sm font-semibold text-slate-800">
@@ -695,7 +642,6 @@ export default async function CompanyPage({
                             ? "Besoin d’une autre proposition ?"
                             : "Générer une première proposition."}
                         </p>
-
                         <p className="mt-1 text-xs leading-5 text-slate-500">
                           Choisis l’approche
                           commerciale avant de
@@ -707,7 +653,6 @@ export default async function CompanyPage({
                           enregistrés.
                         </p>
                       </div>
-
                       <div className="mt-5">
                         <AuditProspectionGenerator
                           prospectionId={
@@ -727,7 +672,6 @@ export default async function CompanyPage({
               </div>
             </div>
           ) : null}
-
           {hasAdministrativeInfo ? (
             <div className="mt-8 border-t border-slate-200 pt-8">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -735,7 +679,6 @@ export default async function CompanyPage({
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                     Données légales
                   </p>
-
                   {company.legal_data_updated_at ? (
                     <p className="mt-1 text-xs text-slate-400">
                       Mise à jour{" "}
@@ -746,7 +689,6 @@ export default async function CompanyPage({
                   ) : null}
                 </div>
               </div>
-
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {company.customer_number ? (
                   <InfoBlock
@@ -756,7 +698,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.legal_name ? (
                   <InfoBlock
                     label="Raison sociale"
@@ -765,7 +706,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.legal_form ? (
                   <InfoBlock
                     label="Forme juridique"
@@ -774,7 +714,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.siren ? (
                   <InfoBlock
                     label="SIREN"
@@ -783,7 +722,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.siret ? (
                   <InfoBlock
                     label="SIRET du siège"
@@ -792,7 +730,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.vat_number ? (
                   <InfoBlock
                     label="TVA intracommunautaire"
@@ -801,7 +738,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.ape_code ? (
                   <InfoBlock
                     label="Code APE / NAF"
@@ -810,7 +746,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.ape_label ? (
                   <InfoBlock
                     label="Activité principale"
@@ -819,7 +754,6 @@ export default async function CompanyPage({
                     }
                   />
                 ) : null}
-
                 {company.creation_date ? (
                   <InfoBlock
                     label="Date de création"
@@ -833,13 +767,11 @@ export default async function CompanyPage({
               </div>
             </div>
           ) : null}
-
           {hasNotes ? (
             <div className="mt-8 border-t border-slate-200 pt-8">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                 Notes
               </p>
-
               <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
                   {company.notes}
@@ -848,7 +780,6 @@ export default async function CompanyPage({
             </div>
           ) : null}
         </section>
-
         <div className="mt-8">
           <CompanyContacts
             companyId={
@@ -859,7 +790,6 @@ export default async function CompanyPage({
             }
           />
         </div>
-
         <div className="mt-8 pb-10">
           <CompanyOpportunities
             companyId={
@@ -874,7 +804,6 @@ export default async function CompanyPage({
     </main>
   );
 }
-
 type InfoBlockProps = {
   label: string;
   value: string;
@@ -882,7 +811,6 @@ type InfoBlockProps = {
   external?: boolean;
   multiline?: boolean;
 };
-
 function InfoBlock({
   label,
   value,
@@ -895,7 +823,6 @@ function InfoBlock({
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
         {label}
       </p>
-
       {href ? (
         <a
           href={href}
@@ -927,7 +854,6 @@ function InfoBlock({
     </div>
   );
 }
-
 function MiniScore({
   label,
   score,
@@ -940,10 +866,8 @@ function MiniScore({
       <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
         {label}
       </p>
-
       <p className="mt-1 text-lg font-bold text-slate-800">
         {score}
-
         <span className="ml-1 text-xs font-medium text-slate-400">
           /100
         </span>
@@ -951,7 +875,6 @@ function MiniScore({
     </div>
   );
 }
-
 function ProspectionInfo({
   label,
   value,
@@ -964,14 +887,12 @@ function ProspectionInfo({
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-400">
         {label}
       </p>
-
       <p className="mt-2 break-words text-sm font-semibold text-slate-800">
         {value}
       </p>
     </div>
   );
 }
-
 function ProspectionStatusBadge({
   status,
 }: {
@@ -990,7 +911,6 @@ function ProspectionStatusBadge({
     </span>
   );
 }
-
 function getProspectionStatusLabel(
   status:
     | "draft"
@@ -1008,16 +928,13 @@ function getProspectionStatusLabel(
     replied:
       "Réponse reçue",
   };
-
   return labels[status];
 }
-
 function formatDate(
   value: string
 ) {
   const date =
     new Date(value);
-
   if (
     Number.isNaN(
       date.getTime()
@@ -1025,18 +942,15 @@ function formatDate(
   ) {
     return value;
   }
-
   return new Intl.DateTimeFormat(
     "fr-FR"
   ).format(date);
 }
-
 function formatDateTime(
   value: string
 ) {
   const date =
     new Date(value);
-
   if (
     Number.isNaN(
       date.getTime()
@@ -1044,7 +958,6 @@ function formatDateTime(
   ) {
     return value;
   }
-
   return new Intl.DateTimeFormat(
     "fr-FR",
     {

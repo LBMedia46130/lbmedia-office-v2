@@ -1,83 +1,68 @@
 "use client";
-
 import {
   useEffect,
   useState,
 } from "react";
-
 import {
   useRouter,
 } from "next/navigation";
-
 type ProposalType =
   | "optimization"
   | "optimization_redesign"
   | "redesign"
   | "new_website";
-
 type AuditProspectionSendButtonProps = {
   prospectionId: string;
-
   status:
     | "draft"
     | "ready"
     | "sent"
     | "follow_up"
     | "replied";
-
   proposalType?:
     | ProposalType
     | null;
-
   recipientEmail:
     | string
     | null;
-
   attachmentUrl:
     | string
     | null;
-
   sentAt:
     | string
     | null;
+  followUpAt:
+    | string
+    | null;
 };
-
 type EditStateEventDetail = {
   prospectionId: string;
   isDirty: boolean;
   isSaving: boolean;
 };
-
 type SendTrace = {
   recipient_email:
     | string
     | null;
-
   sent_at:
     | string
     | null;
-
   sent_subject:
     | string
     | null;
-
   sent_email_content:
     | string
     | null;
-
   sent_html_content:
     | string
     | null;
-
   sent_attachment_url:
     | string
     | null;
-
   smtp_message_id:
     | string
     | null;
 };
-
 export default function AuditProspectionSendButton({
   prospectionId,
   status,
@@ -85,28 +70,25 @@ export default function AuditProspectionSendButton({
   recipientEmail,
   attachmentUrl,
   sentAt,
+  followUpAt,
 }: AuditProspectionSendButtonProps) {
   const router =
     useRouter();
-
   const [
     isSending,
     setIsSending,
   ] =
     useState(false);
-
   const [
     hasUnsavedChanges,
     setHasUnsavedChanges,
   ] =
     useState(false);
-
   const [
     editorIsSaving,
     setEditorIsSaving,
   ] =
     useState(false);
-
   const [
     message,
     setMessage,
@@ -114,7 +96,6 @@ export default function AuditProspectionSendButton({
     useState<
       string | null
     >(null);
-
   const [
     error,
     setError,
@@ -122,7 +103,6 @@ export default function AuditProspectionSendButton({
     useState<
       string | null
     >(null);
-
   const [
     trace,
     setTrace,
@@ -130,13 +110,11 @@ export default function AuditProspectionSendButton({
     useState<
       SendTrace | null
     >(null);
-
   const [
     isLoadingTrace,
     setIsLoadingTrace,
   ] =
     useState(false);
-
   const [
     traceError,
     setTraceError,
@@ -144,20 +122,17 @@ export default function AuditProspectionSendButton({
     useState<
       string | null
     >(null);
-
   const [
     showArchivedEmail,
     setShowArchivedEmail,
   ] =
     useState(false);
-
   useEffect(() => {
     function handleEditState(
       event: Event
     ) {
       const customEvent =
         event as CustomEvent<EditStateEventDetail>;
-
       if (
         customEvent.detail
           ?.prospectionId !==
@@ -165,14 +140,12 @@ export default function AuditProspectionSendButton({
       ) {
         return;
       }
-
       setHasUnsavedChanges(
         Boolean(
           customEvent.detail
             .isDirty
         )
       );
-
       setEditorIsSaving(
         Boolean(
           customEvent.detail
@@ -180,12 +153,10 @@ export default function AuditProspectionSendButton({
         )
       );
     }
-
     window.addEventListener(
       "audit-prospection-edit-state",
       handleEditState
     );
-
     return () => {
       window.removeEventListener(
         "audit-prospection-edit-state",
@@ -193,7 +164,6 @@ export default function AuditProspectionSendButton({
       );
     };
   }, [prospectionId]);
-
   useEffect(() => {
     if (
       status !==
@@ -201,19 +171,15 @@ export default function AuditProspectionSendButton({
     ) {
       return;
     }
-
     let cancelled =
       false;
-
     async function loadTrace() {
       setIsLoadingTrace(
         true
       );
-
       setTraceError(
         null
       );
-
       try {
         const response =
           await fetch(
@@ -223,10 +189,8 @@ export default function AuditProspectionSendButton({
                 "no-store",
             }
           );
-
         const result =
           await response.json();
-
         if (
           !response.ok ||
           !result.success
@@ -236,7 +200,6 @@ export default function AuditProspectionSendButton({
               "Impossible de charger la trace d’envoi."
           );
         }
-
         if (
           !cancelled
         ) {
@@ -266,9 +229,7 @@ export default function AuditProspectionSendButton({
         }
       }
     }
-
     void loadTrace();
-
     return () => {
       cancelled =
         true;
@@ -277,38 +238,117 @@ export default function AuditProspectionSendButton({
     prospectionId,
     status,
   ]);
-
+  const followUpIsDue =
+    Boolean(
+      followUpAt &&
+        new Date(followUpAt).getTime() <=
+          Date.now()
+    );
+  async function resendEmail() {
+    const normalizedResendRecipient =
+      recipientEmail
+        ?.trim()
+        .toLowerCase() ??
+      "";
+    if (
+      !normalizedResendRecipient ||
+      followUpIsDue ||
+      isSending
+    ) {
+      return;
+    }
+    const confirmed =
+      window.confirm(
+        "Confirmer le renvoi de cet audit au même destinataire ? La date de relance programmée ne sera pas modifiée."
+      );
+    if (!confirmed) {
+      return;
+    }
+    setIsSending(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const response =
+        await fetch(
+          `/api/audit-prospections/${prospectionId}/send`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body:
+              JSON.stringify({
+                confirmedRecipientEmail:
+                  normalizedResendRecipient,
+                sendMode:
+                  "resend",
+              }),
+          }
+        );
+      const result =
+        await response.json();
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        if (
+          result.sent ===
+          true
+        ) {
+          throw new Error(
+            result.message ??
+              "L’email a été renvoyé mais la traçabilité n’a pas pu être enregistrée. Ne renvoyez pas le message."
+          );
+        }
+        throw new Error(
+          result.message ??
+            "Impossible de renvoyer l’audit."
+        );
+      }
+      setMessage(
+        "Audit renvoyé avec succès. La date de relance programmée reste inchangée."
+      );
+      router.refresh();
+    } catch (
+      resendError
+    ) {
+      setError(
+        resendError instanceof Error
+          ? resendError.message
+          : "Une erreur est survenue pendant le renvoi."
+      );
+    } finally {
+      setIsSending(false);
+    }
+  }
   if (
-    status === "sent"
+    status === "sent" ||
+    status === "follow_up"
   ) {
     const archivedRecipient =
       trace
         ?.recipient_email ||
       recipientEmail;
-
     const archivedSentAt =
       trace
         ?.sent_at ||
       sentAt;
-
     const archivedAttachment =
       trace
         ?.sent_attachment_url;
-
     return (
       <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-4 sm :flex-row sm :items-start sm :justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-sm font-bold text-emerald-800">
                 Email envoyé
               </p>
-
               <span className="inline-flex rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white">
                 Envoyée
               </span>
             </div>
-
             <p className="mt-2 text-xs leading-5 text-emerald-700">
               {archivedSentAt
                 ? `Envoi enregistré le ${formatDateTime(
@@ -318,23 +358,20 @@ export default function AuditProspectionSendButton({
             </p>
           </div>
         </div>
-
         {isLoadingTrace ? (
           <div className="mt-4 rounded-xl border border-emerald-200 bg-white px-4 py-4 text-sm text-slate-500">
             Chargement de la
             traçabilité…
           </div>
         ) : null}
-
         {traceError ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             {traceError}
           </div>
         ) : null}
-
         {trace ? (
           <>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="mt-4 grid gap-3 md :grid-cols-2">
               <TraceInfo
                 label="Destinataire"
                 value={
@@ -342,7 +379,6 @@ export default function AuditProspectionSendButton({
                   "Non renseigné"
                 }
               />
-
               <TraceInfo
                 label="Date d’envoi"
                 value={
@@ -353,7 +389,6 @@ export default function AuditProspectionSendButton({
                     : "Non renseignée"
                 }
               />
-
               <TraceInfo
                 label="Objet envoyé"
                 value={
@@ -361,7 +396,6 @@ export default function AuditProspectionSendButton({
                   "Non archivé"
                 }
               />
-
               <TraceInfo
                 label="Identifiant SMTP"
                 value={
@@ -371,12 +405,10 @@ export default function AuditProspectionSendButton({
                 mono
               />
             </div>
-
             <div className="mt-3 rounded-xl border border-emerald-200 bg-white px-4 py-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
                 Pièce jointe
               </p>
-
               {archivedAttachment ? (
                 <a
                   href={
@@ -384,7 +416,7 @@ export default function AuditProspectionSendButton({
                   }
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-2 inline-flex text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+                  className="mt-2 inline-flex text-sm font-semibold text-blue-600 transition hover :text-blue-700"
                 >
                   Ouvrir le PDF
                   envoyé
@@ -396,7 +428,6 @@ export default function AuditProspectionSendButton({
                 </p>
               )}
             </div>
-
             <div className="mt-4 rounded-xl border border-emerald-200 bg-white">
               <button
                 type="button"
@@ -414,21 +445,18 @@ export default function AuditProspectionSendButton({
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">
                     Copie archivée
                   </p>
-
                   <p className="mt-1 text-sm font-semibold text-slate-800">
                     Consulter le
                     message réellement
                     envoyé
                   </p>
                 </div>
-
                 <span className="text-sm font-bold text-emerald-700">
                   {showArchivedEmail
                     ? "Masquer"
                     : "Afficher"}
                 </span>
               </button>
-
               {showArchivedEmail ? (
                 <div className="border-t border-emerald-100 px-5 py-5">
                   {trace.sent_subject ? (
@@ -436,7 +464,6 @@ export default function AuditProspectionSendButton({
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
                         Objet
                       </p>
-
                       <p className="mt-1 text-sm font-bold text-slate-900">
                         {
                           trace.sent_subject
@@ -444,13 +471,11 @@ export default function AuditProspectionSendButton({
                       </p>
                     </div>
                   ) : null}
-
                   {trace.sent_email_content ? (
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
                         Message
                       </p>
-
                       <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
                         {
                           trace.sent_email_content
@@ -463,7 +488,6 @@ export default function AuditProspectionSendButton({
                       archivé.
                     </p>
                   )}
-
                   <div className="mt-7 border-t border-slate-100 pt-5">
                     <p className="text-xs font-semibold text-slate-500">
                       La signature
@@ -477,30 +501,61 @@ export default function AuditProspectionSendButton({
                 </div>
               ) : null}
             </div>
-
             <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-100/50 px-4 py-3">
               <p className="text-xs font-semibold leading-5 text-emerald-800">
-                Cet envoi est
-                verrouillé dans
-                LBMedia Office afin
+                L’envoi initial reste
+                verrouillé afin
                 d’éviter toute
                 réexpédition
                 accidentelle.
               </p>
+              {followUpIsDue ? (
+                <p className="mt-3 text-xs font-semibold leading-5 text-amber-700">
+                  La relance programmée
+                  est arrivée à échéance.
+                  Utilise maintenant
+                  l’action de relance
+                  ci-dessous.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={
+                    resendEmail
+                  }
+                  disabled={
+                    isSending ||
+                    !recipientEmail?.trim()
+                  }
+                  className="mt-3 inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSending
+                    ? "Renvoi en cours..."
+                    : "Renvoyer l’audit"}
+                </button>
+              )}
             </div>
+            {message ? (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700">
+                {message}
+              </div>
+            ) : null}
+            {error ? (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {error}
+              </div>
+            ) : null}
           </>
         ) : null}
       </div>
     );
   }
-
   const normalizedRecipient =
     recipientEmail
       ?.trim()
       .toLowerCase() ??
     "";
-
-  /*
+  /**
    * Compatibilité :
    * tant que proposalType n’est
    * pas encore transmis par la page,
@@ -514,21 +569,17 @@ export default function AuditProspectionSendButton({
         ? "redesign"
         : "optimization"
     );
-
   const requiresPdf =
     effectiveProposalType !==
     "optimization";
-
   const hasAttachment =
     Boolean(
       attachmentUrl?.trim()
     );
-
   const attachmentRequirementMet =
     requiresPdf
       ? hasAttachment
       : true;
-
   const canSend =
     status === "ready" &&
     Boolean(
@@ -538,16 +589,13 @@ export default function AuditProspectionSendButton({
     !hasUnsavedChanges &&
     !editorIsSaving &&
     !isSending;
-
   async function sendEmail() {
     if (!canSend) {
       return;
     }
-
     setIsSending(true);
     setMessage(null);
     setError(null);
-
     try {
       const response =
         await fetch(
@@ -555,12 +603,10 @@ export default function AuditProspectionSendButton({
           {
             method:
               "POST",
-
             headers: {
               "Content-Type":
                 "application/json",
             },
-
             body:
               JSON.stringify({
                 confirmedRecipientEmail:
@@ -568,10 +614,8 @@ export default function AuditProspectionSendButton({
               }),
           }
         );
-
       const result =
         await response.json();
-
       if (
         !response.ok ||
         !result.success
@@ -585,17 +629,14 @@ export default function AuditProspectionSendButton({
               "L’email a été envoyé mais la traçabilité n’a pas pu être enregistrée. Ne renvoyez pas le message."
           );
         }
-
         throw new Error(
           result.message ??
             "Impossible d’envoyer l’email."
         );
       }
-
       setMessage(
         "Email envoyé avec succès."
       );
-
       router.refresh();
     } catch (
       sendError
@@ -609,20 +650,17 @@ export default function AuditProspectionSendButton({
       setIsSending(false);
     }
   }
-
   return (
     <div className="mt-5 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-white px-5 py-5">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-5 lg :flex-row lg :items-center lg :justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">
             Envoi réel
           </p>
-
           <h4 className="mt-1 text-base font-bold text-slate-900">
             Envoyer la
             proposition
           </h4>
-
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             Le destinataire
             ci-dessous est celui
@@ -631,7 +669,6 @@ export default function AuditProspectionSendButton({
             LBMedia Office et que
             le serveur utilisera.
           </p>
-
           {recipientEmail ? (
             <div className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
@@ -639,7 +676,6 @@ export default function AuditProspectionSendButton({
                 réellement
                 enregistré
               </p>
-
               <p className="mt-1 break-all text-sm font-bold text-slate-900">
                 {
                   recipientEmail
@@ -647,13 +683,11 @@ export default function AuditProspectionSendButton({
               </p>
             </div>
           ) : null}
-
           {requiresPdf ? (
             <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-500">
                 Pièce jointe requise
               </p>
-
               <p className="mt-1 text-sm leading-6 text-indigo-800">
                 Cette proposition doit être accompagnée de la projection PDF correspondant à l’angle commercial choisi.
               </p>
@@ -663,19 +697,16 @@ export default function AuditProspectionSendButton({
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-600">
                 Envoi sans PDF
               </p>
-
               <p className="mt-1 text-sm leading-6 text-emerald-800">
                 La prospection porte uniquement sur l’optimisation du site existant. Aucune projection PDF n’est nécessaire.
               </p>
             </div>
           )}
-
           {hasUnsavedChanges ? (
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-bold text-amber-800">
                 Envoi bloqué
               </p>
-
               <p className="mt-1 text-xs leading-5 text-amber-700">
                 Des modifications
                 du destinataire,
@@ -686,14 +717,12 @@ export default function AuditProspectionSendButton({
               </p>
             </div>
           ) : null}
-
           {editorIsSaving ? (
             <p className="mt-3 text-xs font-semibold text-amber-700">
               Enregistrement en
               cours…
             </p>
           ) : null}
-
           {!recipientEmail ? (
             <p className="mt-3 text-xs font-semibold text-amber-700">
               Renseigne et
@@ -702,7 +731,6 @@ export default function AuditProspectionSendButton({
               destinataire.
             </p>
           ) : null}
-
           {requiresPdf &&
           !hasAttachment ? (
             <p className="mt-3 text-xs font-semibold text-amber-700">
@@ -711,20 +739,17 @@ export default function AuditProspectionSendButton({
               cette proposition.
             </p>
           ) : null}
-
           {!requiresPdf &&
           hasAttachment ? (
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-bold text-amber-800">
                 Ancien PDF détecté
               </p>
-
               <p className="mt-1 text-xs leading-5 text-amber-700">
                 Un PDF est encore associé à cette prospection, mais il ne doit pas être envoyé avec une proposition d’optimisation seule. Le serveur sera sécurisé pour l’ignorer.
               </p>
             </div>
           ) : null}
-
           {status !==
             "ready" ? (
             <p className="mt-3 text-xs font-semibold text-amber-700">
@@ -735,7 +760,6 @@ export default function AuditProspectionSendButton({
             </p>
           ) : null}
         </div>
-
         <button
           type="button"
           onClick={
@@ -744,7 +768,7 @@ export default function AuditProspectionSendButton({
           disabled={
             !canSend
           }
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover :bg-emerald-700 disabled :cursor-not-allowed disabled :opacity-50"
         >
           {isSending
             ? "Envoi en cours..."
@@ -753,13 +777,11 @@ export default function AuditProspectionSendButton({
               : "Envoyer l’email"}
         </button>
       </div>
-
       {message ? (
         <div className="mt-4 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700">
           {message}
         </div>
       ) : null}
-
       {error ? (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
           {error}
@@ -768,7 +790,6 @@ export default function AuditProspectionSendButton({
     </div>
   );
 }
-
 function TraceInfo({
   label,
   value,
@@ -783,7 +804,6 @@ function TraceInfo({
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
         {label}
       </p>
-
       <p
         className={`mt-2 break-words text-sm font-semibold text-slate-800 ${
           mono
@@ -796,13 +816,11 @@ function TraceInfo({
     </div>
   );
 }
-
 function formatDateTime(
   value: string
 ) {
   const date =
     new Date(value);
-
   if (
     Number.isNaN(
       date.getTime()
@@ -810,13 +828,11 @@ function formatDateTime(
   ) {
     return value;
   }
-
   return new Intl.DateTimeFormat(
     "fr-FR",
     {
       dateStyle:
         "short",
-
       timeStyle:
         "short",
     }

@@ -10,6 +10,8 @@ import {
 import nodemailer from "nodemailer";
 import {
   createInitialAuditProspectionMessage,
+  createResentInitialAuditProspectionMessage,
+  getAuditProspectionMessages,
 } from "@/lib/audit-prospection-messages";
 import {
   supabaseAdmin,
@@ -26,6 +28,7 @@ type RouteContext = {
 };
 type SendRequestBody = {
   confirmedRecipientEmail?: unknown;
+  sendMode?: unknown;
 };
 type ProposalType =
   | "optimization"
@@ -466,6 +469,9 @@ export async function POST(
       body =
         null;
     }
+    const sendMode = body?.sendMode === undefined ? "initial" : body.sendMode;
+    if (sendMode !== "initial" && sendMode !== "resend") return NextResponse.json({ success: false, message: "Mode d’envoi invalide." }, { status: 400 });
+    const isResend = sendMode === "resend";
     const confirmedRecipientValue =
       typeof body
         ?.confirmedRecipientEmail ===
@@ -540,7 +546,8 @@ export async function POST(
           subject,
           email_content,
           attachment_url,
-          sent_at
+          sent_at,
+          follow_up_at
         `
       )
       .eq(
@@ -567,35 +574,18 @@ export async function POST(
         }
       );
     }
-    if (
-      prospection.status ===
-      "sent"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Cette prospection a déjà été envoyée.",
-        },
-        {
-          status: 409,
-        }
-      );
-    }
-    if (
-      prospection.status !==
-      "ready"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "La prospection n’est pas au statut Prête. Envoi annulé.",
-        },
-        {
-          status: 409,
-        }
-      );
+    if (isResend) {
+      if (!prospection.sent_at) return NextResponse.json({ success: false, message: "Cette prospection n’a pas encore été envoyée. Utilisez l’envoi initial." }, { status: 409 });
+      if (prospection.status !== "sent" && prospection.status !== "follow_up") return NextResponse.json({ success: false, message: "Cette prospection ne peut pas être renvoyée dans son état actuel." }, { status: 409 });
+      const messages = await getAuditProspectionMessages(prospection.id);
+      if (messages.some((item) => item.message_type === "follow_up")) return NextResponse.json({ success: false, message: "Une relance a déjà été envoyée. Le renvoi de l’audit initial n’est plus disponible." }, { status: 409 });
+      if (prospection.follow_up_at) {
+        const followUpTime = new Date(prospection.follow_up_at).getTime();
+        if (Number.isNaN(followUpTime) || followUpTime <= Date.now()) return NextResponse.json({ success: false, message: "La relance programmée est arrivée à échéance. Utilisez l’action de relance." }, { status: 409 });
+      }
+    } else {
+      if (prospection.status === "sent" || prospection.sent_at) return NextResponse.json({ success: false, message: "Cette prospection a déjà été envoyée." }, { status: 409 });
+      if (prospection.status !== "ready") return NextResponse.json({ success: false, message: "La prospection n’est pas au statut Prête. Envoi annulé." }, { status: 409 });
     }
     const proposalType =
       normalizeProposalType(
@@ -682,17 +672,6 @@ export async function POST(
       prospection
         .email_content
         ?.trim();
-    /**
- * Règle métier définitive :*
- *
- * - optimisation seule :*
- *   aucune pièce jointe,*
- *   même si une ancienne URL*
- *   existe encore en base ;*
- *
- * - tous les autres angles :*
- *   le PDF est obligatoire.*
- */
     const storedAttachmentUrl =
       prospection
         .attachment_url
@@ -745,9 +724,6 @@ export async function POST(
         }
       );
     }
-    /**
- * Nouvelle lecture de sécurité juste avant l'envoi.*
- */
     const {
       data:
         securityCheck,
@@ -766,7 +742,8 @@ export async function POST(
           subject,
           email_content,
           attachment_url,
-          sent_at
+          sent_at,
+          follow_up_at
         `
       )
       .eq(
@@ -789,36 +766,17 @@ export async function POST(
         }
       );
     }
-    if (
-      securityCheck.status ===
-        "sent" ||
-      securityCheck.sent_at
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Cette prospection est déjà enregistrée comme envoyée.",
-        },
-        {
-          status: 409,
-        }
-      );
-    }
-    if (
-      securityCheck.status !==
-      "ready"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Le statut de la prospection a changé. Aucun email n’a été envoyé.",
-        },
-        {
-          status: 409,
-        }
-      );
+    if (isResend) {
+      if (!securityCheck.sent_at || (securityCheck.status !== "sent" && securityCheck.status !== "follow_up")) return NextResponse.json({ success: false, message: "Le suivi de cette prospection a changé. Aucun email n’a été envoyé." }, { status: 409 });
+      const securityMessages = await getAuditProspectionMessages(prospection.id);
+      if (securityMessages.some((item) => item.message_type === "follow_up")) return NextResponse.json({ success: false, message: "Une relance a déjà été envoyée. Aucun renvoi de l’audit initial n’a été effectué." }, { status: 409 });
+      if (securityCheck.follow_up_at) {
+        const securityFollowUpTime = new Date(securityCheck.follow_up_at).getTime();
+        if (Number.isNaN(securityFollowUpTime) || securityFollowUpTime <= Date.now()) return NextResponse.json({ success: false, message: "La relance programmée est arrivée à échéance. Aucun renvoi n’a été effectué." }, { status: 409 });
+      }
+    } else {
+      if (securityCheck.status === "sent" || securityCheck.sent_at) return NextResponse.json({ success: false, message: "Cette prospection est déjà enregistrée comme envoyée." }, { status: 409 });
+      if (securityCheck.status !== "ready") return NextResponse.json({ success: false, message: "Le statut de la prospection a changé. Aucun email n’a été envoyé." }, { status: 409 });
     }
     if (
       canonicalRecipientEmails(
@@ -880,15 +838,6 @@ export async function POST(
         }
       );
     }
-    /**
- * On ne compare la pièce jointe*
- * que lorsqu'elle est réellement*
- * nécessaire.*
- *
- * En optimisation seule, une*
- * ancienne attachment_url n'a*
- * aucune incidence sur l'envoi.*
- */
     if (
       requiresPdf &&
       securityAttachmentUrl !==
@@ -1011,13 +960,6 @@ export async function POST(
       );
     const textContent =
       `${emailContent}\n\n${getTextSignature()}`;
-    /**
- * Le logo de signature est toujours*
- * présent.*
- *
- * Le PDF n'est ajouté que lorsque*
- * l'angle commercial l'exige.*
- */
     const attachments:
       Parameters<
         typeof transporter.sendMail
@@ -1145,6 +1087,16 @@ export async function POST(
     const sentAt =
       new Date()
         .toISOString();
+    if (isResend) {
+      let archivedMessage = null;
+      try {
+        archivedMessage = await createResentInitialAuditProspectionMessage({ auditProspectionId: prospection.id, recipientEmail: recipientEmails.join(", "), subject, emailContent, htmlContent, attachmentUrl, smtpMessageId: sendResult.messageId ?? null, sentAt });
+      } catch (historyError) {
+        console.error("Audit renvoyé mais historique commercial non créé", historyError);
+        return NextResponse.json({ success: false, sent: true, message: "L’audit a été renvoyé, mais son archivage a échoué. Ne renvoyez pas l’email.", messageId: sendResult.messageId, sentAt }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, resend: true, message: "Audit renvoyé avec succès. La date de relance reste inchangée.", messageId: sendResult.messageId, sentAt, sequenceNumber: archivedMessage.sequence_number, recipientEmail: recipientEmails.join(", ") });
+    }
     const {
       error: auditStatusError,
     } = await supabaseAdmin
@@ -1175,13 +1127,6 @@ export async function POST(
         }
       );
     }
-    /**
- * Photographie exacte de l'envoi.*
- *
- * En optimisation seule,*
- * sent_attachment_url est*
- * explicitement null.*
- */
     const {
       data:
         updated,
@@ -1222,7 +1167,7 @@ export async function POST(
         "recipient_email",
         recipientEmail
       )
-      .select("\*")
+      .select("\\*")
       .maybeSingle();
     if (
       updateError ||
