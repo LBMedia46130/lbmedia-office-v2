@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import {
   FormEvent,
   useEffect,
@@ -295,7 +296,7 @@ export default function AuditPage() {
     try {
       const response =
         await fetch(
-          "/api/audit/history?limit=50",
+          "/api/audit/history?limit=10",
           {
             cache:
               "no-store",
@@ -805,26 +806,34 @@ export default function AuditPage() {
                 Audits enregistrés
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Les audits restent accessibles ici, même lorsqu’ils ne sont pas encore rattachés à une entreprise.
+                Les 10 derniers audits restent accessibles ici. L’historique complet est disponible séparément.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setAuditsLoading(
-                  true
-                );
-                void loadRecentAudits();
-              }}
-              disabled={
-                auditsLoading
-              }
-              className="self-start rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:self-auto"
-            >
-              {auditsLoading
-                ? "Actualisation..."
-                : "Actualiser"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuditsLoading(
+                    true
+                  );
+                  void loadRecentAudits();
+                }}
+                disabled={
+                  auditsLoading
+                }
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {auditsLoading
+                  ? "Actualisation..."
+                  : "Actualiser"}
+              </button>
+              <Link
+                href="/audit/history"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Voir tous les audits
+              </Link>
+            </div>
           </div>
           {auditsError && (
             <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
