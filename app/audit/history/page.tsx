@@ -171,7 +171,7 @@ export default function AuditHistoryPage() {
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {audits.map((audit) => (
                       <tr key={audit.id} className="align-top">
-                        <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">{new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(audit.created_at))}</td>
+                        <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">{new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" }).format(new Date(audit.created_at))}</td>
                         <td className="px-4 py-4"><p className="max-w-md break-all text-sm font-semibold text-slate-900">{audit.website_url}</p><p className="mt-1 text-xs text-slate-400">{audit.pages_analyzed} page{audit.pages_analyzed > 1 ? "s" : ""} analysée{audit.pages_analyzed > 1 ? "s" : ""}</p></td>
                         <td className="px-4 py-4 text-center"><span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{audit.global_score}/100</span></td>
                         <td className="px-4 py-4 text-sm text-slate-700">{companyName(audit.company_id)}</td>
