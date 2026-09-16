@@ -81,6 +81,7 @@ ANGLE : AMÉLIORER LE SITE ACTUEL
 Le mail doit défendre une idée simple :
 LE SITE ACTUEL CONSTITUE UNE BONNE BASE ET PEUT ÊTRE AMÉLIORÉ SANS ÊTRE REFAIT.
 Après l'introduction personnalisée, entre directement dans cette logique.
+Appuie le raisonnement sur 2 à 3 constats concrets maximum réellement observés sur des éléments existants. Deux constats suffisent s'ils sont les seuls vraiment pertinents.
 Choisis seulement quelques enjeux réellement utiles parmi les constats disponibles.
 Traduis-les en bénéfices compréhensibles :
 - meilleure visibilité sur Google ;
@@ -111,7 +112,7 @@ ANGLE : AMÉLIORER L'EXISTANT ET MONTRER JUSQU'OÙ IL PEUT ÉVOLUER
 ==================================================
 Le mail doit défendre cette idée :
 LE SITE ACTUEL PEUT DÉJÀ ÊTRE OPTIMISÉ, MAIS CES AMÉLIORATIONS PEUVENT AUSSI ÊTRE L'OCCASION DE FAIRE ÉVOLUER PLUS LARGEMENT SA PRÉSENTATION.
-Après l'introduction personnalisée, commence par les enjeux réellement identifiés :
+Après l'introduction personnalisée, commence par 2 à 3 constats concrets maximum réellement observés sur des éléments existants, puis relie-les naturellement aux enjeux identifiés. Deux constats suffisent s'ils sont les seuls vraiment pertinents :
 - visibilité ;
 - référencement local ;
 - contenus ;
@@ -140,7 +141,8 @@ ANGLE : REPENSER LE SITE EXISTANT
 ==================================================
 Le mail doit défendre une idée claire :
 LES CONTENUS ET L'IDENTITÉ EXISTENT, MAIS UNE NOUVELLE PRÉSENTATION ET UNE NOUVELLE ORGANISATION POURRAIENT MIEUX LES VALORISER.
-Après l'introduction personnalisée, ne déroule PAS une série de corrections SEO ou techniques.
+Après l'introduction personnalisée, cite 2 à 3 constats concrets maximum réellement observés sur des éléments existants, comme signes qui justifient le raisonnement global. Deux constats suffisent s'ils sont les seuls vraiment pertinents.
+Ne déroule PAS ensuite une série de corrections SEO ou techniques.
 Regroupe les constats utiles en quelques enjeux compréhensibles :
 - mieux raconter l'activité ;
 - mieux mettre en valeur le savoir-faire ;
@@ -174,6 +176,7 @@ PLUTÔT QUE D'ADAPTER L'ORGANISATION ACTUELLE, ON PEUT SE DEMANDER COMMENT LE SI
 Cette idée doit arriver TRÈS TÔT dans le développement commercial.
 Ne commence surtout pas par énumérer plusieurs optimisations du site actuel avant de proposer finalement un nouveau site.
 Après une courte introduction personnalisée et un point positif réel, fais rapidement apparaître la réflexion sur une nouvelle conception.
+Tu peux citer 2 à 3 constats concrets maximum réellement observés sur des éléments existants pour étayer cette réflexion, mais ils ne doivent jamais devenir une liste de corrections. Deux constats suffisent s'ils sont les seuls vraiment pertinents.
 Le raisonnement doit être :
 1. l'entreprise possède une activité, une identité et des contenus réels ;
 2. les usages du web et les enjeux de visibilité ont évolué ;
@@ -527,10 +530,12 @@ RÈGLES ABSOLUES :
 - ne mentionne jamais une "analyse automatique" ;
 - ne mentionne jamais un "diagnostic automatique" ;
 - ne révèle jamais le fonctionnement interne de LBMedia Office ;
-- cite 2 ou 3 constats concrets maximum, réellement présents dans l'audit, afin de montrer que le site a été parcouru ;
-- formule ces constats dans un langage simple et compréhensible, sans transformer le mail en rapport technique ;
-- un terme courant comme « méta-description » peut être utilisé s'il correspond exactement au constat ; pour H1/H2/H3, préfère « hiérarchie des titres » ;
-- évite le jargon technique inutile comme « schema LocalBusiness », « données structurées », « robots.txt », « sitemap » ou « score GEO » ;
+- ne restitue pas les détails techniques bruts de l'audit ;
+- le mail doit intégrer 2 à 3 constats concrets maximum réellement présents dans l'audit ;
+- privilégie les anomalies observées sur des éléments existants plutôt que les simples absences de contenus ;
+- s'il n'existe que 2 constats suffisamment pertinents, n'en force jamais un troisième ;
+- ne retiens pas comme constat commercial l'absence de témoignages, de FAQ, de page À propos ou d'un autre contenu non indispensable ;
+- traduis les constats techniques en formulations simples, concrètes et commerciales ;
 - n'invente jamais une solution précise à partir d'une absence détectée ;
 - n'invente jamais un contenu que l'entreprise devrait posséder ;
 - parle de l'objectif à atteindre lorsque la solution n'est pas explicitement établie ;
@@ -610,7 +615,7 @@ async function generateWithOpenAI(
       role:
         "system",
       content:
-        "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le prospect ne doit jamais savoir qu'un diagnostic ou une analyse automatique existe. Les données d'audit servent uniquement de matière interne. Traduis-les en enjeux simples et compréhensibles. N'invente jamais un contenu, une prestation ou une solution précise qui n'est pas établie par les données. Lorsqu'une absence est détectée, formule l'objectif commercial correspondant plutôt que d'inventer le moyen de le résoudre. La proposition commerciale choisie doit déterminer tout le raisonnement du message, pas seulement une phrase ajoutée à la fin. Évite le jargon marketing comme « convertir les visiteurs ». N'utilise jamais d'intertitres artificiels comme « Refonte : », « Optimisation : » ou « Création d'un nouveau site : ». Le mail doit ressembler à un message réellement écrit après avoir parcouru le site. Retourne uniquement un objet JSON valide contenant les champs salesAngle, subject et emailContent.",
+        "Tu écris pour LBMedia des prises de contact commerciales sobres, naturelles et personnalisées, à la première personne du singulier. Le prospect ne doit jamais savoir qu'un diagnostic ou une analyse automatique existe. Les données d'audit servent uniquement de matière interne. Intègre 2 à 3 constats concrets maximum réellement observés, en privilégiant les anomalies sur des éléments existants ; s'il n'y en a que 2 de pertinents, n'en force pas un troisième et n'utilise pas une absence de témoignages, FAQ ou page similaire pour compléter. Traduis les termes trop techniques en formulations simples et compréhensibles. N'invente jamais un contenu, une prestation ou une solution précise qui n'est pas établie par les données. Lorsqu'une absence est détectée, formule l'objectif commercial correspondant plutôt que d'inventer le moyen de le résoudre. La proposition commerciale choisie doit déterminer tout le raisonnement du message, pas seulement une phrase ajoutée à la fin. Évite le jargon marketing comme « convertir les visiteurs ». N'utilise jamais d'intertitres artificiels comme « Refonte : », « Optimisation : » ou « Création d'un nouveau site : ». Le mail doit ressembler à un message réellement écrit après avoir parcouru le site. Retourne uniquement un objet JSON valide contenant les champs salesAngle, subject et emailContent.",
     },
     {
       role:
@@ -959,28 +964,18 @@ NE PRÉCISE LE MOYEN QUE S'IL EST DIRECTEMENT ET EXPLICITEMENT ÉTABLI PAR LES D
 ==================================================
 RÈGLE DE TRADUCTION COMMERCIALE
 ==================================================
-LE MAIL DOIT CITER 2 OU 3 CONSTATS CONCRETS MAXIMUM, RÉELLEMENT PRÉSENTS DANS L'AUDIT.
-Le but est que le prospect comprenne immédiatement que son site a réellement été parcouru.
-Ces constats doivent rester simples et compréhensibles par un dirigeant non technicien.
-Tu peux conserver un terme courant et parlant lorsqu'il apporte de la crédibilité, par exemple « méta-description ».
-Pour un problème de H1, H2 ou H3, préfère une formulation comme :
-"une hiérarchie des titres qui pourrait être mieux structurée pour le référencement".
-Évite en revanche le jargon technique inutile dans un premier contact, notamment :
-- "schema LocalBusiness" ;
-- "données structurées" ;
-- "score GEO" ;
-- "balises" ;
-- "robots.txt" ;
-- "sitemap" ;
-- "description anglaise en français".
-Exemples de niveau de précision attendu, UNIQUEMENT si le constat correspondant existe réellement dans les données :
-- "une hiérarchie des titres qui pourrait être mieux structurée pour le référencement" ;
-- "l'absence de méta-description sur certaines pages" ;
-- "une prise de contact qui pourrait être davantage mise en évidence" ;
-- "des informations locales qui pourraient être mieux exploitées pour la visibilité dans les recherches de proximité".
-Ne transforme jamais ces exemples en constats si l'audit ne les établit pas.
-Les constats concrets servent de preuve que le site a été regardé ; le raisonnement qui les suit doit rester commercial et dépendre de la proposition choisie.
-Le mail ne doit jamais devenir un rapport technique.
+Le mail doit citer 2 à 3 constats concrets maximum réellement présents dans l'audit afin que le prospect comprenne que son site a réellement été parcouru.
+Privilégie les anomalies observées sur des éléments existants et facilement vérifiables par le prospect.
+S'il n'existe que 2 constats suffisamment pertinents, utilise seulement ces 2 constats. Ne force jamais un troisième constat.
+Évite d'utiliser comme constat commercial une simple absence de témoignages, de FAQ, de page À propos ou d'un autre contenu non indispensable. Une absence détectée peut aider à comprendre un enjeu, mais ne doit pas être ajoutée artificiellement pour compléter la liste.
+Les constats doivent rester accessibles à un dirigeant non technicien.
+Tu peux conserver un terme technique courant lorsqu'il rend le constat concret et reste facilement compréhensible, par exemple "méta-description".
+En revanche, reformule les termes plus techniques :
+- "H1/H2/H3" devient "hiérarchie des titres" ;
+- "schema LocalBusiness" ou "données structurées" devient un enjeu de compréhension ou de visibilité locale ;
+- "score GEO" devient un enjeu d'adaptation aux nouveaux usages de recherche ;
+- "robots.txt" ou "sitemap" ne doivent pas apparaître dans un premier mail.
+N'invente jamais un constat et ne transforme pas le mail en rapport technique. Les détails restent dans l'audit PDF lorsqu'il est joint.
 ==================================================
 VOCABULAIRE COMMERCIAL
 ==================================================
@@ -1103,15 +1098,12 @@ ${formatList(
 UTILISATION DES CONSTATS
 ==================================================
 Sélectionne seulement les éléments réellement utiles à l'angle commercial.
-Le mail doit contenir 2 ou 3 observations concrètes maximum, directement issues des constats disponibles.
-Privilégie, lorsqu'ils existent, les constats que le prospect peut facilement reconnaître ou vérifier sur son propre site.
+Le mail doit intégrer 2 à 3 observations concrètes maximum, réellement présentes dans les constats fournis.
+Privilégie des anomalies portant sur des éléments existants : structure des titres, méta-description, lisibilité, organisation d'une page, visibilité d'une information ou autre défaut effectivement observé.
+Ne complète jamais artificiellement avec l'absence de témoignages, de FAQ, de page À propos ou d'un contenu similaire.
+S'il n'y a que 2 observations concrètes suffisamment pertinentes, 2 suffisent.
 Ne cherche pas à montrer au prospect tout ce que l'analyse a détecté.
-Deux ou trois observations bien intégrées valent mieux qu'une liste exhaustive.
 Transforme toujours les observations en prose naturelle.
-Pour une optimisation, ces constats introduisent naturellement les améliorations ciblées du site actuel.
-Pour une optimisation + refonte, ils montrent ce qui peut être amélioré puis servent à ouvrir la possibilité d'une évolution plus globale.
-Pour une refonte, ils justifient le constat d'ensemble sans devenir un catalogue de petites corrections.
-Pour un nouveau site, ils montrent que l'existant a été observé mais ne doivent pas retarder l'idée centrale de nouvelle conception, qui doit apparaître très tôt.
 ATTENTION :
 Les priorités internes peuvent contenir des solutions concrètes.
 Ne les reprends pas automatiquement telles quelles.
