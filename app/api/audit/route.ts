@@ -1474,6 +1474,8 @@ function buildSiteSignals(
           "service",
           "prestation",
           "creation",
+          "site-internet",
+          "sites-internet",
           "seo",
           "referencement",
         ]
@@ -2683,6 +2685,8 @@ Règles impératives :
 - si une faiblesse juridique significative est détectée, elle peut figurer dans weaknesses et, selon son importance, dans priorities ;
 - un statut "detected_insufficient" signifie que le lien ou la page existe mais que son contenu récupéré est vide ou manifestement insuffisant : ne présente JAMAIS cette page dans strengths comme une présence juridique satisfaisante ;
 - seul un statut "detected_with_content" permet de mentionner positivement la présence d'un contenu juridique, sans pour autant certifier sa conformité ;
+- ne répète jamais deux fois le même constat de conformité ou de cookies sous des formulations différentes dans weaknesses, limitations ou priorities ;
+- les noms internes des signaux (par exemple cookieRejectSignalDetected) servent uniquement au raisonnement et ne doivent pas être reproduits dans le texte destiné à l'utilisateur ;
 - ne présente jamais l'absence de détection d'un bandeau dynamique comme la preuve qu'aucun bandeau n'existe.
 TON :
 - professionnel ;
