@@ -1,26 +1,20 @@
 import Link from "next/link";
-
 import PageBanner from "@/components/dashboard/PageBanner";
-
 import {
   getCompanies,
 } from "@/lib/companies";
-
 import {
   getAuditProspections,
   type AuditProspection,
   type AuditProspectionStatus,
 } from "@/lib/audit-prospections";
-
 export const dynamic =
   "force-dynamic";
-
 type PageProps = {
   searchParams: Promise<{
     status?: string;
   }>;
 };
-
 type ViewFilter =
   | "all"
   | "draft"
@@ -29,24 +23,20 @@ type ViewFilter =
   | "scheduled"
   | "due"
   | "replied";
-
 export default async function ProspectionPage({
   searchParams,
 }: PageProps) {
   const params =
     await searchParams;
-
   const requestedFilter =
     params.status ??
     "all";
-
   const activeFilter =
     isViewFilter(
       requestedFilter
     )
       ? requestedFilter
       : "all";
-
   const [
     companies,
     prospections,
@@ -54,7 +44,6 @@ export default async function ProspectionPage({
     getCompanies(),
     getAuditProspections(),
   ]);
-
   const companiesById =
     new Map(
       companies.map(
@@ -64,10 +53,8 @@ export default async function ProspectionPage({
         ]
       )
     );
-
   const now =
     Date.now();
-
   const rows =
     prospections.map(
       (prospection) => ({
@@ -78,28 +65,24 @@ export default async function ProspectionPage({
           ) ?? null,
       })
     );
-
   const draftCount =
     rows.filter(
       ({ prospection }) =>
         prospection.status ===
         "draft"
     ).length;
-
   const readyCount =
     rows.filter(
       ({ prospection }) =>
         prospection.status ===
         "ready"
     ).length;
-
   const sentCount =
     rows.filter(
       ({ prospection }) =>
         prospection.status ===
         "sent"
     ).length;
-
   const scheduledCount =
     rows.filter(
       ({ prospection }) =>
@@ -108,7 +91,6 @@ export default async function ProspectionPage({
           now
         )
     ).length;
-
   const dueCount =
     rows.filter(
       ({ prospection }) =>
@@ -117,15 +99,13 @@ export default async function ProspectionPage({
           now
         )
     ).length;
-
   const repliedCount =
     rows.filter(
       ({ prospection }) =>
         prospection.status ===
         "replied"
     ).length;
-
-  const filteredRows =
+  const allFilteredRows =
     rows
       .filter(
         ({ prospection }) =>
@@ -146,7 +126,8 @@ export default async function ProspectionPage({
             now
           )
       );
-
+  const filteredRows =
+    allFilteredRows.slice(0, 10);
   const dueRows =
     rows
       .filter(
@@ -166,7 +147,6 @@ export default async function ProspectionPage({
             rowB.prospection
           )
       );
-
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-6 py-10">
@@ -175,7 +155,6 @@ export default async function ProspectionPage({
           title="Prospection"
           description="Pilotage des propositions commerciales issues des audits et suivi des relances."
         />
-
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <StatCard
             href="/companies/prospection?status=draft"
@@ -189,7 +168,6 @@ export default async function ProspectionPage({
               "draft"
             }
           />
-
           <StatCard
             href="/companies/prospection?status=ready"
             label="Prêtes"
@@ -202,7 +180,6 @@ export default async function ProspectionPage({
               "ready"
             }
           />
-
           <StatCard
             href="/companies/prospection?status=sent"
             label="Envoyées"
@@ -215,7 +192,6 @@ export default async function ProspectionPage({
               "sent"
             }
           />
-
           <StatCard
             href="/companies/prospection?status=scheduled"
             label="Relances prévues"
@@ -228,7 +204,6 @@ export default async function ProspectionPage({
               "scheduled"
             }
           />
-
           <StatCard
             href="/companies/prospection?status=due"
             label="À relancer"
@@ -241,7 +216,6 @@ export default async function ProspectionPage({
               "due"
             }
           />
-
           <StatCard
             href="/companies/prospection?status=replied"
             label="Réponses"
@@ -255,7 +229,6 @@ export default async function ProspectionPage({
             }
           />
         </section>
-
         {dueRows.length >
         0 ? (
           <section className="mt-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 p-6 shadow-sm">
@@ -264,25 +237,21 @@ export default async function ProspectionPage({
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-600">
                   Priorité
                 </p>
-
                 <h2 className="mt-2 text-xl font-bold text-slate-900">
                   Relances à
                   effectuer
                 </h2>
-
                 <p className="mt-2 text-sm text-slate-600">
                   Ces prospections
                   ont atteint leur
                   date de relance.
                 </p>
               </div>
-
               <span className="rounded-full bg-amber-500 px-3 py-1.5 text-xs font-bold text-white">
                 {dueRows.length}{" "}
                 à traiter
               </span>
             </div>
-
             <div className="mt-5 space-y-3">
               {dueRows.map(
                 ({
@@ -302,13 +271,11 @@ export default async function ProspectionPage({
                           ?.name ||
                           "Entreprise"}
                       </p>
-
                       <p className="mt-1 truncate text-sm text-slate-500">
                         {prospection.sent_subject ||
                           prospection.subject ||
                           "Prospection après audit"}
                       </p>
-
                       {prospection.recipient_email ? (
                         <p className="mt-1 text-xs text-slate-400">
                           {
@@ -317,12 +284,10 @@ export default async function ProspectionPage({
                         </p>
                       ) : null}
                     </div>
-
                     <div className="shrink-0 text-left sm:text-right">
                       <p className="text-xs font-bold uppercase tracking-wide text-amber-600">
                         Relance prévue
                       </p>
-
                       <p className="mt-1 text-sm font-bold text-slate-800">
                         {prospection.follow_up_at
                           ? formatDate(
@@ -342,27 +307,29 @@ export default async function ProspectionPage({
               Aucune relance en
               retard aujourd’hui.
             </p>
-
             <p className="mt-1 text-xs text-emerald-700">
               Le suivi commercial
               est à jour.
             </p>
           </section>
         )}
-
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                 Suivi global
               </p>
-
               <h2 className="mt-1 text-xl font-bold text-slate-900">
                 Prospections
               </h2>
             </div>
-
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/companies/prospection/history"
+                className="rounded-full bg-blue-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+              >
+                Voir tout l’historique
+              </Link>
               <FilterLink
                 href="/companies/prospection"
                 label="Toutes"
@@ -371,7 +338,6 @@ export default async function ProspectionPage({
                   "all"
                 }
               />
-
               <FilterLink
                 href="/companies/prospection?status=draft"
                 label="À préparer"
@@ -380,7 +346,6 @@ export default async function ProspectionPage({
                   "draft"
                 }
               />
-
               <FilterLink
                 href="/companies/prospection?status=ready"
                 label="Prêtes"
@@ -389,7 +354,6 @@ export default async function ProspectionPage({
                   "ready"
                 }
               />
-
               <FilterLink
                 href="/companies/prospection?status=sent"
                 label="Envoyées"
@@ -398,7 +362,6 @@ export default async function ProspectionPage({
                   "sent"
                 }
               />
-
               <FilterLink
                 href="/companies/prospection?status=scheduled"
                 label="Relances prévues"
@@ -407,7 +370,6 @@ export default async function ProspectionPage({
                   "scheduled"
                 }
               />
-
               <FilterLink
                 href="/companies/prospection?status=due"
                 label="À relancer"
@@ -416,7 +378,6 @@ export default async function ProspectionPage({
                   "due"
                 }
               />
-
               <FilterLink
                 href="/companies/prospection?status=replied"
                 label="Réponses"
@@ -427,20 +388,19 @@ export default async function ProspectionPage({
               />
             </div>
           </div>
-
           <div className="mt-5 border-t border-slate-100 pt-5">
             <p className="text-sm text-slate-500">
-              {
-                filteredRows.length
-              }{" "}
+              {allFilteredRows.length}{" "}
               prospection
-              {filteredRows.length >
+              {allFilteredRows.length >
               1
                 ? "s"
                 : ""}
+              {allFilteredRows.length > 10
+                ? " · 10 affichées"
+                : ""}
             </p>
           </div>
-
           {filteredRows.length >
           0 ? (
             <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
@@ -448,24 +408,19 @@ export default async function ProspectionPage({
                 <span>
                   Entreprise
                 </span>
-
                 <span>
                   Proposition
                 </span>
-
                 <span>
                   Envoi
                 </span>
-
                 <span>
                   Relance
                 </span>
-
                 <span className="text-right">
                   Statut
                 </span>
               </div>
-
               <div className="divide-y divide-slate-100">
                 {filteredRows.map(
                   ({
@@ -485,7 +440,6 @@ export default async function ProspectionPage({
                             ?.name ||
                             "Entreprise inconnue"}
                         </p>
-
                         {prospection.recipient_email ? (
                           <p className="mt-1 truncate text-xs text-slate-400">
                             {
@@ -494,14 +448,12 @@ export default async function ProspectionPage({
                           </p>
                         ) : null}
                       </div>
-
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-700">
                           {prospection.sent_subject ||
                             prospection.subject ||
                             "À rédiger"}
                         </p>
-
                         {prospection.sales_angle ? (
                           <p className="mt-1 truncate text-xs text-slate-400">
                             {
@@ -510,14 +462,12 @@ export default async function ProspectionPage({
                           </p>
                         ) : null}
                       </div>
-
                       <DateColumn
                         label="Envoi"
                         value={
                           prospection.sent_at
                         }
                       />
-
                       <DateColumn
                         label="Relance"
                         value={
@@ -530,7 +480,6 @@ export default async function ProspectionPage({
                           )
                         }
                       />
-
                       <div className="lg:text-right">
                         <ProspectionBadge
                           prospection={
@@ -552,7 +501,6 @@ export default async function ProspectionPage({
                 Aucune prospection
                 dans cette catégorie.
               </p>
-
               <Link
                 href="/companies/prospection"
                 className="mt-3 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700"
@@ -567,7 +515,6 @@ export default async function ProspectionPage({
     </main>
   );
 }
-
 function StatCard({
   href,
   label,
@@ -601,7 +548,6 @@ function StatCard({
     cyan:
       "border-cyan-200 bg-gradient-to-br from-white to-cyan-50 text-cyan-700",
   };
-
   return (
     <Link
       href={href}
@@ -616,14 +562,12 @@ function StatCard({
       <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-80">
         {label}
       </p>
-
       <p className="mt-2 text-3xl font-black">
         {value}
       </p>
     </Link>
   );
 }
-
 function FilterLink({
   href,
   label,
@@ -646,7 +590,6 @@ function FilterLink({
     </Link>
   );
 }
-
 function DateColumn({
   label,
   value,
@@ -663,7 +606,6 @@ function DateColumn({
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 lg:hidden">
         {label}
       </p>
-
       <p
         className={`mt-1 text-sm font-semibold lg:mt-0 ${
           warning
@@ -680,7 +622,6 @@ function DateColumn({
     </div>
   );
 }
-
 function ProspectionBadge({
   prospection,
   now,
@@ -692,12 +633,10 @@ function ProspectionBadge({
     getStatusLabel(
       prospection.status
     );
-
   let className =
     getStatusClassName(
       prospection.status
     );
-
   if (
     isDueFollowUp(
       prospection,
@@ -706,7 +645,6 @@ function ProspectionBadge({
   ) {
     label =
       "À relancer";
-
     className =
       "bg-amber-100 text-amber-700";
   } else if (
@@ -717,11 +655,9 @@ function ProspectionBadge({
   ) {
     label =
       "Relance prévue";
-
     className =
       "bg-violet-100 text-violet-700";
   }
-
   return (
     <span
       className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${className}`}
@@ -730,7 +666,6 @@ function ProspectionBadge({
     </span>
   );
 }
-
 function isScheduledFollowUp(
   prospection: AuditProspection,
   now: number
@@ -742,12 +677,10 @@ function isScheduledFollowUp(
   ) {
     return false;
   }
-
   const followUpTime =
     new Date(
       prospection.follow_up_at
     ).getTime();
-
   return (
     Number.isFinite(
       followUpTime
@@ -756,7 +689,6 @@ function isScheduledFollowUp(
       now
   );
 }
-
 function isDueFollowUp(
   prospection: AuditProspection,
   now: number
@@ -768,12 +700,10 @@ function isDueFollowUp(
   ) {
     return false;
   }
-
   const followUpTime =
     new Date(
       prospection.follow_up_at
     ).getTime();
-
   return (
     Number.isFinite(
       followUpTime
@@ -782,7 +712,6 @@ function isDueFollowUp(
       now
   );
 }
-
 function matchesFilter(
   prospection: AuditProspection,
   filter: ViewFilter,
@@ -793,7 +722,6 @@ function matchesFilter(
   ) {
     return true;
   }
-
   if (
     filter === "scheduled"
   ) {
@@ -802,7 +730,6 @@ function matchesFilter(
       now
     );
   }
-
   if (
     filter === "due"
   ) {
@@ -811,13 +738,11 @@ function matchesFilter(
       now
     );
   }
-
   return (
     prospection.status ===
     filter
   );
 }
-
 function compareProspections(
   a: AuditProspection,
   b: AuditProspection,
@@ -828,13 +753,11 @@ function compareProspections(
       a,
       now
     );
-
   const bDue =
     isDueFollowUp(
       b,
       now
     );
-
   if (
     aDue !== bDue
   ) {
@@ -842,7 +765,6 @@ function compareProspections(
       ? -1
       : 1;
   }
-
   if (
     a.follow_up_at &&
     b.follow_up_at
@@ -854,7 +776,6 @@ function compareProspections(
       new Date(
         b.follow_up_at
       ).getTime();
-
     if (
       followUpCompare !==
       0
@@ -862,7 +783,6 @@ function compareProspections(
       return followUpCompare;
     }
   }
-
   return (
     new Date(
       b.created_at
@@ -872,7 +792,6 @@ function compareProspections(
     ).getTime()
   );
 }
-
 function compareFollowUpDates(
   a: AuditProspection,
   b: AuditProspection
@@ -888,7 +807,6 @@ function compareFollowUpDates(
     ).getTime()
   );
 }
-
 function getStatusLabel(
   status: AuditProspectionStatus
 ) {
@@ -904,10 +822,8 @@ function getStatusLabel(
     replied:
       "Réponse reçue",
   };
-
   return labels[status];
 }
-
 function getStatusClassName(
   status: AuditProspectionStatus
 ) {
@@ -923,10 +839,8 @@ function getStatusClassName(
     replied:
       "bg-cyan-100 text-cyan-700",
   };
-
   return classes[status];
 }
-
 function isViewFilter(
   value: string
 ): value is ViewFilter {
@@ -942,13 +856,11 @@ function isViewFilter(
     value
   );
 }
-
 function formatDate(
   value: string
 ) {
   const date =
     new Date(value);
-
   if (
     Number.isNaN(
       date.getTime()
@@ -956,7 +868,6 @@ function formatDate(
   ) {
     return value;
   }
-
   return new Intl.DateTimeFormat(
     "fr-FR",
     {
