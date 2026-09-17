@@ -214,8 +214,7 @@ export default async function HomePage() {
       .filter(
         (prospection) =>
           prospection.status ===
-            "sent" &&
-          !prospection.replied_at &&
+            "follow_up" &&
           isDue(
             prospection.follow_up_at
           )
@@ -241,8 +240,7 @@ export default async function HomePage() {
       .filter(
         (prospection) =>
           prospection.status ===
-            "sent" &&
-          !prospection.replied_at &&
+            "follow_up" &&
           Boolean(
             prospection.follow_up_at
           ) &&
@@ -291,15 +289,14 @@ export default async function HomePage() {
   const activeProspections =
     prospections.filter(
       (prospection) =>
-        prospection.status === "sent" &&
-        !prospection.replied_at
+        prospection.status === "sent" ||
+        prospection.status === "follow_up"
     ).length;
   const repliesCount =
     prospections.filter(
       (prospection) =>
         prospection.status ===
-          "replied" ||
-        Boolean(prospection.replied_at)
+          "replied"
     ).length;
   const attentionCount =
     toPrepare.length +
@@ -331,7 +328,7 @@ export default async function HomePage() {
           <DashboardCard
             label="Prospections en cours"
             value={activeProspections}
-            description="Audits envoyés en attente de suite."
+            description="Prospections envoyées ou en cours de relance."
             tone="cyan"
           />
           <DashboardCard
