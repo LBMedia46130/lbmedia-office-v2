@@ -74,9 +74,11 @@ type SiteSignals = {
   serviceVocabularyCount: number;
   geographicVocabularyCount: number;
 };
+type LegalContentStatus = "not_detected" | "detected_insufficient" | "detected_with_content";
 type LegalCompliance = {
-  legalNoticeDetected: boolean;
-  privacyPolicyDetected: boolean;
+  legalNoticeStatus: LegalContentStatus;
+  privacyPolicyStatus: LegalContentStatus;
+  termsStatus: LegalContentStatus;
   cookieInformationDetected: boolean;
   cookieConsentSignalDetected: boolean;
   cookieRejectSignalDetected: boolean;
@@ -1647,26 +1649,57 @@ function isLegalCandidate(url: string) {
     "conditions-generales",
   ]);
 }
+function getLegalPageStatus(
+  discoveredUrls: string[],
+  legalPages: PageData[],
+  urlTerms: string[],
+  contentTerms: string[],
+  substantiveTerms: string[]
+): LegalContentStatus {
+  const matchingUrls = discoveredUrls.filter((url) => includesAny(url, urlTerms));
+  const matchingPages = legalPages.filter((page) => includesAny(page.url, urlTerms) || includesAny(`${page.title ?? ""} ${page.text}`, contentTerms));
+  if (matchingUrls.length === 0 && matchingPages.length === 0) return "not_detected";
+  const hasSubstantiveContent = matchingPages.some((page) => {
+    const content = `${page.title ?? ""} ${page.text}`.toLowerCase();
+    const substantiveCount = countTerms(content, substantiveTerms);
+    return page.text.trim().length >= 250 && substantiveCount >= 2;
+  });
+  return hasSubstantiveContent ? "detected_with_content" : "detected_insufficient";
+}
 function buildLegalCompliance(
   homeHtml: string,
   discoveredUrls: string[],
   legalPages: PageData[]
 ): LegalCompliance {
-  const legalUrls = discoveredUrls.filter(isLegalCandidate);
   const legalText = legalPages
     .map((page) => `${page.url} ${page.title ?? ""} ${page.text}`)
     .join(" ")
     .toLowerCase();
   const homeSource = homeHtml.toLowerCase();
   const combinedSource = `${homeSource} ${legalText}`;
-  const legalNoticeDetected =
-    legalUrls.some((url) => includesAny(url, ["mentions-legales", "mentions_legales", "mentionslegales", "legal-notice"])) ||
-    includesAny(legalText, ["mentions légales", "mentions legales"]);
-  const privacyPolicyDetected =
-    legalUrls.some((url) => includesAny(url, ["confidentialite", "privacy", "protection-des-donnees", "donnees-personnelles"])) ||
-    includesAny(legalText, ["politique de confidentialité", "politique de confidentialite", "protection des données", "protection des donnees", "données personnelles", "donnees personnelles"]);
+  const legalNoticeStatus = getLegalPageStatus(
+    discoveredUrls,
+    legalPages,
+    ["mentions-legales", "mentions_legales", "mentionslegales", "legal-notice"],
+    ["mentions légales", "mentions legales"],
+    ["éditeur", "editeur", "directeur de la publication", "responsable de la publication", "hébergeur", "hebergeur", "siren", "siret", "rcs", "raison sociale", "capital social", "siège social", "siege social"]
+  );
+  const privacyPolicyStatus = getLegalPageStatus(
+    discoveredUrls,
+    legalPages,
+    ["confidentialite", "politique-de-confidentialite", "privacy", "privacy-policy", "protection-des-donnees", "donnees-personnelles"],
+    ["politique de confidentialité", "politique de confidentialite", "protection des données", "protection des donnees", "données personnelles", "donnees personnelles"],
+    ["responsable du traitement", "finalité", "finalite", "durée de conservation", "duree de conservation", "droit d'accès", "droit d’acces", "rectification", "effacement", "opposition", "cnil", "base légale", "base legale", "destinataire"]
+  );
+  const termsStatus = getLegalPageStatus(
+    discoveredUrls,
+    legalPages,
+    ["cgv", "conditions-generales", "conditions-generales-de-vente"],
+    ["conditions générales", "conditions generales", "conditions générales de vente", "conditions generales de vente"],
+    ["commande", "paiement", "prix", "responsabilité", "responsabilite", "résiliation", "resiliation", "litige", "rétractation", "retractation", "livraison", "facturation"]
+  );
   const cookieInformationDetected =
-    legalUrls.some((url) => includesAny(url, ["cookie", "cookies"])) ||
+    discoveredUrls.some((url) => includesAny(url, ["cookie", "cookies"])) ||
     includesAny(legalText, ["politique de cookies", "politique des cookies", "gestion des cookies", "traceurs"]);
   const cookieConsentSignalDetected = includesAny(combinedSource, [
     "tarteaucitron",
@@ -1702,19 +1735,24 @@ function buildLegalCompliance(
     "finalite du traitement",
   ]);
   const findings: string[] = [];
-  if (!legalNoticeDetected) findings.push("Aucune page de mentions légales n’a été identifiée parmi les liens et pages juridiques détectés.");
-  if (!privacyPolicyDetected) findings.push("Aucune politique de confidentialité ou information clairement identifiée sur la protection des données n’a été repérée.");
+  if (legalNoticeStatus === "not_detected") findings.push("Aucune page de mentions légales n’a été identifiée parmi les liens et pages juridiques détectés.");
+  if (legalNoticeStatus === "detected_insufficient") findings.push("Une page ou un lien « Mentions légales » a été identifié, mais le contenu récupéré apparaît vide ou manifestement insuffisant pour constituer des mentions légales substantielles. Sa présence ne doit pas être considérée comme un point fort sans vérification.");
+  if (privacyPolicyStatus === "not_detected") findings.push("Aucune politique de confidentialité ou information clairement identifiée sur la protection des données n’a été repérée.");
+  if (privacyPolicyStatus === "detected_insufficient") findings.push("Une page ou un lien relatif à la confidentialité a été identifié, mais son contenu récupéré apparaît vide ou manifestement insuffisant. Sa présence ne doit pas être considérée comme une information RGPD complète sans vérification.");
+  if (termsStatus === "detected_insufficient") findings.push("Une page ou un lien de conditions générales a été identifié, mais son contenu récupéré apparaît vide ou manifestement insuffisant. Sa simple présence ne doit pas être valorisée comme un élément contractuel complet.");
   if (cookieInformationDetected && !cookieConsentSignalDetected) findings.push("Des informations relatives aux cookies ont été repérées, mais aucun signal technique clair de gestion du consentement n’a été identifié dans le HTML analysé.");
   if (cookieConsentSignalDetected && !cookieRejectSignalDetected) findings.push("Un dispositif de gestion des cookies semble présent, mais l’analyse statique n’a pas permis d’identifier clairement une option de refus global.");
   if (contactFormDetected && !formPrivacySignalDetected) findings.push("Un formulaire a été repéré, sans information RGPD clairement identifiable dans les éléments analysés.");
   const limitations = [
     "Ce contrôle est un repérage automatisé et ne constitue pas une validation juridique de conformité.",
+    "Le moteur vérifie désormais qu’une page juridique détectée contient un minimum de contenu pertinent, mais il ne valide pas l’exactitude juridique de ce contenu.",
     "Les bandeaux de consentement chargés dynamiquement peuvent ne pas apparaître dans le HTML récupéré par l’audit.",
     "L’absence de détection d’un élément ne prouve pas à elle seule son absence sur l’ensemble du site.",
   ];
   return {
-    legalNoticeDetected,
-    privacyPolicyDetected,
+    legalNoticeStatus,
+    privacyPolicyStatus,
+    termsStatus,
     cookieInformationDetected,
     cookieConsentSignalDetected,
     cookieRejectSignalDetected,
@@ -2405,7 +2443,7 @@ export async function POST(
         const finalUrl = new URL(fetched.finalUrl);
         if (!isSameWebsite(finalUrl, homeUrl)) continue;
         const page = buildPageData(finalUrl.toString(), fetched.html);
-        if (page.text.length >= 50) legalPages.push(page);
+        legalPages.push(page);
       } catch {
         // Une page juridique inaccessible ne bloque pas l'audit.
       }
@@ -2643,6 +2681,8 @@ Règles impératives :
 - n'invente aucune obligation ou sanction ;
 - distingue l'absence réellement observée d'une simple absence de détection ;
 - si une faiblesse juridique significative est détectée, elle peut figurer dans weaknesses et, selon son importance, dans priorities ;
+- un statut "detected_insufficient" signifie que le lien ou la page existe mais que son contenu récupéré est vide ou manifestement insuffisant : ne présente JAMAIS cette page dans strengths comme une présence juridique satisfaisante ;
+- seul un statut "detected_with_content" permet de mentionner positivement la présence d'un contenu juridique, sans pour autant certifier sa conformité ;
 - ne présente jamais l'absence de détection d'un bandeau dynamique comme la preuve qu'aucun bandeau n'existe.
 TON :
 - professionnel ;
