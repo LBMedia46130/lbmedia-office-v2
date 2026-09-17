@@ -69,10 +69,7 @@ export async function GET(
       );
     }
 
-    if (
-      data.status !==
-      "sent"
-    ) {
+    if (!data.sent_at) {
       return NextResponse.json(
         {
           success: false,
