@@ -571,6 +571,11 @@ RÈGLES IMPÉRATIVES POUR CETTE COMPARAISON :
 - Totem ne doit jamais bénéficier d'un encadré, d'une carte, d'un titre ou d'un traitement graphique équivalent à celui de RFM ;
 - ne jamais présenter Totem comme une offre, une solution ou un support proposé par LBMedia ;
 - dans le graphique, Totem et les autres radios doivent rester visuellement secondaires par rapport à RFM ;
+- utiliser de la couleur dans le graphique pour améliorer sa lisibilité et éviter un rendu composé uniquement de barres grises ;
+- la barre RFM doit être clairement mise en valeur en bleu soutenu, cohérent avec l'identité visuelle de la présentation ;
+- la barre Totem peut utiliser une couleur secondaire contrastante mais discrète : elle doit rester nettement moins présente visuellement que RFM ;
+- les autres radios doivent utiliser des nuances harmonieuses de bleu et de gris, sans qu'aucune ne concurrence visuellement RFM ;
+- éviter qu'une seule petite barre secondaire soit colorée en bleu tandis que RFM reste grise ;
 - à côté du bloc principal RFM, utiliser de préférence une simple mention discrète du type :
   "vs Totem : 7 200 auditeurs/jour"
 - il est permis d'ajouter :
@@ -578,9 +583,9 @@ RÈGLES IMPÉRATIVES POUR CETTE COMPARAISON :
 - le graphique peut afficher toutes les radios listées ci-dessus afin de rendre la comparaison immédiatement compréhensible ;
 - ne modifier aucun des chiffres fournis ;
 - ne pas inventer d'autres radios, chiffres, parts de marché ou périodes ;
-- faire figurer lisiblement sur cette page la mention :
-  "Source : Médiamétrie – EAR Local, septembre 2024 à juin 2026"
-- ne jamais supprimer la source lors de la personnalisation de la présentation.
+- faire figurer lisiblement sur cette page la source complète suivante :
+  "Sources : Médiamétrie EAR Local, Septembre 2024–Juin 2026, LàV, 5h–24h, 13 ans et +. Audience cumulée, 13 ans et +. Ranking vs stations 100 % locales sur le département."
+- ne jamais raccourcir, reformuler ou supprimer cette source lors de la personnalisation de la présentation.
 
 PERSONNALISATION :
 - Adapter les contenus commerciaux aux informations du devis ci-dessous.
@@ -699,20 +704,21 @@ Avant de finaliser la présentation, vérifier impérativement que :
 7. la comparaison des audiences dans le Lot est présente avec RFM à 25 100 auditeurs par jour et Totem à 7 200 auditeurs par jour ;
 8. RFM est la seule radio mise en avant comme offre commerciale et Totem apparaît uniquement comme repère comparatif secondaire ;
 9. Totem ne bénéficie d'aucun encadré, carte ou traitement graphique équivalent à celui de RFM ;
-10. la mention "Source : Médiamétrie – EAR Local, septembre 2024 à juin 2026" est visible sur la page de comparaison ;
-11. aucun chiffre de la comparaison d'audience n'a été modifié ;
-12. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
-13. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
-14. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
-15. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
-16. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
-17. les données d'audience RFM Lot du template sont conservées ;
-18. les montants correspondent exactement au devis ;
-19. aucune prestation absente du devis n'a été ajoutée ;
-20. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté ;
-21. la dernière page présente clairement les trois activités LBMedia : Radio, Sites internet et SEO & GEO ;
-22. ces activités sont présentées comme les expertises générales de LBMedia et non comme des prestations incluses dans le devis ;
-23. le bloc de contact LBMedia est conservé sur cette dernière page.
+10. la source Médiamétrie complète est visible sur la page de comparaison, avec la période, le créneau LàV 5h–24h, la cible 13 ans et +, l'audience cumulée et la mention du ranking vs stations 100 % locales sur le département ;
+11. le graphique met clairement RFM en valeur en bleu soutenu, Totem reste visuellement secondaire et les autres radios utilisent des nuances harmonieuses de bleu et de gris ;
+12. aucun chiffre de la comparaison d'audience n'a été modifié ;
+13. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
+14. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
+15. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
+16. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
+17. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
+18. les données d'audience RFM Lot du template sont conservées ;
+19. les montants correspondent exactement au devis ;
+20. aucune prestation absente du devis n'a été ajoutée ;
+21. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté ;
+22. la dernière page présente clairement les trois activités LBMedia : Radio, Sites internet et SEO & GEO ;
+23. ces activités sont présentées comme les expertises générales de LBMedia et non comme des prestations incluses dans le devis ;
+24. le bloc de contact LBMedia est conservé sur cette dernière page.
 `.trim();
 }
 
