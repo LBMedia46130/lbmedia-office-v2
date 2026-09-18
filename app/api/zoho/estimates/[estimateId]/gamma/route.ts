@@ -565,11 +565,17 @@ Données à afficher :
 - Jordanne FM : 800 auditeurs par jour
 
 RÈGLES IMPÉRATIVES POUR CETTE COMPARAISON :
-- afficher explicitement le nom Totem : c'est le principal concurrent de référence dans cette comparaison ;
+- RFM doit être la seule radio mise en avant comme offre commerciale ;
 - mettre visuellement en évidence RFM et son audience de 25 100 auditeurs par jour ;
-- faire également apparaître clairement Totem et ses 7 200 auditeurs par jour ;
+- afficher explicitement le nom Totem uniquement comme repère comparatif ;
+- Totem ne doit jamais bénéficier d'un encadré, d'une carte, d'un titre ou d'un traitement graphique équivalent à celui de RFM ;
+- ne jamais présenter Totem comme une offre, une solution ou un support proposé par LBMedia ;
+- dans le graphique, Totem et les autres radios doivent rester visuellement secondaires par rapport à RFM ;
+- à côté du bloc principal RFM, utiliser de préférence une simple mention discrète du type :
+  "vs Totem : 7 200 auditeurs/jour"
+- il est permis d'ajouter :
+  "soit près de 3,5 fois plus d'auditeurs quotidiens pour RFM dans le Lot."
 - le graphique peut afficher toutes les radios listées ci-dessus afin de rendre la comparaison immédiatement compréhensible ;
-- il est permis d'indiquer factuellement que RFM réunit près de 3,5 fois plus d'auditeurs quotidiens que Totem dans le Lot ;
 - ne modifier aucun des chiffres fournis ;
 - ne pas inventer d'autres radios, chiffres, parts de marché ou périodes ;
 - faire figurer lisiblement sur cette page la mention :
@@ -691,21 +697,22 @@ Avant de finaliser la présentation, vérifier impérativement que :
 5. la carte des zones de diffusion du template est conservée ;
 6. aucune affirmation de leadership, de classement ou de part de marché absente des données fournies n'a été inventée ;
 7. la comparaison des audiences dans le Lot est présente avec RFM à 25 100 auditeurs par jour et Totem à 7 200 auditeurs par jour ;
-8. Totem est explicitement nommé dans cette comparaison ;
-9. la mention "Source : Médiamétrie – EAR Local, septembre 2024 à juin 2026" est visible sur la page de comparaison ;
-10. aucun chiffre de la comparaison d'audience n'a été modifié ;
-11. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
-12. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
-13. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
-14. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
-15. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
-16. les données d'audience RFM Lot du template sont conservées ;
-17. les montants correspondent exactement au devis ;
-18. aucune prestation absente du devis n'a été ajoutée ;
-19. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté ;
-20. la dernière page présente clairement les trois activités LBMedia : Radio, Sites internet et SEO & GEO ;
-21. ces activités sont présentées comme les expertises générales de LBMedia et non comme des prestations incluses dans le devis ;
-22. le bloc de contact LBMedia est conservé sur cette dernière page.
+8. RFM est la seule radio mise en avant comme offre commerciale et Totem apparaît uniquement comme repère comparatif secondaire ;
+9. Totem ne bénéficie d'aucun encadré, carte ou traitement graphique équivalent à celui de RFM ;
+10. la mention "Source : Médiamétrie – EAR Local, septembre 2024 à juin 2026" est visible sur la page de comparaison ;
+11. aucun chiffre de la comparaison d'audience n'a été modifié ;
+12. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
+13. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
+14. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
+15. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
+16. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
+17. les données d'audience RFM Lot du template sont conservées ;
+18. les montants correspondent exactement au devis ;
+19. aucune prestation absente du devis n'a été ajoutée ;
+20. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté ;
+21. la dernière page présente clairement les trois activités LBMedia : Radio, Sites internet et SEO & GEO ;
+22. ces activités sont présentées comme les expertises générales de LBMedia et non comme des prestations incluses dans le devis ;
+23. le bloc de contact LBMedia est conservé sur cette dernière page.
 `.trim();
 }
 
