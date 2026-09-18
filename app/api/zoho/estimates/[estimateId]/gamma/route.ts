@@ -537,21 +537,44 @@ Elle doit permettre au client de comprendre immédiatement :
 Ne pas utiliser un discours générique de notoriété si l'objectif fourni concerne une opération ponctuelle, un événement, des portes ouvertes, une promotion, une ouverture, un recrutement ou toute autre finalité spécifique.
 
 POSITIONNEMENT RFM :
-- Ne jamais inventer ni extrapoler un positionnement de supériorité pour RFM.
-- Ne jamais écrire que RFM est "leader", "radio leader", "n°1", "numéro 1", "première radio", "radio préférée" ou toute formulation équivalente, sauf si cette affirmation figure explicitement dans les données fournies.
-- Ne jamais déduire un classement à partir des chiffres d'audience.
-- Ne pas transformer les données Médiamétrie en revendication de leadership ou de supériorité.
-- Pour présenter RFM dans les textes commerciaux, privilégier des formulations factuelles telles que "média de proximité à forte audience locale" ou "radio musicale de proximité".
-- Il est également possible de s'appuyer directement sur les données d'audience présentes dans le template sans leur attribuer de classement.
-- Toute affirmation chiffrée concernant l'audience doit provenir exclusivement des données Médiamétrie présentes dans le template.
-- Ne jamais inventer de chiffre, de classement ou de part de marché.
+- Ne jamais inventer ni extrapoler un positionnement de supériorité pour RFM au-delà des données fournies.
+- Ne jamais inventer de classement, de part de marché ou de chiffre d'audience.
+- Toute affirmation chiffrée concernant l'audience doit provenir exclusivement des données Médiamétrie fournies ci-dessous ou déjà présentes dans le template.
+- La comparaison d'audience ci-dessous est une donnée commerciale de référence fournie par LBMedia : elle doit être présentée clairement et factuellement.
 
 AUDIENCES RFM :
 - Conserver les informations générales RFM Lot déjà présentes dans le template.
 - Conserver exactement les données d'audience RFM Lot présentes dans le template.
-- Ne pas recalculer les audiences.
-- Ne pas modifier les données Médiamétrie du template.
+- Ne pas recalculer ni modifier les données Médiamétrie du template.
 - Conserver les sources et mentions associées aux audiences.
+
+COMPARAISON DES AUDIENCES DANS LE LOT :
+Créer ou conserver une page dédiée à la comparaison des audiences quotidiennes des radios dans le Lot.
+
+Titre recommandé :
+"RFM se démarque nettement dans le Lot"
+
+Données à afficher :
+- RFM : 25 100 auditeurs par jour
+- Totem : 7 200 auditeurs par jour
+- ICI : 2 600 auditeurs par jour
+- 100% : 1 700 auditeurs par jour
+- Antenne d'Oc–Pluriel : 1 400 auditeurs par jour
+- CFM : 1 400 auditeurs par jour
+- 47 FM : 800 auditeurs par jour
+- Jordanne FM : 800 auditeurs par jour
+
+RÈGLES IMPÉRATIVES POUR CETTE COMPARAISON :
+- afficher explicitement le nom Totem : c'est le principal concurrent de référence dans cette comparaison ;
+- mettre visuellement en évidence RFM et son audience de 25 100 auditeurs par jour ;
+- faire également apparaître clairement Totem et ses 7 200 auditeurs par jour ;
+- le graphique peut afficher toutes les radios listées ci-dessus afin de rendre la comparaison immédiatement compréhensible ;
+- il est permis d'indiquer factuellement que RFM réunit près de 3,5 fois plus d'auditeurs quotidiens que Totem dans le Lot ;
+- ne modifier aucun des chiffres fournis ;
+- ne pas inventer d'autres radios, chiffres, parts de marché ou périodes ;
+- faire figurer lisiblement sur cette page la mention :
+  "Source : Médiamétrie – EAR Local, septembre 2024 à juin 2026"
+- ne jamais supprimer la source lors de la personnalisation de la présentation.
 
 PERSONNALISATION :
 - Adapter les contenus commerciaux aux informations du devis ci-dessous.
@@ -666,19 +689,23 @@ Avant de finaliser la présentation, vérifier impérativement que :
   } ;
 4. le territoire affiché est cohérent avec "${campaignContext.territory}" ;
 5. la carte des zones de diffusion du template est conservée ;
-6. aucune affirmation de leadership ou de classement de RFM n'a été inventée ;
-7. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
-8. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
-9. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
-10. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
-11. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
-12. les données d'audience RFM Lot du template sont conservées ;
-13. les montants correspondent exactement au devis ;
-14. aucune prestation absente du devis n'a été ajoutée ;
-15. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté.
-16. la dernière page présente clairement les trois activités LBMedia : Radio, Sites internet et SEO & GEO ;
-17. ces activités sont présentées comme les expertises générales de LBMedia et non comme des prestations incluses dans le devis ;
-18. le bloc de contact LBMedia est conservé sur cette dernière page.
+6. aucune affirmation de leadership, de classement ou de part de marché absente des données fournies n'a été inventée ;
+7. la comparaison des audiences dans le Lot est présente avec RFM à 25 100 auditeurs par jour et Totem à 7 200 auditeurs par jour ;
+8. Totem est explicitement nommé dans cette comparaison ;
+9. la mention "Source : Médiamétrie – EAR Local, septembre 2024 à juin 2026" est visible sur la page de comparaison ;
+10. aucun chiffre de la comparaison d'audience n'a été modifié ;
+11. le nom "${LBMEDIA_CONTACT.name}" est présent dans le bloc de contact final ;
+12. le téléphone "${LBMEDIA_CONTACT.phone}" est affiché exactement ;
+13. l'adresse e-mail "${LBMEDIA_CONTACT.email}" est affichée exactement ;
+14. le site "${LBMEDIA_CONTACT.website}" est affiché exactement ;
+15. aucun placeholder [Téléphone], [Email], [E-mail] ou [Site web LBMedia] ne subsiste ;
+16. les données d'audience RFM Lot du template sont conservées ;
+17. les montants correspondent exactement au devis ;
+18. aucune prestation absente du devis n'a été ajoutée ;
+19. aucun compte rendu, bilan ou reporting après diffusion n'a été ajouté ;
+20. la dernière page présente clairement les trois activités LBMedia : Radio, Sites internet et SEO & GEO ;
+21. ces activités sont présentées comme les expertises générales de LBMedia et non comme des prestations incluses dans le devis ;
+22. le bloc de contact LBMedia est conservé sur cette dernière page.
 `.trim();
 }
 
