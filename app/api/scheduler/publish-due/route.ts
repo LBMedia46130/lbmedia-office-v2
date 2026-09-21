@@ -50,6 +50,8 @@ function channelPublishingIsAllowed(
       return facebookPublishingIsAllowed();
     case "brevo":
       return brevoPublishingIsAllowed();
+    case "linkedin":
+      return true;
     default:
       return false;
   }
@@ -64,6 +66,8 @@ function getBlockedMessage(
       return "Publication Facebook bloquée par sécurité. ALLOW_FACEBOOK_PUBLISHING doit être défini à true.";
     case "brevo":
       return "Envoi Brevo bloqué par sécurité. ALLOW_BREVO_PUBLISHING doit être défini à true.";
+    case "linkedin":
+      return "Publication LinkedIn bloquée.";
     default:
       return "Publication externe bloquée par sécurité.";
   }
@@ -444,6 +448,74 @@ async function sendBrevo(
       "Campagne Brevo envoyée.",
   };
 }
+async function publishLinkedIn(
+  publication: ScheduledPublication,
+  request: Request
+): Promise<PublicationResult> {
+  if (
+    publication.channel !== "linkedin"
+  ) {
+    return {
+      id: publication.id,
+      channel: publication.channel,
+      success: false,
+      message:
+        "Canal LinkedIn invalide.",
+    };
+  }
+  const publishUrl = new URL(
+    `/api/publications/${publication.id}/publish-linkedin`,
+    request.url
+  );
+  const response = await fetch(
+    publishUrl,
+    {
+      method: "POST",
+      cache: "no-store",
+    }
+  );
+  const rawResponse =
+    await response.text();
+  let data: unknown = null;
+  try {
+    data = rawResponse
+      ? JSON.parse(rawResponse)
+      : null;
+  } catch {
+    data = rawResponse;
+  }
+  if (!response.ok) {
+    const details =
+      data &&
+      typeof data === "object" &&
+      "message" in data &&
+      typeof (data as { message?: unknown }).message ===
+        "string"
+        ? (data as { message: string }).message
+        : formatExternalError(data);
+    throw new Error(
+      `LinkedIn a refusé la publication (${response.status}) : ${details}`
+    );
+  }
+  if (
+    data &&
+    typeof data === "object" &&
+    "success" in data &&
+    (data as { success?: unknown }).success ===
+      false
+  ) {
+    throw new Error(
+      "La publication LinkedIn n'a pas pu être effectuée."
+    );
+  }
+  return {
+    id: publication.id,
+    channel: "linkedin",
+    success: true,
+    message:
+      "Publication LinkedIn effectuée.",
+  };
+}
 async function getNewsId(
   publicationId: string
 ) {
@@ -567,6 +639,7 @@ async function handleScheduler(
         "website",
         "facebook",
         "brevo",
+        "linkedin",
       ]
     )
     .order(
@@ -646,6 +719,18 @@ async function handleScheduler(
         results.push(
           await sendBrevo(
             publication
+          )
+        );
+        continue;
+      }
+      if (
+        publication.channel ===
+        "linkedin"
+      ) {
+        results.push(
+          await publishLinkedIn(
+            publication,
+            request
           )
         );
       }
