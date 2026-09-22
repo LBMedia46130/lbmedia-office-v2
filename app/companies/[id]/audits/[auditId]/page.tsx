@@ -4,6 +4,7 @@ import {
 } from "next/navigation";
 
 import AuditDeleteButton from "@/components/companies/AuditDeleteButton";
+import AuditPrintButton from "@/components/companies/AuditPrintButton";
 import AuditOpportunityButton from "@/components/companies/AuditOpportunityButton";
 import PageBanner from "@/components/dashboard/PageBanner";
 
@@ -98,8 +99,61 @@ export default async function AuditDetailPage({
     );
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-6xl px-6 py-10">
+    <main className="audit-print-root min-h-screen bg-slate-50">
+      <style>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 12mm;
+          }
+
+          html,
+          body {
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .audit-print-root {
+            min-height: auto !important;
+            background: #ffffff !important;
+          }
+
+          .audit-print-container {
+            max-width: none !important;
+            padding: 0 !important;
+          }
+
+          .print-hide {
+            display: none !important;
+          }
+
+          .shadow-sm {
+            box-shadow: none !important;
+          }
+
+          h1,
+          h2,
+          h3,
+          h4 {
+            break-after: avoid-page;
+            page-break-after: avoid;
+          }
+
+          li,
+          .print-avoid {
+            break-inside: avoid-page;
+            page-break-inside: avoid;
+          }
+
+          a {
+            color: inherit !important;
+            text-decoration: none !important;
+          }
+        }
+      `}</style>
+
+      <div className="audit-print-container mx-auto max-w-6xl px-6 py-10">
         <PageBanner
           eyebrow="Audit de site"
           title={
@@ -110,7 +164,7 @@ export default async function AuditDetailPage({
           )}`}
         />
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="print-hide mt-6 flex flex-wrap items-center justify-between gap-4">
           <Link
             href={`/companies/${company.id}`}
             className="text-sm font-semibold text-slate-500 transition hover:text-slate-950"
@@ -185,6 +239,8 @@ export default async function AuditDetailPage({
               Nouvel audit
             </Link>
 
+            <AuditPrintButton />
+
             <AuditDeleteButton
               auditId={
                 audit.id
@@ -196,7 +252,7 @@ export default async function AuditDetailPage({
           </div>
         </div>
 
-        <section className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+        <section className="print-avoid mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold text-blue-900">
@@ -680,7 +736,7 @@ export default async function AuditDetailPage({
           </div>
         </section>
 
-        <div className="mt-8 pb-10">
+        <div className="print-hide mt-8 pb-10">
           <Link
             href={`/companies/${company.id}`}
             className="inline-flex rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
@@ -708,7 +764,7 @@ function FeasibilityCard({
     );
 
   return (
-    <div className="rounded-xl border border-violet-200 bg-white p-5">
+    <div className="print-avoid rounded-xl border border-violet-200 bg-white p-5">
       <p className="text-sm font-bold text-slate-900">
         {label}
       </p>
@@ -911,7 +967,7 @@ function CommercialScoreCard({
         : "text-emerald-600";
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+    <div className="print-avoid rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="font-bold text-slate-900">
@@ -972,7 +1028,7 @@ function CommercialWeaknessList({
   items: string[];
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+    <div className="print-avoid rounded-2xl border border-slate-200 bg-white p-5">
       <h3 className="font-bold text-slate-900">
         {title}
       </h3>
@@ -1032,7 +1088,7 @@ function ScoreCard({
   score: number;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="print-avoid rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
         {label}
       </p>
@@ -1073,7 +1129,7 @@ function AuditList({
   items: string[];
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+    <section className="print-avoid rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
         {
           eyebrow
