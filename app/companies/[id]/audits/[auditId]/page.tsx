@@ -413,7 +413,7 @@ export default async function AuditDetailPage({
 
             {audit.technical_evidence.length >
             0 ? (
-              <div className="mt-6 border-t border-violet-200 pt-5">
+              <div className="print-avoid mt-6 border-t border-violet-200 pt-5">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Indices
                   détectés
