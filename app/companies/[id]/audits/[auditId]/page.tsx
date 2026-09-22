@@ -587,7 +587,7 @@ export default async function AuditDetailPage({
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+        <section className="print-avoid mt-6 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
             Diagnostic
           </p>
@@ -669,7 +669,7 @@ export default async function AuditDetailPage({
           </section>
         ) : null}
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+        <section className="print-avoid mt-6 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
             Actions
           </p>
