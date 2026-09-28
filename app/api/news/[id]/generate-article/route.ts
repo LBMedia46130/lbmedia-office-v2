@@ -465,7 +465,12 @@ Pour cela :
 - évite notamment les affirmations générales du type "les assistants privilégient", "les IA aiment", "les assistants utilisent toujours", "les assistants consultent" ou "cela augmente les chances d'être cité" lorsqu'aucune source fournie ne permet de l'affirmer ;
 - lorsqu'un fonctionnement technique n'est pas établi par les informations fournies, formule seulement ce qui peut être expliqué avec certitude et recentre l'article sur les conséquences pratiques pour le lecteur ;
 - lorsque le sujet concerne le GEO, ne le réduis jamais à l'ajout de FAQ, de données locales ou de contenus faciles à extraire : traite aussi la compréhension de l'entreprise et de ses services, la cohérence des informations, l'autorité et la citabilité des sources, ainsi que la visibilité réelle dans les réponses générées lorsque ces dimensions sont pertinentes ;
-- explique les relations de cause à effet lorsqu'elles sont importantes pour comprendre le sujet ;
+- lorsque le SEO ou le GEO constitue explicitement une notion centrale du brief, nomme cette notion dans l'article et explique-la simplement au lecteur au lieu de la remplacer par une notion voisine comme "visibilité locale" ;
+- présente SEO et GEO comme complémentaires lorsque le sujet les met en relation : le GEO ne remplace pas le SEO et ne doit pas être confondu avec le référencement local ;
+- en l'absence de source fournie, reste prudent et descriptif sur le fonctionnement interne des assistants IA : décris l'évolution des usages et les enjeux de compréhension, de cohérence, d'autorité ou de citabilité sans affirmer qu'un format précis, une FAQ, une longueur de texte, un type de donnée ou une structure donnée augmente directement les chances d'être cité ;
+- n'utilise pas des formulations vagues comme "les pratiques observables montrent" pour transformer une hypothèse ou une généralisation non sourcée en fait établi ;
+- n'établis jamais de lien causal direct entre une optimisation SEO/GEO et une hausse du nombre de contacts, de prospects, de citations ou de ventes sans donnée ou source fournie qui l'établisse ;
+- explique les relations de cause à effet lorsqu'elles sont importantes pour comprendre le sujet et uniquement lorsqu'elles peuvent être justifiées par le contexte ou les sources fournies ;
 - distingue clairement les notions proches lorsqu'une confusion est possible ;
 - apporte du contexte aux informations : indique de quoi l'on parle, pour qui et dans quelle situation ;
 - lorsqu'une recommandation est formulée, explique pourquoi elle est pertinente ;
@@ -542,7 +547,8 @@ Avant de produire le JSON final, détermine silencieusement :
 - les éventuelles pages LBMedia qui constituent un prolongement réellement utile ;
 - si l'URL source fournie mérite réellement d'être citée dans l'article ;
 - si la structure envisagée ressemble à une checklist, un tutoriel, une succession d'étapes ou un catalogue de conseils ; si c'est le cas, transforme-la silencieusement en véritable raisonnement éditorial avant de rédiger ;
-- si certaines affirmations sur Google, les moteurs de recherche ou les assistants IA nécessiteraient une source absente du brief ; si c'est le cas, retire-les ou reformule-les sans présenter comme certain ce qui ne l'est pas.
+- si certaines affirmations sur Google, les moteurs de recherche ou les assistants IA nécessiteraient une source absente du brief ; si c'est le cas, retire-les ou reformule-les sans présenter comme certain ce qui ne l'est pas ;
+- si une notion centrale explicitement demandée dans le brief, notamment SEO ou GEO, a été remplacée par une notion différente ou a disparu du projet d'article ; si c'est le cas, réintroduis-la et explique-la simplement.
 
 N'affiche pas cette analyse dans la réponse.
 `,
