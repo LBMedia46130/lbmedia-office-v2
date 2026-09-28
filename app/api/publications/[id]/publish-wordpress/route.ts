@@ -83,6 +83,17 @@ function getAuthorization(
   ).toString("base64")}`;
 }
 
+async function readWordPressJson<T>(response: Response, step: string): Promise<T> {
+  const raw = await response.text();
+  if (!raw.trim()) throw new Error(`${step} : WordPress a retourné une réponse vide (HTTP ${response.status}).`);
+  try { return JSON.parse(raw) as T; }
+  catch {
+    const preview = raw.replace(/\s+/g, " ").trim().slice(0, 220);
+    const contentType = response.headers.get("content-type") || "type de contenu inconnu";
+    throw new Error(`${step} : WordPress a retourné une réponse non JSON (HTTP ${response.status}, ${contentType}) : ${preview}`);
+  }
+}
+
 function deepClone<T>(value: T): T {
   return JSON.parse(
     JSON.stringify(value)
@@ -663,9 +674,10 @@ async function getWordPressPost(
       }
     );
 
-  const data =
-    (await response.json()) as
-      WordPressPost;
+  const data = await readWordPressJson<WordPressPost>(
+    response,
+    `Chargement du contenu WordPress ${postId}`
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -800,9 +812,10 @@ async function importImageIntoWordPress(
       }
     );
 
-  const mediaData =
-    (await mediaResponse.json()) as
-      WordPressMedia;
+  const mediaData = await readWordPressJson<WordPressMedia>(
+    mediaResponse,
+    "Import du visuel dans la médiathèque WordPress"
+  );
 
   if (!mediaResponse.ok) {
     throw new Error(
@@ -854,9 +867,10 @@ async function importImageIntoWordPress(
       }
     );
 
-  const metadataData =
-    (await metadataResponse.json()) as
-      WordPressMedia;
+  const metadataData = await readWordPressJson<WordPressMedia>(
+    metadataResponse,
+    `Mise à jour des métadonnées du média WordPress ${mediaId}`
+  );
 
   if (!metadataResponse.ok) {
     throw new Error(
@@ -1211,12 +1225,17 @@ export async function POST(
         }
       );
 
-    const wordpressData =
-      (await wordpressResponse.json()) as
-        WordPressPost & {
-          code?: string;
-          message?: string;
-        };
+    const wordpressData = await readWordPressJson<
+      WordPressPost & {
+        code?: string;
+        message?: string;
+      }
+    >(
+      wordpressResponse,
+      hasExistingWordPressPost
+        ? "Mise à jour du brouillon Elementor WordPress"
+        : "Création du brouillon Elementor WordPress"
+    );
 
     if (!wordpressResponse.ok) {
       return NextResponse.json(
