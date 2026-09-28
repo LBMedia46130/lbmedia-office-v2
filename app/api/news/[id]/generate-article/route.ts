@@ -343,7 +343,12 @@ Règles éditoriales :
 - n'invente aucune expérience, réalisation ou résultat obtenu par LBMedia qui ne figure pas dans le contexte fourni ;
 - évite le remplissage et les répétitions ;
 - l'article doit être directement exploitable comme contenu de référence LBMedia ;
-- structure le contenu avec une introduction claire puis plusieurs sections utiles ;
+- construis l'article autour d'une idée centrale et fais progresser le raisonnement d'une section à l'autre ;
+- privilégie un article rédigé et éditorial : les paragraphes constituent la structure principale du contenu ;
+- utilise généralement 3 ou 4 intertitres H2 maximum, sauf si le sujet exige réellement davantage ;
+- n'organise jamais l'article comme une checklist, une procédure, un tutoriel, une succession d'étapes, un catalogue de conseils ou une liste d'actions ;
+- évite les sections artificielles du type "Ce qu'il faut faire", "Ce qu'il ne faut pas faire", "Les erreurs à éviter", "Checklist", "Les X actions", "Étape 1" ou formulations équivalentes ;
+- lorsqu'il existe plusieurs recommandations pratiques, hiérarchise-les et intègre-les dans le raisonnement plutôt que de créer une rubrique ou une liste pour chacune ;
 - le champ content doit utiliser une structure Markdown simple destinée à être convertie ensuite en HTML dans Elementor ;
 - n'insère jamais le titre principal de l'article dans content : il est géré séparément par le champ title ;
 - utilise obligatoirement "## " au début de chaque intertitre principal afin qu'il soit converti en véritable titre H2 dans WordPress ;
@@ -351,9 +356,10 @@ Règles éditoriales :
 - n'utilise jamais "# " dans content ;
 - laisse une ligne vide avant et après chaque intertitre ;
 - sépare les paragraphes par une ligne vide ;
-- utilise "- " pour une liste à puces lorsqu'une liste améliore réellement la lecture ;
-- utilise "1. ", "2. ", "3. " pour une liste numérotée lorsqu'un ordre est réellement nécessaire ;
-- privilégie le texte rédigé : ne transforme pas l'article en succession de listes ;
+- les listes à puces doivent rester exceptionnelles et courtes ; utilise-les seulement lorsque la lecture serait réellement moins claire sous forme de paragraphes ;
+- n'utilise une liste numérotée que lorsqu'un ordre chronologique ou une séquence est indispensable au sens ;
+- ne termine jamais l'article par une checklist, une liste récapitulative ou une série d'actions à effectuer ;
+- privilégie toujours le texte rédigé : une liste ne doit jamais constituer l'ossature principale de l'article ;
 - ne laisse jamais un intertitre sous forme de simple phrase isolée : tout intertitre doit commencer par "## " ou "### " ;
 - n'utilise pas d'intertitres génériques comme "Introduction", "Développement", "Conclusion", "À retenir" ou "Quelques conseils" ;
 - ne produis aucun HTML dans content ;
@@ -441,6 +447,10 @@ Pour cela :
 - lorsqu'un concept important peut être mal compris, donne une explication simple et directe avant de développer ;
 - lorsqu'une question importante est soulevée par le sujet, donne une réponse identifiable avant d'ajouter les nuances ;
 - privilégie les formulations factuelles et précises aux affirmations vagues ;
+- ne présente jamais comme un fait établi une caractéristique du fonctionnement des moteurs de recherche, assistants IA ou modèles génératifs qui n'est pas fournie dans le contexte ou dans une source associée à l'actualité ;
+- évite notamment les affirmations générales du type "les assistants privilégient", "les IA aiment", "les assistants utilisent toujours", "les assistants consultent" ou "cela augmente les chances d'être cité" lorsqu'aucune source fournie ne permet de l'affirmer ;
+- lorsqu'un fonctionnement technique n'est pas établi par les informations fournies, formule seulement ce qui peut être expliqué avec certitude et recentre l'article sur les conséquences pratiques pour le lecteur ;
+- lorsque le sujet concerne le GEO, ne le réduis jamais à l'ajout de FAQ, de données locales ou de contenus faciles à extraire : traite aussi la compréhension de l'entreprise et de ses services, la cohérence des informations, l'autorité et la citabilité des sources, ainsi que la visibilité réelle dans les réponses générées lorsque ces dimensions sont pertinentes ;
 - explique les relations de cause à effet lorsqu'elles sont importantes pour comprendre le sujet ;
 - distingue clairement les notions proches lorsqu'une confusion est possible ;
 - apporte du contexte aux informations : indique de quoi l'on parle, pour qui et dans quelle situation ;
@@ -470,29 +480,25 @@ Si un brouillon existe déjà :
 - corrige les passages trop vagues ou répétitifs ;
 - préserve le ton éditorial existant lorsqu'il est déjà satisfaisant.
 
-Exemple de structure attendue dans le champ content :
+Structure éditoriale attendue dans le champ content :
 
-Paragraphe d'ouverture qui pose clairement le sujet et apporte rapidement les premiers éléments utiles au lecteur.
+Paragraphe d'ouverture court qui pose le constat, l'enjeu ou la question centrale et donne rapidement au lecteur une première réponse.
 
-## Un premier intertitre précis et utile
+## Un premier intertitre qui fait avancer le raisonnement
 
-Un ou plusieurs paragraphes développent cette première idée avec suffisamment de contexte pour être compris sans ambiguïté.
+Deux ou trois paragraphes expliquent l'idée, son contexte et ses conséquences concrètes. Les recommandations éventuelles sont intégrées naturellement dans le texte.
 
-## Un deuxième intertitre précis
+## Un deuxième intertitre qui approfondit ou nuance le sujet
 
-Un paragraphe peut introduire une liste lorsque cela apporte réellement quelque chose :
+Le raisonnement progresse : explique ce qui change, ce qui ne change pas, ou distingue des notions proches lorsque cela aide réellement le lecteur.
 
-- premier point ;
-- deuxième point ;
-- troisième point.
+## Un troisième intertitre tourné vers les conséquences pratiques
 
-### Un sous-angle si nécessaire
+Explique ce qu'une TPE ou une PME doit comprendre ou envisager, sans transformer cette partie en procédure, checklist ou catalogue d'actions.
 
-Un ou plusieurs paragraphes développent cette sous-partie.
+Le texte se termine naturellement par un dernier paragraphe qui referme le raisonnement ou ouvre vers un accompagnement LBMedia pertinent. N'ajoute ni checklist finale ni intertitre "Conclusion".
 
-## Une dernière partie utile
-
-Le texte se termine naturellement, sans ajouter artificiellement un intertitre "Conclusion".
+Cette structure est un principe éditorial, pas un plan à recopier mot pour mot. Les H2 doivent être spécifiques au sujet traité.
 
 Retourne exclusivement un objet JSON valide.
 N'utilise aucun bloc Markdown autour du JSON.
@@ -519,7 +525,9 @@ Avant de produire le JSON final, détermine silencieusement :
 - le mot-clé principal le plus naturel ;
 - les notions qui doivent être explicitées pour que l'article soit compris sans ambiguïté ;
 - les éventuelles pages LBMedia qui constituent un prolongement réellement utile ;
-- si l'URL source fournie mérite réellement d'être citée dans l'article.
+- si l'URL source fournie mérite réellement d'être citée dans l'article ;
+- si la structure envisagée ressemble à une checklist, un tutoriel, une succession d'étapes ou un catalogue de conseils ; si c'est le cas, transforme-la silencieusement en véritable raisonnement éditorial avant de rédiger ;
+- si certaines affirmations sur Google, les moteurs de recherche ou les assistants IA nécessiteraient une source absente du brief ; si c'est le cas, retire-les ou reformule-les sans présenter comme certain ce qui ne l'est pas.
 
 N'affiche pas cette analyse dans la réponse.
 `,
