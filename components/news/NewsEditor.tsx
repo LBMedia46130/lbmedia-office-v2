@@ -681,9 +681,11 @@ export default function NewsEditor({
         !result.success
       ) {
         throw new Error(
-          result.message ??
-            "Impossible de traiter le brouillon WordPress."
-        );
+  result.error
+    ? `${result.message ?? "Impossible de traiter le brouillon WordPress."} — ${result.error}`
+    : result.message ??
+        "Impossible de traiter le brouillon WordPress."
+);
       }
 
       setMessage(
@@ -884,7 +886,7 @@ export default function NewsEditor({
   async function handleDelete() {
     const confirmed =
       window.confirm(
-        "Supprimer définitivement cette actualité ?"
+        "Supprimer définitivement cette actualité et toutes ses déclinaisons ? Cette action est irréversible."
       );
 
     if (!confirmed) {
