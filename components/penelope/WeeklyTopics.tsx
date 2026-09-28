@@ -27,6 +27,12 @@ export default function WeeklyTopics() {
   const [error, setError] =
     useState<string | null>(null);
 
+  const [customTopic, setCustomTopic] =
+    useState("");
+
+  const [isCustomTopicOpen, setIsCustomTopicOpen] =
+    useState(false);
+
   async function generateTopics() {
     setIsGenerating(true);
     setTopics([]);
@@ -75,7 +81,7 @@ export default function WeeklyTopics() {
     }
   }
 
-  async function chooseTopic(
+  async function createNewsFromTopic(
     topic: WeeklyTopic
   ) {
     setIsCreating(
@@ -196,6 +202,38 @@ export default function WeeklyTopics() {
     }
   }
 
+  async function chooseTopic(
+    topic: WeeklyTopic
+  ) {
+    await createNewsFromTopic(
+      topic
+    );
+  }
+
+  async function submitCustomTopic() {
+    const title =
+      customTopic.trim();
+
+    if (!title) {
+      setError(
+        "Indique le sujet que tu veux confier à Pénélope."
+      );
+      return;
+    }
+
+    setTopics([]);
+    setMessage(null);
+    setError(null);
+
+    await createNewsFromTopic({
+      title,
+      angle:
+        "Développer ce sujet proposé directement par LBMedia en trouvant l’angle éditorial le plus pertinent, concret et accessible pour des dirigeants de TPE et PME.",
+      reason:
+        "Sujet choisi directement par LBMedia pour sa prochaine communication.",
+    });
+  }
+
   const isBusy =
     isGenerating ||
     Boolean(isCreating);
@@ -213,28 +251,105 @@ export default function WeeklyTopics() {
           </h2>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Pénélope peut proposer trois
-            sujets éditoriaux à partir de
-            l’historique LBMedia. Choisis
-            celui que tu veux travailler.
+            Laisse Pénélope te proposer
+            trois sujets éditoriaux ou
+            confie-lui directement une idée
+            que tu veux travailler.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={
-            generateTopics
-          }
-          disabled={isBusy}
-          className="rounded-xl bg-indigo-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isGenerating
-            ? "Pénélope réfléchit..."
-            : topics.length > 0
-              ? "Proposer 3 autres sujets"
-              : "Proposer les sujets de la semaine"}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={
+              generateTopics
+            }
+            disabled={isBusy}
+            className="rounded-xl bg-indigo-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isGenerating
+              ? "Pénélope réfléchit..."
+              : topics.length > 0
+                ? "Proposer 3 autres sujets"
+                : "Pénélope me propose des sujets"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsCustomTopicOpen(
+                (value) => !value
+              );
+              setMessage(null);
+              setError(null);
+            }}
+            disabled={isBusy}
+            className="rounded-xl border border-indigo-300 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Je propose mon sujet à Pénélope
+          </button>
+        </div>
       </div>
+
+      {isCustomTopicOpen ? (
+        <div className="mt-5 rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+          <label
+            htmlFor="custom-topic"
+            className="text-sm font-bold text-slate-950"
+          >
+            Quel sujet veux-tu confier à Pénélope ?
+          </label>
+
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Donne-lui ton idée comme elle vient. Elle se chargera de la transformer en article LBMedia.
+          </p>
+
+          <textarea
+            id="custom-topic"
+            value={customTopic}
+            onChange={(event) =>
+              setCustomTopic(
+                event.target.value
+              )
+            }
+            disabled={isBusy}
+            rows={4}
+            placeholder="Ex. : Pour octobre, je voudrais parler de la façon dont les clients utilisent désormais Google mais aussi ChatGPT et les assistants IA pour trouver une entreprise. Faire le lien entre SEO et GEO sans être trop technique."
+            className="mt-4 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setIsCustomTopicOpen(false);
+                setCustomTopic("");
+                setError(null);
+              }}
+              disabled={isBusy}
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Annuler
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                submitCustomTopic
+              }
+              disabled={
+                isBusy ||
+                !customTopic.trim()
+              }
+              className="rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCreating
+                ? "Pénélope rédige..."
+                : "Confier ce sujet à Pénélope"}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {message ? (
         <p className="mt-5 rounded-xl bg-white/70 px-4 py-3 text-sm font-medium text-indigo-800">
