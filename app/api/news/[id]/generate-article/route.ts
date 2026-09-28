@@ -368,9 +368,23 @@ Règles éditoriales :
 - n'écris jamais pour satisfaire mécaniquement un outil de score SEO ;
 - évite les formulations typiques de contenus SEO génériques comme "dans un monde de plus en plus digital", "à l'ère du numérique", "il est essentiel de" ou toute introduction interchangeable avec des centaines d'autres articles.
 
+Angle éditorial fourni par LBMedia :
+
+Le titre et surtout le contenu du brouillon peuvent constituer un brief éditorial rédigé directement par LBMedia. Dans ce cas, ce brief est directeur.
+
+- identifie l'idée centrale, l'angle et la progression souhaitée dans le brouillon ;
+- respecte cet angle comme fil conducteur de l'article ;
+- développe et approfondis le sujet sans le remplacer par un autre angle plus générique ;
+- ne transforme pas automatiquement un sujet explicatif ou prospectif en tutoriel d'optimisation, guide pratique, liste de bonnes pratiques ou catalogue d'actions ;
+- les conseils pratiques doivent rester au service du raisonnement demandé, et non devenir le sujet principal sauf si le brief le demande explicitement ;
+- lorsqu'un brief oppose, rapproche ou fait évoluer deux notions, conserve cette relation au cœur de l'article ;
+- si le brief demande d'expliquer un changement de comportement, commence par expliquer ce changement, ses conséquences et ce qu'il implique avant d'aborder d'éventuelles recommandations ;
+- ne surinterprète pas un exemple donné dans le brief comme une obligation de centrer tout l'article sur cet exemple ;
+- n'ajoute pas une promesse de résultat commercial ou de performance qui n'est pas contenue dans le brief ou étayée par une source fournie.
+
 Intention de recherche :
 
-Avant de rédiger, identifie mentalement la question principale à laquelle le lecteur cherche une réponse.
+Avant de rédiger, identifie mentalement la question principale à laquelle le lecteur cherche une réponse, sans perdre l'angle éditorial défini par LBMedia.
 
 L'article doit :
 - traiter réellement cette question et ne pas seulement tourner autour du sujet ;
@@ -520,6 +534,7 @@ Rédige maintenant la version article + SEO/GEO prête à être relue.
 
 Avant de produire le JSON final, détermine silencieusement :
 - le sujet central ;
+- l'angle éditorial demandé par LBMedia dans le brouillon et ce qui ne doit pas être déformé ;
 - l'intention de recherche principale ;
 - la réponse essentielle que le lecteur doit obtenir ;
 - le mot-clé principal le plus naturel ;
