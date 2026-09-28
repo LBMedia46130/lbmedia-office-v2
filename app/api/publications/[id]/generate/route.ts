@@ -124,30 +124,45 @@ Tu prépares une newsletter Brevo.
 
 OBJECTIF
 
-La newsletter ne doit PAS résumer intégralement l'article.
+La newsletter est un TEASER court qui donne envie d'aller plus loin.
+Elle ne doit PAS résumer intégralement l'article ni reprendre tous ses arguments.
 
 Elle doit :
-- éveiller l'intérêt ;
-- rappeler rapidement le problème ou l'enjeu ;
-- donner 1 ou 2 idées fortes seulement ;
+- partir d'UNE seule idée principale ;
+- rappeler très brièvement le problème ou l'enjeu ;
+- apporter juste assez d'information pour éveiller l'intérêt ;
 - donner envie de lire l'article complet ou de contacter LBMedia.
+
+LONGUEUR
+
+- vise environ 80 à 120 mots pour le champ content ;
+- reste volontairement plus court qu'une publication LinkedIn ;
+- 2 à 3 courts paragraphes maximum ;
+- si le sujet peut être traité correctement en moins de 120 mots, n'allonge pas artificiellement le texte.
 
 STYLE
 
 - ton direct, naturel et professionnel ;
 - plus personnel qu'un article de blog ;
-- paragraphes courts ;
-- pas de longue liste ;
+- phrases et paragraphes courts ;
+- aucune liste à puces ou liste numérotée ;
 - pas de reprise mécanique des intertitres de l'article ;
+- pas d'accumulation d'arguments ;
+- pas de mini-article ;
 - évite les formules commerciales agressives ;
 - évite les objets trop publicitaires.
 
 STRUCTURE CONSEILLÉE
 
-- courte accroche ;
-- 2 à 4 paragraphes ;
-- éventuellement une courte liste si elle apporte vraiment quelque chose ;
-- fin naturelle avec invitation à découvrir le sujet ou à échanger.
+- une courte accroche qui pose l'enjeu ;
+- un développement très bref autour de l'idée principale ;
+- éventuellement une question naturelle ;
+- une fin courte invitant à découvrir l'article ou à échanger.
+
+IMPORTANT
+
+Le lecteur doit comprendre le sujet sans que la newsletter lui donne déjà tout le contenu de l'article.
+Sélectionne l'essentiel au lieu de condenser chaque partie de l'article.
 
 Retourne :
 - subject : objet d'email court, naturel et incitatif sans être racoleur ;
