@@ -128,6 +128,11 @@ export default function AuditProspectionSendButton({
     setShowArchivedEmail,
   ] =
     useState(false);
+  const [
+    attachClientReport,
+    setAttachClientReport,
+  ] =
+    useState(true);
   useEffect(() => {
     function handleEditState(
       event: Event
@@ -612,6 +617,7 @@ export default function AuditProspectionSendButton({
               JSON.stringify({
                 confirmedRecipientEmail:
                   normalizedRecipient,
+                attachClientReport,
               }),
           }
         );
@@ -703,6 +709,29 @@ export default function AuditProspectionSendButton({
               </p>
             </div>
           )}
+          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+            <input
+              type="checkbox"
+              checked={
+                attachClientReport
+              }
+              onChange={(event) =>
+                setAttachClientReport(
+                  event.target.checked
+                )
+              }
+              disabled={isSending}
+              className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
+            />
+            <span>
+              <span className="block text-sm font-bold text-blue-800">
+                Joindre le compte rendu d’audit
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-blue-700">
+                Le compte rendu client de cet audit sera joint au message au format PDF.
+              </span>
+            </span>
+          </label>
           {hasUnsavedChanges ? (
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm font-bold text-amber-800">
@@ -773,7 +802,7 @@ export default function AuditProspectionSendButton({
         >
           {isSending
             ? "Envoi en cours..."
-            : requiresPdf
+            : requiresPdf || attachClientReport
               ? "Envoyer l’email + PDF"
               : "Envoyer l’email"}
         </button>

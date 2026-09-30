@@ -8,6 +8,7 @@ import {
   NextResponse,
 } from "next/server";
 import nodemailer from "nodemailer";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   createInitialAuditProspectionMessage,
   createResentInitialAuditProspectionMessage,
@@ -29,6 +30,7 @@ type RouteContext = {
 type SendRequestBody = {
   confirmedRecipientEmail?: unknown;
   sendMode?: unknown;
+  attachClientReport?: unknown;
 };
 type ProposalType =
   | "optimization"
@@ -395,6 +397,468 @@ function buildHtmlContent(
 </html>
 `.trim();
 }
+
+function toClientLanguage(value: string) {
+  const lower = value.toLowerCase();
+
+  if (
+    lower.includes("hasexperiencesignal") ||
+    lower.includes("hasexpertisesignal")
+  ) {
+    return "Mieux mettre en avant l’expérience, le savoir-faire et les éléments qui différencient l’entreprise afin de renforcer sa crédibilité auprès des visiteurs, des moteurs de recherche et des assistants IA.";
+  }
+
+  if (
+    lower.includes("vocabulaire géographique") ||
+    (lower.includes("occurrence") &&
+      (lower.includes("local") || lower.includes("géograph")))
+  ) {
+    return "Renforcer les références à la zone d’intervention et aux secteurs desservis afin d’améliorer la visibilité sur les recherches locales pertinentes.";
+  }
+
+  if (lower.includes("meta description")) {
+    return "Mieux présenter chaque page dans les résultats de recherche afin de donner envie de cliquer et d’aider les moteurs à comprendre son contenu.";
+  }
+
+  if (/\bh1\b/i.test(value)) {
+    return "Mieux structurer les pages pour permettre aux moteurs de recherche d’identifier immédiatement leur sujet principal.";
+  }
+
+  if (
+    lower.includes("json-ld") ||
+    lower.includes("données structurées") ||
+    lower.includes("balisage structuré")
+  ) {
+    return "Fournir aux moteurs de recherche et aux assistants IA des informations plus précises sur l’entreprise, ses services, sa zone d’intervention et, lorsque c’est pertinent, les avis clients.";
+  }
+
+  if (lower.includes("open graph")) {
+    return "Améliorer la présentation du site lorsqu’une page est partagée sur les réseaux sociaux afin de renforcer son impact et son image.";
+  }
+
+  if (lower.includes("canonique") || lower.includes("canonical")) {
+    return "Clarifier pour les moteurs de recherche quelles sont les pages principales à prendre en compte afin d’éviter les ambiguïtés.";
+  }
+
+  if (lower.includes("maillage interne")) {
+    return "Créer davantage de liens pertinents entre les pages afin de faciliter la navigation des visiteurs et la compréhension du site par les moteurs de recherche.";
+  }
+
+  if (
+    lower.includes("indexation") ||
+    lower.includes("robots.txt") ||
+    lower.includes("sitemap")
+  ) {
+    return "Faciliter l’exploration et la prise en compte des pages importantes du site par les moteurs de recherche.";
+  }
+
+  if (
+    lower.includes("témoign") ||
+    lower.includes("preuve sociale") ||
+    lower.includes("avis client")
+  ) {
+    return "Renforcer les éléments de confiance avec davantage d’avis, de témoignages et de contenus démontrant concrètement l’expérience et le savoir-faire de l’entreprise.";
+  }
+
+  if (lower.includes("faq")) {
+    return "Ajouter des réponses claires aux questions fréquentes des clients afin d’enrichir le contenu du site et de mieux répondre aux recherches courantes.";
+  }
+
+  if (lower.includes("actualités") || lower.includes("blog")) {
+    return "Publier régulièrement des contenus utiles autour des services, des besoins clients et de la zone d’intervention pour développer durablement la visibilité du site.";
+  }
+
+  let result = value;
+  const replacements: [RegExp, string][] = [
+    [/\bCTA\b/g, "appels à l’action"],
+    [/\bSERP\b/gi, "résultats de recherche"],
+    [/\bOpen Graph\b/gi, "présentation sur les réseaux sociaux"],
+    [/\bJSON-LD\b/gi, "informations structurées"],
+    [/\bLocalBusiness\b/gi, "informations sur l’entreprise locale"],
+    [/\bSchema(?:\.org)?\b/gi, "informations structurées"],
+    [/\bmeta descriptions?\b/gi, "résumés affichés dans les résultats de recherche"],
+    [/\bH1\b/gi, "titre principal de page"],
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    result = result.replace(pattern, replacement);
+  }
+
+  return result.replace(/\s{2,}/g, " ").trim();
+}
+
+function toClientStrength(value: string) {
+  const lower = value.toLowerCase();
+
+  if (
+    lower.includes("json-ld") ||
+    (lower.includes("seo") &&
+      (lower.includes("titre") ||
+        lower.includes("meta") ||
+        lower.includes("canonical") ||
+        lower.includes("viewport")))
+  ) {
+    return "Les principaux fondamentaux techniques du référencement sont bien présents sur les pages analysées.";
+  }
+
+  let result = value;
+  const replacements: [RegExp, string][] = [
+    [/\bCTA(?:s)?\b/g, "appels à l’action"],
+    [/\bviewport\b/gi, "adaptation aux écrans mobiles"],
+    [/\bbalises canoniques?\b/gi, "indications permettant aux moteurs d’identifier les pages principales"],
+    [/\bcanonical(?:es)?\b/gi, "page principale"],
+    [/\bmeta descriptions?\b/gi, "résumés affichés dans les résultats de recherche"],
+    [/\bH1\b/gi, "titre principal de page"],
+    [/\bJSON-LD\b/gi, "informations structurées"],
+    [/\bOpen Graph\b/gi, "présentation sur les réseaux sociaux"],
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    result = result.replace(pattern, replacement);
+  }
+
+  return result.replace(/\s{2,}/g, " ").trim();
+}
+
+function toClientSummary(value: string) {
+  const lower = value.toLowerCase();
+  const parts: string[] = [];
+
+  if (
+    lower.includes("agence") ||
+    lower.includes("coordonn") ||
+    lower.includes("service")
+  ) {
+    parts.push(
+      "Le site présente correctement l’activité et permet de comprendre les principaux services proposés."
+    );
+  } else {
+    parts.push(
+      "Le site dispose de bases utiles pour présenter l’activité et accompagner les visiteurs."
+    );
+  }
+
+  if (
+    lower.includes("meta") ||
+    lower.includes("h1") ||
+    lower.includes("seo") ||
+    lower.includes("index")
+  ) {
+    parts.push(
+      "Sa visibilité dans les moteurs de recherche peut toutefois être renforcée grâce à une structure de pages plus claire et à une meilleure présentation des contenus dans les résultats."
+    );
+  }
+
+  if (
+    lower.includes("json") ||
+    lower.includes("structur") ||
+    lower.includes("ia") ||
+    lower.includes("open graph")
+  ) {
+    parts.push(
+      "Des informations plus précises sur l’entreprise, ses services et sa zone d’intervention aideraient également Google et les assistants IA à mieux identifier et valoriser l’activité."
+    );
+  }
+
+  if (
+    lower.includes("témoign") ||
+    lower.includes("avis") ||
+    lower.includes("preuve") ||
+    lower.includes("contenu")
+  ) {
+    parts.push(
+      "Enfin, davantage de contenus utiles et de preuves de confiance permettraient de renforcer la crédibilité du site et son potentiel de conversion."
+    );
+  }
+
+  return parts.length === 1 ? toClientLanguage(value) : parts.join(" ");
+}
+
+function sanitizePdfText(value: string) {
+  return value
+    .replaceAll("’", "'")
+    .replaceAll("“", '"')
+    .replaceAll("”", '"')
+    .replaceAll("–", "-")
+    .replaceAll("—", "-")
+    .replaceAll("•", "-")
+    .replaceAll("·", "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function wrapPdfText(
+  text: string,
+  font: { widthOfTextAtSize: (text: string, size: number) => number },
+  size: number,
+  maxWidth: number
+) {
+  const words = sanitizePdfText(text).split(" ").filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, size) <= maxWidth) {
+      line = candidate;
+    } else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  }
+
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function generateClientReportPdf({
+  companyName,
+  audit,
+  diagnosis,
+}: {
+  companyName: string;
+  audit: any;
+  diagnosis: any;
+}) {
+  const pdf = await PDFDocument.create();
+  const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const margin = 46;
+  const contentWidth = pageWidth - margin * 2;
+  const blue = rgb(0.086, 0.435, 0.773);
+  const dark = rgb(0.09, 0.13, 0.2);
+  const gray = rgb(0.34, 0.39, 0.47);
+  const light = rgb(0.95, 0.97, 0.99);
+
+  let page = pdf.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
+
+  const ensureSpace = (needed: number) => {
+    if (y - needed < margin) {
+      page = pdf.addPage([pageWidth, pageHeight]);
+      y = pageHeight - margin;
+    }
+  };
+
+  const drawText = (
+    value: string,
+    options: {
+      size?: number;
+      font?: typeof regular;
+      color?: ReturnType<typeof rgb>;
+      indent?: number;
+      gapAfter?: number;
+      maxWidth?: number;
+    } = {}
+  ) => {
+    const size = options.size ?? 10;
+    const font = options.font ?? regular;
+    const color = options.color ?? dark;
+    const indent = options.indent ?? 0;
+    const gapAfter = options.gapAfter ?? 7;
+    const maxWidth = options.maxWidth ?? contentWidth - indent;
+    const lines = wrapPdfText(value, font, size, maxWidth);
+    const lineHeight = size * 1.42;
+    ensureSpace(lines.length * lineHeight + gapAfter);
+    for (const line of lines) {
+      page.drawText(line, {
+        x: margin + indent,
+        y,
+        size,
+        font,
+        color,
+      });
+      y -= lineHeight;
+    }
+    y -= gapAfter;
+  };
+
+  const heading = (value: string) => {
+    ensureSpace(34);
+    y -= 4;
+    drawText(value, {
+      size: 16,
+      font: bold,
+      color: dark,
+      gapAfter: 10,
+    });
+  };
+
+  const bulletList = (items: string[]) => {
+    for (const item of items) {
+      ensureSpace(28);
+      page.drawText("-", {
+        x: margin + 2,
+        y,
+        size: 10,
+        font: bold,
+        color: blue,
+      });
+      const lines = wrapPdfText(item, regular, 10, contentWidth - 22);
+      for (const line of lines) {
+        page.drawText(line, {
+          x: margin + 18,
+          y,
+          size: 10,
+          font: regular,
+          color: dark,
+        });
+        y -= 14;
+      }
+      y -= 5;
+    }
+    y -= 4;
+  };
+
+  page.drawRectangle({
+    x: 0,
+    y: pageHeight - 150,
+    width: pageWidth,
+    height: 150,
+    color: dark,
+  });
+  page.drawText("LBMedia", {
+    x: margin,
+    y: pageHeight - 62,
+    size: 13,
+    font: bold,
+    color: blue,
+  });
+  page.drawText("Audit de visibilité digitale", {
+    x: margin,
+    y: pageHeight - 91,
+    size: 23,
+    font: bold,
+    color: rgb(1, 1, 1),
+  });
+  page.drawText(`Compte rendu pour ${sanitizePdfText(companyName)}`, {
+    x: margin,
+    y: pageHeight - 118,
+    size: 11,
+    font: regular,
+    color: rgb(0.82, 0.86, 0.91),
+  });
+  y = pageHeight - 180;
+
+  drawText(`Site analysé : ${audit.website_url}`, { size: 9, color: gray, gapAfter: 3 });
+  drawText(
+    `Périmètre : ${audit.pages_analyzed} ${audit.pages_analyzed > 1 ? "pages analysées" : "page analysée"}`,
+    { size: 9, color: gray, gapAfter: 12 }
+  );
+
+  page.drawRectangle({
+    x: margin,
+    y: y - 72,
+    width: contentWidth,
+    height: 72,
+    color: light,
+  });
+  page.drawText("SCORE GLOBAL", {
+    x: margin + 18,
+    y: y - 25,
+    size: 9,
+    font: bold,
+    color: gray,
+  });
+  page.drawText(`${audit.global_score}/100`, {
+    x: margin + 18,
+    y: y - 52,
+    size: 22,
+    font: bold,
+    color: dark,
+  });
+  y -= 92;
+
+  heading("Votre site aujourd'hui");
+  drawText(toClientSummary(audit.summary), { size: 10, color: gray, gapAfter: 12 });
+
+  heading("Les 5 indicateurs");
+  const scores = [
+    ["Positionnement", audit.positioning_score],
+    ["Conversion", audit.conversion_score],
+    ["SEO", audit.seo_score],
+    ["SEO local", audit.local_seo_score],
+    ["GEO / IA", audit.geo_score],
+  ];
+  for (const [label, score] of scores) {
+    drawText(`${label} : ${score}/100`, { size: 10, font: bold, gapAfter: 3 });
+  }
+  y -= 6;
+
+  heading("Ce qui fonctionne bien");
+  const strengths = (audit.strengths ?? []).slice(0, 4).map(toClientStrength);
+  if (strengths.length) bulletList(strengths);
+  else drawText("Aucun point fort spécifique n'a été isolé lors de cette analyse.", { color: gray });
+
+  heading("Ce qui mérite d'être amélioré");
+  const improvements = (audit.weaknesses ?? []).slice(0, 5).map(toClientLanguage);
+  if (improvements.length) bulletList(improvements);
+  else drawText("Aucun point d'amélioration prioritaire n'a été identifié.", { color: gray });
+
+  heading("Visibilité Google & IA");
+  drawText(
+    "La visibilité d'un site ne dépend plus uniquement de son référencement classique. Les moteurs de recherche, les résultats locaux et les assistants utilisant l'intelligence artificielle s'appuient sur la qualité, la précision et la structure des informations disponibles pour comprendre une entreprise, ses prestations et sa zone d'intervention.",
+    { color: gray, gapAfter: 10 }
+  );
+
+  drawText("Visibilité & acquisition", { font: bold, gapAfter: 5 });
+  const visibilityIssues = (diagnosis?.weaknesses?.visibility ?? []).slice(0, 4).map(toClientLanguage);
+  if (visibilityIssues.length) bulletList(visibilityIssues);
+  else drawText("Les fondamentaux de visibilité relevés lors de l'audit sont globalement satisfaisants.", { color: gray });
+
+  drawText("Site & parcours", { font: bold, gapAfter: 5 });
+  const websiteIssues = (diagnosis?.weaknesses?.website ?? []).slice(0, 4).map(toClientLanguage);
+  if (websiteIssues.length) bulletList(websiteIssues);
+  else drawText("Aucun frein majeur lié au parcours du site n'a été isolé dans cette analyse.", { color: gray });
+
+  drawText(
+    "Le score GEO / IA évalue ici les signaux présents sur le site qui facilitent la compréhension de l'entreprise par les moteurs et assistants IA. Il ne constitue pas une mesure de présence effective dans toutes les réponses générées par ces services.",
+    { size: 8.5, color: gray, gapAfter: 12 }
+  );
+
+  heading("Les actions à privilégier");
+  const priorities = (audit.priorities ?? []).slice(0, 3).map(toClientLanguage);
+  if (priorities.length) {
+    priorities.forEach((priority: string, index: number) => {
+      drawText(`${index + 1}. ${priority}`, { size: 10, gapAfter: 7 });
+    });
+  } else {
+    drawText("Aucune priorité spécifique n'a été enregistrée pour cet audit.", { color: gray });
+  }
+
+  heading("Et maintenant ?");
+  drawText(
+    "Cet audit permet d'identifier les principaux leviers d'amélioration du site. LBMedia peut vous accompagner pour définir les actions les plus adaptées à vos objectifs : optimisation du site, amélioration du référencement et de la visibilité locale, renforcement de la présence dans les environnements de recherche et d'IA, ou évolution plus globale du site lorsque cela est pertinent.",
+    { color: gray, gapAfter: 8 }
+  );
+  drawText("LBMedia - Sites internet - SEO - GEO / IA", {
+    font: bold,
+    color: blue,
+    gapAfter: 14,
+  });
+
+  drawText(
+    "Audit réalisé à partir des éléments accessibles sur le site au moment de l'analyse. Certaines données externes ou privées peuvent nécessiter des vérifications complémentaires.",
+    { size: 8, color: gray, gapAfter: 0 }
+  );
+
+  const pages = pdf.getPages();
+  pages.forEach((currentPage, index) => {
+    currentPage.drawText(`LBMedia - Audit de visibilité digitale - ${index + 1}/${pages.length}`, {
+      x: margin,
+      y: 20,
+      size: 7.5,
+      font: regular,
+      color: rgb(0.55, 0.59, 0.65),
+    });
+  });
+
+  return Buffer.from(await pdf.save());
+}
+
 export async function POST(
   request: Request,
   context: RouteContext
@@ -472,6 +936,8 @@ export async function POST(
     const sendMode = body?.sendMode === undefined ? "initial" : body.sendMode;
     if (sendMode !== "initial" && sendMode !== "resend") return NextResponse.json({ success: false, message: "Mode d’envoi invalide." }, { status: 400 });
     const isResend = sendMode === "resend";
+    const attachClientReport =
+      body?.attachClientReport === true;
     const confirmedRecipientValue =
       typeof body
         ?.confirmedRecipientEmail ===
@@ -724,6 +1190,159 @@ export async function POST(
         }
       );
     }
+    let clientReportBuffer:
+      | Buffer
+      | null = null;
+    let clientReportFilename:
+      | string
+      | null = null;
+
+    if (attachClientReport) {
+      const [
+        auditResult,
+        companyResult,
+      ] = await Promise.all([
+        supabaseAdmin
+          .from("website_audits")
+          .select("*")
+          .eq(
+            "id",
+            prospection.website_audit_id
+          )
+          .maybeSingle(),
+        supabaseAdmin
+          .from("companies")
+          .select("id, name")
+          .eq(
+            "id",
+            prospection.company_id
+          )
+          .maybeSingle(),
+      ]);
+
+      if (
+        auditResult.error ||
+        !auditResult.data
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Impossible de charger l’audit pour générer le compte rendu client. Aucun email n’a été envoyé.",
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      if (
+        companyResult.error ||
+        !companyResult.data
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Impossible de charger l’entreprise pour générer le compte rendu client. Aucun email n’a été envoyé.",
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      const auditData =
+        auditResult.data as any;
+
+      const visibilityKeywords =
+        [
+          "seo",
+          "local",
+          "google",
+          "index",
+          "meta",
+          "h1",
+          "json",
+          "structur",
+          "ia",
+          "geo",
+          "recherche",
+          "sitemap",
+          "robots",
+        ];
+
+      const visibility: string[] =
+        [];
+      const website: string[] =
+        [];
+
+      for (
+        const weakness of
+        (auditData.weaknesses ??
+          []) as string[]
+      ) {
+        const lower =
+          weakness.toLowerCase();
+        if (
+          visibilityKeywords.some(
+            (keyword) =>
+              lower.includes(
+                keyword
+              )
+          )
+        ) {
+          visibility.push(
+            weakness
+          );
+        } else {
+          website.push(
+            weakness
+          );
+        }
+      }
+
+      clientReportBuffer =
+        await generateClientReportPdf({
+          companyName:
+            companyResult.data
+              .name ||
+            "Entreprise",
+          audit:
+            auditData,
+          diagnosis: {
+            weaknesses: {
+              visibility,
+              website,
+            },
+          },
+        });
+
+      const safeCompanyName =
+        String(
+          companyResult.data
+            .name ||
+            "client"
+        )
+          .normalize("NFD")
+          .replace(
+            /[̀-ͯ]/g,
+            ""
+          )
+          .replace(
+            /[^a-zA-Z0-9]+/g,
+            "-"
+          )
+          .replace(
+            /^-+|-+$/g,
+            ""
+          )
+          .toLowerCase();
+
+      clientReportFilename =
+        `audit-visibilite-${safeCompanyName || "client"}.pdf`;
+    }
+
     const {
       data:
         securityCheck,
@@ -981,6 +1600,21 @@ export async function POST(
           "application/pdf",
       });
     }
+    if (
+      attachClientReport &&
+      clientReportBuffer &&
+      clientReportFilename
+    ) {
+      attachments.push({
+        filename:
+          clientReportFilename,
+        content:
+          clientReportBuffer,
+        contentType:
+          "application/pdf",
+      });
+    }
+
     attachments.push({
       filename:
         "lbmedia-logo.png",
@@ -1031,6 +1665,10 @@ export async function POST(
             prospection.website_audit_id,
           "X-LBMedia-Proposal-Type":
             proposalType,
+          "X-LBMedia-Client-Report":
+            attachClientReport
+              ? "attached"
+              : "not-attached",
         },
       });
     const accepted =
