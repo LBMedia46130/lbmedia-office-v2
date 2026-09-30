@@ -15,7 +15,7 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
 
   const diagnosis = getWebsiteAuditCommercialDiagnosis(audit);
   const clientSummary = toClientSummary(audit.summary);
-  const strengths = audit.strengths.slice(0, 4).map(toClientLanguage);
+  const strengths = audit.strengths.slice(0, 4).map(toClientStrength);
   const improvements = audit.weaknesses.slice(0, 5).map(toClientLanguage);
   const priorities = audit.priorities.slice(0, 3).map(toClientLanguage);
   const visibilityIssues = diagnosis.weaknesses.visibility.slice(0, 4).map(toClientLanguage);
@@ -111,8 +111,38 @@ function toClientSummary(value:string){
   return parts.join(" ");
 }
 
+function toClientStrength(value:string){
+  let text=value;
+
+  const replacements:[RegExp,string][]=[
+    [/\bCTA(?:s)?\b/g,"appels à l’action"],
+    [/\bviewport\b/gi,"adaptation aux écrans mobiles"],
+    [/\bbalises canoniques?\b/gi,"indications permettant aux moteurs d’identifier les pages principales"],
+    [/\bcanonical(?:es)?\b/gi,"page principale"],
+    [/\bmeta descriptions?\b/gi,"résumés affichés dans les résultats de recherche"],
+    [/\bH1\b/gi,"titre principal de page"],
+    [/\bJSON-LD\b/gi,"informations structurées"],
+    [/\bOpen Graph\b/gi,"présentation sur les réseaux sociaux"],
+  ];
+
+  for(const [pattern,replacement] of replacements){
+    text=text.replace(pattern,replacement);
+  }
+
+  return text.replace(/\s{2,}/g," ").trim();
+}
+
 function toClientLanguage(value:string){
   const lower=value.toLowerCase();
+
+  if(lower.includes("hasexperiencesignal") || lower.includes("hasexpertisesignal")){
+    return "Mieux mettre en avant l’expérience, le savoir-faire et les éléments qui différencient l’entreprise afin de renforcer sa crédibilité auprès des visiteurs, des moteurs de recherche et des assistants IA.";
+  }
+
+  if(lower.includes("vocabulaire géographique") || lower.includes("occurrence") && (lower.includes("local") || lower.includes("géograph"))){
+    return "Renforcer les références à la zone d’intervention et aux secteurs desservis afin d’améliorer la visibilité sur les recherches locales pertinentes.";
+  }
+
 
   if(lower.includes("meta description")){
     return "Mieux présenter chaque page dans les résultats de recherche afin de donner envie de cliquer et d’aider les moteurs à comprendre son contenu.";
