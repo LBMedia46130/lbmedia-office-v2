@@ -82,52 +82,95 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
 
 
 function toClientSummary(value:string){
-  return toClientLanguage(value)
-    .replace(/\s+/g," ")
-    .trim();
+  const lower=value.toLowerCase();
+
+  const parts:string[]=[];
+
+  if(lower.includes("agence") || lower.includes("coordonn") || lower.includes("service")){
+    parts.push("Le site présente correctement l’activité et permet de comprendre les principaux services proposés.");
+  } else {
+    parts.push("Le site dispose de bases utiles pour présenter l’activité et accompagner les visiteurs.");
+  }
+
+  if(lower.includes("meta") || lower.includes("h1") || lower.includes("seo") || lower.includes("index")){
+    parts.push("Sa visibilité dans les moteurs de recherche peut toutefois être renforcée grâce à une structure de pages plus claire et à une meilleure présentation des contenus dans les résultats.");
+  }
+
+  if(lower.includes("json") || lower.includes("structur") || lower.includes("ia") || lower.includes("open graph")){
+    parts.push("Des informations plus précises sur l’entreprise, ses services et sa zone d’intervention aideraient également Google et les assistants IA à mieux identifier et valoriser l’activité.");
+  }
+
+  if(lower.includes("témoign") || lower.includes("avis") || lower.includes("preuve") || lower.includes("contenu")){
+    parts.push("Enfin, davantage de contenus utiles et de preuves de confiance permettraient de renforcer la crédibilité du site et son potentiel de conversion.");
+  }
+
+  if(parts.length===1){
+    return toClientLanguage(value);
+  }
+
+  return parts.join(" ");
 }
 
 function toClientLanguage(value:string){
-  let text=value;
+  const lower=value.toLowerCase();
 
+  if(lower.includes("meta description")){
+    return "Mieux présenter chaque page dans les résultats de recherche afin de donner envie de cliquer et d’aider les moteurs à comprendre son contenu.";
+  }
+
+  if(/\bh1\b/i.test(value)){
+    return "Mieux structurer les pages pour permettre aux moteurs de recherche d’identifier immédiatement leur sujet principal.";
+  }
+
+  if(lower.includes("json-ld") || lower.includes("données structurées") || lower.includes("balisage structuré")){
+    return "Fournir aux moteurs de recherche et aux assistants IA des informations plus précises sur l’entreprise, ses services, sa zone d’intervention et, lorsque c’est pertinent, les avis clients.";
+  }
+
+  if(lower.includes("open graph")){
+    return "Améliorer la présentation du site lorsqu’une page est partagée sur les réseaux sociaux afin de renforcer son impact et son image.";
+  }
+
+  if(lower.includes("canonique") || lower.includes("canonical")){
+    return "Clarifier pour les moteurs de recherche quelles sont les pages principales à prendre en compte afin d’éviter les ambiguïtés.";
+  }
+
+  if(lower.includes("maillage interne")){
+    return "Créer davantage de liens pertinents entre les pages afin de faciliter la navigation des visiteurs et la compréhension du site par les moteurs de recherche.";
+  }
+
+  if(lower.includes("indexation") || lower.includes("robots.txt") || lower.includes("sitemap")){
+    return "Faciliter l’exploration et la prise en compte des pages importantes du site par les moteurs de recherche.";
+  }
+
+  if(lower.includes("témoign") || lower.includes("preuve sociale") || lower.includes("avis client")){
+    return "Renforcer les éléments de confiance avec davantage d’avis, de témoignages et de contenus démontrant concrètement l’expérience et le savoir-faire de l’entreprise.";
+  }
+
+  if(lower.includes("faq")){
+    return "Ajouter des réponses claires aux questions fréquentes des clients afin d’enrichir le contenu du site et de mieux répondre aux recherches courantes.";
+  }
+
+  if(lower.includes("actualités") || lower.includes("blog")){
+    return "Publier régulièrement des contenus utiles autour des services, des besoins clients et de la zone d’intervention pour développer durablement la visibilité du site.";
+  }
+
+  let text=value;
   const replacements:[RegExp,string][]=[
-    [/\baucune meta description repérée dans l['’]échantillon\b/gi,"Les pages analysées ne présentent pas toujours un résumé suffisamment clair pour les résultats de recherche"],
-    [/\bmeta descriptions?\b/gi,"résumés affichés dans les résultats de recherche"],
-    [/\baucun H1 détecté sur les pages analysées\b/gi,"La structure des pages peut être mieux organisée pour aider les moteurs à identifier immédiatement leur sujet principal"],
-    [/\bH1\b/gi,"titre principal de page"],
-    [/\bdonnées structurées JSON-LD non détectées\b/gi,"Le site fournit encore peu d’informations structurées permettant aux moteurs et assistants IA d’identifier précisément l’entreprise et ses services"],
-    [/\bdonnées structurées JSON-LD\b/gi,"informations structurées destinées aux moteurs et assistants IA"],
-    [/\bJSON-LD\b/gi,"informations structurées"],
-    [/\bLocalBusiness\b/gi,"informations sur l’entreprise locale"],
-    [/\bService\b/g,"informations sur les services"],
-    [/\bReview\b/g,"avis clients"],
-    [/\bbalises Open Graph non détectées\b/gi,"Le partage du site sur les réseaux sociaux peut être mieux valorisé"],
-    [/\bbalises Open Graph\b/gi,"informations de présentation pour les réseaux sociaux"],
-    [/\bOpen Graph\b/gi,"présentation lors des partages sur les réseaux sociaux"],
-    [/\bbalises canoniques\b/gi,"indications permettant aux moteurs d’identifier la version principale d’une page"],
-    [/\bcanonical(?:es)?\b/gi,"version principale d’une page"],
     [/\bCTA\b/g,"appels à l’action"],
     [/\bSERP\b/gi,"résultats de recherche"],
-    [/\bmaillage interne\b/gi,"liens entre les différentes pages du site"],
-    [/\bindexation\b/gi,"prise en compte des pages par les moteurs de recherche"],
-    [/\bcrawl(?:abilité|able|ing)?\b/gi,"capacité des moteurs à parcourir le site"],
-    [/\brobots\.txt\b/gi,"instructions données aux moteurs de recherche"],
-    [/\bsitemap(?:\.xml)?\b/gi,"plan du site destiné aux moteurs de recherche"],
-    [/\bSchema(?:\.org)?\b/gi,"informations structurées destinées aux moteurs"],
-    [/\bFAQ schema\b/gi,"questions-réponses structurées pour les moteurs"],
-    [/\balt\b/gi,"description des images"],
+    [/\bOpen Graph\b/gi,"présentation sur les réseaux sociaux"],
+    [/\bJSON-LD\b/gi,"informations structurées"],
+    [/\bLocalBusiness\b/gi,"informations sur l’entreprise locale"],
+    [/\bSchema(?:\.org)?\b/gi,"informations structurées"],
+    [/\bmeta descriptions?\b/gi,"résumés affichés dans les résultats de recherche"],
+    [/\bH1\b/gi,"titre principal de page"],
   ];
 
   for(const [pattern,replacement] of replacements){
     text=text.replace(pattern,replacement);
   }
 
-  text=text
-    .replace(/\s+—\s+/g," — ")
-    .replace(/\s{2,}/g," ")
-    .trim();
-
-  return text;
+  return text.replace(/\s{2,}/g," ").trim();
 }
 
 function InfoItem({label,value}:{label:string;value:string}){return <div><p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 break-words font-medium text-slate-700">{value}</p></div>}
