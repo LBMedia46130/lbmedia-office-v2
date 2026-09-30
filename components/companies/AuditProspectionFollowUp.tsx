@@ -26,6 +26,12 @@ type AuditProspectionFollowUpProps = {
   followUpAt:
     | string
     | null;
+
+  nextFollowUpNumber: number;
+
+  latestFollowUpSentAt:
+    | string
+    | null;
 };
 
 type GeneratedFollowUp = {
@@ -54,6 +60,8 @@ export default function AuditProspectionFollowUp({
   status,
   sentAt,
   followUpAt,
+  nextFollowUpNumber,
+  latestFollowUpSentAt,
 }: AuditProspectionFollowUpProps) {
   const router =
     useRouter();
@@ -594,15 +602,27 @@ export default function AuditProspectionFollowUp({
           </div>
 
           <h4 className="mt-2 text-base font-bold text-slate-900">
-            Suivre cette
-            prospection
+            {isReplied
+              ? "Suivi de la prospection"
+              : nextFollowUpNumber === 1
+                ? "1re relance à effectuer"
+                : `${nextFollowUpNumber}e relance à effectuer`}
           </h4>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Programme une relance
-            ou indique simplement
-            qu’une réponse a été
-            reçue.
+            {isReplied
+              ? "Cette prospection a obtenu une réponse."
+              : nextFollowUpNumber === 1
+                ? "Aucune relance n’a encore été envoyée."
+                : latestFollowUpSentAt
+                  ? `Relance ${nextFollowUpNumber - 1} envoyée le ${formatDateTime(
+                      latestFollowUpSentAt
+                    )}.`
+                  : `${nextFollowUpNumber - 1} relance${
+                      nextFollowUpNumber - 1 > 1 ? "s ont" : " a"
+                    } déjà été envoyée${
+                      nextFollowUpNumber - 1 > 1 ? "s" : ""
+                    }.`}
           </p>
         </div>
 
@@ -719,7 +739,9 @@ export default function AuditProspectionFollowUp({
                 }`}
               >
                 {followUpIsDue
-                  ? "Cette prospection est à relancer."
+                  ? nextFollowUpNumber === 1
+                    ? "La 1re relance est à effectuer."
+                    : `La ${nextFollowUpNumber}e relance est à effectuer.`
                   : `Relance prévue le ${formatDate(
                       followUpAt
                     )}.`}
@@ -740,8 +762,10 @@ export default function AuditProspectionFollowUp({
                   {isGenerating
                     ? "Préparation..."
                     : generatedFollowUp
-                      ? "Regénérer la relance"
-                      : "Préparer la relance"}
+                      ? `Regénérer la relance ${nextFollowUpNumber}`
+                      : nextFollowUpNumber === 1
+                        ? "Préparer la 1re relance"
+                        : `Préparer la ${nextFollowUpNumber}e relance`}
                 </button>
               ) : null}
             </div>

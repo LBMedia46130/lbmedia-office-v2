@@ -30,7 +30,11 @@ import {
 import {
   getAuditProspectionByAuditId,
 } from "@/lib/audit-prospections";
-import { getLatestAuditProspectionMessage } from "@/lib/audit-prospection-messages";
+import {
+  getAuditProspectionMessages,
+  getLatestAuditProspectionMessage,
+  getNextFollowUpSequenceNumber,
+} from "@/lib/audit-prospection-messages";
 import {
   prepareAuditProspection,
 } from "./auditProspectionActions";
@@ -83,12 +87,37 @@ export default async function CompanyPage({
         null,
         null,
       ];
-  const latestProspectionMessage =
-    latestProspection
-      ? await getLatestAuditProspectionMessage(
+  const [
+    latestProspectionMessage,
+    prospectionMessages,
+    nextFollowUpNumber,
+  ] = latestProspection
+    ? await Promise.all([
+        getLatestAuditProspectionMessage(
           latestProspection.id
-        )
-      : null;
+        ),
+        getAuditProspectionMessages(
+          latestProspection.id
+        ),
+        getNextFollowUpSequenceNumber(
+          latestProspection.id
+        ),
+      ])
+    : [
+        null,
+        [],
+        1,
+      ];
+
+  const latestSentFollowUp =
+    [...prospectionMessages]
+      .reverse()
+      .find(
+        (message) =>
+          message.message_type ===
+          "follow_up"
+      ) ?? null;
+
   const hasSentFollowUp =
     latestProspectionMessage?.message_type ===
     "follow_up";
@@ -633,6 +662,13 @@ export default async function CompanyPage({
                       }
                       followUpAt={
                         latestProspection.follow_up_at
+                      }
+                      nextFollowUpNumber={
+                        nextFollowUpNumber
+                      }
+                      latestFollowUpSentAt={
+                        latestSentFollowUp?.sent_at ??
+                        null
                       }
                     />
                     <div className="mt-5 rounded-xl border border-indigo-100 bg-white p-5">
