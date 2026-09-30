@@ -239,6 +239,13 @@ export default async function AuditDetailPage({
               Nouvel audit
             </Link>
 
+            <Link
+              href={`/companies/${company.id}/audits/${audit.id}/client-report`}
+              className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+            >
+              Compte rendu client
+            </Link>
+
             <AuditPrintButton />
 
             <AuditDeleteButton
