@@ -505,7 +505,7 @@ export default function AppSidebar() {
           </p>
 
           <p className="mt-1 text-[10px] text-slate-400">
-            Version 2.3.3
+            Version 2.5.0
           </p>
         </div>
       </div>
