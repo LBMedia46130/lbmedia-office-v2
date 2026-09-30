@@ -626,6 +626,10 @@ export default function AuditProspectionFollowUp({
               <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
                 Réponse reçue
               </span>
+            ) : isStopped ? (
+              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-700">
+                Relances stoppées
+              </span>
             ) : followUpIsDue ? (
               <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">
                 À relancer
@@ -644,16 +648,20 @@ export default function AuditProspectionFollowUp({
           <h4 className="mt-2 text-base font-bold text-slate-900">
             {isReplied
               ? "Suivi de la prospection"
-              : nextFollowUpNumber === 1
-                ? "1re relance à effectuer"
-                : `${nextFollowUpNumber}e relance à effectuer`}
+              : isStopped
+                ? "Relances stoppées"
+                : nextFollowUpNumber === 1
+                  ? "1re relance à effectuer"
+                  : `${nextFollowUpNumber}e relance à effectuer`}
           </h4>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             {isReplied
               ? "Cette prospection a obtenu une réponse."
-              : nextFollowUpNumber === 1
-                ? "Aucune relance n’a encore été envoyée."
+              : isStopped
+                ? "Aucune nouvelle relance ne sera proposée tant que le suivi n’est pas réactivé."
+                : nextFollowUpNumber === 1
+                  ? "Aucune relance n’a encore été envoyée."
                 : latestFollowUpSentAt
                   ? `Relance ${nextFollowUpNumber - 1} envoyée le ${formatDateTime(
                       latestFollowUpSentAt
@@ -704,6 +712,25 @@ export default function AuditProspectionFollowUp({
             className="mt-4 inline-flex items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Réouvrir le suivi
+          </button>
+        </div>
+      ) : isStopped ? (
+        <div className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-4">
+          <p className="text-sm font-bold text-slate-700">
+            Les relances sont stoppées.
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Cette prospection reste dans l’historique, mais aucune nouvelle relance n’est actuellement attendue.
+          </p>
+
+          <button
+            type="button"
+            onClick={reactivateFollowUps}
+            disabled={isSaving}
+            className="mt-4 inline-flex items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSaving ? "Réactivation..." : "Réactiver les relances"}
           </button>
         </div>
       ) : (
@@ -958,7 +985,7 @@ export default function AuditProspectionFollowUp({
             </div>
           ) : null}
 
-          <div className="mt-5 border-t border-violet-200 pt-5">
+          <div className="mt-5 flex flex-wrap gap-3 border-t border-violet-200 pt-5">
             <button
               type="button"
               onClick={
@@ -972,6 +999,23 @@ export default function AuditProspectionFollowUp({
             >
               Marquer comme
               réponse reçue
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                stopFollowUps
+              }
+              disabled={
+                isSaving ||
+                isSending ||
+                isGenerating
+              }
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSaving
+                ? "Enregistrement..."
+                : "Stopper les relances"}
             </button>
           </div>
         </>
