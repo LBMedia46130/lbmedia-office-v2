@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AuditPrintButton from "@/components/companies/AuditPrintButton";
 import { getCompanyById } from "@/lib/companies";
 import { getWebsiteAuditById, getWebsiteAuditCommercialDiagnosis } from "@/lib/website-audits";
 
