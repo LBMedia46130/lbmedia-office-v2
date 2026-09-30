@@ -41,6 +41,7 @@ export async function GET(
           sent_email_content,
           sent_html_content,
           sent_attachment_url,
+          sent_client_report_attached,
           smtp_message_id
         `
       )

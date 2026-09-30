@@ -1727,6 +1727,53 @@ export async function POST(
       new Date()
         .toISOString();
     if (isResend) {
+      const {
+        error:
+          resendTraceError,
+      } = await supabaseAdmin
+        .from(
+          "audit_prospections"
+        )
+        .update({
+          sent_client_report_attached:
+            attachClientReport,
+          updated_at:
+            sentAt,
+        })
+        .eq(
+          "id",
+          prospection.id
+        );
+
+      if (
+        resendTraceError
+      ) {
+        console.error(
+          "Audit renvoyé mais traçabilité des pièces jointes non enregistrée",
+          {
+            prospectionId:
+              prospection.id,
+            error:
+              resendTraceError.message,
+          }
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            sent: true,
+            message:
+              "L’audit a été renvoyé, mais la traçabilité des pièces jointes n’a pas pu être enregistrée. Ne renvoyez pas l’email.",
+            messageId:
+              sendResult.messageId,
+            sentAt,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
       let archivedMessage = null;
       try {
         archivedMessage = await createResentInitialAuditProspectionMessage({ auditProspectionId: prospection.id, recipientEmail: recipientEmails.join(", "), subject, emailContent, htmlContent, attachmentUrl, smtpMessageId: sendResult.messageId ?? null, sentAt });
@@ -1788,6 +1835,8 @@ export async function POST(
           htmlContent,
         sent_attachment_url:
           attachmentUrl,
+        sent_client_report_attached:
+          attachClientReport,
         smtp_message_id:
           sendResult.messageId ??
           null,

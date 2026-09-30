@@ -60,6 +60,9 @@ type SendTrace = {
   sent_attachment_url:
     | string
     | null;
+  sent_client_report_attached:
+    | boolean
+    | null;
   smtp_message_id:
     | string
     | null;
@@ -413,26 +416,40 @@ export default function AuditProspectionSendButton({
             </div>
             <div className="mt-3 rounded-xl border border-emerald-200 bg-white px-4 py-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                Pièce jointe
+                Pièces jointes envoyées
               </p>
-              {archivedAttachment ? (
-                <a
-                  href={
-                    archivedAttachment
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 inline-flex text-sm font-semibold text-blue-600 transition hover :text-blue-700"
-                >
-                  Ouvrir le PDF
-                  envoyé
-                </a>
-              ) : (
-                <p className="mt-2 text-sm text-slate-500">
-                  Aucune pièce
-                  jointe archivée.
-                </p>
-              )}
+              <div className="mt-3 space-y-2">
+                {archivedAttachment ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                    <p className="text-sm font-semibold text-emerald-800">
+                      ✓ Projection commerciale PDF
+                    </p>
+                    <a
+                      href={
+                        archivedAttachment
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold text-blue-600 transition hover:text-blue-700"
+                    >
+                      Ouvrir
+                    </a>
+                  </div>
+                ) : null}
+                {trace.sent_client_report_attached ? (
+                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                    <p className="text-sm font-semibold text-emerald-800">
+                      ✓ Compte rendu d’audit PDF
+                    </p>
+                  </div>
+                ) : null}
+                {!archivedAttachment &&
+                !trace.sent_client_report_attached ? (
+                  <p className="text-sm text-slate-500">
+                    Aucune pièce jointe enregistrée pour cet envoi.
+                  </p>
+                ) : null}
+              </div>
             </div>
             <div className="mt-4 rounded-xl border border-emerald-200 bg-white">
               <button
