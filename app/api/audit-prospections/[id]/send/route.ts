@@ -581,6 +581,7 @@ function sanitizePdfText(value: string) {
     .replaceAll("”", '"')
     .replaceAll("–", "-")
     .replaceAll("—", "-")
+    .replaceAll("‑", "-")
     .replaceAll("•", "-")
     .replaceAll("·", "-")
     .replace(/\s+/g, " ")
