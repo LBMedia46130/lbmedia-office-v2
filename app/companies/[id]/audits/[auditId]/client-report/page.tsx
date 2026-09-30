@@ -14,11 +14,12 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
   if (!company || !audit || String(audit.company_id ?? "") !== String(company.id)) notFound();
 
   const diagnosis = getWebsiteAuditCommercialDiagnosis(audit);
-  const strengths = audit.strengths.slice(0, 4);
-  const improvements = audit.weaknesses.slice(0, 5);
-  const priorities = audit.priorities.slice(0, 3);
-  const visibilityIssues = diagnosis.weaknesses.visibility.slice(0, 4);
-  const websiteIssues = diagnosis.weaknesses.website.slice(0, 4);
+  const clientSummary = toClientSummary(audit.summary);
+  const strengths = audit.strengths.slice(0, 4).map(toClientLanguage);
+  const improvements = audit.weaknesses.slice(0, 5).map(toClientLanguage);
+  const priorities = audit.priorities.slice(0, 3).map(toClientLanguage);
+  const visibilityIssues = diagnosis.weaknesses.visibility.slice(0, 4).map(toClientLanguage);
+  const websiteIssues = diagnosis.weaknesses.website.slice(0, 4).map(toClientLanguage);
 
   return (
     <main className="client-report-root min-h-screen bg-slate-100">
@@ -43,7 +44,7 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
         </header>
 
         <section className="print-avoid mt-6 rounded-3xl border border-blue-200 bg-blue-50 p-7 sm:p-9">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"><div className="max-w-2xl"><p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Votre site aujourd’hui</p><h2 className="mt-2 text-2xl font-bold text-slate-950">Une vue d’ensemble de son efficacité et de sa visibilité</h2><p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-700">{audit.summary}</p></div><div className="shrink-0 rounded-2xl border border-blue-200 bg-white px-7 py-5 text-center"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">Score global</p><p className="mt-1 text-4xl font-bold text-slate-950">{audit.global_score}<span className="ml-1 text-sm font-medium text-slate-400">/100</span></p></div></div>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between"><div className="max-w-2xl"><p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">Votre site aujourd’hui</p><h2 className="mt-2 text-2xl font-bold text-slate-950">Une vue d’ensemble de son efficacité et de sa visibilité</h2><p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-700">{clientSummary}</p></div><div className="shrink-0 rounded-2xl border border-blue-200 bg-white px-7 py-5 text-center"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">Score global</p><p className="mt-1 text-4xl font-bold text-slate-950">{audit.global_score}<span className="ml-1 text-sm font-medium text-slate-400">/100</span></p></div></div>
         </section>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -77,6 +78,56 @@ export default async function ClientReportPage({ params }: ClientReportPageProps
       </div>
     </main>
   );
+}
+
+
+function toClientSummary(value:string){
+  return toClientLanguage(value)
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function toClientLanguage(value:string){
+  let text=value;
+
+  const replacements:[RegExp,string][]=[
+    [/\baucune meta description repérée dans l['’]échantillon\b/gi,"Les pages analysées ne présentent pas toujours un résumé suffisamment clair pour les résultats de recherche"],
+    [/\bmeta descriptions?\b/gi,"résumés affichés dans les résultats de recherche"],
+    [/\baucun H1 détecté sur les pages analysées\b/gi,"La structure des pages peut être mieux organisée pour aider les moteurs à identifier immédiatement leur sujet principal"],
+    [/\bH1\b/gi,"titre principal de page"],
+    [/\bdonnées structurées JSON-LD non détectées\b/gi,"Le site fournit encore peu d’informations structurées permettant aux moteurs et assistants IA d’identifier précisément l’entreprise et ses services"],
+    [/\bdonnées structurées JSON-LD\b/gi,"informations structurées destinées aux moteurs et assistants IA"],
+    [/\bJSON-LD\b/gi,"informations structurées"],
+    [/\bLocalBusiness\b/gi,"informations sur l’entreprise locale"],
+    [/\bService\b/g,"informations sur les services"],
+    [/\bReview\b/g,"avis clients"],
+    [/\bbalises Open Graph non détectées\b/gi,"Le partage du site sur les réseaux sociaux peut être mieux valorisé"],
+    [/\bbalises Open Graph\b/gi,"informations de présentation pour les réseaux sociaux"],
+    [/\bOpen Graph\b/gi,"présentation lors des partages sur les réseaux sociaux"],
+    [/\bbalises canoniques\b/gi,"indications permettant aux moteurs d’identifier la version principale d’une page"],
+    [/\bcanonical(?:es)?\b/gi,"version principale d’une page"],
+    [/\bCTA\b/g,"appels à l’action"],
+    [/\bSERP\b/gi,"résultats de recherche"],
+    [/\bmaillage interne\b/gi,"liens entre les différentes pages du site"],
+    [/\bindexation\b/gi,"prise en compte des pages par les moteurs de recherche"],
+    [/\bcrawl(?:abilité|able|ing)?\b/gi,"capacité des moteurs à parcourir le site"],
+    [/\brobots\.txt\b/gi,"instructions données aux moteurs de recherche"],
+    [/\bsitemap(?:\.xml)?\b/gi,"plan du site destiné aux moteurs de recherche"],
+    [/\bSchema(?:\.org)?\b/gi,"informations structurées destinées aux moteurs"],
+    [/\bFAQ schema\b/gi,"questions-réponses structurées pour les moteurs"],
+    [/\balt\b/gi,"description des images"],
+  ];
+
+  for(const [pattern,replacement] of replacements){
+    text=text.replace(pattern,replacement);
+  }
+
+  text=text
+    .replace(/\s+—\s+/g," — ")
+    .replace(/\s{2,}/g," ")
+    .trim();
+
+  return text;
 }
 
 function InfoItem({label,value}:{label:string;value:string}){return <div><p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 break-words font-medium text-slate-700">{value}</p></div>}
