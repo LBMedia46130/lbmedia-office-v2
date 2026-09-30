@@ -35,6 +35,7 @@ const allowedStatuses: AuditProspectionStatus[] =
     "sent",
     "follow_up",
     "replied",
+    "stopped",
   ];
 
 export async function PATCH(

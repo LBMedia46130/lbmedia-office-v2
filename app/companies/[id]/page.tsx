@@ -937,7 +937,8 @@ function ProspectionStatusBadge({
     | "ready"
     | "sent"
     | "follow_up"
-    | "replied";
+    | "replied"
+    | "stopped";
 }) {
   return (
     <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
@@ -954,6 +955,7 @@ function getProspectionStatusLabel(
     | "sent"
     | "follow_up"
     | "replied"
+    | "stopped"
 ) {
   const labels = {
     draft: "À préparer",
@@ -963,6 +965,8 @@ function getProspectionStatusLabel(
       "Relance à faire",
     replied:
       "Réponse reçue",
+    stopped:
+      "Relances stoppées",
   };
   return labels[status];
 }

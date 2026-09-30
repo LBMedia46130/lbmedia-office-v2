@@ -22,7 +22,8 @@ type ViewFilter =
   | "sent"
   | "scheduled"
   | "due"
-  | "replied";
+  | "replied"
+  | "stopped";
 export default async function ProspectionPage({
   searchParams,
 }: PageProps) {
@@ -105,6 +106,12 @@ export default async function ProspectionPage({
         prospection.status ===
         "replied"
     ).length;
+  const stoppedCount =
+    rows.filter(
+      ({ prospection }) =>
+        prospection.status ===
+        "stopped"
+    ).length;
   const allFilteredRows =
     rows
       .filter(
@@ -155,7 +162,7 @@ export default async function ProspectionPage({
           title="Prospection"
           description="Pilotage des propositions commerciales issues des audits et suivi des relances."
         />
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
           <StatCard
             href="/companies/prospection?status=draft"
             label="À préparer"
@@ -226,6 +233,18 @@ export default async function ProspectionPage({
             active={
               activeFilter ===
               "replied"
+            }
+          />
+          <StatCard
+            href="/companies/prospection?status=stopped"
+            label="Relances stoppées"
+            value={
+              stoppedCount
+            }
+            tone="rose"
+            active={
+              activeFilter ===
+              "stopped"
             }
           />
         </section>
@@ -386,6 +405,14 @@ export default async function ProspectionPage({
                   "replied"
                 }
               />
+              <FilterLink
+                href="/companies/prospection?status=stopped"
+                label="Relances stoppées"
+                active={
+                  activeFilter ===
+                  "stopped"
+                }
+              />
             </div>
           </div>
           <div className="mt-5 border-t border-slate-100 pt-5">
@@ -531,7 +558,8 @@ function StatCard({
     | "emerald"
     | "violet"
     | "amber"
-    | "cyan";
+    | "cyan"
+    | "rose";
   active: boolean;
 }) {
   const tones = {
@@ -547,6 +575,8 @@ function StatCard({
       "border-amber-200 bg-gradient-to-br from-white to-amber-50 text-amber-700",
     cyan:
       "border-cyan-200 bg-gradient-to-br from-white to-cyan-50 text-cyan-700",
+    rose:
+      "border-rose-200 bg-gradient-to-br from-white to-rose-50 text-rose-700",
   };
   return (
     <Link
@@ -821,6 +851,8 @@ function getStatusLabel(
       "Suivi",
     replied:
       "Réponse reçue",
+    stopped:
+      "Relances stoppées",
   };
   return labels[status];
 }
@@ -838,6 +870,8 @@ function getStatusClassName(
       "bg-violet-100 text-violet-700",
     replied:
       "bg-cyan-100 text-cyan-700",
+    stopped:
+      "bg-rose-100 text-rose-700",
   };
   return classes[status];
 }
@@ -852,6 +886,7 @@ function isViewFilter(
     "scheduled",
     "due",
     "replied",
+    "stopped",
   ].includes(
     value
   );

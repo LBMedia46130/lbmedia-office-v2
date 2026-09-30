@@ -7,7 +7,8 @@ export type AuditProspectionStatus =
   | "ready"
   | "sent"
   | "follow_up"
-  | "replied";
+  | "replied"
+  | "stopped";
 
 export type AuditProspectionProposalType =
   | "optimization"

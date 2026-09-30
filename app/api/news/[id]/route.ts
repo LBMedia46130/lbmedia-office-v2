@@ -351,6 +351,75 @@ export async function DELETE(
 ) {
   const { id } = await context.params;
 
+  const {
+    data: currentNews,
+    error: currentNewsError,
+  } = await supabaseAdmin
+    .from("news")
+    .select("id, status")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (currentNewsError) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Impossible de charger l’actualité.",
+        error: currentNewsError.message,
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+
+  if (!currentNews) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Actualité introuvable.",
+      },
+      {
+        status: 404,
+      }
+    );
+  }
+
+  if (currentNews.status === "published") {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Une actualité publiée ne peut pas être supprimée depuis LBMedia Office.",
+      },
+      {
+        status: 409,
+      }
+    );
+  }
+
+  const { error: publicationsError } =
+    await supabaseAdmin
+      .from("publications")
+      .delete()
+      .eq("news_id", id);
+
+  if (publicationsError) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Impossible de supprimer les déclinaisons associées.",
+        error: publicationsError.message,
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+
   const { data, error } =
     await supabaseAdmin
       .from("news")

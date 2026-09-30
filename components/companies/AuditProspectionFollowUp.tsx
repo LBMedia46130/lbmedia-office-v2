@@ -17,7 +17,8 @@ type AuditProspectionFollowUpProps = {
     | "ready"
     | "sent"
     | "follow_up"
-    | "replied";
+    | "replied"
+    | "stopped";
 
   sentAt:
     | string
@@ -152,7 +153,8 @@ export default function AuditProspectionFollowUp({
   if (
     status !== "sent" &&
     status !== "follow_up" &&
-    status !== "replied"
+    status !== "replied" &&
+    status !== "stopped"
   ) {
     return null;
   }
@@ -160,10 +162,14 @@ export default function AuditProspectionFollowUp({
   const isReplied =
     status === "replied";
 
+  const isStopped =
+    status === "stopped";
+
   const followUpIsDue =
     Boolean(
       followUpAt &&
         !isReplied &&
+        !isStopped &&
         new Date(
           followUpAt
         ).getTime() <=
@@ -175,7 +181,8 @@ export default function AuditProspectionFollowUp({
       status?:
         | "sent"
         | "follow_up"
-        | "replied";
+        | "replied"
+        | "stopped";
 
       followUpAt?:
         | string
@@ -289,6 +296,39 @@ export default function AuditProspectionFollowUp({
           followUpDateTime.toISOString(),
       },
       "Relance programmée."
+    );
+  }
+
+  async function stopFollowUps() {
+    await updateProspection(
+      {
+        status:
+          "stopped",
+
+        followUpAt:
+          null,
+      },
+      "Relances stoppées."
+    );
+  }
+
+  async function reactivateFollowUps() {
+    const nextDate =
+      new Date();
+
+    nextDate.setDate(
+      nextDate.getDate() + 7
+    );
+
+    await updateProspection(
+      {
+        status:
+          "follow_up",
+
+        followUpAt:
+          nextDate.toISOString(),
+      },
+      "Relances réactivées. Une nouvelle date de suivi a été proposée à J+7."
     );
   }
 

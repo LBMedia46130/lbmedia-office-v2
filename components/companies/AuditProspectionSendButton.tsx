@@ -18,7 +18,8 @@ type AuditProspectionSendButtonProps = {
     | "ready"
     | "sent"
     | "follow_up"
-    | "replied";
+    | "replied"
+    | "stopped";
   proposalType?:
     | ProposalType
     | null;
