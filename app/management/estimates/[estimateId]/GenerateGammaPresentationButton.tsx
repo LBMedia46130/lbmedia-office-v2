@@ -10,6 +10,9 @@ type GenerateGammaPresentationButtonProps = {
   estimateId: string;
   estimateNumber: string;
   customerName: string;
+  initialGenerationId?: string | null;
+  initialGammaUrl?: string | null;
+  initialGeneratedAt?: string | null;
 };
 
 type GammaStatus =
@@ -35,6 +38,9 @@ export default function GenerateGammaPresentationButton({
   estimateId,
   estimateNumber,
   customerName,
+  initialGenerationId = null,
+  initialGammaUrl = null,
+  initialGeneratedAt = null,
 }: GenerateGammaPresentationButtonProps) {
   const [
     generationId,
@@ -48,7 +54,11 @@ export default function GenerateGammaPresentationButton({
     setStatus,
   ] =
     useState<GammaStatus>(
-      "idle"
+      initialGammaUrl
+        ? "completed"
+        : initialGenerationId
+          ? "pending"
+          : "idle"
     );
 
   const [
@@ -301,6 +311,23 @@ export default function GenerateGammaPresentationButton({
     }
   }
 
+  const generatedAtLabel =
+    initialGeneratedAt
+      ? new Intl.DateTimeFormat(
+          "fr-FR",
+          {
+            dateStyle:
+              "short",
+            timeStyle:
+              "short",
+          }
+        ).format(
+          new Date(
+            initialGeneratedAt
+          )
+        )
+      : null;
+
   const isGenerating =
     status === "starting" ||
     status === "pending" ||
@@ -324,6 +351,13 @@ export default function GenerateGammaPresentationButton({
             Devis{" "}
             {estimateNumber}
           </p>
+
+          {generatedAtLabel ? (
+            <p className="mt-1 text-xs text-emerald-700">
+              Dernière génération :{" "}
+              {generatedAtLabel}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-2">

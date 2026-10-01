@@ -209,7 +209,10 @@ export default async function EstimateDetailPage({
         )
         .select(
           `
-            campaign_objective
+            campaign_objective,
+            gamma_generation_id,
+            gamma_url,
+            gamma_generated_at
           `
         )
         .eq(
@@ -242,6 +245,36 @@ export default async function EstimateDetailPage({
           .data
           .campaign_objective
       : "";
+
+  const gammaGenerationId =
+    typeof campaignContextResult
+      .data
+      ?.gamma_generation_id ===
+      "string"
+      ? campaignContextResult
+          .data
+          .gamma_generation_id
+      : null;
+
+  const gammaUrl =
+    typeof campaignContextResult
+      .data
+      ?.gamma_url ===
+      "string"
+      ? campaignContextResult
+          .data
+          .gamma_url
+      : null;
+
+  const gammaGeneratedAt =
+    typeof campaignContextResult
+      .data
+      ?.gamma_generated_at ===
+      "string"
+      ? campaignContextResult
+          .data
+          .gamma_generated_at
+      : null;
 
   const currency =
     estimate.currency_code ||
@@ -778,6 +811,15 @@ export default async function EstimateDetailPage({
                   }
                   customerName={
                     estimate.customer_name
+                  }
+                  initialGenerationId={
+                    gammaGenerationId
+                  }
+                  initialGammaUrl={
+                    gammaUrl
+                  }
+                  initialGeneratedAt={
+                    gammaGeneratedAt
                   }
                 />
               </div>

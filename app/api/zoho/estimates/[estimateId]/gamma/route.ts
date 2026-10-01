@@ -728,6 +728,56 @@ Avant de finaliser la présentation, vérifier impérativement que :
 `.trim();
 }
 
+async function persistGammaState(
+  zohoEstimateId: string,
+  values: {
+    gamma_generation_id?: string | null;
+    gamma_url?: string | null;
+    gamma_generated_at?: string | null;
+  }
+) {
+  const {
+    data: existingRow,
+    error: updateError,
+  } = await supabaseAdmin
+    .from(
+      "estimate_campaign_contexts"
+    )
+    .update(values)
+    .eq(
+      "zoho_estimate_id",
+      zohoEstimateId
+    )
+    .select(
+      "zoho_estimate_id"
+    )
+    .maybeSingle();
+
+  if (updateError) {
+    throw updateError;
+  }
+
+  if (existingRow) {
+    return;
+  }
+
+  const {
+    error: insertError,
+  } = await supabaseAdmin
+    .from(
+      "estimate_campaign_contexts"
+    )
+    .insert({
+      zoho_estimate_id:
+        zohoEstimateId,
+      ...values,
+    });
+
+  if (insertError) {
+    throw insertError;
+  }
+}
+
 /*
  * POST
  *
@@ -820,6 +870,24 @@ export async function POST(
         prompt
       );
 
+    try {
+      await persistGammaState(
+        normalizedEstimateId,
+        {
+          gamma_generation_id:
+            generation.generationId,
+          gamma_url: null,
+          gamma_generated_at:
+            null,
+        }
+      );
+    } catch (persistenceError) {
+      console.error(
+        "Impossible d'enregistrer la génération Gamma dans Supabase :",
+        persistenceError
+      );
+    }
+
     return NextResponse.json(
       {
         generationId:
@@ -869,9 +937,30 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  _context: RouteContext
+  context: RouteContext
 ) {
   try {
+    const {
+      estimateId,
+    } = await context.params;
+
+    const normalizedEstimateId =
+      estimateId?.trim();
+
+    if (
+      !normalizedEstimateId
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Identifiant de devis Zoho manquant.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const generationId =
       request.nextUrl.searchParams
         .get("generationId")
@@ -893,6 +982,31 @@ export async function GET(
       await getGammaGeneration(
         generationId
       );
+
+    if (
+      generation.status ===
+        "completed" &&
+      generation.gammaUrl
+    ) {
+      try {
+        await persistGammaState(
+          normalizedEstimateId,
+          {
+            gamma_generation_id:
+              generationId,
+            gamma_url:
+              generation.gammaUrl,
+            gamma_generated_at:
+              new Date().toISOString(),
+          }
+        );
+      } catch (persistenceError) {
+        console.error(
+          "Impossible d'enregistrer le lien Gamma dans Supabase :",
+          persistenceError
+        );
+      }
+    }
 
     return NextResponse.json({
       generationId,
