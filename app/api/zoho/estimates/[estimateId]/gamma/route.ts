@@ -736,10 +736,38 @@ Avant de finaliser la présentation, vérifier impérativement que :
  * de la génération.
  */
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   context: RouteContext
 ) {
   try {
+    let requestBody: {
+      action?: unknown;
+    } = {};
+
+    try {
+      requestBody =
+        (await request.json()) as {
+          action?: unknown;
+        };
+    } catch {
+      requestBody = {};
+    }
+
+    if (
+      requestBody.action !==
+      "generate"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Génération Gamma refusée : action explicite requise.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     const {
       estimateId,
     } = await context.params;
