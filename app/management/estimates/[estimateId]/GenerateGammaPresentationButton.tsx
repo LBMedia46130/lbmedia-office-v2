@@ -47,7 +47,7 @@ export default function GenerateGammaPresentationButton({
     setGenerationId,
   ] = useState<
     string | null
-  >(null);
+  >(initialGenerationId);
 
   const [
     status,
@@ -73,7 +73,7 @@ export default function GenerateGammaPresentationButton({
     setGammaUrl,
   ] = useState<
     string | null
-  >(null);
+  >(initialGammaUrl);
 
   const [
     exportUrl,
@@ -370,7 +370,7 @@ export default function GenerateGammaPresentationButton({
               rel="noopener noreferrer"
               className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              Voir la présentation
+              Ouvrir dans Gamma
             </a>
           ) : null}
 
