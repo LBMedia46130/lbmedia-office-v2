@@ -129,6 +129,172 @@ function normalizeForDetection(
     .toLowerCase();
 }
 
+type CoverVisualDirection = {
+  label: string;
+  instructions: string;
+};
+
+function getEstimateSearchableText(
+  estimate: ZohoEstimate,
+  campaignContext: CampaignContext
+) {
+  return [
+    estimate.customer_name,
+    estimate.reference_number,
+    estimate.notes,
+    campaignContext.objective,
+    ...(estimate.line_items ?? []).flatMap(
+      (line) => [
+        line.name,
+        line.description,
+      ]
+    ),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function inferCoverVisualDirection(
+  estimate: ZohoEstimate,
+  campaignContext: CampaignContext
+): CoverVisualDirection {
+  const normalized =
+    normalizeForDetection(
+      getEstimateSearchableText(
+        estimate,
+        campaignContext
+      )
+    );
+
+  const hasAny = (
+    keywords: string[]
+  ) =>
+    keywords.some((keyword) =>
+      normalized.includes(keyword)
+    );
+
+  if (
+    hasAny([
+      "restaurant",
+      "restauration",
+      "traiteur",
+      "bar",
+      "brasserie",
+      "cafe",
+      "boulanger",
+      "boulangerie",
+      "patisserie",
+      "epicerie",
+      "vin",
+      "cave",
+      "aliment",
+      "food",
+    ])
+  ) {
+    return {
+      label:
+        "Restauration / alimentaire",
+      instructions:
+        "Utiliser une image de couverture chaleureuse et réaliste liée à l'univers de la restauration ou de l'alimentaire : établissement, produits, service, ambiance conviviale, clientèle ou scène de vie crédible. Éviter les images trop luxueuses ou trop génériques.",
+    };
+  }
+
+  if (
+    hasAny([
+      "artisan",
+      "artisanat",
+      "batiment",
+      "btp",
+      "travaux",
+      "renovation",
+      "construction",
+      "charpente",
+      "menuiserie",
+      "plomberie",
+      "chauffage",
+      "electricite",
+      "peinture",
+      "maconnerie",
+      "habitat",
+      "materiaux",
+      "piscine",
+      "cuisine",
+      "carrelage",
+    ])
+  ) {
+    return {
+      label:
+        "Artisan / bâtiment / habitat",
+      instructions:
+        "Utiliser une image de couverture réaliste liée au savoir-faire métier : chantier propre, réalisation, habitat, équipe au travail, détail de matériaux ou intervention professionnelle. L'image doit inspirer sérieux, proximité et qualité.",
+    };
+  }
+
+  if (
+    hasAny([
+      "communaute de communes",
+      "mairie",
+      "ville",
+      "departement",
+      "collectivite",
+      "office de tourisme",
+      "tourisme",
+      "patrimoine",
+      "festival",
+      "evenement",
+      "manifestation",
+      "territoire",
+      "association",
+      "culture",
+      "saison",
+    ])
+  ) {
+    return {
+      label:
+        "Collectivité / tourisme / événement / territoire",
+      instructions:
+        "Utiliser une image de couverture ancrée dans le territoire et l'humain : paysage local, lieu identifiable sans être trop carte postale, scène de vie, public, événement, patrimoine ou service de proximité selon le contexte. Le rendu doit rester institutionnel, accessible et chaleureux.",
+    };
+  }
+
+  if (
+    hasAny([
+      "magasin",
+      "boutique",
+      "commerce",
+      "optique",
+      "coiffure",
+      "salon",
+      "beaute",
+      "fleuriste",
+      "garage",
+      "automobile",
+      "moto",
+      "concession",
+      "animalerie",
+      "pharmacie",
+      "superette",
+      "librairie",
+      "pret a porter",
+    ])
+  ) {
+    return {
+      label:
+        "Commerce local",
+      instructions:
+        "Utiliser une image de couverture réaliste montrant le commerce, l'accueil client, la vitrine, le point de vente ou l'expérience en magasin. L'ambiance doit être locale, professionnelle et engageante.",
+    };
+  }
+
+  return {
+    label:
+      "Services / entreprise locale",
+    instructions:
+      "Utiliser une image de couverture réaliste et professionnelle liée à l'activité du client : personnes en situation de travail, accueil, échange, environnement métier ou scène d'usage cohérente avec le service proposé. Éviter les visuels trop abstraits ou impersonnels.",
+  };
+}
+
+
 function detectRadioTerritory(
   estimate: ZohoEstimate
 ) {
@@ -458,6 +624,11 @@ RÈGLE :
 - rester factuel à partir des prestations du devis ;
 - ne pas inventer un objectif commercial précis qui ne figure pas dans les données disponibles.
 `;
+  const coverVisualDirection =
+    inferCoverVisualDirection(
+      estimate,
+      campaignContext
+    );
 
   const territoryInstructions = `
 TERRITOIRE DE LA CAMPAGNE :
@@ -525,6 +696,24 @@ ${clientLogoInstructions}
 ${campaignObjectiveInstructions}
 
 ${territoryInstructions}
+
+COUVERTURE — IMAGE DE PREMIÈRE PAGE :
+La première page doit conserver la mise en page générale du template Gamma, mais l'image principale de couverture doit être personnalisée en fonction du client et de la campagne.
+
+Activité / famille visuelle détectée : ${coverVisualDirection.label}
+Direction visuelle recommandée : ${coverVisualDirection.instructions}
+
+RÈGLES POUR LA COUVERTURE :
+- l'image de couverture doit être cohérente avec l'activité réelle du client ;
+- elle doit également être cohérente avec l'objectif de campagne lorsqu'il est renseigné ;
+- si l'objectif concerne une opération ponctuelle (portes ouvertes, événement, recrutement, promotion, lancement, saison, opération commerciale), l'image doit le suggérer visuellement de manière crédible ;
+- privilégier une image réaliste, sobre, professionnelle et crédible ;
+- l'image doit évoquer le terrain, la proximité et l'activité du client plutôt qu'un univers radio générique ;
+- ne pas utiliser de visuel futuriste, d'illustration abstraite, de robot, de cerveau numérique, ni de composition artificielle sans lien avec le métier ;
+- éviter les images de banque d'images trop génériques, trop corporate ou déconnectées du territoire et du client ;
+- ne pas inventer de texte intégré dans l'image ;
+- ne pas intégrer de faux logo ou de signalétique inventée dans l'image ;
+- l'image de couverture doit rester élégante et compatible avec la lisibilité des éléments de la page.
 
 PAGE "ENJEUX" :
 Cette page doit être personnalisée en priorité à partir de l'objectif de campagne et du territoire fournis ci-dessus.
