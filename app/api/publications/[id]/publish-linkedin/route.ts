@@ -14,6 +14,7 @@ type LinkedInPublication = {
   channel: string;
   content: string;
   link_url: string | null;
+  hashtags: string | null;
   image_url: string | null;
   image_alt: string | null;
   status: string;
@@ -304,6 +305,7 @@ export async function POST(
         channel,
         content,
         link_url,
+        hashtags,
         image_url,
         image_alt,
         status,
@@ -549,6 +551,18 @@ export async function POST(
         .content
         .trim(),
     ];
+
+    if (
+      linkedInPublication
+        .hashtags
+        ?.trim()
+    ) {
+      messageParts.push(
+        linkedInPublication
+          .hashtags
+          .trim()
+      );
+    }
 
     if (
       linkedInPublication
