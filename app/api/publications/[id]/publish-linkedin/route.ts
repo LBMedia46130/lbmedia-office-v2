@@ -581,6 +581,21 @@ export async function POST(
         "\n\n"
       );
 
+    console.log(
+      "LINKEDIN_DEBUG_BEFORE_SEND",
+      {
+        publicationId:
+          linkedInPublication.id,
+        content:
+          linkedInPublication.content,
+        hashtags:
+          linkedInPublication.hashtags,
+        linkUrl:
+          linkedInPublication.link_url,
+        commentary,
+      }
+    );
+
     const imageUrl =
       linkedInPublication
         .image_url
@@ -722,6 +737,46 @@ export async function POST(
       postResponse.headers.get(
         "x-restli-id"
       );
+
+    if (linkedInPostId) {
+      try {
+        const verifyResponse =
+          await fetch(
+            `${LINKEDIN_API_BASE}/posts/${encodeURIComponent(
+              linkedInPostId
+            )}?viewContext=AUTHOR`,
+            {
+              method: "GET",
+              headers,
+              cache: "no-store",
+            }
+          );
+
+        const verifyData =
+          await readResponse(
+            verifyResponse
+          );
+
+        console.log(
+          "LINKEDIN_DEBUG_AFTER_SEND",
+          {
+            postId:
+              linkedInPostId,
+            status:
+              verifyResponse.status,
+            data:
+              verifyData,
+          }
+        );
+      } catch (
+        verifyError
+      ) {
+        console.error(
+          "LINKEDIN_DEBUG_VERIFY_FAILED",
+          verifyError
+        );
+      }
+    }
 
     const publishedUrl =
       linkedInPostId
