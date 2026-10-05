@@ -254,15 +254,15 @@ Choisis UNE seule idée forte et développe-la comme une véritable publication 
 
 LONGUEUR
 
-Vise généralement entre 800 et 1 400 caractères pour le contenu du post, hors hashtags.
+Vise généralement entre 500 et 700 caractères pour le contenu du post, hors hashtags et lien.
 
-Cette longueur est une cible éditoriale et non une obligation mathématique.
+Cette longueur est volontairement courte afin que le post reste lisible dans le fil LinkedIn, y compris lorsqu'un visuel est joint.
 
 Tu peux être légèrement plus court si le sujet s'y prête.
 
-Ne dépasse 1 400 caractères que si cela apporte réellement quelque chose au propos.
+Évite de dépasser 700 caractères.
 
-Le post ne doit jamais devenir un mini-article simplement parce que le brief contient beaucoup d'informations.
+Le post doit rester une réflexion concise et autonome, jamais un mini-article.
 
 PRINCIPE DE SÉLECTION
 

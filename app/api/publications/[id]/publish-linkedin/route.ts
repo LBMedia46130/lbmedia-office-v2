@@ -564,6 +564,18 @@ export async function POST(
       );
     }
 
+    if (
+      linkedInPublication
+        .link_url
+        ?.trim()
+    ) {
+      messageParts.push(
+        linkedInPublication
+          .link_url
+          .trim()
+      );
+    }
+
     const commentary =
       messageParts.join(
         "\n\n"
@@ -651,24 +663,6 @@ export async function POST(
             "Visuel de la publication LBMedia",
         },
       };
-
-      if (
-        linkedInPublication
-          .link_url
-          ?.trim()
-      ) {
-        postPayload.contentLandingPage =
-          linkedInPublication
-            .link_url
-            .trim();
-      }
-    } else if (
-      linkedInPublication
-        .link_url
-        ?.trim()
-    ) {
-      postPayload.commentary =
-        `${commentary}\n\n${linkedInPublication.link_url.trim()}`;
     }
 
     const postResponse =
