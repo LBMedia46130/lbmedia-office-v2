@@ -212,7 +212,8 @@ export default async function EstimateDetailPage({
             campaign_objective,
             gamma_generation_id,
             gamma_url,
-            gamma_generated_at
+            gamma_generated_at,
+            gamma_type
           `
         )
         .eq(
@@ -274,6 +275,20 @@ export default async function EstimateDetailPage({
       ? campaignContextResult
           .data
           .gamma_generated_at
+      : null;
+
+  const gammaPresentationType =
+    campaignContextResult
+      .data
+      ?.gamma_type ===
+      "radio" ||
+    campaignContextResult
+      .data
+      ?.gamma_type ===
+      "web"
+      ? campaignContextResult
+          .data
+          .gamma_type
       : null;
 
   const currency =
@@ -820,6 +835,9 @@ export default async function EstimateDetailPage({
                   }
                   initialGeneratedAt={
                     gammaGeneratedAt
+                  }
+                  initialPresentationType={
+                    gammaPresentationType
                   }
                 />
               </div>

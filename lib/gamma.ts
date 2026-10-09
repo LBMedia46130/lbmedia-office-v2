@@ -4,6 +4,9 @@ const GAMMA_API_BASE_URL =
 export const LBMEDIA_RADIO_GAMMA_TEMPLATE_ID =
   "g_nezqpg5uzyz4yg3";
 
+export const LBMEDIA_WEB_GAMMA_TEMPLATE_ID =
+  "g_zx2hya46kw243g5";
+
 export type GammaExportFormat =
   | "pdf"
   | "pptx";
@@ -230,6 +233,22 @@ export async function generateLbmediaRadioPresentation(
     {
       gammaId:
         LBMEDIA_RADIO_GAMMA_TEMPLATE_ID,
+
+      prompt,
+
+      exportAs:
+        "pdf",
+    }
+  );
+}
+
+export async function generateLbmediaWebPresentation(
+  prompt: string
+) {
+  return generateGammaFromTemplate(
+    {
+      gammaId:
+        LBMEDIA_WEB_GAMMA_TEMPLATE_ID,
 
       prompt,
 

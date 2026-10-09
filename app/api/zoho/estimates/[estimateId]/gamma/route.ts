@@ -5,6 +5,7 @@ import {
 
 import {
   generateLbmediaRadioPresentation,
+  generateLbmediaWebPresentation,
   getGammaGeneration,
 } from "@/lib/gamma";
 
@@ -508,7 +509,7 @@ async function getCompanyLogoUrl(
   return logoUrl;
 }
 
-function buildGammaPrompt(
+function buildRadioGammaPrompt(
   estimate: ZohoEstimate,
   clientLogoUrl: string | null,
   campaignContext: CampaignContext
@@ -624,6 +625,7 @@ RÈGLE :
 - rester factuel à partir des prestations du devis ;
 - ne pas inventer un objectif commercial précis qui ne figure pas dans les données disponibles.
 `;
+
   const coverVisualDirection =
     inferCoverVisualDirection(
       estimate,
@@ -706,14 +708,11 @@ Direction visuelle recommandée : ${coverVisualDirection.instructions}
 RÈGLES POUR LA COUVERTURE :
 - l'image de couverture doit être cohérente avec l'activité réelle du client ;
 - elle doit également être cohérente avec l'objectif de campagne lorsqu'il est renseigné ;
-- si l'objectif concerne une opération ponctuelle (portes ouvertes, événement, recrutement, promotion, lancement, saison, opération commerciale), l'image doit le suggérer visuellement de manière crédible ;
 - privilégier une image réaliste, sobre, professionnelle et crédible ;
 - l'image doit évoquer le terrain, la proximité et l'activité du client plutôt qu'un univers radio générique ;
-- ne pas utiliser de visuel futuriste, d'illustration abstraite, de robot, de cerveau numérique, ni de composition artificielle sans lien avec le métier ;
-- éviter les images de banque d'images trop génériques, trop corporate ou déconnectées du territoire et du client ;
+- ne pas utiliser de visuel futuriste, d'illustration abstraite, de robot ou de composition artificielle sans lien avec le métier ;
 - ne pas inventer de texte intégré dans l'image ;
-- ne pas intégrer de faux logo ou de signalétique inventée dans l'image ;
-- l'image de couverture doit rester élégante et compatible avec la lisibilité des éléments de la page.
+- ne pas intégrer de faux logo ou de signalétique inventée dans l'image.
 
 PAGE "ENJEUX" :
 Cette page doit être personnalisée en priorité à partir de l'objectif de campagne et du territoire fournis ci-dessus.
@@ -917,12 +916,178 @@ Avant de finaliser la présentation, vérifier impérativement que :
 `.trim();
 }
 
+
+function buildWebGammaPrompt(
+  estimate: ZohoEstimate,
+  clientLogoUrl: string | null,
+  campaignContext: CampaignContext
+) {
+  const currency =
+    estimate.currency_code ||
+    "EUR";
+
+  const lineItems =
+    estimate.line_items ?? [];
+
+  const prestations =
+    lineItems.length > 0
+      ? lineItems
+          .map(
+            (
+              line,
+              index
+            ) => {
+              const description =
+                line.description
+                  ?.trim();
+
+              return [
+                `Prestation ${index + 1} :`,
+                `- Intitulé : ${line.name}`,
+                description
+                  ? `- Description : ${description}`
+                  : null,
+                `- Quantité : ${line.quantity}${
+                  line.unit
+                    ? ` ${line.unit}`
+                    : ""
+                }`,
+                `- Prix unitaire HT : ${formatCurrency(
+                  line.rate,
+                  currency
+                )}`,
+                `- Remise : ${formatDiscount(
+                  line.discount,
+                  line.discount_amount,
+                  currency
+                )}`,
+                `- Total HT de la ligne : ${formatCurrency(
+                  line.item_total,
+                  currency
+                )}`,
+              ]
+                .filter(Boolean)
+                .join("\n");
+            }
+          )
+          .join("\n\n")
+      : "Aucune prestation détaillée.";
+
+  const coverVisualDirection =
+    inferCoverVisualDirection(
+      estimate,
+      campaignContext
+    );
+
+  const clientLogoInstructions =
+    clientLogoUrl
+      ? `
+LOGO CLIENT :
+Le logo officiel du client est disponible à cette URL :
+${clientLogoUrl}
+
+- utiliser cette image comme logo officiel du client ;
+- conserver ses proportions ;
+- ne pas l'étirer, la rogner ou la déformer ;
+- ne pas inventer un autre logo ;
+- ne pas afficher l'URL dans la présentation.
+`
+      : `
+LOGO CLIENT :
+Aucun logo client fiable n'est disponible.
+- ne pas inventer de logo ;
+- supprimer tout placeholder de logo client.
+`;
+
+  return `
+Créer une proposition commerciale Web LBMedia à partir du template Gamma "Proposition commerciale Web LBMedia".
+
+RÈGLE PRINCIPALE :
+Le template Web LBMedia constitue la base graphique et éditoriale de référence.
+Conserver sa structure, son identité visuelle, son logo LBMedia et sa logique de présentation.
+Personnaliser le contenu pour le client et le devis ci-dessous sans transformer la présentation en simple copie du devis.
+
+IDENTITÉ LBMEDIA :
+- conserver le logo officiel LBMedia du template ;
+- conserver les coordonnées LBMedia ;
+- ne pas inventer de coordonnées, de références ou d'engagements ;
+- ne jamais ajouter une prestation qui n'est pas présente dans le devis.
+
+COORDONNÉES LBMEDIA :
+${LBMEDIA_CONTACT.name}
+${LBMEDIA_CONTACT.phone}
+${LBMEDIA_CONTACT.email}
+${LBMEDIA_CONTACT.website}
+
+${clientLogoInstructions}
+
+COUVERTURE — IMAGE DE PREMIÈRE PAGE :
+La première page doit conserver la mise en page générale du template Web, mais l'image principale doit être personnalisée en fonction du métier du client et du projet.
+
+Activité / famille visuelle détectée : ${coverVisualDirection.label}
+Direction visuelle recommandée : ${coverVisualDirection.instructions}
+
+RÈGLES POUR LA COUVERTURE :
+- privilégier une image réaliste, sobre et professionnelle ;
+- représenter l'activité réelle du client plutôt qu'un univers numérique générique ;
+- le digital peut être suggéré subtilement mais ne doit pas remplacer le métier du client ;
+- ne pas utiliser de robot, cerveau numérique, code informatique, hologramme ou visuel IA futuriste ;
+- ne pas inventer de texte ou de faux logo dans l'image ;
+- maintenir une excellente lisibilité du titre et du logo client.
+
+PERSONNALISATION DU CONTENU :
+- s'appuyer exclusivement sur le devis et ses prestations ;
+- valoriser les bénéfices client de façon concrète et compréhensible ;
+- si le devis porte sur une création ou une refonte de site, expliquer clairement l'objectif du nouveau site ;
+- si le devis contient du SEO ou du GEO, les présenter uniquement si ces prestations figurent réellement dans le devis ;
+- ne pas ajouter de maintenance, hébergement, référencement, rédaction, photographie, accompagnement ou autre prestation absente du devis ;
+- conserver les montants exactement tels qu'ils figurent dans le devis ;
+- garder un ton commercial, concret, sans jargon technique inutile.
+
+CLIENT
+Nom : ${estimate.customer_name}
+
+DEVIS
+Numéro : ${estimate.estimate_number}
+Référence : ${estimate.reference_number || "Non précisée"}
+Date : ${formatDate(estimate.date)}
+Validité : ${formatDate(estimate.expiry_date)}
+Commercial : ${estimate.salesperson_name || LBMEDIA_CONTACT.name}
+
+PRESTATIONS
+${prestations}
+
+MONTANTS
+Sous-total HT : ${formatCurrency(
+    estimate.sub_total,
+    currency
+  )}
+TVA : ${formatCurrency(
+    estimate.tax_total,
+    currency
+  )}
+Total TTC : ${formatCurrency(
+    estimate.total,
+    currency
+  )}
+
+NOTES DU DEVIS
+${estimate.notes?.trim() || "Aucune note particulière."}
+
+CONSIGNES FINALES :
+Créer une proposition commerciale Web personnalisée pour ${estimate.customer_name}, cohérente avec le devis ${estimate.estimate_number}.
+Le document doit pouvoir être envoyé directement au client avec le devis Zoho Books.
+Vérifier avant finalisation que le logo LBMedia est conservé, que le logo client est utilisé lorsqu'il est disponible, que les prestations et montants correspondent au devis et qu'aucune prestation absente n'a été ajoutée.
+`.trim();
+}
+
 async function persistGammaState(
   zohoEstimateId: string,
   values: {
     gamma_generation_id?: string | null;
     gamma_url?: string | null;
     gamma_generated_at?: string | null;
+    gamma_type?: "radio" | "web" | null;
   }
 ) {
   const {
@@ -981,12 +1146,14 @@ export async function POST(
   try {
     let requestBody: {
       action?: unknown;
+      presentationType?: unknown;
     } = {};
 
     try {
       requestBody =
         (await request.json()) as {
           action?: unknown;
+          presentationType?: unknown;
         };
     } catch {
       requestBody = {};
@@ -994,12 +1161,16 @@ export async function POST(
 
     if (
       requestBody.action !==
-      "generate"
+      "generate" ||
+      (requestBody.presentationType !==
+        "radio" &&
+        requestBody.presentationType !==
+          "web")
     ) {
       return NextResponse.json(
         {
           error:
-            "Génération Gamma refusée : action explicite requise.",
+            "Génération Gamma refusée : type Radio ou Web requis.",
         },
         {
           status: 400,
@@ -1047,17 +1218,30 @@ export async function POST(
         ),
       ]);
 
+    const presentationType =
+      requestBody.presentationType;
+
     const prompt =
-      buildGammaPrompt(
-        estimate,
-        clientLogoUrl,
-        campaignContext
-      );
+      presentationType === "radio"
+        ? buildRadioGammaPrompt(
+            estimate,
+            clientLogoUrl,
+            campaignContext
+          )
+        : buildWebGammaPrompt(
+            estimate,
+            clientLogoUrl,
+            campaignContext
+          );
 
     const generation =
-      await generateLbmediaRadioPresentation(
-        prompt
-      );
+      presentationType === "radio"
+        ? await generateLbmediaRadioPresentation(
+            prompt
+          )
+        : await generateLbmediaWebPresentation(
+            prompt
+          );
 
     try {
       await persistGammaState(
@@ -1068,6 +1252,8 @@ export async function POST(
           gamma_url: null,
           gamma_generated_at:
             null,
+          gamma_type:
+            presentationType,
         }
       );
     } catch (persistenceError) {
@@ -1096,6 +1282,8 @@ export async function POST(
 
         territory:
           campaignContext.territory,
+
+        presentationType,
       }
     );
   } catch (error) {
