@@ -1,49 +1,38 @@
 import {
   NextResponse,
 } from "next/server";
-
 import {
   supabaseAdmin,
 } from "@/lib/supabase-admin";
-
 export const dynamic =
   "force-dynamic";
-
 const GOOGLE_TOKEN_URL =
   "https://oauth2.googleapis.com/token";
-
 const GOOGLE_ACCOUNTS_URL =
   "https://mybusinessaccountmanagement.googleapis.com/v1/accounts";
-
 const GOOGLE_BUSINESS_INFORMATION_URL =
   "https://mybusinessbusinessinformation.googleapis.com/v1";
-
 const GOOGLE_MY_BUSINESS_V4_URL =
   "https://mybusiness.googleapis.com/v4";
-
 type RouteContext = {
   params: Promise<{
     id: string;
   }>;
 };
-
 type GoogleBusinessConnection = {
   id: string;
   access_token: string;
   refresh_token: string | null;
   expires_at: string;
 };
-
 type GoogleBusinessAccount = {
   name: string;
   accountName?: string;
 };
-
 type GoogleBusinessLocation = {
   name: string;
   title?: string;
 };
-
 type GoogleLocalPost = {
   name?: string;
   summary?: string;
@@ -51,14 +40,12 @@ type GoogleLocalPost = {
   state?: string;
   createTime?: string;
 };
-
 type GoogleErrorResponse = {
   error?: {
     message?: string;
     status?: string;
   };
 };
-
 type GoogleBusinessPublication = {
   id: string;
   news_id: string | null;
@@ -70,16 +57,13 @@ type GoogleBusinessPublication = {
   status: string;
   published_at: string | null;
 };
-
 async function refreshAccessToken(
   connection: GoogleBusinessConnection
 ) {
   const clientId =
     process.env.GOOGLE_BUSINESS_CLIENT_ID;
-
   const clientSecret =
     process.env.GOOGLE_BUSINESS_CLIENT_SECRET;
-
   if (
     !clientId ||
     !clientSecret
@@ -88,7 +72,6 @@ async function refreshAccessToken(
       "La configuration Google Business Profile est incomplète."
     );
   }
-
   if (
     !connection.refresh_token
   ) {
@@ -96,42 +79,33 @@ async function refreshAccessToken(
       "Aucun refresh token Google Business Profile n’est disponible. Reconnectez le compte Google."
     );
   }
-
   const response =
     await fetch(
       GOOGLE_TOKEN_URL,
       {
         method:
           "POST",
-
         headers: {
           "Content-Type":
             "application/x-www-form-urlencoded",
         },
-
         body:
           new URLSearchParams({
             client_id:
               clientId,
-
             client_secret:
               clientSecret,
-
             refresh_token:
               connection.refresh_token,
-
             grant_type:
               "refresh_token",
           }),
-
         cache:
           "no-store",
       }
     );
-
   const result =
     await response.json();
-
   if (
     !response.ok ||
     !result.access_token
@@ -142,7 +116,6 @@ async function refreshAccessToken(
         "Impossible de renouveler l’accès Google Business Profile."
     );
   }
-
   const expiresAt =
     new Date(
       Date.now() +
@@ -152,7 +125,6 @@ async function refreshAccessToken(
         ) *
           1000
     ).toISOString();
-
   const {
     error:
       updateError,
@@ -163,18 +135,14 @@ async function refreshAccessToken(
     .update({
       access_token:
         result.access_token,
-
       expires_at:
         expiresAt,
-
       token_type:
         result.token_type ??
         null,
-
       scope:
         result.scope ??
         null,
-
       updated_at:
         new Date().toISOString(),
     })
@@ -182,7 +150,6 @@ async function refreshAccessToken(
       "id",
       connection.id
     );
-
   if (
     updateError
   ) {
@@ -190,10 +157,8 @@ async function refreshAccessToken(
       `Impossible de mettre à jour la connexion Google Business Profile : ${updateError.message}`
     );
   }
-
   return result.access_token as string;
 }
-
 async function getAccessToken(
   connection: GoogleBusinessConnection
 ) {
@@ -201,7 +166,6 @@ async function getAccessToken(
     new Date(
       connection.expires_at
     ).getTime();
-
   if (
     Number.isFinite(
       expiresAt
@@ -212,12 +176,10 @@ async function getAccessToken(
   ) {
     return connection.access_token;
   }
-
   return refreshAccessToken(
     connection
   );
 }
-
 async function getSingleLocation(
   accessToken: string
 ) {
@@ -233,13 +195,11 @@ async function getSingleLocation(
           "no-store",
       }
     );
-
   const accountsResult =
     (await accountsResponse.json()) as
       {
         accounts?: GoogleBusinessAccount[];
       } & GoogleErrorResponse;
-
   if (
     !accountsResponse.ok
   ) {
@@ -249,11 +209,9 @@ async function getSingleLocation(
         "Impossible de récupérer les comptes Google Business Profile."
     );
   }
-
   const accounts =
     accountsResult.accounts ??
     [];
-
   if (
     accounts.length ===
       0
@@ -262,7 +220,6 @@ async function getSingleLocation(
       "Aucun compte Google Business Profile accessible."
     );
   }
-
   const locations:
     Array<{
       account:
@@ -270,7 +227,6 @@ async function getSingleLocation(
       location:
         GoogleBusinessLocation;
     }> = [];
-
   for (
     const account of accounts
   ) {
@@ -279,7 +235,6 @@ async function getSingleLocation(
     ) {
       continue;
     }
-
     const params =
       new URLSearchParams({
         readMask:
@@ -287,7 +242,6 @@ async function getSingleLocation(
         pageSize:
           "100",
       });
-
     const response =
       await fetch(
         `${GOOGLE_BUSINESS_INFORMATION_URL}/${account.name}/locations?${params.toString()}`,
@@ -300,13 +254,11 @@ async function getSingleLocation(
             "no-store",
         }
       );
-
     const result =
       (await response.json()) as
         {
           locations?: GoogleBusinessLocation[];
         } & GoogleErrorResponse;
-
     if (
       !response.ok
     ) {
@@ -316,7 +268,6 @@ async function getSingleLocation(
           `Impossible de récupérer les établissements du compte ${account.accountName ?? account.name}.`
       );
     }
-
     for (
       const location of
         result.locations ??
@@ -328,7 +279,6 @@ async function getSingleLocation(
       });
     }
   }
-
   if (
     locations.length ===
       0
@@ -337,7 +287,6 @@ async function getSingleLocation(
       "Aucun établissement Google Business Profile accessible."
     );
   }
-
   if (
     locations.length >
       1
@@ -346,10 +295,8 @@ async function getSingleLocation(
       "Plusieurs établissements Google Business Profile sont accessibles. La sélection de l’établissement doit être ajoutée dans Office avant de publier."
     );
   }
-
   return locations[0];
 }
-
 function buildLocalPostBody(
   publication: GoogleBusinessPublication,
   imageUrl:
@@ -374,30 +321,24 @@ function buildLocalPostBody(
   } = {
     languageCode:
       "fr-FR",
-
     summary:
       publication.content.trim(),
-
     topicType:
       "STANDARD",
   };
-
   const linkUrl =
     publication.link_url
       ?.trim();
-
   if (
     linkUrl
   ) {
     body.callToAction = {
       actionType:
         "LEARN_MORE",
-
       url:
         linkUrl,
     };
   }
-
   if (
     imageUrl
   ) {
@@ -405,16 +346,13 @@ function buildLocalPostBody(
       {
         mediaFormat:
           "PHOTO",
-
         sourceUrl:
           imageUrl,
       },
     ];
   }
-
   return body;
 }
-
 export async function POST(
   _request: Request,
   context: RouteContext
@@ -422,7 +360,7 @@ export async function POST(
   const {
     id,
   } = await context.params;
-
+  let stage = "chargement de la publication";
   try {
     const {
       data:
@@ -451,7 +389,6 @@ export async function POST(
         id
       )
       .maybeSingle();
-
     if (
       publicationError
     ) {
@@ -459,10 +396,8 @@ export async function POST(
         {
           success:
             false,
-
           message:
             "Impossible de charger la publication Google Business.",
-
           error:
             publicationError.message,
         },
@@ -472,7 +407,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !publication
     ) {
@@ -480,7 +414,6 @@ export async function POST(
         {
           success:
             false,
-
           message:
             "Publication introuvable.",
         },
@@ -490,10 +423,8 @@ export async function POST(
         }
       );
     }
-
     const googlePublication =
       publication as GoogleBusinessPublication;
-
     if (
       googlePublication.channel !==
       "google_business"
@@ -502,7 +433,6 @@ export async function POST(
         {
           success:
             false,
-
           message:
             "Cette publication n'est pas destinée à Google Business Profile.",
         },
@@ -512,7 +442,6 @@ export async function POST(
         }
       );
     }
-
     if (
       googlePublication.status ===
       "published"
@@ -521,7 +450,6 @@ export async function POST(
         {
           success:
             false,
-
           message:
             "Cette publication Google Business est déjà marquée comme publiée.",
         },
@@ -531,7 +459,6 @@ export async function POST(
         }
       );
     }
-
     if (
       googlePublication.status !==
         "ready" &&
@@ -542,7 +469,6 @@ export async function POST(
         {
           success:
             false,
-
           message:
             "La publication Google Business doit d'abord être validée.",
         },
@@ -552,7 +478,6 @@ export async function POST(
         }
       );
     }
-
     if (
       !googlePublication.content
         ?.trim()
@@ -561,7 +486,6 @@ export async function POST(
         {
           success:
             false,
-
           message:
             "Le contenu Google Business est vide.",
         },
@@ -571,12 +495,10 @@ export async function POST(
         }
       );
     }
-
     let newsImageUrl:
       | string
       | null =
       null;
-
     if (
       !googlePublication.image_url &&
       googlePublication.news_id
@@ -601,7 +523,6 @@ export async function POST(
           googlePublication.news_id
         )
         .maybeSingle();
-
       if (
         newsError
       ) {
@@ -609,10 +530,8 @@ export async function POST(
           {
             success:
               false,
-
             message:
               "Impossible de charger le visuel associé à l'actualité.",
-
             error:
               newsError.message,
           },
@@ -622,19 +541,16 @@ export async function POST(
           }
         );
       }
-
       newsImageUrl =
         news?.image_url
           ?.trim() ??
         null;
     }
-
     const imageUrl =
       googlePublication.image_url
         ?.trim() ||
       newsImageUrl ||
       null;
-
     const {
       data:
         connection,
@@ -654,7 +570,6 @@ export async function POST(
       )
       .limit(1)
       .maybeSingle();
-
     if (
       connectionError
     ) {
@@ -662,7 +577,6 @@ export async function POST(
         `Impossible de charger la connexion Google Business Profile : ${connectionError.message}`
       );
     }
-
     if (
       !connection
     ) {
@@ -670,7 +584,6 @@ export async function POST(
         {
           success:
             false,
-
           message:
             "Google Business Profile n’est pas encore connecté.",
         },
@@ -680,12 +593,12 @@ export async function POST(
         }
       );
     }
-
+    stage = "authentification Google";
     const accessToken =
       await getAccessToken(
         connection as GoogleBusinessConnection
       );
-
+    stage = "recherche de l’établissement Google";
     const {
       account,
       location,
@@ -693,39 +606,33 @@ export async function POST(
       await getSingleLocation(
         accessToken
       );
-
     const accountId =
       account.name
         .replace(
           /^accounts\//,
           ""
         );
-
     const locationId =
       location.name
         .replace(
           /^locations\//,
           ""
         );
-
     const parent =
       `accounts/${accountId}/locations/${locationId}`;
-
+    stage = "envoi de la publication à Google";
     const response =
       await fetch(
         `${GOOGLE_MY_BUSINESS_V4_URL}/${parent}/localPosts`,
         {
           method:
             "POST",
-
           headers: {
             Authorization:
               `Bearer ${accessToken}`,
-
             "Content-Type":
               "application/json",
           },
-
           body:
             JSON.stringify(
               buildLocalPostBody(
@@ -733,17 +640,17 @@ export async function POST(
                 imageUrl
               )
             ),
-
           cache:
             "no-store",
         }
       );
-
-    const result =
-      (await response.json()) as
-        GoogleLocalPost &
-        GoogleErrorResponse;
-
+    const rawResult = await response.text();
+    let result: GoogleLocalPost & GoogleErrorResponse;
+    try {
+      result = JSON.parse(rawResult) as GoogleLocalPost & GoogleErrorResponse;
+    } catch {
+      result = { error: { message: rawResult.slice(0, 500) || `Réponse HTTP ${response.status} non JSON` } };
+    }
     if (
       !response.ok
     ) {
@@ -752,22 +659,18 @@ export async function POST(
         {
           status:
             response.status,
-
           result,
         }
       );
-
       return NextResponse.json(
         {
           success:
             false,
-
           message:
-            "Google a refusé la publication Google Business Profile.",
-
+            `Google Business (HTTP ${response.status}) : ${result.error?.message ?? "Publication refusée sans précision par Google."}`,
+          step: stage,
           status:
             response.status,
-
           details:
             result,
         },
@@ -777,14 +680,12 @@ export async function POST(
         }
       );
     }
-
+    stage = "enregistrement du succès dans Office";
     const publishedAt =
       new Date().toISOString();
-
     const publishedUrl =
       result.searchUrl ??
       null;
-
     const {
       data:
         updatedPublication,
@@ -797,16 +698,12 @@ export async function POST(
       .update({
         status:
           "published",
-
         published_at:
           publishedAt,
-
         published_url:
           publishedUrl,
-
         scheduled_at:
           null,
-
         updated_at:
           publishedAt,
       })
@@ -818,7 +715,6 @@ export async function POST(
         "*"
       )
       .single();
-
     if (
       updateError
     ) {
@@ -826,20 +722,15 @@ export async function POST(
         {
           success:
             false,
-
           sent:
             true,
-
           message:
             "La publication a été créée sur Google Business Profile, mais LBMedia Office n'a pas pu enregistrer son statut. Ne republiez pas le contenu.",
-
           error:
             updateError.message,
-
           google_post_name:
             result.name ??
             null,
-
           published_url:
             publishedUrl,
         },
@@ -849,41 +740,35 @@ export async function POST(
         }
       );
     }
-
     return NextResponse.json({
       success:
         true,
-
       message:
         imageUrl
           ? "Publication Google Business avec visuel effectuée."
           : "Publication Google Business effectuée.",
-
       google_post_name:
         result.name ??
         null,
-
       google_post_state:
         result.state ??
         null,
-
       published_url:
         publishedUrl,
-
       publication:
         updatedPublication,
     });
   } catch (
     error
   ) {
+    console.error("Google Business publication exception", { stage, error });
     return NextResponse.json(
       {
         success:
           false,
-
         message:
-          "Impossible de publier sur Google Business Profile.",
-
+          `Google Business — ${stage} : ${error instanceof Error ? error.message : "Erreur inconnue"}`,
+        step: stage,
         error:
           error instanceof Error
             ? error.message
@@ -896,5 +781,3 @@ export async function POST(
     );
   }
 }
-
-
