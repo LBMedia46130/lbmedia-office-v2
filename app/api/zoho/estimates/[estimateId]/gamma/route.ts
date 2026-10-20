@@ -41,6 +41,17 @@ type CampaignContext = {
   hasSaintCere: boolean;
 };
 
+type CompanyWebContext = {
+  sector: string | null;
+  businessDescription: string | null;
+  targetAudience: string | null;
+  geographicArea: string | null;
+  services: string | null;
+  products: string | null;
+  strengths: string | null;
+  brandStory: string | null;
+};
+
 function formatCurrency(
   value: number | undefined,
   currency = "EUR"
@@ -137,13 +148,22 @@ type CoverVisualDirection = {
 
 function getEstimateSearchableText(
   estimate: ZohoEstimate,
-  campaignContext: CampaignContext
+  campaignContext: CampaignContext,
+  companyContext?: CompanyWebContext | null
 ) {
   return [
     estimate.customer_name,
     estimate.reference_number,
     estimate.notes,
     campaignContext.objective,
+    companyContext?.sector,
+    companyContext?.businessDescription,
+    companyContext?.targetAudience,
+    companyContext?.geographicArea,
+    companyContext?.services,
+    companyContext?.products,
+    companyContext?.strengths,
+    companyContext?.brandStory,
     ...(estimate.line_items ?? []).flatMap(
       (line) => [
         line.name,
@@ -157,13 +177,15 @@ function getEstimateSearchableText(
 
 function inferCoverVisualDirection(
   estimate: ZohoEstimate,
-  campaignContext: CampaignContext
+  campaignContext: CampaignContext,
+  companyContext?: CompanyWebContext | null
 ): CoverVisualDirection {
   const normalized =
     normalizeForDetection(
       getEstimateSearchableText(
         estimate,
-        campaignContext
+        campaignContext,
+        companyContext
       )
     );
 
@@ -507,6 +529,93 @@ async function getCompanyLogoUrl(
   }
 
   return logoUrl;
+}
+
+function normalizeCompanyContextValue(
+  value: unknown
+): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+
+  if (Array.isArray(value)) {
+    const joined = value
+      .map((item) =>
+        typeof item === "string"
+          ? item.trim()
+          : String(item ?? "").trim()
+      )
+      .filter(Boolean)
+      .join(", ");
+
+    return joined || null;
+  }
+
+  if (value && typeof value === "object") {
+    try {
+      const serialized = JSON.stringify(value);
+      return serialized !== "{}" ? serialized : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+async function getCompanyWebContext(
+  zohoContactId: string
+): Promise<CompanyWebContext | null> {
+  if (!zohoContactId) {
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("companies")
+    .select(
+      `
+        sector,
+        business_description,
+        target_audience,
+        geographic_area,
+        services,
+        products,
+        strengths,
+        brand_story
+      `
+    )
+    .eq("zoho_contact_id", zohoContactId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Erreur récupération contexte métier entreprise pour Gamma :",
+      error
+    );
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    sector: normalizeCompanyContextValue(data.sector),
+    businessDescription: normalizeCompanyContextValue(
+      data.business_description
+    ),
+    targetAudience: normalizeCompanyContextValue(
+      data.target_audience
+    ),
+    geographicArea: normalizeCompanyContextValue(
+      data.geographic_area
+    ),
+    services: normalizeCompanyContextValue(data.services),
+    products: normalizeCompanyContextValue(data.products),
+    strengths: normalizeCompanyContextValue(data.strengths),
+    brandStory: normalizeCompanyContextValue(data.brand_story),
+  };
 }
 
 function buildRadioGammaPrompt(
@@ -920,7 +1029,8 @@ Avant de finaliser la présentation, vérifier impérativement que :
 function buildWebGammaPrompt(
   estimate: ZohoEstimate,
   clientLogoUrl: string | null,
-  campaignContext: CampaignContext
+  campaignContext: CampaignContext,
+  companyContext: CompanyWebContext | null
 ) {
   const currency =
     estimate.currency_code ||
@@ -976,8 +1086,55 @@ function buildWebGammaPrompt(
   const coverVisualDirection =
     inferCoverVisualDirection(
       estimate,
-      campaignContext
+      campaignContext,
+      companyContext
     );
+
+  const companyContextInstructions = companyContext
+    ? `
+CONTEXTE MÉTIER CLIENT DISPONIBLE DANS OFFICE :
+- Secteur : ${companyContext.sector || "Non renseigné"}
+- Activité / positionnement : ${companyContext.businessDescription || "Non renseigné"}
+- Cible : ${companyContext.targetAudience || "Non renseignée"}
+- Zone géographique : ${companyContext.geographicArea || "Non renseignée"}
+- Services : ${companyContext.services || "Non renseignés"}
+- Produits : ${companyContext.products || "Non renseignés"}
+- Points forts : ${companyContext.strengths || "Non renseignés"}
+- Histoire / contexte de marque : ${companyContext.brandStory || "Non renseigné"}
+
+RÈGLES :
+- utiliser ce contexte uniquement pour mieux comprendre l'activité réelle du client, le vocabulaire, les visuels et les bénéfices métier ;
+- ne pas transformer une information de contexte en prestation incluse au devis ;
+- ne pas inventer de donnée absente ;
+- si une information de la fiche entreprise contredit le devis ou ses conditions particulières, le devis prévaut.
+`
+    : `
+CONTEXTE MÉTIER CLIENT :
+Aucun contexte métier suffisamment renseigné n'est disponible dans Office.
+- ne pas deviner l'activité au-delà des informations réellement présentes dans le devis ;
+- privilégier des visuels neutres et cohérents avec les prestations lorsqu'aucun métier précis ne peut être établi.
+`;
+
+  const projectSpecificityInstructions = campaignContext.objective
+    ? `
+OBJECTIF / SPÉCIFICITÉ DU PROJET RENSEIGNÉE DANS OFFICE :
+${campaignContext.objective}
+
+RÈGLES IMPÉRATIVES :
+- cette information a été renseignée manuellement dans Office et constitue la priorité éditoriale du projet ;
+- elle doit guider la narration commerciale avant les descriptions génériques des articles ;
+- elle doit apparaître clairement dès le début de la présentation, idéalement dans les premières pages ;
+- si elle décrit plusieurs enseignes, activités, publics, parcours, univers ou contraintes, les présenter explicitement et ne jamais les fusionner en un seul sujet générique ;
+- si cette spécificité constitue l'enjeu central du projet, créer une page dédiée pour l'expliquer ;
+- ne pas la remplacer par un objectif marketing générique ;
+- ne pas inventer d'autre objectif.
+`
+    : `
+OBJECTIF / SPÉCIFICITÉ DU PROJET :
+Aucun objectif spécifique n'a été renseigné dans Office.
+- rester factuel à partir du devis, de ses notes et de la fiche entreprise ;
+- ne pas inventer un enjeu stratégique précis.
+`;
 
   const clientLogoInstructions =
     clientLogoUrl
@@ -1021,6 +1178,20 @@ ${LBMEDIA_CONTACT.website}
 
 ${clientLogoInstructions}
 
+${projectSpecificityInstructions}
+
+${companyContextInstructions}
+
+HIÉRARCHIE DES INFORMATIONS — À RESPECTER IMPÉRATIVEMENT :
+1. Objectif / spécificité du projet renseigné dans Office.
+2. Notes et conditions particulières du devis.
+3. Prestations réellement facturées dans les lignes du devis.
+4. Contexte métier de la fiche entreprise, uniquement pour personnaliser le discours et les visuels.
+5. Formulations génériques du template.
+
+En cas de conflit entre deux informations, l'élément situé le plus haut dans cette hiérarchie prévaut.
+Ne jamais écraser une spécificité du projet par une formulation générique issue du template.
+
 COUVERTURE — IMAGE DE PREMIÈRE PAGE :
 La première page doit conserver la mise en page générale du template Web, mais l'image principale doit être personnalisée en fonction du métier du client et du projet.
 
@@ -1036,13 +1207,23 @@ RÈGLES POUR LA COUVERTURE :
 - maintenir une excellente lisibilité du titre et du logo client.
 
 PERSONNALISATION DU CONTENU :
-- s'appuyer exclusivement sur le devis et ses prestations ;
+- s'appuyer d'abord sur l'objectif/spécificité du projet, puis sur les notes et conditions particulières du devis, puis sur les prestations facturées ;
 - valoriser les bénéfices client de façon concrète et compréhensible ;
-- si le devis porte sur une création ou une refonte de site, expliquer clairement l'objectif du nouveau site ;
+- si le devis porte sur une création ou une refonte de site, expliquer clairement l'objectif du nouveau site et les particularités d'architecture ou de parcours mentionnées ;
+- si plusieurs enseignes, marques, activités ou univers sont mentionnés, les nommer explicitement et expliquer leur articulation ;
 - si le devis contient du SEO ou du GEO, les présenter uniquement si ces prestations figurent réellement dans le devis ;
-- ne pas ajouter de maintenance, hébergement, référencement, rédaction, photographie, accompagnement ou autre prestation absente du devis ;
+- ne pas ajouter de maintenance, hébergement, référencement, rédaction, photographie, accompagnement, Google Business ou autre prestation absente du devis ;
+- une information présente dans la fiche entreprise sert de contexte, mais ne devient jamais automatiquement une prestation incluse ;
 - conserver les montants exactement tels qu'ils figurent dans le devis ;
 - garder un ton commercial, concret, sans jargon technique inutile.
+
+OPTIONS ET PRESTATIONS NON INCLUSES :
+- analyser attentivement les notes et conditions particulières du devis ;
+- toute prestation explicitement présentée comme « option », « option disponible », « non incluse », « en supplément » ou équivalent doit rester clairement séparée du périmètre principal ;
+- ne jamais présenter une option comme incluse dans le prix principal ;
+- si des options sont mentionnées, créer si pertinent une page ou un bloc « Options disponibles — non incluses au devis » ;
+- ne jamais additionner le prix des options au montant principal du projet ;
+- ne jamais transformer une recommandation générale en engagement contractuel.
 
 CLIENT
 Nom : ${estimate.customer_name}
@@ -1077,7 +1258,20 @@ ${estimate.notes?.trim() || "Aucune note particulière."}
 CONSIGNES FINALES :
 Créer une proposition commerciale Web personnalisée pour ${estimate.customer_name}, cohérente avec le devis ${estimate.estimate_number}.
 Le document doit pouvoir être envoyé directement au client avec le devis Zoho Books.
-Vérifier avant finalisation que le logo LBMedia est conservé, que le logo client est utilisé lorsqu'il est disponible, que les prestations et montants correspondent au devis et qu'aucune prestation absente n'a été ajoutée.
+
+Avant de finaliser, vérifier impérativement que :
+1. l'objectif / spécificité du projet renseigné dans Office a bien été exploité et n'a pas été remplacé par un discours générique ;
+2. les notes et conditions particulières du devis ont été respectées ;
+3. les éventuelles enseignes, marques, activités ou univers distincts mentionnés sont tous correctement représentés ;
+4. le logo LBMedia est conservé ;
+5. le logo client est utilisé lorsqu'il est disponible et aucun faux logo n'a été inventé ;
+6. les prestations incluses correspondent strictement aux lignes facturées et aux conditions du devis ;
+7. les options sont clairement identifiées comme non incluses et ne sont jamais ajoutées au montant principal ;
+8. aucune prestation absente n'a été ajoutée, notamment Google Business, hébergement, rédaction, photographie ou maintenance si elles ne figurent pas au devis ;
+9. le contexte métier de la fiche entreprise a servi à personnaliser le vocabulaire et les visuels sans créer de nouvelles obligations ;
+10. les montants correspondent exactement au devis ;
+11. les images choisies sont cohérentes avec l'activité réellement connue du client ;
+12. lorsqu'aucune activité précise n'est connue, aucun métier n'a été inventé.
 `.trim();
 }
 
@@ -1207,6 +1401,7 @@ export async function POST(
     const [
       clientLogoUrl,
       campaignContext,
+      companyWebContext,
     ] =
       await Promise.all([
         getCompanyLogoUrl(
@@ -1215,6 +1410,10 @@ export async function POST(
 
         getCampaignContext(
           estimate
+        ),
+
+        getCompanyWebContext(
+          estimate.customer_id
         ),
       ]);
 
@@ -1231,7 +1430,8 @@ export async function POST(
         : buildWebGammaPrompt(
             estimate,
             clientLogoUrl,
-            campaignContext
+            campaignContext,
+            companyWebContext
           );
 
     const generation =
