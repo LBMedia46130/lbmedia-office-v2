@@ -1026,6 +1026,58 @@ Avant de finaliser la présentation, vérifier impérativement que :
 }
 
 
+function getEstimateCustomFieldValue(
+  estimate: ZohoEstimate,
+  labels: string[]
+) {
+  const normalizedLabels =
+    labels.map((label) =>
+      normalizeForDetection(label)
+    );
+
+  const field =
+    (estimate.custom_fields ?? []).find(
+      (customField) => {
+        const label =
+          typeof customField.label === "string"
+            ? normalizeForDetection(customField.label)
+            : "";
+
+        return normalizedLabels.some(
+          (candidate) =>
+            label === candidate ||
+            label.startsWith(`${candidate} `) ||
+            label.endsWith(` ${candidate}`)
+        );
+      }
+    );
+
+  if (
+    !field ||
+    field.value === null ||
+    field.value === undefined
+  ) {
+    return null;
+  }
+
+  const value = String(field.value).trim();
+  return value || null;
+}
+
+function getEstimateProjectObject(
+  estimate: ZohoEstimate
+) {
+  return getEstimateCustomFieldValue(
+    estimate,
+    [
+      "Objet",
+      "Objet du devis",
+      "Objet du projet",
+      "Périmètre du projet",
+    ]
+  );
+}
+
 function buildWebGammaPrompt(
   estimate: ZohoEstimate,
   clientLogoUrl: string | null,
@@ -1038,6 +1090,15 @@ function buildWebGammaPrompt(
 
   const lineItems =
     estimate.line_items ?? [];
+
+  const projectObject =
+    getEstimateProjectObject(estimate);
+
+  const estimateNotes =
+    estimate.notes?.trim() || null;
+
+  const estimateTerms =
+    estimate.terms?.trim() || null;
 
   const prestations =
     lineItems.length > 0
@@ -1136,6 +1197,23 @@ Aucun objectif spécifique n'a été renseigné dans Office.
 - ne pas inventer un enjeu stratégique précis.
 `;
 
+  const estimateScopeInstructions = `
+OBJET / PÉRIMÈTRE SPÉCIFIQUE DU DEVIS :
+${projectObject || "Aucun champ Objet exploitable n'a été trouvé dans le devis Zoho."}
+
+NOTES DU DEVIS :
+${estimateNotes || "Aucune note particulière."}
+
+CONDITIONS / TERMES PARTICULIERS DU DEVIS :
+${estimateTerms || "Aucune condition particulière."}
+
+RÈGLES IMPÉRATIVES :
+- ces informations proviennent directement du devis client et sont prioritaires pour définir le périmètre réel du projet ;
+- si l'objet, les notes ou les conditions mentionnent plusieurs enseignes, marques, activités, sites ou univers, tous doivent être représentés explicitement ;
+- le nom du client Zoho est une identité administrative de facturation : il ne doit jamais réduire le périmètre à cette seule enseigne si le devis en mentionne d'autres ;
+- ne pas inventer d'enseigne ou d'activité absente de ces données.
+`;
+
   const clientLogoInstructions =
     clientLogoUrl
       ? `
@@ -1178,16 +1256,20 @@ ${LBMEDIA_CONTACT.website}
 
 ${clientLogoInstructions}
 
+${estimateScopeInstructions}
+
 ${projectSpecificityInstructions}
 
 ${companyContextInstructions}
 
 HIÉRARCHIE DES INFORMATIONS — À RESPECTER IMPÉRATIVEMENT :
-1. Objectif / spécificité du projet renseigné dans Office.
-2. Notes et conditions particulières du devis.
-3. Prestations réellement facturées dans les lignes du devis.
-4. Contexte métier de la fiche entreprise, uniquement pour personnaliser le discours et les visuels.
-5. Formulations génériques du template.
+1. Objet / périmètre spécifique du devis Zoho.
+2. Conditions et notes particulières du devis.
+3. Objectif / spécificité du projet renseigné dans Office.
+4. Prestations réellement facturées dans les lignes du devis.
+5. Contexte métier de la fiche entreprise, uniquement pour personnaliser le discours et les visuels.
+6. Nom administratif du client Zoho.
+7. Formulations génériques du template.
 
 En cas de conflit entre deux informations, l'élément situé le plus haut dans cette hiérarchie prévaut.
 Ne jamais écraser une spécificité du projet par une formulation générique issue du template.
@@ -1225,8 +1307,9 @@ OPTIONS ET PRESTATIONS NON INCLUSES :
 - ne jamais additionner le prix des options au montant principal du projet ;
 - ne jamais transformer une recommandation générale en engagement contractuel.
 
-CLIENT
-Nom : ${estimate.customer_name}
+CLIENT ADMINISTRATIF / FACTURATION
+Nom Zoho : ${estimate.customer_name}
+RÈGLE : ce nom identifie le client facturé mais ne limite pas le périmètre éditorial du projet lorsque l'objet, les notes ou les conditions du devis mentionnent d'autres enseignes ou marques.
 
 DEVIS
 Numéro : ${estimate.estimate_number}
@@ -1252,26 +1335,33 @@ Total TTC : ${formatCurrency(
     currency
   )}
 
+OBJET DU DEVIS
+${projectObject || "Non renseigné ou non récupéré."}
+
 NOTES DU DEVIS
-${estimate.notes?.trim() || "Aucune note particulière."}
+${estimateNotes || "Aucune note particulière."}
+
+CONDITIONS / TERMES DU DEVIS
+${estimateTerms || "Aucune condition particulière."}
 
 CONSIGNES FINALES :
 Créer une proposition commerciale Web personnalisée pour ${estimate.customer_name}, cohérente avec le devis ${estimate.estimate_number}.
 Le document doit pouvoir être envoyé directement au client avec le devis Zoho Books.
 
 Avant de finaliser, vérifier impérativement que :
-1. l'objectif / spécificité du projet renseigné dans Office a bien été exploité et n'a pas été remplacé par un discours générique ;
+1. l'objet / périmètre du devis Zoho a été exploité en priorité lorsqu'il est disponible ;
 2. les notes et conditions particulières du devis ont été respectées ;
-3. les éventuelles enseignes, marques, activités ou univers distincts mentionnés sont tous correctement représentés ;
-4. le logo LBMedia est conservé ;
-5. le logo client est utilisé lorsqu'il est disponible et aucun faux logo n'a été inventé ;
-6. les prestations incluses correspondent strictement aux lignes facturées et aux conditions du devis ;
-7. les options sont clairement identifiées comme non incluses et ne sont jamais ajoutées au montant principal ;
-8. aucune prestation absente n'a été ajoutée, notamment Google Business, hébergement, rédaction, photographie ou maintenance si elles ne figurent pas au devis ;
-9. le contexte métier de la fiche entreprise a servi à personnaliser le vocabulaire et les visuels sans créer de nouvelles obligations ;
-10. les montants correspondent exactement au devis ;
-11. les images choisies sont cohérentes avec l'activité réellement connue du client ;
-12. lorsqu'aucune activité précise n'est connue, aucun métier n'a été inventé.
+3. l'objectif / spécificité du projet renseigné dans Office a été exploité sans remplacer le périmètre contractuel du devis ;
+4. les éventuelles enseignes, marques, activités ou univers distincts mentionnés dans l'objet, les notes ou les conditions sont tous correctement représentés ;
+5. le logo LBMedia est conservé ;
+6. le logo client est utilisé lorsqu'il est disponible et aucun faux logo n'a été inventé ;
+7. les prestations incluses correspondent strictement aux lignes facturées et aux conditions du devis ;
+8. les options sont clairement identifiées comme non incluses et ne sont jamais ajoutées au montant principal ;
+9. aucune prestation absente n'a été ajoutée, notamment Google Business, hébergement, rédaction, photographie ou maintenance si elles ne figurent pas au devis ;
+10. le contexte métier de la fiche entreprise a servi à personnaliser le vocabulaire et les visuels sans créer de nouvelles obligations ;
+11. les montants correspondent exactement au devis ;
+12. les images choisies sont cohérentes avec l'activité réellement connue du client ;
+13. lorsqu'aucune activité précise n'est connue, aucun métier n'a été inventé.
 `.trim();
 }
 

@@ -94,6 +94,14 @@ export type ZohoEstimateTax = {
   tax_amount: number;
 };
 
+export type ZohoEstimateCustomField = {
+  customfield_id?: string;
+  index?: number;
+  label?: string;
+  value?: string | number | boolean | null;
+  show_on_pdf?: boolean;
+};
+
 export type ZohoEstimateAddress = {
   address?: string;
   street2?: string;
@@ -133,6 +141,8 @@ export type ZohoEstimate = {
   adjustment_description?: string;
 
   taxes?: ZohoEstimateTax[];
+
+  custom_fields?: ZohoEstimateCustomField[];
 
   notes?: string;
   terms?: string;
