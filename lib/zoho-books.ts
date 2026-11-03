@@ -171,6 +171,7 @@ export type ZohoEstimateEmailContent = {
 };
 
 export type SendZohoEstimateEmailInput = {
+  gammaPdf?: { bytes: Uint8Array; filename: string };
   to_mail_ids: string[];
   subject: string;
   body: string;
@@ -502,6 +503,7 @@ async function zohoBooksRequest<T>(
 
   if (
     options.body &&
+    !(options.body instanceof FormData) &&
     !headers.has(
       "Content-Type"
     )
@@ -1220,11 +1222,6 @@ export async function sendZohoEstimateEmail(
     );
   }
 
-  const preparedEmail =
-    await getZohoEstimateEmailContent(
-      normalizedEstimateId
-    );
-
   const payload = {
     to_mail_ids:
       toMailIds,
@@ -1246,16 +1243,41 @@ export async function sendZohoEstimateEmail(
       input.body,
   };
 
-  await zohoBooksRequest<Record<string, never>>(
-    `/estimates/${encodeURIComponent(
-      normalizedEstimateId
-    )}/email`,
-    {
-      method: "POST",
-      body: JSON.stringify(
-        payload
-      ),
+  // Zoho Books accepte un PDF additionnel via "attachments".
+  // Sans Gamma, on conserve intégralement la requête JSON historique.
+  // Avec Gamma, les champs du message et le PDF voyagent dans une
+  // seule requête multipart/form-data (sans envoi séparé).
+  let requestBody: BodyInit;
+  if (input.gammaPdf) {
+    const { bytes, filename } = input.gammaPdf;
+    if (
+      bytes.byteLength < 5 ||
+      bytes[0] !== 0x25 ||
+      bytes[1] !== 0x50 ||
+      bytes[2] !== 0x44 ||
+      bytes[3] !== 0x46 ||
+      bytes[4] !== 0x2d
+    ) {
+      throw new Error("Le document Gamma téléchargé n'est pas un PDF valide.");
     }
+
+    const form = new FormData();
+    // Zoho Books utilise JSONString pour les paramètres d'une
+    // requête multipart comportant une pièce jointe.
+    form.append("JSONString", JSON.stringify(payload));
+    form.append(
+      "attachments",
+      new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+      filename
+    );
+    requestBody = form;
+  } else {
+    requestBody = JSON.stringify(payload);
+  }
+
+  await zohoBooksRequest<Record<string, never>>(
+    `/estimates/${encodeURIComponent(normalizedEstimateId)}/email`,
+    { method: "POST", body: requestBody }
   );
 
   await zohoBooksRequest<Record<string, never>>(
