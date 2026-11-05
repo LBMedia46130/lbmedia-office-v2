@@ -1523,6 +1523,32 @@ export async function POST(
         );
       }
     }
+    // Conserver exactement les octets du PDF qui seront joints à cet envoi.
+    // Un chemin unique empêche un renvoi d'écraser un document précédent.
+    let clientReportStoragePath: string | null = null;
+    if (attachClientReport && clientReportBuffer && clientReportFilename) {
+      clientReportStoragePath =
+        `${prospection.company_id}/${prospection.id}/${crypto.randomUUID()}-${clientReportFilename}`;
+
+      const { error: reportUploadError } = await supabaseAdmin.storage
+        .from("audit-client-reports")
+        .upload(clientReportStoragePath, clientReportBuffer, {
+          contentType: "application/pdf",
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (reportUploadError) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Impossible d'archiver le compte rendu d'audit : ${reportUploadError.message}. Aucun email n'a été envoyé.`,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     const signatureLogoPath =
       join(
         process.cwd(),
@@ -1735,10 +1761,14 @@ export async function POST(
           "audit_prospections"
         )
         .update({
-          sent_client_report_attached:
-            attachClientReport,
-          updated_at:
-            sentAt,
+          // Un renvoi sans compte rendu ne doit pas effacer l'archive initiale.
+          ...(attachClientReport
+            ? {
+                sent_client_report_attached: true,
+                sent_client_report_path: clientReportStoragePath,
+              }
+            : {}),
+          updated_at: sentAt,
         })
         .eq(
           "id",
@@ -1837,6 +1867,8 @@ export async function POST(
           attachmentUrl,
         sent_client_report_attached:
           attachClientReport,
+        sent_client_report_path:
+          clientReportStoragePath,
         smtp_message_id:
           sendResult.messageId ??
           null,
