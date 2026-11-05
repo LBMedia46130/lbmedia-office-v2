@@ -42,6 +42,7 @@ export async function GET(
           sent_html_content,
           sent_attachment_url,
           sent_client_report_attached,
+          sent_client_report_path,
           smtp_message_id
         `
       )
@@ -83,9 +84,29 @@ export async function GET(
       );
     }
 
+    // Un lien signé donne accès au rapport privé sans rendre le bucket public.
+    let clientReportUrl: string | null = null;
+    let clientReportUnavailable = false;
+    if (data.sent_client_report_path) {
+      const { data: signed, error: signedError } =
+        await supabaseAdmin.storage
+          .from("audit-client-reports")
+          .createSignedUrl(data.sent_client_report_path, 60 * 60);
+      if (signedError || !signed?.signedUrl) {
+        console.error("Impossible de signer le compte rendu d'audit", signedError);
+        clientReportUnavailable = true;
+      } else {
+        clientReportUrl = signed.signedUrl;
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      trace: data,
+      trace: {
+        ...data,
+        sent_client_report_url: clientReportUrl,
+        sent_client_report_unavailable: clientReportUnavailable,
+      },
     });
   } catch (error) {
     console.error(

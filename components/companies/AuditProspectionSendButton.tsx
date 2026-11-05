@@ -63,6 +63,8 @@ type SendTrace = {
   sent_client_report_attached:
     | boolean
     | null;
+  sent_client_report_url?: string | null;
+  sent_client_report_unavailable?: boolean;
   smtp_message_id:
     | string
     | null;
@@ -437,10 +439,26 @@ export default function AuditProspectionSendButton({
                   </div>
                 ) : null}
                 {trace.sent_client_report_attached ? (
-                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
                     <p className="text-sm font-semibold text-emerald-800">
                       ✓ Compte rendu d’audit PDF
                     </p>
+                    {trace.sent_client_report_url ? (
+                      <a
+                        href={trace.sent_client_report_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-blue-600 transition hover:text-blue-700"
+                      >
+                        Ouvrir
+                      </a>
+                    ) : (
+                      <span className="text-xs text-amber-700">
+                        {trace.sent_client_report_unavailable
+                          ? "Document momentanément indisponible"
+                          : "Original non archivé (ancien envoi)"}
+                      </span>
+                    )}
                   </div>
                 ) : null}
                 {!archivedAttachment &&
