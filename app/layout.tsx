@@ -72,7 +72,7 @@ export default function RootLayout({
         <div className="min-h-screen lg:flex">
           <AppSidebar />
 
-          <main className="min-w-0 flex-1 lg:ml-64">
+          <main className="min-w-0 flex-1 pt-16 lg:ml-64 lg:pt-0">
             <div className="mx-auto max-w-7xl px-6 pt-6">
               <LiveDateTimeBanner
                 initialDate={todayDate}
