@@ -2201,4 +2201,101 @@ export async function createZohoInvoiceFromEstimate(
 }
 
 
+// ------------------------------------------------------------
+// Avoirs Zoho Books — lecture uniquement (V2.5.2, étape 1).
+// La création et l'application d'un avoir seront ajoutées après
+// vérification des droits OAuth et du comportement de Zoho.
+// ------------------------------------------------------------
 
+export type ZohoCreditNoteLineItem = {
+  line_item_id?: string;
+  item_id?: string;
+  name?: string;
+  description?: string;
+  quantity?: number;
+  rate?: number;
+  discount?: string | number;
+  tax_id?: string;
+  tax_percentage?: number;
+  item_total?: number;
+};
+
+export type ZohoCreditNote = {
+  creditnote_id: string;
+  creditnote_number?: string;
+  customer_id: string;
+  customer_name?: string;
+  status?: string;
+  date?: string;
+  total?: number;
+  balance?: number;
+  currency_code?: string;
+  reference_number?: string;
+  notes?: string;
+  line_items?: ZohoCreditNoteLineItem[];
+  invoices?: Array<{
+    invoice_id: string;
+    invoice_number?: string;
+    amount?: number;
+  }>;
+};
+
+export async function getZohoCreditNotes(
+  page = 1,
+  perPage = 200
+) {
+  const data = await zohoBooksRequest<{
+    creditnotes?: ZohoCreditNote[];
+    page_context?: ZohoPageContext;
+  }>(
+    "/creditnotes",
+    { method: "GET" },
+    { page, per_page: perPage }
+  );
+
+  return {
+    creditNotes: data.creditnotes ?? [],
+    pageContext: data.page_context ?? null,
+  };
+}
+
+export async function getAllZohoCreditNotes() {
+  const creditNotes: ZohoCreditNote[] = [];
+  let page = 1;
+  let hasMorePage = true;
+
+  while (hasMorePage) {
+    const result = await getZohoCreditNotes(page);
+    creditNotes.push(...result.creditNotes);
+    hasMorePage = result.pageContext?.has_more_page ?? false;
+    page += 1;
+
+    if (page > 100) {
+      throw new Error(
+        "Arrêt de sécurité pendant la récupération des avoirs Zoho."
+      );
+    }
+  }
+
+  return creditNotes;
+}
+
+export async function getZohoCreditNote(creditNoteId: string) {
+  const normalizedId = creditNoteId.trim();
+  if (!normalizedId) {
+    throw new Error("Identifiant d'avoir Zoho manquant.");
+  }
+
+  const data = await zohoBooksRequest<{
+    creditnote?: ZohoCreditNote;
+  }>(
+    `/creditnotes/${encodeURIComponent(normalizedId)}`,
+    { method: "GET" }
+  );
+
+  if (!data.creditnote?.creditnote_id) {
+    throw new Error("Avoir Zoho Books introuvable.");
+  }
+
+  return data.creditnote;
+}
