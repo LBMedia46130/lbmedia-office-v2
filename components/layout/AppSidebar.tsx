@@ -512,6 +512,27 @@ export default function AppSidebar() {
 
                   <span>Factures</span>
                 </Link>
+
+                <Link
+                  href="/management/credit-notes"
+                  onClick={() => setMobileOpen(false)}
+                  className={[
+                    "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                    isActive("/management/credit-notes")
+                      ? "bg-white/10 text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white",
+                  ].join(" ")}
+                >
+                  <span
+                    className={[
+                      "h-1.5 w-1.5 rounded-full",
+                      isActive("/management/credit-notes")
+                        ? "bg-cyan-300"
+                        : "bg-slate-600",
+                    ].join(" ")}
+                  />
+                  <span>Avoirs</span>
+                </Link>
               </div>
             ) : null}
           </div>
@@ -525,7 +546,7 @@ export default function AppSidebar() {
           </p>
 
           <p className="mt-1 text-[10px] text-slate-400">
-            Version 2.5.1
+            Version 2.5.2
           </p>
         </div>
       </div>
