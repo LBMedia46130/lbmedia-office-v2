@@ -182,6 +182,13 @@ export default async function InvoiceDetailPage({
             </Link>
 
             <Link
+              href={`/management/invoices/${encodeURIComponent(invoice.invoice_id)}/credit-note`}
+              className="inline-flex rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 transition hover:bg-amber-100"
+            >
+              Créer un avoir total
+            </Link>
+
+            <Link
               href={`/management/invoices/${invoice.invoice_id}/edit`}
               className="inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
