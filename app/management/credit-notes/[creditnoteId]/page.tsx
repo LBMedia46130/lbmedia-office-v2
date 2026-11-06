@@ -4,7 +4,7 @@ import { getZohoCreditNote } from "@/lib/zoho-books";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ creditNoteId: string }> };
+type Props = { params: Promise<{ creditnoteId: string }> };
 
 function money(value?: number, currency = "EUR") {
   return new Intl.NumberFormat("fr-FR", {
@@ -32,12 +32,12 @@ function statusLabel(value?: string) {
 }
 
 export default async function CreditNoteDetailPage({ params }: Props) {
-  const { creditNoteId } = await params;
-  if (!creditNoteId?.trim()) notFound();
+  const { creditnoteId } = await params;
+  if (!creditnoteId?.trim()) notFound();
 
   let creditNote;
   try {
-    creditNote = await getZohoCreditNote(creditNoteId);
+    creditNote = await getZohoCreditNote(creditnoteId);
   } catch (error) {
     console.error("Impossible de récupérer l'avoir Zoho :", error);
     return (
