@@ -77,7 +77,12 @@ export default async function CreditNotesPage() {
                 {creditNotes.map((creditNote) => (
                   <tr key={creditNote.creditnote_id} className="text-slate-700">
                     <td className="px-5 py-4 font-semibold text-slate-900">
-                      {creditNote.creditnote_number || "—"}
+                      <Link
+                        href={`/management/credit-notes/${encodeURIComponent(creditNote.creditnote_id)}`}
+                        className="text-blue-700 hover:text-blue-900 hover:underline"
+                      >
+                        {creditNote.creditnote_number || "—"}
+                      </Link>
                     </td>
                     <td className="px-5 py-4">{dateLabel(creditNote.date)}</td>
                     <td className="px-5 py-4">{creditNote.customer_name || "—"}</td>
