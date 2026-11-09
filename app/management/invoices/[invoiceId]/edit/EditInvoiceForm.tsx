@@ -1228,7 +1228,7 @@ export default function EditInvoiceForm({
 
                       <input
                         type="number"
-                        min="0"
+                        
                         step="0.01"
                         value={
                           line.rate
@@ -1519,7 +1519,7 @@ export default function EditInvoiceForm({
           <button
             type="submit"
             disabled={
-              submitting
+              submitting || initialTotalMismatch
             }
             className="mt-6 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
