@@ -48,6 +48,7 @@ type InitialInvoice = {
   customer_id: string;
   customer_name: string;
   status: string;
+  original_total: number;
   date: string;
   due_date: string;
   reference_number: string;
@@ -174,7 +175,7 @@ function calculateLineDiscount(
   }
 
   return Math.min(
-    gross,
+    Math.max(0, gross),
     value
   );
 }
@@ -182,15 +183,7 @@ function calculateLineDiscount(
 function calculateLineTotal(
   line: InvoiceLine
 ) {
-  return Math.max(
-    0,
-    calculateLineGross(
-      line
-    ) -
-      calculateLineDiscount(
-        line
-      )
-  );
+  return calculateLineGross(line) - calculateLineDiscount(line);
 }
 
 function normalizeSearch(
@@ -411,9 +404,26 @@ export default function EditInvoiceForm({
       taxes,
     ]);
 
-  const total =
-    subtotal +
-    taxAmount;
+  const total = subtotal + taxAmount;
+
+  const initialTotalMismatch = useMemo(() => {
+    const initialNet = invoice.line_items.reduce((sum, line) => {
+      const gross = line.quantity * line.rate;
+      const reduction = line.discount_mode === "percent"
+        ? Math.max(0, gross) * Math.min(100, line.discount_value) / 100
+        : Math.min(Math.max(0, gross), line.discount_value);
+      return sum + gross - reduction;
+    }, 0);
+    const initialTax = invoice.line_items.reduce((sum, line) => {
+      const tax = taxes.find((entry) => entry.tax_id === line.tax_id);
+      const gross = line.quantity * line.rate;
+      const reduction = line.discount_mode === "percent"
+        ? Math.max(0, gross) * Math.min(100, line.discount_value) / 100
+        : Math.min(Math.max(0, gross), line.discount_value);
+      return sum + (gross - reduction) * ((tax?.tax_percentage ?? 0) / 100);
+    }, 0);
+    return Math.abs(initialNet + initialTax - invoice.original_total) > 0.025;
+  }, [invoice, taxes]);
 
   function updateLine(
     id: string,
@@ -651,6 +661,13 @@ export default function EditInvoiceForm({
 
     setErrorMessage(null);
 
+    // Un écart dès l'ouverture indique une donnée Zoho non reproduite
+    // correctement : bloquer l'écriture comptable plutôt que l'altérer.
+    if (initialTotalMismatch) {
+      setErrorMessage("Le total initial ne correspond pas à Zoho Books. Enregistrement bloqué pour protéger la facture.");
+      return;
+    }
+
     const normalizedLines =
       lines.map(
         (line) => {
@@ -669,15 +686,16 @@ export default function EditInvoiceForm({
             discount =
               line.discount_mode ===
               "percent"
-                ? `${Math.round(
-                    discountValue
-                  )}%`
+                ? `${discountValue}%`
                 : String(
                     discountValue
                   );
           }
 
           return {
+            line_item_id:
+              invoice.line_items.find((original) => original.line_item_id === line.id)?.line_item_id,
+
             item_id:
               line.item_id ||
               undefined,
@@ -725,7 +743,7 @@ export default function EditInvoiceForm({
           if (
             !line.name ||
             line.quantity <= 0 ||
-            line.rate < 0 ||
+            !Number.isFinite(line.rate) ||
             discountValue < 0
           ) {
             return true;
@@ -743,9 +761,7 @@ export default function EditInvoiceForm({
             sourceLine.discount_mode ===
               "amount" &&
             discountValue >
-              calculateLineGross(
-                sourceLine
-              )
+              Math.max(0, calculateLineGross(sourceLine))
           ) {
             return true;
           }
@@ -847,6 +863,14 @@ export default function EditInvoiceForm({
       }
       className="space-y-6"
     >
+      {initialTotalMismatch ? (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          Attention : les montants chargés ne correspondent pas au total officiel Zoho
+          ({formatCurrency(invoice.original_total)}). Enregistrement désactivé pour éviter
+          toute modification comptable incorrecte. Vérifier remises et taxes dans Zoho.
+        </div>
+      ) : null}
+
       {errorMessage ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           {errorMessage}
@@ -1267,7 +1291,7 @@ export default function EditInvoiceForm({
                           step={
                             line.discount_mode ===
                             "percent"
-                              ? "1"
+                              ? "0.01"
                               : "0.01"
                           }
                           value={

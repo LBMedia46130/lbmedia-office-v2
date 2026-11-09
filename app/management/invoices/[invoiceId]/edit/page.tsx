@@ -25,102 +25,37 @@ type DiscountMode =
   | "amount";
 
 function readDiscount(
-  discount:
-    | string
-    | number
-    | undefined,
-  discountAmount:
-    | number
-    | undefined
-): {
-  mode: DiscountMode;
-  value: number;
-} {
-  if (
-    typeof discount ===
-    "string"
-  ) {
-    const trimmed =
-      discount.trim();
+  discount: string | number | undefined,
+  discountAmount: number | undefined,
+  gross: number,
+  itemTotal: number
+): { mode: DiscountMode; value: number } {
+  // Zoho retourne parfois une remise numérique même lorsque sa nature
+  // est un montant fixe. Ne jamais l'interpréter comme un pourcentage.
+  if (typeof discount === "string" && discount.trim().endsWith("%")) {
+    const value = Number(discount.trim().slice(0, -1).replace(",", "."));
+    return { mode: "percent", value: Number.isFinite(value) ? value : 0 };
+  }
 
-    if (
-      trimmed.endsWith("%")
-    ) {
-      const value =
-        Number(
-          trimmed
-            .slice(0, -1)
-            .replace(",", ".")
-        );
+  if (typeof discountAmount === "number" &&
+      Number.isFinite(discountAmount) && discountAmount > 0) {
+    return { mode: "amount", value: discountAmount };
+  }
 
-      return {
-        mode: "percent",
-        value:
-          Number.isFinite(
-            value
-          )
-            ? Math.round(value)
-            : 0,
-      };
-    }
-
-    const value =
-      Number(
-        trimmed.replace(
-          ",",
-          "."
-        )
-      );
-
-    if (
-      Number.isFinite(
-        value
-      ) &&
-      value > 0
-    ) {
-      return {
-        mode: "amount",
-        value,
-      };
+  if (typeof discount === "string" || typeof discount === "number") {
+    const value = Number(String(discount).trim().replace(",", "."));
+    if (Number.isFinite(value) && value > 0) {
+      return { mode: "amount", value };
     }
   }
 
-  if (
-    typeof discount ===
-      "number" &&
-    Number.isFinite(
-      discount
-    ) &&
-    discount > 0
-  ) {
-    return {
-      mode: "percent",
-      value:
-        Math.round(
-          discount
-        ),
-    };
+  // Sécurité pour les lignes dont Zoho ne renseigne que le montant net.
+  if (gross > 0 && Number.isFinite(itemTotal) && itemTotal >= 0 &&
+      gross - itemTotal > 0.005) {
+    return { mode: "amount", value: Math.round((gross - itemTotal) * 100) / 100 };
   }
 
-  if (
-    typeof discountAmount ===
-      "number" &&
-    Number.isFinite(
-      discountAmount
-    ) &&
-    discountAmount > 0
-  ) {
-    return {
-      mode: "amount",
-      value:
-        discountAmount,
-    };
-  }
-
-  return {
-    mode: "percent",
-    value: 0,
-  };
+  return { mode: "percent", value: 0 };
 }
 
 export default async function EditInvoicePage({
@@ -193,6 +128,9 @@ export default async function EditInvoicePage({
             status:
               invoice.status,
 
+            original_total:
+              Number(invoice.total) || 0,
+
             date:
               invoice.date || "",
 
@@ -217,7 +155,9 @@ export default async function EditInvoicePage({
               const discount =
                 readDiscount(
                   line.discount,
-                  line.discount_amount
+                  line.discount_amount,
+                  Number(line.quantity) * Number(line.rate),
+                  Number(line.item_total)
                 );
 
               return {
