@@ -2299,3 +2299,162 @@ export async function getZohoCreditNote(creditNoteId: string) {
 
   return data.creditnote;
 }
+
+
+// ------------------------------------------------------------
+// Avoirs Zoho Books — opérations explicites (V2.5.2, étape 2).
+// Aucun avoir n'est créé ou imputé automatiquement.
+// La numérotation reste entièrement gérée par Zoho Books.
+// ------------------------------------------------------------
+
+export type CreateZohoCreditNoteLineItemInput = {
+  item_id?: string;
+  invoice_item_id?: string;
+  name?: string;
+  description?: string;
+  quantity: number;
+  rate: number;
+  tax_id?: string;
+};
+
+export type CreateZohoCreditNoteInput = {
+  customer_id: string;
+  invoice_id?: string;
+  date: string;
+  notes?: string;
+  reference_number?: string;
+  line_items: CreateZohoCreditNoteLineItemInput[];
+};
+
+/** Crée uniquement un brouillon. Son application à une facture est une action distincte. */
+export async function createZohoCreditNoteDraft(
+  input: CreateZohoCreditNoteInput
+): Promise<ZohoCreditNote> {
+  const customerId = input.customer_id?.trim();
+  const invoiceId = input.invoice_id?.trim();
+  if (!customerId) throw new Error("Le client Zoho est obligatoire pour créer un avoir.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) {
+    throw new Error("La date de l'avoir doit être au format AAAA-MM-JJ.");
+  }
+  if (!input.line_items?.length) {
+    throw new Error("L'avoir doit contenir au moins une ligne.");
+  }
+
+  // Vérification de cohérence si l'avoir est préparé à partir d'une facture.
+  if (invoiceId) {
+    const invoice = await getZohoInvoice(invoiceId);
+    if (invoice.customer_id !== customerId) {
+      throw new Error("Le client de l'avoir ne correspond pas à celui de la facture.");
+    }
+  }
+
+  const lineItems = input.line_items.map((line, index) => {
+    const quantity = Number(line.quantity);
+    const rate = Number(line.rate);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new Error(`Quantité invalide à la ligne ${index + 1}.`);
+    }
+    if (!Number.isFinite(rate) || rate < 0) {
+      throw new Error(`Prix invalide à la ligne ${index + 1}.`);
+    }
+    if (!line.item_id?.trim() && !line.name?.trim()) {
+      throw new Error(`Article ou libellé manquant à la ligne ${index + 1}.`);
+    }
+    return {
+      item_id: line.item_id?.trim() || undefined,
+      invoice_item_id: line.invoice_item_id?.trim() || undefined,
+      name: line.name?.trim() || undefined,
+      description: line.description?.trim() || undefined,
+      quantity,
+      rate,
+      tax_id: line.tax_id?.trim() || undefined,
+    };
+  });
+
+  const payload = {
+    customer_id: customerId,
+    date: input.date,
+    is_draft: true,
+    reference_number: input.reference_number?.trim() || undefined,
+    notes: input.notes?.trim() || undefined,
+    line_items: lineItems,
+  };
+
+  const data = await zohoBooksRequest<{ creditnote?: ZohoCreditNote }>(
+    "/creditnotes",
+    { method: "POST", body: JSON.stringify(payload) },
+    invoiceId ? { invoice_id: invoiceId } : undefined
+  );
+  if (!data.creditnote?.creditnote_id) {
+    throw new Error("Zoho Books n'a pas retourné l'identifiant de l'avoir créé.");
+  }
+  return getZohoCreditNote(data.creditnote.creditnote_id);
+}
+
+/** Liste les imputations déjà enregistrées pour éviter les suppositions de statut. */
+export async function getZohoCreditNoteAppliedInvoices(creditNoteId: string) {
+  const id = creditNoteId.trim();
+  if (!id) throw new Error("Identifiant d'avoir Zoho manquant.");
+  const data = await zohoBooksRequest<{
+    invoices?: Array<{
+      creditnote_invoice_id?: string;
+      invoice_id: string;
+      invoice_number?: string;
+      amount_applied?: number;
+      amount?: number;
+    }>;
+  }>(`/creditnotes/${encodeURIComponent(id)}/invoices`, { method: "GET" });
+  return data.invoices ?? [];
+}
+
+/** Impute un avoir existant sur une facture, après contrôles côté serveur. */
+export async function applyZohoCreditNoteToInvoice(
+  creditNoteId: string,
+  invoiceId: string,
+  amount: number
+): Promise<{ creditNote: ZohoCreditNote; invoice: ZohoInvoice }> {
+  const creditId = creditNoteId.trim();
+  const invoiceIdTrimmed = invoiceId.trim();
+  if (!creditId || !invoiceIdTrimmed) {
+    throw new Error("L'avoir et la facture sont obligatoires.");
+  }
+  if (!Number.isFinite(amount) || amount <= 0 || Math.abs(Math.round(amount * 100) - amount * 100) > 0.000001) {
+    throw new Error("Le montant à imputer doit être positif et comporter au maximum deux décimales.");
+  }
+
+  const [credit, invoice] = await Promise.all([
+    getZohoCreditNote(creditId),
+    getZohoInvoice(invoiceIdTrimmed),
+  ]);
+  if (credit.customer_id !== invoice.customer_id) {
+    throw new Error("L'avoir et la facture ne concernent pas le même client.");
+  }
+  if (credit.currency_code && invoice.currency_code && credit.currency_code !== invoice.currency_code) {
+    throw new Error("L'avoir et la facture n'utilisent pas la même devise.");
+  }
+  if (credit.status !== "open") {
+    throw new Error("Seul un avoir ouvert peut être imputé à une facture.");
+  }
+  if (typeof credit.balance !== "number" || typeof invoice.balance !== "number") {
+    throw new Error("Soldes indisponibles : impossible de vérifier l'imputation.");
+  }
+  const cents = Math.round(amount * 100);
+  if (cents > Math.round(credit.balance * 100) || cents > Math.round(invoice.balance * 100)) {
+    throw new Error("Le montant dépasse le solde disponible de l'avoir ou de la facture.");
+  }
+
+  await zohoBooksRequest<Record<string, never>>(
+    `/creditnotes/${encodeURIComponent(creditId)}/invoices`,
+    {
+      method: "POST",
+      body: JSON.stringify({ invoices: [{ invoice_id: invoiceIdTrimmed, amount_applied: cents / 100 }] }),
+    }
+  );
+
+  // Relire la vérité comptable dans Zoho après l'opération.
+  const [updatedCredit, updatedInvoice] = await Promise.all([
+    getZohoCreditNote(creditId),
+    getZohoInvoice(invoiceIdTrimmed),
+  ]);
+  return { creditNote: updatedCredit, invoice: updatedInvoice };
+}
