@@ -11,6 +11,19 @@ type ZohoApiResponse<T> = {
   message: string;
 } & T;
 
+/** Réponse d'erreur reçue explicitement de Zoho Books (à distinguer d'un timeout réseau). */
+export class ZohoBooksApiError extends Error {
+  readonly zohoCode: number | null;
+  readonly httpStatus: number;
+
+  constructor(code: number | null, httpStatus: number, message: string) {
+    super(`Erreur Zoho Books (${code ?? httpStatus}) : ${message}`);
+    this.name = "ZohoBooksApiError";
+    this.zohoCode = code;
+    this.httpStatus = httpStatus;
+  }
+}
+
 type ZohoPageContext = {
   page: number;
   per_page: number;
@@ -528,14 +541,12 @@ async function zohoBooksRequest<T>(
     !response.ok ||
     data.code !== 0
   ) {
-    throw new Error(
-      `Erreur Zoho Books (${
-        data.code ??
-        response.status
-      }) : ${
-        data.message ??
-        response.statusText
-      }`
+    throw new ZohoBooksApiError(
+      typeof data.code === "number" ? data.code : null,
+      response.status,
+      typeof data.message === "string" && data.message.trim()
+        ? data.message
+        : response.statusText || "Réponse refusée par Zoho"
     );
   }
 

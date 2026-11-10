@@ -8,6 +8,7 @@ import {
   prepareZohoCreditNoteLines,
   type ZohoCreditNote,
   type ZohoInvoice,
+  ZohoBooksApiError,
 } from "@/lib/zoho-books";
 
 export const dynamic = "force-dynamic";
@@ -144,6 +145,24 @@ export async function POST(request: NextRequest) {
     }
     lockAcquired = true;
 
+    // Diagnostic comptable sans nom de client, commentaires ni informations OAuth.
+    // Montants et structures uniquement pour diagnostiquer le code Zoho 6.
+    console.info("Avoir Zoho - payload comptable avant création", {
+      invoiceId: invoice.invoice_id,
+      invoiceNumber: invoice.invoice_number,
+      invoiceTotal: invoice.total,
+      currency: invoice.currency_code ?? "EUR",
+      lines: preparation.lines.map((line, index) => ({
+        position: index + 1,
+        quantity: line.quantity,
+        rate: line.rate,
+        discount: line.discount ?? null,
+        hasItemId: Boolean(line.item_id),
+        hasInvoiceItemId: Boolean(line.invoice_item_id),
+        hasTaxId: Boolean(line.tax_id),
+      })),
+    });
+
     // Une seule écriture Zoho. Ne JAMAIS faire de retry automatique.
     creationStarted = true;
     const creditNote = await createZohoCreditNoteDraft({
@@ -175,13 +194,28 @@ export async function POST(request: NextRequest) {
       applied: false,
     }, { status: 201 });
   } catch (error) {
-    console.error("Création brouillon avoir Zoho :", error);
+    const explicitZohoRejection = creationStarted && error instanceof ZohoBooksApiError;
+    console.error("Création brouillon avoir Zoho :", {
+      invoiceId,
+      explicitZohoRejection,
+      zohoCode: error instanceof ZohoBooksApiError ? error.zohoCode : null,
+      httpStatus: error instanceof ZohoBooksApiError ? error.httpStatus : null,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    });
     if (lockAcquired) {
       try {
         await updateLock(invoiceId, "uncertain");
       } catch (lockError) {
         console.error("Échec du marquage du verrou comme incertain :", lockError);
       }
+    }
+    if (explicitZohoRejection) {
+      // Refus formel de Zoho : distinct d'un timeout. Le verrou reste conservé
+      // pour empêcher tout nouvel essai sans réconciliation humaine.
+      return errorResponse(
+        `Zoho Books a refusé le brouillon (code ${error.zohoCode ?? error.httpStatus}). Aucune nouvelle tentative avant vérification dans Zoho. Verrou conservé par sécurité.`,
+        422
+      );
     }
     return errorResponse(
       creationStarted
