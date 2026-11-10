@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllZohoInvoices, getZohoCreditNote, type ZohoInvoice } from "@/lib/zoho-books";
 import OpenCreditNoteButton from "./OpenCreditNoteButton";
+import ApplyCreditNoteButton from "./ApplyCreditNoteButton";
 
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ creditnoteId: string }> };
@@ -51,7 +52,7 @@ export default async function CreditNoteDetailPage({ params }: Props) {
 
   // La référence et le client permettent de retrouver la facture d'origine.
   // La route API revérifie impérativement les informations avant toute écriture.
-  if (creditNote.status === "draft" && creditNote.reference_number) {
+  if (["draft", "open"].includes(creditNote.status || "") && creditNote.reference_number) {
     try {
       const matches = (await getAllZohoInvoices()).filter(
         (invoice) => invoice.invoice_number === creditNote.reference_number &&
@@ -69,6 +70,16 @@ export default async function CreditNoteDetailPage({ params }: Props) {
     creditNote.notes?.includes(`Facture d'origine : ${originalInvoice.invoice_number}`);
   const canOfferOpening = creditNote.status === "draft" && originalInvoice &&
     totalMatches && linkedByNote && creditNote.total !== undefined && creditNote.total > 0;
+
+  const canOfferApplication = creditNote.status === "open" && originalInvoice &&
+    linkedByNote && typeof creditNote.balance === "number" && creditNote.balance > 0 &&
+    typeof originalInvoice.balance === "number" && originalInvoice.balance > 0 &&
+    originalInvoice.status !== "void" && originalInvoice.status !== "draft" &&
+    (!creditNote.currency_code || !originalInvoice.currency_code ||
+      creditNote.currency_code === originalInvoice.currency_code) &&
+    !invoices.some((invoice) => invoice.invoice_id === originalInvoice.invoice_id);
+  const maximumApplication = canOfferApplication && originalInvoice
+    ? Math.min(creditNote.balance || 0, originalInvoice.balance) : 0;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -97,6 +108,24 @@ export default async function CreditNoteDetailPage({ params }: Props) {
               ? "la recherche de la facture d'origine a échoué."
               : "la facture d'origine, le lien explicite ou l'égalité des montants TTC n'est pas vérifiable."}
             {" "}Aucune opération comptable n'a été exécutée.
+          </div>
+        ) : null}
+
+        {canOfferApplication && originalInvoice ? (
+          <div className="mt-8">
+            <ApplyCreditNoteButton
+              creditNoteId={creditNote.creditnote_id}
+              creditNoteNumber={creditNote.creditnote_number || creditNote.creditnote_id}
+              invoiceId={originalInvoice.invoice_id}
+              invoiceNumber={originalInvoice.invoice_number}
+              amountLabel={money(maximumApplication, currency)}
+            />
+          </div>
+        ) : creditNote.status === "open" ? (
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            Imputation non proposee : la facture d'origine n'est pas identifiable avec certitude,
+            une imputation existe deja, ou aucun solde n'est disponible sur la facture ou l'avoir.
+            Un avoir concernant une facture deja payee doit etre traite separement (credit client ou remboursement).
           </div>
         ) : null}
 
