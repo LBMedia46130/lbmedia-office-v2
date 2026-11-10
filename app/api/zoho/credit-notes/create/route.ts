@@ -1,24 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
   createZohoCreditNoteDraft,
   getAllZohoCreditNotes,
   getZohoCreditNote,
   getZohoInvoice,
+  prepareZohoCreditNoteLines,
   type ZohoCreditNote,
   type ZohoInvoice,
-  prepareZohoCreditNoteLines,
 } from "@/lib/zoho-books";
 
 export const dynamic = "force-dynamic";
 
-// Ne créer un document comptable qu'après une confirmation explicite.
-// Cette route ne transforme PAS le brouillon en avoir ouvert et ne l'impute PAS.
-type CreateRequest = {
-  invoiceId?: unknown;
-  confirmation?: unknown;
+// IMPORTANT : cette route ne crée qu'un BROUILLON, sans ouverture ni imputation.
+// Le proxy Office doit toujours protéger /api/zoho/credit-notes/create.
+// Installer la table SQL associée AVANT de déployer cette route.
+// Aucun verrou n'est effacé automatiquement : une réponse Zoho perdue peut
+// masquer un avoir réellement créé. Le déblocage exige une vérification humaine.
+
+type CreateRequest = { invoiceId?: unknown; confirmation?: unknown };
+type LockRow = {
+  invoice_id: string;
+  invoice_number: string;
+  status: "pending" | "created" | "uncertain";
+  credit_note_id: string | null;
 };
 
 const CONFIRMATION = "CREER_BROUILLON_AVOIR_TOTAL";
+const LOCK_TABLE = "zoho_credit_note_creation_locks";
 
 function errorResponse(message: string, status: number) {
   return NextResponse.json({ success: false, message }, { status });
@@ -30,10 +39,7 @@ function inCents(value: number): number {
 
 function parisDate(): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Paris",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
+    timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit",
   }).formatToParts(new Date());
   const part = (name: string) => parts.find((item) => item.type === name)?.value ?? "";
   return `${part("year")}-${part("month")}-${part("day")}`;
@@ -48,6 +54,42 @@ function linkedToInvoice(note: ZohoCreditNote, invoice: ZohoInvoice): boolean {
       (line as typeof line & { invoice_id?: string }).invoice_id === invoice.invoice_id
     )
   );
+}
+
+/** L'unicité de invoice_id est imposée en base et fonctionne entre instances Vercel. */
+async function acquireCreationLock(invoice: ZohoInvoice) {
+  const { error } = await supabaseAdmin.from(LOCK_TABLE).insert({
+    invoice_id: invoice.invoice_id,
+    invoice_number: invoice.invoice_number,
+    status: "pending",
+  });
+  if (!error) return { acquired: true as const };
+
+  // 23505 = violation de l'unicité PostgreSQL : une autre requête est déjà passée.
+  if (error.code === "23505") {
+    const { data, error: readError } = await supabaseAdmin
+      .from(LOCK_TABLE)
+      .select("invoice_id, invoice_number, status, credit_note_id")
+      .eq("invoice_id", invoice.invoice_id)
+      .maybeSingle();
+    if (readError) throw new Error(`Verrou existant, mais lecture impossible : ${readError.message}`);
+    return { acquired: false as const, previous: (data ?? null) as LockRow | null };
+  }
+
+  // Une table manquante ou une erreur Supabase ne doit jamais permettre une écriture Zoho.
+  throw new Error(`Verrou de création indisponible : ${error.message}`);
+}
+
+async function updateLock(invoiceId: string, status: "created" | "uncertain", creditNoteId?: string) {
+  const { error } = await supabaseAdmin
+    .from(LOCK_TABLE)
+    .update({
+      status,
+      credit_note_id: creditNoteId ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("invoice_id", invoiceId);
+  if (error) throw new Error(`Impossible de mettre à jour le verrou de création : ${error.message}`);
 }
 
 export async function POST(request: NextRequest) {
@@ -67,12 +109,13 @@ export async function POST(request: NextRequest) {
   }
 
   let creationStarted = false;
+  let lockAcquired = false;
   try {
     const invoice = await getZohoInvoice(invoiceId);
     const preparation = prepareZohoCreditNoteLines(invoice);
     if (preparation.blockingReason) return errorResponse(preparation.blockingReason, 422);
 
-    // Vérification en lecture seule : si elle échoue, aucune création n'est autorisée.
+    // Premier contrôle des éventuels avoirs existants, exclusivement en lecture.
     const allNotes = await getAllZohoCreditNotes();
     const customerNotes = allNotes.filter((note) => note.customer_id === invoice.customer_id);
     const detailedNotes = await Promise.all(
@@ -87,7 +130,21 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // Écriture réelle unique. Aucun retry automatique si la réponse Zoho est incertaine.
+    // Deux appels simultanés peuvent passer le contrôle précédent.
+    // INSERT avec clé primaire invoice_id : une seule requête prend le verrou.
+    const lock = await acquireCreationLock(invoice);
+    if (!lock.acquired) {
+      return NextResponse.json({
+        success: false,
+        message: lock.previous?.status === "created"
+          ? "Une création d'avoir est déjà enregistrée pour cette facture. Vérifie l'avoir existant dans Zoho."
+          : "Une création d'avoir est en cours ou son résultat est incertain. Vérifie Zoho avant toute autre tentative.",
+        creditNoteId: lock.previous?.credit_note_id ?? null,
+      }, { status: 409 });
+    }
+    lockAcquired = true;
+
+    // Une seule écriture Zoho. Ne JAMAIS faire de retry automatique.
     creationStarted = true;
     const creditNote = await createZohoCreditNoteDraft({
       customer_id: invoice.customer_id,
@@ -98,6 +155,8 @@ export async function POST(request: NextRequest) {
       line_items: preparation.lines,
     });
 
+    // Le verrou reste en place, même si la comparaison des montants échoue.
+    await updateLock(invoiceId, "created", creditNote.creditnote_id);
     const matchesTotal = typeof creditNote.total === "number" &&
       inCents(creditNote.total) === inCents(invoice.total);
 
@@ -117,10 +176,17 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error("Création brouillon avoir Zoho :", error);
+    if (lockAcquired) {
+      try {
+        await updateLock(invoiceId, "uncertain");
+      } catch (lockError) {
+        console.error("Échec du marquage du verrou comme incertain :", lockError);
+      }
+    }
     return errorResponse(
       creationStarted
-        ? "La création a peut-être eu lieu dans Zoho malgré l'erreur. Vérifier les avoirs Zoho avant toute nouvelle tentative."
-        : "Contrôle de la facture et des avoirs impossible. Aucun avoir n'a été créé par cette requête.",
+        ? "Résultat de création incertain : un avoir a peut-être été créé dans Zoho. Vérifier Zoho et le journal Supabase avant toute nouvelle tentative."
+        : "Contrôle préalable impossible ou verrou de création indisponible : aucune création Zoho n'a été lancée par cette requête.",
       502
     );
   }
