@@ -2540,3 +2540,64 @@ export async function applyZohoCreditNoteToInvoice(
   ]);
   return { creditNote: updatedCredit, invoice: updatedInvoice };
 }
+
+
+/**
+ * Ouvre explicitement un avoir brouillon après comparaison avec la facture d'origine.
+ * N'effectue AUCUNE imputation ni aucun remboursement.
+ * En cas de réponse incertaine de Zoho, relire l'avoir avant toute nouvelle action.
+ */
+export async function openZohoCreditNoteForInvoice(
+  creditNoteId: string,
+  invoiceId: string
+): Promise<ZohoCreditNote> {
+  const creditId = creditNoteId.trim();
+  const sourceInvoiceId = invoiceId.trim();
+  if (!/^\d+$/.test(creditId) || !/^\d+$/.test(sourceInvoiceId)) {
+    throw new Error("Identifiant d'avoir ou de facture invalide.");
+  }
+
+  const [credit, invoice] = await Promise.all([
+    getZohoCreditNote(creditId),
+    getZohoInvoice(sourceInvoiceId),
+  ]);
+
+  if (credit.status !== "draft") {
+    throw new Error("L'avoir doit être au statut brouillon pour être ouvert.");
+  }
+  if (invoice.status === "draft" || invoice.status === "void") {
+    throw new Error("Une facture brouillon ou annulée ne peut pas être créditée.");
+  }
+  if (credit.customer_id !== invoice.customer_id) {
+    throw new Error("L'avoir et la facture ne correspondent pas au même client.");
+  }
+  if (credit.currency_code && invoice.currency_code && credit.currency_code !== invoice.currency_code) {
+    throw new Error("La devise de l'avoir diffère de celle de la facture.");
+  }
+  if (credit.reference_number !== invoice.invoice_number ||
+      !credit.notes?.includes(`Facture d'origine : ${invoice.invoice_number}`)) {
+    throw new Error("Le lien explicite entre l'avoir et la facture n'est pas vérifié.");
+  }
+  if (!Number.isFinite(credit.total) || !Number.isFinite(invoice.total) ||
+      Number(credit.total) <= 0 ||
+      Math.round(Number(credit.total) * 100) !== Math.round(invoice.total * 100)) {
+    throw new Error("Le montant TTC de l'avoir diffère de celui de la facture.");
+  }
+
+  const alreadyApplied = await getZohoCreditNoteAppliedInvoices(creditId);
+  if (alreadyApplied.length > 0) {
+    throw new Error("Cet avoir comporte déjà des imputations : ouverture automatique interdite.");
+  }
+
+  // Passage au statut ouvert : opération comptable explicite.
+  await zohoBooksRequest<Record<string, never>>(
+    `/creditnotes/${encodeURIComponent(creditId)}/status/open`,
+    { method: "POST" }
+  );
+
+  const updated = await getZohoCreditNote(creditId);
+  if (updated.status !== "open") {
+    throw new Error("Zoho a reçu la demande, mais le statut ouvert n'est pas confirmé : vérifier manuellement.");
+  }
+  return updated;
+}
