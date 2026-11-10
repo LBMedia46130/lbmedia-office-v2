@@ -2301,6 +2301,86 @@ export async function getZohoCreditNote(creditNoteId: string) {
 }
 
 
+/**
+ * Vérification préliminaire d'une facture pour un avoir total brouillon.
+ * Les factures réglées restent éligibles : leur remboursement est une opération séparée.
+ * Ne jamais déduire de cette vérification qu'une imputation est autorisée.
+ */
+export function prepareZohoCreditNoteLines(invoice: ZohoInvoice): {
+  lines: CreateZohoCreditNoteLineItemInput[];
+  blockingReason: string | null;
+} {
+  if (["draft", "void"].includes(invoice.status)) {
+    return { lines: [], blockingReason: "Une facture brouillon ou annulée ne peut pas être créditée ici." };
+  }
+  if (!invoice.invoice_number || !invoice.customer_id || !invoice.invoice_id) {
+    return { lines: [], blockingReason: "Informations obligatoires de la facture manquantes." };
+  }
+  if (!Number.isFinite(invoice.total) || invoice.total <= 0 ||
+      !Number.isFinite(invoice.balance) || invoice.balance < 0 ||
+      invoice.balance > invoice.total + 0.01) {
+    return { lines: [], blockingReason: "Montants de facture incohérents." };
+  }
+  // Les remises globales et ajustements ne se reproduisent pas fidèlement
+  // par une simple recopie des lignes : ne pas les deviner.
+  if (invoice.discount || invoice.shipping_charge || invoice.adjustment || invoice.is_inclusive_tax) {
+    return { lines: [], blockingReason: "Remise globale, frais, ajustement ou TVA incluse : traitement manuel nécessaire." };
+  }
+  const original = invoice.line_items ?? [];
+  if (!original.length) return { lines: [], blockingReason: "La facture ne contient aucune ligne." };
+
+  const lines: CreateZohoCreditNoteLineItemInput[] = [];
+  for (let index = 0; index < original.length; index++) {
+    const line = original[index];
+    const label = `Ligne ${index + 1}`;
+    if (!line.line_item_id || (!line.item_id && !line.name) ||
+        !Number.isFinite(line.quantity) || line.quantity <= 0 ||
+        !Number.isFinite(line.rate) || !Number.isFinite(line.item_total)) {
+      return { lines: [], blockingReason: `${label} : données manquantes ou invalides.` };
+    }
+    if (line.tax_percentage && !line.tax_id) {
+      return { lines: [], blockingReason: `${label} : identifiant de TVA Zoho manquant.` };
+    }
+    const gross = Math.round(line.quantity * line.rate * 100);
+    const net = Math.round(line.item_total * 100);
+    const difference = gross - net;
+    let discount: string | undefined;
+    const raw = line.discount;
+    if (typeof raw === "string" && raw.trim().endsWith("%")) {
+      const pct = Number(raw.trim().slice(0, -1).replace(",", "."));
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100 ||
+          Math.abs(Math.round(gross * (1 - pct / 100)) - net) > 1) {
+        return { lines: [], blockingReason: `${label} : pourcentage de remise incohérent.` };
+      }
+      discount = `${pct}%`;
+    } else {
+      // Une remise non suffixée de % est une remise fixe. On la vérifie
+      // contre le total hors taxe de ligne retourné par Zoho.
+      const amount = raw !== undefined && raw !== null && String(raw).trim() !== "" && Number(raw) !== 0
+        ? Number(String(raw).replace(",", "."))
+        : Number(line.discount_amount || 0);
+      if (!Number.isFinite(amount) || amount < 0 ||
+          Math.abs(Math.round(amount * 100) - difference) > 1) {
+        return { lines: [], blockingReason: `${label} : remise incompatible avec le montant de ligne.` };
+      }
+      if (amount > 0) discount = String(amount);
+    }
+    // Les lignes négatives sont conservées à l'identique : elles font
+    // partie du calcul de la facture (ex. remise régie).
+    lines.push({
+      item_id: line.item_id,
+      invoice_item_id: line.line_item_id,
+      name: line.name,
+      description: line.description,
+      quantity: line.quantity,
+      rate: line.rate,
+      discount,
+      tax_id: line.tax_id,
+    });
+  }
+  return { lines, blockingReason: null };
+}
+
 // ------------------------------------------------------------
 // Avoirs Zoho Books — opérations explicites (V2.5.2, étape 2).
 // Aucun avoir n'est créé ou imputé automatiquement.
@@ -2314,6 +2394,7 @@ export type CreateZohoCreditNoteLineItemInput = {
   description?: string;
   quantity: number;
   rate: number;
+  discount?: string;
   tax_id?: string;
 };
 
@@ -2354,7 +2435,7 @@ export async function createZohoCreditNoteDraft(
     if (!Number.isFinite(quantity) || quantity <= 0) {
       throw new Error(`Quantité invalide à la ligne ${index + 1}.`);
     }
-    if (!Number.isFinite(rate) || rate < 0) {
+    if (!Number.isFinite(rate)) {
       throw new Error(`Prix invalide à la ligne ${index + 1}.`);
     }
     if (!line.item_id?.trim() && !line.name?.trim()) {
@@ -2367,6 +2448,7 @@ export async function createZohoCreditNoteDraft(
       description: line.description?.trim() || undefined,
       quantity,
       rate,
+      discount: line.discount?.trim() || undefined,
       tax_id: line.tax_id?.trim() || undefined,
     };
   });
