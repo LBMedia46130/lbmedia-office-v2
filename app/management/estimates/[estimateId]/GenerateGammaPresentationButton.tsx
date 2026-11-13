@@ -96,13 +96,6 @@ export default function GenerateGammaPresentationButton({
   );
 
   const [
-    exportUrl,
-    setExportUrl,
-  ] = useState<string | null>(
-    null
-  );
-
-  const [
     presentationType,
     setPresentationType,
   ] = useState<PresentationType | null>(
@@ -111,6 +104,55 @@ export default function GenerateGammaPresentationButton({
 
   const pollingInProgress =
     useRef(false);
+
+  const uploadInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [corrected, setCorrected] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status !== "completed") return;
+    let cancelled = false;
+    void fetch(`/api/zoho/estimates/${encodeURIComponent(estimateId)}/gamma/pdf`, {
+      cache: "no-store",
+    }).then(async (response) => {
+      if (!response.ok) throw new Error("Vérification PDF impossible.");
+      return (await response.json()) as { corrected?: boolean };
+    }).then((result) => {
+      if (!cancelled) setCorrected(Boolean(result.corrected));
+    }).catch(() => {
+      if (!cancelled) setUploadMessage("Impossible de vérifier la version du PDF.");
+    });
+    return () => { cancelled = true; };
+  }, [estimateId, status, generationId]);
+
+  async function handleUpload(file: File | undefined) {
+    if (!file) return;
+    setUploadMessage(null);
+    setError(null);
+    if (file.type !== "application/pdf" || file.size > 15 * 1024 * 1024) {
+      setError("Sélectionne un PDF de 15 Mo maximum.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch(
+        `/api/zoho/estimates/${encodeURIComponent(estimateId)}/gamma/pdf`,
+        { method: "PUT", body: form }
+      );
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error || "Import impossible.");
+      setCorrected(true);
+      setUploadMessage("PDF corrigé enregistré. Il sera joint au prochain envoi du devis.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Import impossible.");
+    } finally {
+      setUploading(false);
+      if (uploadInput.current) uploadInput.current.value = "";
+    }
+  }
 
   async function checkGeneration(
     id: string
@@ -154,10 +196,6 @@ export default function GenerateGammaPresentationButton({
       ) {
         setGammaUrl(
           data.gammaUrl ??
-            null
-        );
-        setExportUrl(
-          data.exportUrl ??
             null
         );
         setStatus(
@@ -250,8 +288,9 @@ export default function GenerateGammaPresentationButton({
     setStatus("starting");
     setError(null);
     setGammaUrl(null);
-    setExportUrl(null);
     setGenerationId(null);
+    setCorrected(false);
+    setUploadMessage(null);
 
     try {
       const response =
@@ -366,15 +405,36 @@ export default function GenerateGammaPresentationButton({
         </a>
       ) : null}
 
-      {exportUrl ? (
+      {status === "completed" ? (
         <a
-          href={exportUrl}
+          href={`/api/zoho/estimates/${encodeURIComponent(estimateId)}/gamma/pdf?download=1`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
         >
-          Ouvrir le PDF
+          {corrected ? "Ouvrir le PDF corrigé" : "Ouvrir le PDF"}
         </a>
+      ) : null}
+
+      {status === "completed" ? (
+        <div className="space-y-2">
+          <input
+            ref={uploadInput}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(event) => void handleUpload(event.target.files?.[0])}
+          />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => uploadInput.current?.click()}
+            className="inline-flex w-full items-center justify-center rounded-xl border border-blue-600 bg-white px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
+          >
+            {uploading ? "Import du PDF en cours…" : corrected ? "Remplacer de nouveau le PDF" : "Remplacer le PDF"}
+          </button>
+          {uploadMessage ? <p className="text-xs text-emerald-700">{uploadMessage}</p> : null}
+        </div>
       ) : null}
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

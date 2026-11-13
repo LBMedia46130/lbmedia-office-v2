@@ -9,6 +9,7 @@ import {
 } from "@/lib/zoho-books";
 import { getGammaGeneration } from "@/lib/gamma";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { loadCorrectedGammaPdf } from "@/lib/gamma-pdf";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,17 @@ async function loadGammaPdfForEstimate(estimateId: string) {
       );
     }
     return null;
+  }
+
+  // Le document corrigé et validé remplace l'export initial de Gamma.
+  // Le chemin inclut la génération : une nouvelle présentation n'utilise
+  // jamais le PDF corrigé d'une génération précédente.
+  const corrected = await loadCorrectedGammaPdf(estimateId, generationId);
+  if (corrected) {
+    return {
+      bytes: corrected,
+      filename: `Presentation-LBMedia-${estimateId}.pdf`,
+    };
   }
 
   const generation = await getGammaGeneration(generationId);
