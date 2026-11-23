@@ -541,7 +541,7 @@ export default function StandalonePublicationCreateForm() {
           {isSubmitting
             ? "Création..."
             : isMultiChannel
-              ? "Créer les 2 brouillons"
+              ? `Créer les ${channels.length} brouillons`
               : "Créer la publication"}
         </button>
       </div>
