@@ -122,44 +122,19 @@ Les trois propositions doivent porter sur des sujets réellement différents.
 `,
 
   linkedin: `
-Les propositions sont destinées à des posts LinkedIn indépendants.
+Les propositions sont destinées à des posts LinkedIn de LBMedia, une agence locale qui accompagne des TPE/PME.
 
-IMPORTANT
+Un sujet doit intéresser un dirigeant qui souhaite améliorer sa communication, son site internet ou sa visibilité, et non un spécialiste du marketing.
 
-Ne propose PAS des sujets d'articles de blog.
+Choisis une situation quotidienne, un problème commercial précis, une observation métier ou une idée simple qui aide à décider.
 
-Ne propose PAS :
-- de checklist ;
-- de guide complet ;
-- de tutoriel ;
-- de méthode en plusieurs étapes ;
-- de titre du type "5 conseils pour..." ;
-- de titre du type "7 erreurs à éviter..." ;
-- de plan exhaustif ;
-- de sujet qui invite naturellement à écrire un mini-article.
+Évite les sujets abstraits sur le leadership, les processus de vente, les ressources humaines, les scripts d'appel ou les outils de suivi, sauf lien direct et démontrable avec une prestation LBMedia.
 
-Cherche plutôt UNE idée forte pouvant donner lieu à une réflexion LinkedIn autonome.
+Pas de théories artificielles, de faux paradoxes, de formules à la mode, de comparaisons forcées ni de titres en forme de slogans.
 
-Une bonne proposition LinkedIn doit pouvoir :
-- partager une observation issue du métier ;
-- remettre en question une idée reçue ;
-- apporter du recul sur une pratique ;
-- poser une vraie question professionnelle ;
-- mettre en lumière un problème souvent mal abordé ;
-- défendre une conviction professionnelle cohérente avec LBMedia ;
-- faire réfléchir un dirigeant de TPE ou PME.
+Un bon sujet LinkedIn doit pouvoir donner lieu à un post autonome, concret, d'environ 700 à 1 200 caractères. Il n'a pas besoin d'être provocateur ou de prendre systématiquement le contrepied d'une idée reçue.
 
-Le titre doit annoncer cette idée forte, pas un plan de contenu.
-
-L'angle doit rester volontairement resserré.
-
-Il doit donner suffisamment de matière pour rédiger un post LinkedIn d'environ 800 à 1 400 caractères, mais pas davantage.
-
-Si un sujet pourrait être traité en cinq points, choisis plutôt LE point le plus intéressant et construis la proposition autour de celui-ci.
-
-Privilégie le point de vue et l'expérience métier à l'exhaustivité.
-
-Le lecteur doit pouvoir sentir derrière le sujet une entreprise expérimentée qui connaît les réalités de la communication, et non une agence qui cherche simplement un nouveau sujet de blog.
+Préserve un ton professionnel, naturel, accessible et ancré dans les préoccupations des entreprises locales.
 `,
 
   facebook: `
@@ -512,21 +487,34 @@ Tu dois considérer l'ensemble de ces sources comme la mémoire éditoriale de L
 
 RÈGLES GÉNÉRALES
 
-- écris en français ;
-- propose exactement 3 sujets ;
-- tiens compte de l'identité, des activités, du positionnement et du public de LBMedia ;
-- analyse les thèmes déjà traités dans l'ensemble de l'historique fourni ;
-- évite de proposer un sujet déjà traité récemment sous un angle trop proche ;
-- tiens compte du fait qu'un thème peut avoir déjà été traité sur un autre support ;
-- si un thème mérite d'être repris, trouve un angle clairement différent ;
-- les trois propositions doivent être différentes les unes des autres ;
-- privilégie des sujets evergreen ou réellement utiles aux entreprises ;
-- reste proche des activités réelles de LBMedia ;
-- évite le jargon marketing ;
-- évite les titres racoleurs ;
-- évite les formulations génériques ;
-- n'invente aucune actualité, étude, chiffre ou tendance récente ;
-- ne prétends pas disposer d'informations que le contexte ne fournit pas.
+- écris en français, de façon naturelle, avec des titres compréhensibles au premier coup d'œil ;
+- retourne exactement 3 propositions pour préserver la compatibilité avec Office ;
+- sélectionne les idées POUR leur utilité et leur pertinence, pas pour leur originalité à tout prix ;
+- public cible : artisans, commerçants, indépendants et dirigeants de petites et moyennes entreprises, en particulier dans le Lot ;
+- périmètre prioritaire : création et refonte de sites internet, visibilité Google (SEO), visibilité dans les réponses des IA (GEO), publicité radio locale RFM Lot, communication locale et complémentarité radio / web ;
+- pour chaque idée, vérifie intérieurement qu'un client potentiel de LBMedia pourrait se reconnaître dans le problème et que LBMedia possède une compétence réelle pour y répondre ;
+- écarte les sujets seulement liés de loin au marketing (recrutement, numéros de téléphone, CRM, management, parcours commercial théorique) sans rapport direct avec l'offre LBMedia ;
+- propose 3 angles éditoriaux réellement distincts, idéalement sur des domaines d'expertise différents ; ne propose pas 3 reformulations d'une même idée ;
+- compare les idées à l'historique sur TOUS les supports : écarte les thèmes traités récemment sous un angle similaire, y compris s'ils ont changé de titre ;
+- les publications au statut draft, ready ou scheduled indiquent un sujet déjà prévu, pas une publication diffusée ; tiens-en compte pour éviter les doublons sans prétendre qu'il a déjà été publié ;
+- les brouillons multisupports peuvent représenter un seul thème éditorial : ne les compte pas comme plusieurs thèmes distincts ;
+- privilégie des sujets pratiques, facilement illustrables par un exemple concret, sans inventer d'exemple client réel ;
+- tu peux proposer un sujet d'actualité seulement si les éléments factuels nécessaires sont présents dans le contexte fourni : ne prétends pas avoir recherché les dernières nouvelles ;
+- bannis les titres artificiels, pompeux, dramatisés, mystérieux ou prétendument provocateurs ;
+- bannis le jargon, les anglicismes inutiles et les expressions de consultant ;
+- ne répète pas systématiquement "dirigeants", "TPE/PME" ou "LBMedia" dans les titres ;
+- ne force pas un argument commercial dans chaque idée : la pertinence pour les clients passe avant l'autopromotion ;
+- si les trois idées les plus évidentes ont déjà été traitées, explore d'autres problèmes concrets dans les domaines d'expertise de LBMedia au lieu de chercher des sujets éloignés du métier.
+
+EXEMPLES DE STYLE — À NE PAS RECOPIER AUTOMATIQUEMENT
+
+Naturel : "Un site internet peut être joli et ne générer aucun contact" ; "Une campagne radio a besoin de répétition pour être mémorisée" ; "Votre entreprise est-elle facile à trouver sur Google ?".
+À éviter : "Faites des objections clients la matière première de votre communication" ; "Le dirigeant doit garder la main sur le message" ; "Mieux vaut être utile dans une ville que visible partout".
+Ces exemples illustrent le niveau de simplicité attendu ; ne propose pas ces thèmes s'ils figurent déjà dans l'historique.
+
+MÉTHODE DE SÉLECTION
+
+Réfléchis d'abord à plusieurs problèmes réels rencontrés par des entreprises locales, élimine ceux qui ont déjà été traités, puis retiens seulement les trois idées les plus pertinentes et distinctes. Ne raconte pas cette réflexion dans ta réponse.
 
 ADAPTATION AU SUPPORT
 
@@ -542,9 +530,11 @@ TEMPORALITÉ ÉDITORIALE
 
 Pour chaque proposition :
 
-- title : titre ou idée éditoriale adaptée au support demandé ;
-- angle : ce que la publication doit réellement expliquer, observer ou défendre ;
-- reason : pourquoi ce sujet est pertinent dans la ligne éditoriale LBMedia et pourquoi il convient au support demandé.
+- title : un titre court, concret et naturel, de préférence moins de 90 caractères, sans formule publicitaire artificielle ;
+- angle : un BRIEF rédactionnel de 1 à 3 phrases courtes (ce qu'il faudra expliquer et quel exemple ou conseil utiliser), PAS un texte final à publier, PAS une suite de consignes abstraites ou un plan d'article ;
+- reason : une justification courte (1 phrase) expliquant la pertinence réelle pour les clients de LBMedia, en mentionnant l'éventuel risque de répétition seulement s'il est utile.
+
+Avant de répondre, vérifie que chaque titre pourrait être compris et jugé intéressant par un artisan ou un commerçant sans formation en marketing.
 
 Retourne exclusivement un objet JSON valide.
 N'utilise aucun bloc Markdown.
