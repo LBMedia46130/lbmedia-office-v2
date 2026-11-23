@@ -39,12 +39,6 @@ const channelOptions: {
     description:
       "Créer une publication pour la fiche Google Business.",
   },
-  {
-    value: "brevo",
-    label: "Brevo",
-    description:
-      "Créer une newsletter indépendante.",
-  },
 ];
 
 export default function StandalonePublicationCreateForm() {
@@ -52,11 +46,14 @@ export default function StandalonePublicationCreateForm() {
     useRouter();
 
   const [
-    channel,
-    setChannel,
-  ] = useState<PublicationChannel>(
-    "linkedin"
-  );
+    channels,
+    setChannels,
+  ] = useState<PublicationChannel[]>(["linkedin"]);
+
+  // L'API Pénélope attend toujours un seul support.
+  const channel: PublicationChannel = channels.includes("linkedin")
+    ? "linkedin"
+    : channels[0] ?? "linkedin";
 
   const [
     title,
@@ -92,10 +89,29 @@ export default function StandalonePublicationCreateForm() {
     null
   );
 
-  function handleChannelChange(
-    nextChannel: PublicationChannel
-  ) {
-    setChannel(nextChannel);
+  function handleChannelChange(nextChannel: PublicationChannel) {
+    const isSocial = ["linkedin", "facebook", "google_business"].includes(nextChannel);
+
+    setChannels((current) => {
+      if (!isSocial) {
+        // Les autres supports ne sont pas proposés dans ce formulaire.
+        return [nextChannel];
+      }
+
+      const socialSelection = current.filter(
+        (value) => ["linkedin", "facebook", "google_business"].includes(value)
+      );
+
+      if (socialSelection.includes(nextChannel)) {
+        // On doit conserver au moins un support actif.
+        return socialSelection.length === 1
+          ? socialSelection
+          : socialSelection.filter((value) => value !== nextChannel);
+      }
+
+      return [...socialSelection, nextChannel];
+    });
+
     setTopics([]);
     setError(null);
   }
@@ -187,6 +203,11 @@ export default function StandalonePublicationCreateForm() {
     const cleanTitle =
       title.trim();
 
+    if (channels.length === 0) {
+      setError("Sélectionne au moins un support.");
+      return;
+    }
+
     if (!cleanTitle) {
       setError(
         "Indique le sujet de la publication."
@@ -209,7 +230,7 @@ export default function StandalonePublicationCreateForm() {
                 "application/json",
             },
             body: JSON.stringify({
-              channel,
+              channels,
               title:
                 cleanTitle,
               content:
@@ -252,11 +273,11 @@ export default function StandalonePublicationCreateForm() {
   }
 
   const currentChannel =
-    channelOptions.find(
-      (option) =>
-        option.value ===
-        channel
-    );
+    channelOptions.find((option) => option.value === channel);
+  const isMultiChannel = channels.length > 1;
+  const channelLabel = channels
+    .map((value) => channelOptions.find((option) => option.value === value)?.label ?? value)
+    .join(", ");
 
   return (
     <form
@@ -265,55 +286,51 @@ export default function StandalonePublicationCreateForm() {
       }
       className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
     >
-      <div>
-        <label
-          htmlFor="channel"
-          className="block text-sm font-semibold text-slate-900"
-        >
-          Support
-        </label>
-
-        <select
-          id="channel"
-          value={channel}
-          onChange={(
-            event
-          ) =>
-            handleChannelChange(
-              event.target
-                .value as PublicationChannel
-            )
-          }
-          disabled={
-            isSubmitting ||
-            isGeneratingTopics
-          }
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-slate-950 disabled:opacity-60"
-        >
-          {channelOptions.map(
-            (option) => (
-              <option
-                key={
-                  option.value
-                }
-                value={
-                  option.value
-                }
-              >
-                {
-                  option.label
-                }
-              </option>
-            )
-          )}
-        </select>
-
+      <fieldset disabled={isSubmitting || isGeneratingTopics}>
+        <legend className="block text-sm font-semibold text-slate-900">
+          Supports de publication
+        </legend>
         <p className="mt-2 text-sm text-slate-500">
-          {
-            currentChannel?.description
-          }
+          Sélectionne un ou plusieurs supports : LinkedIn, Facebook et Google Business.
         </p>
-      </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {channelOptions.map((option) => {
+            const checked = channels.includes(option.value);
+            return (
+              <label
+                key={option.value}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                  checked
+                    ? "border-blue-400 bg-blue-50/70"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  name="channels"
+                  value={option.value}
+                  checked={checked}
+                  onChange={() => handleChannelChange(option.value)}
+                  className="mt-1 h-4 w-4 accent-blue-600"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">
+                    {option.label}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">
+                    {option.description}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+        {isMultiChannel ? (
+          <p className="mt-3 text-sm font-medium text-blue-700">
+            {channels.length} brouillons liés seront créés, un par support sélectionné.
+          </p>
+        ) : null}
+      </fieldset>
 
       <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -331,12 +348,12 @@ export default function StandalonePublicationCreateForm() {
               trois sujets adaptés à{" "}
               <span className="font-semibold">
                 {
-                  currentChannel?.label
+                  channelLabel
                 }
               </span>{" "}
               en tenant compte de
               l&apos;historique éditorial
-              de LBMedia.
+              de LBMedia. {isMultiChannel ? "Les sujets servent de brief commun aux brouillons sélectionnés. Pénélope utilise actuellement un seul profil de réseau pour les suggestions." : ""}
             </p>
           </div>
 
@@ -516,13 +533,16 @@ export default function StandalonePublicationCreateForm() {
           type="submit"
           disabled={
             isSubmitting ||
-            isGeneratingTopics
+            isGeneratingTopics ||
+            channels.length === 0
           }
           className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting
             ? "Création..."
-            : "Créer la publication"}
+            : isMultiChannel
+              ? "Créer les 2 brouillons"
+              : "Créer la publication"}
         </button>
       </div>
     </form>

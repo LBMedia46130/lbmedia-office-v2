@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import {
@@ -8,7 +9,10 @@ import {
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 type CreateStandalonePublicationInput = {
+  // Ancien format, conserve pour les formulaires deja en production.
   channel?: PublicationChannel;
+  // Nouveau format : un ou plusieurs supports.
+  channels?: PublicationChannel[];
   title?: string;
   content?: string;
 };
@@ -20,9 +24,13 @@ const standaloneChannels: PublicationChannel[] = [
   "brevo",
 ];
 
-export async function POST(
-  request: Request
-) {
+const multiChannelOptions: PublicationChannel[] = [
+  "linkedin",
+  "facebook",
+  "google_business",
+];
+
+export async function POST(request: Request) {
   let body: CreateStandalonePublicationInput;
 
   try {
@@ -31,103 +39,123 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Les données envoyées sont invalides.",
+        message: "Les donnees envoyees sont invalides.",
       },
-      {
-        status: 400,
-      }
+      { status: 400 }
     );
   }
 
+  const usesMultipleChannels = body.channels !== undefined;
+  const requestedChannels: unknown = usesMultipleChannels
+    ? body.channels
+    : body.channel !== undefined
+      ? [body.channel]
+      : [];
+
   if (
-    !body.channel ||
-    !publicationChannels.includes(
-      body.channel
+    !Array.isArray(requestedChannels) ||
+    requestedChannels.length === 0 ||
+    requestedChannels.some(
+      (channel) =>
+        typeof channel !== "string" ||
+        !publicationChannels.includes(channel as PublicationChannel)
     )
   ) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Le support de publication est invalide.",
+        message: "Le support de publication est invalide.",
       },
+      { status: 400 }
+    );
+  }
+
+  const channels = requestedChannels as PublicationChannel[];
+
+  if (new Set(channels).size !== channels.length) {
+    return NextResponse.json(
       {
-        status: 400,
-      }
+        success: false,
+        message: "Un support ne peut etre selectionne qu'une seule fois.",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (channels.some((channel) => !standaloneChannels.includes(channel))) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Ce support ne peut pas etre utilise pour une publication independante.",
+      },
+      { status: 400 }
     );
   }
 
   if (
-    !standaloneChannels.includes(
-      body.channel
-    )
+    channels.length > 1 &&
+    channels.some((channel) => !multiChannelOptions.includes(channel))
   ) {
     return NextResponse.json(
       {
         success: false,
         message:
-          "Ce support ne peut pas être utilisé pour une publication indépendante.",
+          "La selection multiple est disponible uniquement pour LinkedIn, Facebook et Google Business.",
       },
-      {
-        status: 400,
-      }
+      { status: 400 }
     );
   }
 
-  const title =
-    body.title?.trim() ?? "";
+  const title = typeof body.title === "string" ? body.title.trim() : "";
 
   if (!title) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Le sujet est obligatoire.",
+        message: "Le sujet est obligatoire.",
       },
-      {
-        status: 400,
-      }
+      { status: 400 }
     );
   }
 
-  const now =
-    new Date().toISOString();
+  const content = typeof body.content === "string" ? body.content.trim() : "";
+  const now = new Date().toISOString();
+  const groupId = channels.length > 1 ? randomUUID() : null;
 
-  const {
-    data,
-    error,
-  } = await supabaseAdmin
+  // Un seul INSERT pour creer ensemble les brouillons :
+  // pas de publication orpheline si l'operation echoue.
+  const rows = channels.map((channel) => ({
+    news_id: null,
+    group_id: groupId,
+    channel,
+    title,
+    content,
+    status: "draft" as const,
+    updated_at: now,
+  }));
+
+  const { data, error } = await supabaseAdmin
     .from("publications")
-    .insert({
-      news_id: null,
-      channel: body.channel,
-      title,
-      content:
-        body.content?.trim() ?? "",
-      status: "draft",
-      updated_at: now,
-    })
-    .select("*")
-    .single();
+    .insert(rows)
+    .select("*");
 
-  if (error) {
+  if (error || !data || data.length !== channels.length) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Impossible de créer la publication.",
-        error:
-          error.message,
+        message: "Impossible de creer la publication.",
+        ...(error ? { error: error.message } : {}),
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 
+  // Compatibilite avec les ecrans existants : publication reste disponible.
   return NextResponse.json({
     success: true,
-    publication: data,
+    publication: data.find((item) => item.channel === channels[0]) ?? data[0],
+    publications: data,
+    group_id: groupId,
   });
 }

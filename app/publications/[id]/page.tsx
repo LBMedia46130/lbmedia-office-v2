@@ -37,6 +37,14 @@ const channelLabels: Record<
   facebook: "Facebook",
 };
 
+const statusLabels: Record<Publication["status"], string> = {
+  draft: "Brouillon",
+  ready: "Prêt",
+  scheduled: "Programmé",
+  published: "Publié",
+  failed: "Échec",
+};
+
 export default async function PublicationPage({
   params,
 }: PublicationPageProps) {
@@ -80,6 +88,33 @@ export default async function PublicationPage({
     throw new Error(
       "Une publication WordPress doit être rattachée à une actualité."
     );
+  }
+
+  // Une même idée éditoriale peut avoir plusieurs brouillons,
+  // chacun conservant son propre statut et ses actions.
+  let linkedPublications: Pick<
+    Publication,
+    "id" | "channel" | "status"
+  >[] = [];
+
+  if (publication.group_id) {
+    const { data: linkedData, error: linkedError } =
+      await supabaseAdmin
+        .from("publications")
+        .select("id, channel, status")
+        .eq("group_id", publication.group_id)
+        .is("news_id", null);
+
+    if (linkedError) {
+      throw new Error(
+        `Impossible de charger les supports associés : ${linkedError.message}`
+      );
+    }
+
+    linkedPublications = (linkedData ?? []) as Pick<
+      Publication,
+      "id" | "channel" | "status"
+    >[];
   }
 
   async function deletePublication() {
@@ -174,6 +209,44 @@ export default async function PublicationPage({
             />
           </div>
         </div>
+
+        {linkedPublications.length > 1 ? (
+          <section
+            aria-label="Déclinaisons de cette publication"
+            className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
+            <h2 className="text-base font-semibold text-slate-950">
+              Supports associés
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Ces brouillons partagent le même sujet. Chaque support
+              possède son propre texte, son statut et sa programmation.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {linkedPublications.map((item) => {
+                const isCurrent = item.id === publication.id;
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/publications/${item.id}`}
+                    aria-current={isCurrent ? "page" : undefined}
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                      isCurrent
+                        ? "border-blue-600 bg-blue-50 text-blue-800"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    {channelLabels[item.channel]} · {statusLabels[item.status]}
+                    {isCurrent ? " (actuel)" : ""}
+                  </Link>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              La suppression depuis cette page ne concerne que le brouillon affiché.
+            </p>
+          </section>
+        ) : null}
 
         <div className="mt-8">
           <PublicationEditor

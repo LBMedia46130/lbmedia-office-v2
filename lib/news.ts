@@ -60,6 +60,9 @@ export type PublicationStatus =
 export type Publication = {
   id: string;
   news_id: string | null;
+  // Identifiant commun aux déclinaisons d’une publication ponctuelle.
+  // Null pour les publications existantes et les actualités mensuelles.
+  group_id?: string | null;
   channel: PublicationChannel;
 
   title: string | null;
