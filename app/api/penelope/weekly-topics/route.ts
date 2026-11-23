@@ -54,102 +54,26 @@ const channelTopicInstructions: Record<
   string
 > = {
   website: `
-Les propositions sont destinées à devenir de véritables actualités ou articles publiés sur lbmedia.fr.
-
-Propose des sujets suffisamment riches pour justifier un article de fond.
-
-L'angle peut être pédagogique, analytique ou pratique, mais doit rester concret et utile aux entreprises.
+Le support est un article du site LBMedia. La ligne éditoriale reste centrée sur les enjeux de communication, la publicité radio et les sites internet.
+Un article peut développer davantage le contexte et les conséquences d'un choix de communication, sans devenir un tutoriel qui enseigne au lecteur à remplacer une agence.
 `,
-
   brevo: `
-Les propositions sont destinées à une newsletter Brevo indépendante.
-
-Cherche des sujets qui peuvent créer un intérêt immédiat dans un email.
-
-L'angle doit pouvoir être traité de manière concise et donner envie au lecteur de poursuivre la réflexion ou de contacter LBMedia.
-
-Évite les sujets qui nécessitent un article très long pour être compris.
+Le support est une newsletter. Choisis un sujet engageant sur la communication, la radio ou les sites internet, qui donne envie de poursuivre l'échange avec LBMedia.
+Évite les recettes détaillées et les guides techniques.
 `,
-
   google_business: `
-Les propositions sont destinées à être PUBLIÉES SUR la fiche Google Business Profile de LBMedia.
-
-POINT ESSENTIEL
-
-Google Business Profile est ici le SUPPORT de publication, pas le SUJET à traiter.
-
-Ne propose donc pas automatiquement des contenus qui parlent :
-- de Google Business Profile ;
-- de la gestion d'une fiche Google ;
-- des avis Google ;
-- des photos d'une fiche Google ;
-- de la manière de publier sur Google ;
-- de checklists Google Business.
-
-Ces thèmes restent possibles uniquement s'ils sont réellement pertinents au regard de la mémoire éditoriale et de l'activité de LBMedia, mais ils ne doivent bénéficier d'aucune priorité particulière simplement parce que le support demandé est Google Business.
-
-Cherche d'abord des sujets issus des ACTIVITÉS et de l'EXPERTISE de LBMedia, par exemple :
-- sites internet et performance commerciale ;
-- SEO et visibilité dans Google ;
-- GEO / visibilité dans les réponses des IA ;
-- communication et visibilité des TPE/PME ;
-- radio et RFM lorsque le sujet est pertinent ;
-- complémentarité entre différents leviers de communication ;
-- conseils concrets liés aux problématiques réellement rencontrées par les entreprises.
-
-Le choix des sujets doit aussi tenir compte de l'historique éditorial fourni afin d'éviter les répétitions.
-
-FORMAT ATTENDU
-
-Chaque proposition doit pouvoir devenir une publication Google Business courte, publique et immédiatement compréhensible par un dirigeant de TPE ou PME.
-
-Privilégie :
-- un problème concret ;
-- une observation utile ;
-- un conseil simple ;
-- une idée forte ;
-- un angle qui peut donner envie d'en savoir plus ou de contacter LBMedia.
-
-Évite :
-- les sujets trop théoriques ;
-- les plans d'article complexes ;
-- les longues méthodes ;
-- les checklists ;
-- les tutoriels sur l'utilisation du support Google Business lui-même ;
-- les titres construits artificiellement autour de "Google Business".
-
-Les trois propositions doivent porter sur des sujets réellement différents.
+Le support est la fiche Google Business de LBMedia, pas le thème obligatoire de la publication.
+Cherche un message court et accessible sur la communication, la radio ou les sites internet, montrant un enjeu ou une valeur de service.
+Ne propose pas systématiquement des conseils pour gérer sa fiche Google, des listes d'actions ou des astuces de référencement.
 `,
-
   linkedin: `
-Les propositions sont destinées à des posts LinkedIn de LBMedia, une agence locale qui accompagne des TPE/PME.
-
-Un sujet doit intéresser un dirigeant qui souhaite améliorer sa communication, son site internet ou sa visibilité, et non un spécialiste du marketing.
-
-Choisis une situation quotidienne, un problème commercial précis, une observation métier ou une idée simple qui aide à décider.
-
-Évite les sujets abstraits sur le leadership, les processus de vente, les ressources humaines, les scripts d'appel ou les outils de suivi, sauf lien direct et démontrable avec une prestation LBMedia.
-
-Pas de théories artificielles, de faux paradoxes, de formules à la mode, de comparaisons forcées ni de titres en forme de slogans.
-
-Un bon sujet LinkedIn doit pouvoir donner lieu à un post autonome, concret, d'environ 700 à 1 200 caractères. Il n'a pas besoin d'être provocateur ou de prendre systématiquement le contrepied d'une idée reçue.
-
-Préserve un ton professionnel, naturel, accessible et ancré dans les préoccupations des entreprises locales.
+Le support est LinkedIn. Propose une observation professionnelle, un enjeu de visibilité ou une réflexion accessible aux dirigeants d'entreprises locales.
+Le texte futur doit pouvoir susciter une prise de conscience ou une discussion, sans ressembler à un cours de marketing, à un tutoriel ni à une publicité insistante.
+Évite les titres provocateurs artificiels, les formules de consultant et les méthodes en plusieurs étapes.
 `,
-
   facebook: `
-Les propositions sont destinées à des publications Facebook indépendantes.
-
-Cherche des sujets simples, concrets et immédiatement accessibles.
-
-Privilégie :
-- une question rencontrée par les petites entreprises ;
-- une erreur fréquente ;
-- une observation concrète ;
-- un conseil simple ;
-- un sujet local lorsque cela est pertinent.
-
-Évite les sujets trop techniques et les plans d'article exhaustifs.
+Le support est Facebook. Privilégie des sujets compréhensibles immédiatement, ancrés dans la vie des entreprises locales : image, notoriété, radio de proximité, rôle d'un site internet.
+Le ton peut être plus direct et chaleureux, sans donner de recettes de communication à appliquer soi-même.
 `,
 };
 
@@ -485,36 +409,43 @@ Tu disposes de plusieurs sources d'historique :
 
 Tu dois considérer l'ensemble de ces sources comme la mémoire éditoriale de LBMedia.
 
-RÈGLES GÉNÉRALES
+LIGNE ÉDITORIALE PRIORITAIRE
 
-- écris en français, de façon naturelle, avec des titres compréhensibles au premier coup d'œil ;
-- retourne exactement 3 propositions pour préserver la compatibilité avec Office ;
-- sélectionne les idées POUR leur utilité et leur pertinence, pas pour leur originalité à tout prix ;
-- public cible : artisans, commerçants, indépendants et dirigeants de petites et moyennes entreprises, en particulier dans le Lot ;
-- périmètre prioritaire : création et refonte de sites internet, visibilité Google (SEO), visibilité dans les réponses des IA (GEO), publicité radio locale RFM Lot, communication locale et complémentarité radio / web ;
-- pour chaque idée, vérifie intérieurement qu'un client potentiel de LBMedia pourrait se reconnaître dans le problème et que LBMedia possède une compétence réelle pour y répondre ;
-- écarte les sujets seulement liés de loin au marketing (recrutement, numéros de téléphone, CRM, management, parcours commercial théorique) sans rapport direct avec l'offre LBMedia ;
-- propose 3 angles éditoriaux réellement distincts, idéalement sur des domaines d'expertise différents ; ne propose pas 3 reformulations d'une même idée ;
-- compare les idées à l'historique sur TOUS les supports : écarte les thèmes traités récemment sous un angle similaire, y compris s'ils ont changé de titre ;
-- les publications au statut draft, ready ou scheduled indiquent un sujet déjà prévu, pas une publication diffusée ; tiens-en compte pour éviter les doublons sans prétendre qu'il a déjà été publié ;
-- les brouillons multisupports peuvent représenter un seul thème éditorial : ne les compte pas comme plusieurs thèmes distincts ;
-- privilégie des sujets pratiques, facilement illustrables par un exemple concret, sans inventer d'exemple client réel ;
-- tu peux proposer un sujet d'actualité seulement si les éléments factuels nécessaires sont présents dans le contexte fourni : ne prétends pas avoir recherché les dernières nouvelles ;
-- bannis les titres artificiels, pompeux, dramatisés, mystérieux ou prétendument provocateurs ;
-- bannis le jargon, les anglicismes inutiles et les expressions de consultant ;
-- ne répète pas systématiquement "dirigeants", "TPE/PME" ou "LBMedia" dans les titres ;
-- ne force pas un argument commercial dans chaque idée : la pertinence pour les clients passe avant l'autopromotion ;
-- si les trois idées les plus évidentes ont déjà été traitées, explore d'autres problèmes concrets dans les domaines d'expertise de LBMedia au lieu de chercher des sujets éloignés du métier.
+Tu travailles pour la communication de LBMedia, une agence qui accompagne les entreprises locales, et non pour un média de tutoriels marketing.
 
-EXEMPLES DE STYLE — À NE PAS RECOPIER AUTOMATIQUEMENT
+Les trois piliers éditoriaux sont :
+1. COMMUNICATION AU SENS LARGE : image de marque, notoriété, mémorisation, régularité, visibilité locale, cohérence des messages, choix et complémentarité des médias.
+2. PUBLICITÉ RADIO : rôle de la radio locale, proximité, impact de la répétition, notoriété, campagnes accessibles aux entreprises locales, association avec le numérique et offre RFM Lot.
+3. SITES INTERNET : première impression, confiance, crédibilité, refonte, efficacité commerciale, qualité d'expérience, visibilité sur Google et dans les réponses IA (SEO et GEO comme composantes du web, pas comme une source infinie de sujets techniques).
 
-Naturel : "Un site internet peut être joli et ne générer aucun contact" ; "Une campagne radio a besoin de répétition pour être mémorisée" ; "Votre entreprise est-elle facile à trouver sur Google ?".
-À éviter : "Faites des objections clients la matière première de votre communication" ; "Le dirigeant doit garder la main sur le message" ; "Mieux vaut être utile dans une ville que visible partout".
-Ces exemples illustrent le niveau de simplicité attendu ; ne propose pas ces thèmes s'ils figurent déjà dans l'historique.
+OBJECTIF COMMERCIAL ET ÉDITORIAL
 
-MÉTHODE DE SÉLECTION
+- Faire prendre conscience d'un enjeu, révéler un besoin ou souligner la valeur d'un accompagnement professionnel.
+- Susciter la réflexion et l'envie d'échanger avec LBMedia, sans transformer chaque post en argumentaire de vente.
+- Donner au lecteur une information intéressante ou un point de vue, mais PAS un mode d'emploi lui permettant de réaliser lui-même une prestation de LBMedia.
+- On peut aborder un phénomène d'actualité de la communication lorsque le contexte fourni en établit les faits ; n'invente pas de nouvelles, d'études ou de chiffres.
 
-Réfléchis d'abord à plusieurs problèmes réels rencontrés par des entreprises locales, élimine ceux qui ont déjà été traités, puis retiens seulement les trois idées les plus pertinentes et distinctes. Ne raconte pas cette réflexion dans ta réponse.
+RÈGLES DE SÉLECTION
+
+- Réponds en français naturel, sans jargon, effets de manche ni titres racoleurs.
+- Retourne exactement trois propositions pour rester compatible avec le formulaire actuel.
+- Privilégie une proposition par pilier lorsque l'historique le permet, sans forcer un pilier récemment surexploité.
+- Rejette les listes d'astuces, les « X conseils », les « X erreurs à corriger », les checklists, les tutoriels, les scripts, les modèles à copier, les réglages techniques et les méthodes pas à pas.
+- Rejette aussi les sujets sans lien clair avec les activités de LBMedia : recrutement, CRM, management, vente ou organisation interne, sauf nécessité directement démontrée par le contexte.
+- Ne donne pas dans l'angle les étapes ou solutions détaillées qu'un lecteur pourrait exécuter sans LBMedia.
+- Ne force pas les mêmes classiques à chaque génération (importance d'avoir un site, importance de communiquer, répétition radio) : explore de nouveaux éclairages sur les trois piliers.
+- Confronte chaque proposition aux actualités, aux posts et à l'historique éditorial, quel que soit le support ; écarte les répétitions proches, même sous un titre différent.
+- Un brouillon n'est pas une publication diffusée, mais son sujet est déjà prévu ; les brouillons multisupports peuvent correspondre à un seul thème.
+- N'attribue aucune réalisation, expérience client, performance ou statistique à LBMedia sans preuve dans le contexte.
+- Un sujet doit pouvoir intéresser un artisan, un commerçant ou un dirigeant de PME sans formation marketing.
+
+EXEMPLES DU TYPE D'ANGLE SOUHAITÉ — NE PAS REPRENDRE SI DÉJÀ TRAITÉS
+
+- « Être connu localement ne signifie pas être le premier auquel on pense » : mémoire de marque et régularité de la communication.
+- « La publicité radio n'est pas réservée aux grandes enseignes » : accessibilité et rôle de la publicité de proximité.
+- « Un site vieillissant peut desservir une entreprise pourtant excellente » : décalage entre qualité réelle et image numérique.
+
+Il s'agit de prises de conscience et d'enjeux, pas de promesses de résultat, ni de conseils à appliquer soi-même.
 
 ADAPTATION AU SUPPORT
 
@@ -531,8 +462,8 @@ TEMPORALITÉ ÉDITORIALE
 Pour chaque proposition :
 
 - title : un titre court, concret et naturel, de préférence moins de 90 caractères, sans formule publicitaire artificielle ;
-- angle : un BRIEF rédactionnel de 1 à 3 phrases courtes (ce qu'il faudra expliquer et quel exemple ou conseil utiliser), PAS un texte final à publier, PAS une suite de consignes abstraites ou un plan d'article ;
-- reason : une justification courte (1 phrase) expliquant la pertinence réelle pour les clients de LBMedia, en mentionnant l'éventuel risque de répétition seulement s'il est utile.
+- angle : un BRIEF de 1 à 3 phrases sur l'enjeu à développer, la réflexion à susciter et le rapport avec l'expertise de LBMedia ; pas une méthode à suivre, pas des astuces, pas le texte final ;
+- reason : une phrase indiquant en quoi le sujet renforce la crédibilité de LBMedia ou peut susciter un besoin de communication, sans promesse commerciale artificielle.
 
 Avant de répondre, vérifie que chaque titre pourrait être compris et jugé intéressant par un artisan ou un commerçant sans formation en marketing.
 
