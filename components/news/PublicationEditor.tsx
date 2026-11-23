@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import type {
   Publication,
@@ -68,6 +69,12 @@ export default function PublicationEditor({
   publication,
   label,
 }: PublicationEditorProps) {
+  const router = useRouter();
+
+  const [brief, setBrief] = useState(
+    publication.brief ?? ""
+  );
+
   const [title, setTitle] =
     useState(
       publication.title ?? ""
@@ -276,6 +283,7 @@ export default function PublicationEditor({
   ) {
     return {
       title,
+      brief,
       content,
       status: nextStatus,
       scheduled_at:
@@ -288,10 +296,14 @@ export default function PublicationEditor({
       seo_title: seoTitle,
       meta_description:
         metaDescription,
-      image_url:
-        imageUrl || null,
-      image_alt:
-        imageAlt || null,
+      // Pour un groupe, les images sont synchronisées uniquement
+      // par l’API generate-visual, jamais par le formulaire.
+      ...(publication.group_id
+        ? {}
+        : {
+            image_url: imageUrl || null,
+            image_alt: imageAlt || null,
+          }),
       subject,
       preview_text:
         previewText,
@@ -841,10 +853,11 @@ export default function PublicationEditor({
       }
 
       setMessage(
-        imageUrl
-          ? "Nouveau visuel généré et enregistré."
+        publication.group_id
+          ? "Visuel commun généré et synchronisé sur les supports associés."
           : "Visuel généré et enregistré."
       );
+      router.refresh();
     } catch (
       visualError
     ) {
@@ -1408,6 +1421,8 @@ export default function PublicationEditor({
   function syncFields(
     updatedPublication: Publication
   ) {
+    setBrief(updatedPublication.brief ?? "");
+
     setTitle(
       updatedPublication.title ??
         ""
@@ -1892,6 +1907,38 @@ export default function PublicationEditor({
           </div>
         </section>
 
+        {!publication.news_id ? (
+          <section className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">
+              Préparation éditoriale
+            </p>
+            <h4 className="mt-1 text-lg font-bold text-slate-950">
+              Brief de la publication
+            </h4>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Ces consignes servent à la rédaction par Pénélope. Elles ne sont
+              pas envoyées sur les réseaux. Le texte publiable se trouve dans
+              la section Contenu ci-dessous.
+            </p>
+            <div className="mt-4">
+              <TextArea
+                label="Consignes de rédaction"
+                value={brief}
+                onChange={setBrief}
+                rows={5}
+                disabled={!canEdit || isBusy}
+                tone="border-amber-200 focus:border-amber-500 focus:ring-amber-50"
+              />
+            </div>
+            {publication.group_id ? (
+              <p className="mt-2 text-xs leading-5 text-amber-800">
+                Ce brief est enregistré pour cette déclinaison. Les textes des
+                autres supports restent indépendants.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
         <section
           className={`mt-5 rounded-2xl border p-5 ${theme.content}`}
         >
@@ -2222,7 +2269,9 @@ export default function PublicationEditor({
                 </h4>
 
                 <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-                  Pénélope génère une illustration éditoriale LBMedia à partir du contenu de la publication.
+                  {publication.group_id
+                    ? "Un seul visuel est généré et partagé entre les supports associés."
+                    : "Pénélope génère une illustration éditoriale LBMedia à partir du contenu de la publication."}
                 </p>
               </div>
 
@@ -2292,12 +2341,19 @@ export default function PublicationEditor({
                       rows={3}
                       disabled={
                         !canEdit ||
-                        isBusy
+                        isBusy ||
+                        Boolean(publication.group_id)
                       }
                       tone="border-violet-200 focus:border-violet-500 focus:ring-violet-50"
                     />
                   </div>
 
+                  {publication.group_id ? (
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Pour une publication multisupports, le texte ALT est commun
+                      et synchronisé lors de la génération du visuel.
+                    </p>
+                  ) : null}
                   {!imageAlt ? (
                     <p className="mt-2 text-xs leading-5 text-slate-500">
                       Le texte ALT sera généré automatiquement avec le prochain visuel.

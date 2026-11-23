@@ -613,6 +613,7 @@ export async function POST(
   if (
     isStandalone &&
     !publication.title?.trim() &&
+    !publication.brief?.trim() &&
     !publication.content?.trim()
   ) {
     return NextResponse.json(
@@ -654,8 +655,10 @@ Tu dois rédiger directement une publication pour le canal demandé à partir du
 Sujet :
 ${publication.title || "Aucun titre distinct."}
 
-Brief ou contenu de départ :
-${publication.content || "Aucun contenu détaillé."}
+Brief éditorial de référence :
+${publication.brief?.trim() || publication.content?.trim() || "Aucune consigne détaillée. Développe le sujet sans inventer de faits."}
+
+${publication.brief?.trim() ? "IMPORTANT : un texte de publication peut déjà exister dans Office. Il ne remplace pas le brief de référence et ne doit pas servir de consigne pour cette nouvelle génération." : "Compatibilité : aucun brief distinct n'est enregistré. Le contenu existant est utilisé comme point de départ pour cette ancienne publication."}
 
 Lien associé :
 ${publication.link_url || "Aucun lien"}
@@ -716,7 +719,8 @@ RÈGLES COMMUNES
 PUBLICATION INDÉPENDANTE
 
 Lorsque le contenu source indique qu'il s'agit d'une publication indépendante :
-- considère le titre et le contenu fournis comme un brief éditorial, jamais comme du texte destiné à être recopié ;
+- considère le titre et le brief éditorial comme les consignes de référence, jamais comme du texte destiné à être recopié ;
+- lorsque le brief distinct est présent, conserve-le comme source stable même si un texte final a déjà été généré ;
 - rédige une véritable publication autonome ;
 - exécute les intentions du brief au lieu de reproduire ses consignes ;
 - si le brief dit "indiquer", "expliquer", "montrer", "proposer", "phrase à copier", "exemple", "modèle", "checklist" ou équivalent, transforme cette consigne en texte public naturel ;

@@ -15,6 +15,7 @@ type CreateStandalonePublicationInput = {
   channels?: PublicationChannel[];
   title?: string;
   content?: string;
+  brief?: string;
 };
 
 const standaloneChannels: PublicationChannel[] = [
@@ -119,7 +120,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const content = typeof body.content === "string" ? body.content.trim() : "";
+  // Le nouveau formulaire envoie `channels` et utilise encore `content`
+  // pour les consignes. Stocker ces consignes dans `brief` et laisser le
+  // texte final vide jusqu'à la génération IA.
+  // Les anciens clients qui envoient `channel` conservent leur comportement.
+  const incomingContent =
+    typeof body.content === "string" ? body.content.trim() : "";
+  const incomingBrief =
+    typeof body.brief === "string" ? body.brief.trim() : "";
+  const brief = usesMultipleChannels
+    ? incomingBrief || incomingContent
+    : incomingBrief;
+  const content = usesMultipleChannels ? "" : incomingContent;
   const now = new Date().toISOString();
   const groupId = channels.length > 1 ? randomUUID() : null;
 
@@ -131,6 +143,7 @@ export async function POST(request: Request) {
     channel,
     title,
     content,
+    brief: brief || null,
     status: "draft" as const,
     updated_at: now,
   }));

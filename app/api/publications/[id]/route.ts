@@ -7,6 +7,10 @@ import {
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+type UpdatePublicationWithBrief = UpdatePublicationInput & {
+  brief?: string | null;
+};
+
 type RouteContext = {
   params: Promise<{
     id: string;
@@ -32,7 +36,7 @@ export async function PATCH(
   const { id } =
     await context.params;
 
-  let body: UpdatePublicationInput;
+  let body: UpdatePublicationWithBrief;
 
   try {
     body =
@@ -77,6 +81,7 @@ export async function PATCH(
     .select(`
       id,
       channel,
+      group_id,
       status,
       scheduled_at,
       published_at,
@@ -167,6 +172,12 @@ export async function PATCH(
       body.content.trim();
   }
 
+  // Le brief editorial reste distinct du texte publie.
+  if (body.brief !== undefined) {
+    updateData.brief =
+      body.brief?.trim() || null;
+  }
+
   if (
     body.status !== undefined
   ) {
@@ -253,22 +264,20 @@ export async function PATCH(
       null;
   }
 
-  if (
-    body.image_alt !==
-    undefined
-  ) {
-    updateData.image_alt =
-      body.image_alt?.trim() ||
-      null;
-  }
+  // Les visuels des publications groupees sont gerees par
+  // l'API generate-visual. Ne jamais les reecrire avec un etat
+  // potentiellement ancien provenant d'un editeur ouvert.
+  // Les publications non groupees conservent le PATCH habituel.
+  if (!currentPublication.group_id) {
+    if (body.image_alt !== undefined) {
+      updateData.image_alt =
+        body.image_alt?.trim() || null;
+    }
 
-  if (
-    body.image_url !==
-    undefined
-  ) {
-    updateData.image_url =
-      body.image_url?.trim() ||
-      null;
+    if (body.image_url !== undefined) {
+      updateData.image_url =
+        body.image_url?.trim() || null;
+    }
   }
 
   if (

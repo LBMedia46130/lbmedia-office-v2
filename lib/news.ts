@@ -66,6 +66,7 @@ export type Publication = {
   channel: PublicationChannel;
 
   title: string | null;
+  brief?: string | null;
   content: string;
 
   status: PublicationStatus;
@@ -102,6 +103,7 @@ export type Publication = {
 
 export type UpdatePublicationInput = {
   title?: string | null;
+  brief?: string | null;
   content?: string;
 
   status?: PublicationStatus;

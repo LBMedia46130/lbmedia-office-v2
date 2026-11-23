@@ -166,6 +166,10 @@ export async function POST(
 
           news_id,
 
+          group_id,
+
+          status,
+
           channel,
 
           title,
@@ -285,6 +289,51 @@ export async function POST(
       );
 
     }
+
+    // Les membres d'un groupe partagent une seule image.
+    // On refuse de régénérer un visuel si un support est déjà publié :
+    // cela évite une divergence avec l'image déjà envoyée sur un réseau.
+    const groupId = publication.group_id as string | null;
+    // Capturer les valeurs après le contrôle d'existence : TypeScript
+    // conserve ainsi leur type à l'intérieur de la fonction asynchrone.
+    const publicationNewsId = publication.news_id;
+    const publicationStatus = publication.status;
+
+    async function checkGroupCanUpdate() {
+      if (!groupId || publicationNewsId) {
+        if (publicationStatus === "published") {
+          throw new Error(
+            "Le visuel d'une publication déjà diffusée ne peut plus être remplacé."
+          );
+        }
+        return;
+      }
+
+      const { data: members, error: membersError } = await supabaseAdmin
+        .from("publications")
+        .select("id, channel, status, news_id")
+        .eq("group_id", groupId);
+
+      if (membersError) {
+        throw new Error(`Impossible de vérifier les supports associés : ${membersError.message}`);
+      }
+
+      if (!members?.some((member) => member.id === id)) {
+        throw new Error("Cette publication n'appartient plus à son groupe.");
+      }
+
+      if (members.some((member) =>
+        member.status === "published" ||
+        member.news_id !== null ||
+        !["linkedin", "facebook", "google_business"].includes(member.channel)
+      )) {
+        throw new Error(
+          "Le visuel commun ne peut pas être remplacé : un support associé est déjà publié ou n'est pas un post ponctuel."
+        );
+      }
+    }
+
+    await checkGroupCanUpdate();
 
     const contentExcerpt =
 
@@ -931,7 +980,7 @@ Le résultat final doit être immédiatement identifiable comme une illustration
 
     const fileName =
 
-      `publications/${id}/${Date.now()}.png`;
+      `publications/${groupId ?? id}/${Date.now()}.png`;
 
     const {
 
@@ -1013,80 +1062,67 @@ Le résultat final doit être immédiatement identifiable comme une illustration
 
         publication.content,
 
-        publication.channel
+        groupId ? "shared" : publication.channel
 
       );
 
-    const {
+    // Nouvelle vérification après la génération (qui peut durer plusieurs secondes).
+    await checkGroupCanUpdate();
 
-      data: updatedPublication,
+    const updateValues = {
+      image_url: imageUrl,
+      image_alt: imageAlt,
+      updated_at: new Date().toISOString(),
+    };
 
-      error: updateError,
+    if (groupId && !publication.news_id) {
+      // Une seule requête de mise à jour pour tous les brouillons liés.
+      const { data: updatedMembers, error: updateError } = await supabaseAdmin
+        .from("publications")
+        .update(updateValues)
+        .eq("group_id", groupId)
+        .neq("status", "published")
+        .is("news_id", null)
+        .select("*");
 
-    } = await supabaseAdmin
+      if (updateError || !updatedMembers?.some((member) => member.id === id)) {
+        throw new Error(
+          updateError?.message ||
+          "Le visuel a été créé, mais il n'a pas pu être enregistré sur les supports associés."
+        );
+      }
 
+      return NextResponse.json({
+        success: true,
+        message: `Visuel commun généré et enregistré pour ${updatedMembers.length} support(s).`,
+        image_url: imageUrl,
+        image_alt: imageAlt,
+        publication: updatedMembers.find((member) => member.id === id),
+        linked_count: updatedMembers.length,
+      });
+    }
+
+    const { data: updatedPublication, error: updateError } = await supabaseAdmin
       .from("publications")
-
-      .update({
-
-        image_url:
-
-          imageUrl,
-
-        image_alt:
-
-          imageAlt,
-
-        updated_at:
-
-          new Date().toISOString(),
-
-      })
-
+      .update(updateValues)
       .eq("id", id)
-
+      .neq("status", "published")
       .select("*")
-
       .maybeSingle();
 
-    if (
-
-      updateError ||
-
-      !updatedPublication
-
-    ) {
-
+    if (updateError || !updatedPublication) {
       throw new Error(
-
         updateError?.message ||
-
-          "Le visuel a été créé mais son URL n'a pas pu être enregistrée."
-
+        "Le visuel a été créé mais son URL n'a pas pu être enregistrée."
       );
-
     }
 
     return NextResponse.json({
-
       success: true,
-
-      message:
-
-        "Visuel généré et enregistré.",
-
-      image_url:
-
-        imageUrl,
-
-      image_alt:
-
-        imageAlt,
-
-      publication:
-
-        updatedPublication,
-
+      message: "Visuel généré et enregistré.",
+      image_url: imageUrl,
+      image_alt: imageAlt,
+      publication: updatedPublication,
     });
 
   } catch (error) {
@@ -1197,7 +1233,11 @@ function buildImageAlt(
 
       ? "Illustration éditoriale LBMedia pour une publication Google Business"
 
-      : "Illustration éditoriale LBMedia pour une publication Facebook";
+      : channel === "shared"
+
+        ? "Illustration éditoriale LBMedia pour les réseaux sociaux"
+
+        : "Illustration éditoriale LBMedia pour une publication Facebook";
 
   const alt =
 
