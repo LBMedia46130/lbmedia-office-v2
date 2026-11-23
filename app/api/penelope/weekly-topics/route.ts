@@ -20,15 +20,6 @@ type WeeklyTopicsResponse = {
   topics: WeeklyTopic[];
 };
 
-type EditorialReview = {
-  reviews: {
-    index: number;
-    approved: boolean;
-    explanation: string;
-  }[];
-};
-
-const CANDIDATE_COUNT = 8;
 const DISPLAY_COUNT = 3;
 
 type WeeklyTopicsRequest = {
@@ -72,6 +63,8 @@ type EditorialFeedbackItem = {
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 45_000,
+  maxRetries: 0,
 });
 
 const channelTopicInstructions: Record<
@@ -216,7 +209,7 @@ export async function POST(
             ascending: false,
           }
         )
-        .limit(30),
+        .limit(20),
 
       supabaseAdmin
         .from("publications")
@@ -233,7 +226,7 @@ export async function POST(
             ascending: false,
           }
         )
-        .limit(60),
+        .limit(30),
 
       supabaseAdmin
         .from(
@@ -249,7 +242,7 @@ export async function POST(
             nullsFirst: false,
           }
         )
-        .limit(100),
+        .limit(45),
 
       supabaseAdmin
         .from("editorial_topic_feedback")
@@ -257,7 +250,7 @@ export async function POST(
           "title, angle, reason, channel, feedback, rejection_reason, created_at"
         )
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(50),
     ]);
 
     if (
@@ -353,16 +346,16 @@ export async function POST(
     const formatFeedback = (items: EditorialFeedbackItem[]) =>
       items.length > 0
         ? items
-            .slice(0, 35)
+            .slice(0, 20)
             .map((item, index) =>
               [
                 `${index + 1}. ${cleanExcerpt(item.title, 160)}`,
                 `Support : ${item.channel}`,
                 `Date de l'évaluation : ${formatDate(item.created_at)}`,
-                `Angle : ${cleanExcerpt(item.angle, 350)}`,
+                `Angle : ${cleanExcerpt(item.angle, 180)}`,
                 item.feedback === "rejected"
                   ? `Motif de refus : ${item.rejection_reason?.trim() || "Non précisé"}`
-                  : `Intérêt initial : ${cleanExcerpt(item.reason, 180)}`,
+                  : `Intérêt initial : ${cleanExcerpt(item.reason, 120)}`,
               ].join("\n")
             )
             .join("\n\n")
@@ -387,7 +380,7 @@ export async function POST(
                   )}`,
                   `Statut : ${item.status}`,
                   `Résumé : ${cleanExcerpt(
-                    item.content
+                    item.content, 180
                   )}`,
                 ].join("\n");
               }
@@ -428,8 +421,8 @@ export async function POST(
                 `Supports : ${channels.join(", ")}`,
                 `Date : ${formatDate(item.created_at)}`,
                 `Statut : ${item.status}`,
-                `Brief : ${cleanExcerpt(item.brief)}`,
-                `Texte : ${cleanExcerpt(item.content)}`,
+                `Brief : ${cleanExcerpt(item.brief, 160)}`,
+                `Texte : ${cleanExcerpt(item.content, 160)}`,
               ].join("\n")
             )
             .join("\n\n")
@@ -451,7 +444,7 @@ export async function POST(
                     item.published_at
                   )}`,
                   `Résumé : ${cleanExcerpt(
-                    item.summary
+                    item.summary, 160
                   )}`,
                 ];
 
@@ -517,7 +510,7 @@ Plusieurs sujets relevant du même univers sont acceptables s'ils sont réelleme
 
 DIVERSITÉ ÉDITORIALE — PRIORITÉ ABSOLUE
 
-Pour préparer les pistes, explore mentalement plusieurs FAMILLES D'ANGLES, puis retiens les meilleures :
+Explore intérieurement plusieurs FAMILLES D'ANGLES, puis retiens les trois plus fortes :
 - une tendance ou une évolution de la communication et ses implications pour les entreprises ;
 - la manière dont les consommateurs découvrent, perçoivent et mémorisent une marque ;
 - le rôle réel de la radio, du web ou d'une campagne dans un parcours de décision ;
@@ -536,7 +529,7 @@ HISTORIQUE : VÉRIFICATION AVANT SÉLECTION
 L'historique comprend des contenus publiés ET des sujets en préparation. Un groupe de brouillons multisupports correspond à une seule idée, pas à trois sujets différents.
 Avant de retenir chaque proposition, compare son IDÉE CENTRALE, pas seulement son titre, aux thèmes récents des trois sources.
 Si le lecteur pourrait résumer deux sujets par la même phrase, considère-les comme des doublons et rejette le nouveau sujet.
-Les nouvelles propositions doivent aussi être différentes ENTRE ELLES sur le fond, et pas seulement par leur canal ou leur formulation.
+Les trois propositions doivent aussi être différentes ENTRE ELLES sur le fond, et pas seulement par leur canal ou leur formulation.
 Prends en compte les sujets anciens, mais donne plus de poids aux derniers mois.
 
 APPRENTISSAGE À PARTIR DES ÉVALUATIONS
@@ -575,7 +568,7 @@ Si une actualité serait nécessaire pour rendre un sujet crédible mais n'est p
 
 STYLE DES PROPOSITIONS
 
-- Propose huit pistes candidates variées ; un second contrôle indépendant retiendra ensuite trois sujets pour le formulaire.
+- Explore plusieurs idées en interne, puis retourne uniquement les trois meilleures. Effectue un contrôle final des doublons et de la pertinence avant de répondre.
 - Français naturel, précis, simple, sans jargon ni formule publicitaire artificielle.
 - Titres courts et lisibles, sans structure scolaire (« Pourquoi X : les 3 étapes de Y »).
 - Pas d'astuces, de « conseils à appliquer », de listes ni de tutoriels.
@@ -649,7 +642,7 @@ ${rejectedFeedbackText}
 
 Utilise ces évaluations pour ajuster la pertinence de tes choix. Ne répète pas les sujets évalués, même lorsqu'ils ont été retenus. Les motifs de refus sont des signaux plus fiables que les justifications initiales de l'IA.
 
-À partir du contexte de LBMedia et de la mémoire éditoriale, sélectionne huit pistes éditoriales candidates nouvelles. Évite avant tout les répétitions de thèmes (notamment la cohérence entre supports et la radio comme test rapide). Adapte les titres au support ${channel}, sans forcer un thème par activité.
+À partir du contexte de LBMedia et de la mémoire éditoriale, sélectionne trois sujets nouveaux après avoir écarté mentalement les pistes redondantes, refusées ou trop opérationnelles. Évite avant tout les répétitions de thèmes (notamment la cohérence entre supports et la radio comme test rapide). Adapte les titres au support ${channel}, sans forcer un thème par activité.
 `,
 
         text: {
@@ -664,8 +657,8 @@ Utilise ces évaluations pour ajuster la pertinence de tes choix. Ne répète pa
                 topics: {
                   type:
                     "array",
-                  minItems: CANDIDATE_COUNT,
-                  maxItems: CANDIDATE_COUNT,
+                  minItems: DISPLAY_COUNT,
+                  maxItems: DISPLAY_COUNT,
                   items: {
                     type:
                       "object",
@@ -719,120 +712,23 @@ Utilise ces évaluations pour ajuster la pertinence de tes choix. Ne répète pa
 
     if (
       !Array.isArray(result.topics) ||
-      result.topics.length !== CANDIDATE_COUNT
+      result.topics.length !== DISPLAY_COUNT ||
+      result.topics.some(
+        (topic) =>
+          typeof topic.title !== "string" ||
+          !topic.title.trim() ||
+          typeof topic.angle !== "string" ||
+          !topic.angle.trim() ||
+          typeof topic.reason !== "string" ||
+          !topic.reason.trim()
+      )
     ) {
-      throw new Error("Les pistes éditoriales retournées sont invalides.");
-    }
-
-    // Un second appel indépendant vérifie les idées, et pas seulement les titres.
-    // Il n'a pas le droit d'inventer de nouveaux sujets : il ne fait que filtrer.
-    const reviewResponse = await openai.responses.create({
-      model: "gpt-5-mini",
-      instructions: `
-Tu es un contrôleur qualité éditorial indépendant pour LBMedia.
-Tu dois évaluer les HUIT pistes proposées (indexées de 0 à 7) sans en réécrire aucune.
-Compare l'IDÉE CENTRALE et le BRIEF de chaque piste, pas seulement les mots du titre.
-
-REFUSE une piste si :
-- elle reprend substantiellement une idée explicitement rejetée par LBMedia, même si son titre ou son secteur diffère ;
-- elle reprend un sujet déjà retenu, publié ou préparé, sans nouveauté éditoriale réelle ;
-- elle duplique une autre piste candidate plus intéressante ; dans ce cas approuve au maximum l'une des deux ;
-- elle relève surtout de l'organisation interne, du management ou de conseils opérationnels plutôt que de la communication, de la radio ou des sites web ;
-- elle promet des résultats non vérifiables ou présente la radio comme un instrument fiable de mesure immédiate des ventes ;
-- elle prend la forme d'une recette, checklist, tutoriel ou astuce pour se passer d'un professionnel.
-
-Important : un sujet rejeté ne condamne pas l'ensemble de l'activité radio, web ou communication.
-En l'absence de motif précis, évite surtout la répétition de son angle central.
-La justification initiale "reason" a été rédigée par l'IA, ce n'est PAS un vote de l'utilisateur.
-Évalue strictement, sans chercher à en approuver absolument trois. Une réponse avec moins de trois pistes acceptables est possible.
-Retourne exactement huit décisions, une par index de 0 à 7, et une explication brève par décision.
-`,
-      input: `
-SUPPORT : ${channel}
-
-SUJETS REFUSÉS PAR LBMEDIA
-${rejectedFeedbackText}
-
-SUJETS ACCEPTÉS (à ne pas répéter)
-${acceptedFeedbackText}
-
-ARTICLES EXISTANTS
-${recentNewsText.slice(0, 6500)}
-
-BROUILLONS ET POSTS EXISTANTS
-${standaloneText.slice(0, 6500)}
-
-HISTORIQUE ÉDITORIAL IMPORTÉ
-${importedHistoryText.slice(0, 9000)}
-
-HUIT PISTES CANDIDATES À ÉVALUER
-${JSON.stringify(result.topics.map((topic, index) => ({ index, ...topic })), null, 2)}
-`,
-      text: {
-        format: {
-          type: "json_schema",
-          name: "editorial_review",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              reviews: {
-                type: "array",
-                minItems: CANDIDATE_COUNT,
-                maxItems: CANDIDATE_COUNT,
-                items: {
-                  type: "object",
-                  properties: {
-                    index: { type: "integer" },
-                    approved: { type: "boolean" },
-                    explanation: { type: "string" },
-                  },
-                  required: ["index", "approved", "explanation"],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ["reviews"],
-            additionalProperties: false,
-          },
-        },
-      },
-    });
-
-    const reviewText = reviewResponse.output_text.trim();
-    if (!reviewText) {
-      throw new Error("La vérification éditoriale n'a retourné aucun résultat.");
-    }
-
-    const review = JSON.parse(reviewText) as EditorialReview;
-    const reviewIndices = review.reviews?.map((item) => item.index) ?? [];
-    if (
-      reviewIndices.length !== CANDIDATE_COUNT ||
-      new Set(reviewIndices).size !== CANDIDATE_COUNT ||
-      reviewIndices.some((index) => !Number.isInteger(index) || index < 0 || index >= CANDIDATE_COUNT)
-    ) {
-      throw new Error("Le contrôle éditorial a retourné des indices invalides.");
-    }
-
-    const selectedTopics = review.reviews
-      .filter((item) => item.approved)
-      .map((item) => result.topics[item.index])
-      .slice(0, DISPLAY_COUNT);
-
-    if (selectedTopics.length < DISPLAY_COUNT) {
-      // Ne jamais afficher un sujet rejeté simplement pour remplir trois cases.
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Pénélope n'a pas trouvé trois sujets suffisamment nouveaux et pertinents. Relance la recherche de sujets.",
-        },
-        { status: 422 }
-      );
+      throw new Error("Les sujets éditoriaux retournés sont invalides.");
     }
 
     return NextResponse.json({
       success: true,
-      topics: selectedTopics,
+      topics: result.topics,
     });
   } catch (error) {
     console.error(
